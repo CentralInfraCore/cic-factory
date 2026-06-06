@@ -19,6 +19,12 @@ agent:
   config_dir: ""            # CLAUDE_CONFIG_DIR value, e.g. "~/.claude-personal/agents/agent-01"
   model: ""                 # e.g. "claude-sonnet-4-6"
 
+# Workplace — gitignored, disposable working area
+workplace:
+  enabled: false            # true if agent clones repos into jobs/<id>/workplace/
+  repos: []                 # cloned repos, e.g. ["github_private@devel"]
+  review_required: true     # agent stops before commit; human+Claude reviews diff
+
 # Status
 status: "pending"           # pending | running | done | error
 error_message: ""           # only when status: error
