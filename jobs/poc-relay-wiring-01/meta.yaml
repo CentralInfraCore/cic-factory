@@ -1,0 +1,25 @@
+schema_version: "1.0"
+job_id: "poc-relay-wiring-01"
+parent_job_id: "poc-implementation-plan"
+level: "domain"
+target:
+  repo: "CIC-Relay"
+  path: "core/nexus/iac"
+kb_focus:
+  - "n984"
+  - "n477"
+  - "n349"
+  - "n479"
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+workplace:
+  repos: ["cic-factory", "CIC-Relay"]
+  branch: "feature/poc-relay-wiring-01"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-06-06T00:00:00Z"
+  started: ""
+  completed: ""
