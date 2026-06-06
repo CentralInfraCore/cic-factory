@@ -1,0 +1,22 @@
+schema_version: "1.0"
+job_id: "poc-demo-script-01"
+parent_job_id: "poc-implementation-plan"
+level: "domain"
+target:
+  repo: "cic-factory"
+  path: "jobs/poc-demo-script-01"
+kb_focus: []
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+workplace:
+  repos:
+    - "cic-factory"
+  branch: "feature/poc-demo-script-01"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-06-06T00:00:00Z"
+  started: ""
+  completed: ""

@@ -1,0 +1,31 @@
+schema_version: "1.0"
+job_id: "poc-schema-signing-01"
+parent_job_id: "poc-implementation-plan"
+level: "domain"
+target:
+  repo: "CIC-Relay"
+  path: "core/modules/schemacompile"
+kb_focus:
+  - "c442"
+  - "c453"
+  - "c189"
+  - "c1312"
+  - "c263"
+  - "c1963"
+  - "c958"
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+workplace:
+  repos:
+    - "cic-factory"
+    - "CIC-Relay"
+    - "CIC-Schemas"
+  branch: "feature/poc-schema-signing-01"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-06-06T00:00:00Z"
+  started: ""
+  completed: ""

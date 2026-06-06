@@ -1,0 +1,31 @@
+schema_version: "1.0"
+job_id: "poc-rollback-01"
+parent_job_id: "poc-implementation-plan"
+level: "domain"
+target:
+  repo: "CIC-Relay"
+  path: "core/plugins/intent_watcher"
+kb_focus:
+  - "c2498"
+  - "c2842"
+  - "c2836"
+  - "c517"
+  - "c2436"
+  - "c263"
+  - "c2616"
+  - "c1715"
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+workplace:
+  repos:
+    - "cic-factory"
+    - "CIC-Relay"
+  branch: "feature/poc-rollback-01"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-06-06T00:00:00Z"
+  started: ""
+  completed: ""
