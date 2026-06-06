@@ -1,0 +1,24 @@
+schema_version: "1.0"
+
+job_id: "map-private-source"
+parent_job_id: ""
+
+level: "orchestrator"
+target:
+  repo: "MCPs/private/source"
+  path: ""
+
+kb_focus: []
+promptmap_ref: ""
+
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+
+status: "pending"
+error_message: ""
+
+timestamps:
+  created: "2026-06-06T17:00:00Z"
+  started: ""
+  completed: ""
