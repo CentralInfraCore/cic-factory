@@ -1,0 +1,24 @@
+schema_version: "1.0"
+
+job_id: "deep-inspect-private-repos"
+parent_job_id: "map-private-source"
+
+level: "orchestrator"
+target:
+  repo: "CIC_Relay, CIC_Schemas, cic-mcp-private, github_private"
+  path: ""
+
+kb_focus: []
+promptmap_ref: ""
+
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+
+status: "pending"
+error_message: ""
+
+timestamps:
+  created: "2026-06-06T20:00:00Z"
+  started: ""
+  completed: ""
