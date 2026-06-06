@@ -10,6 +10,13 @@ A szülő könyvtár (`CIC/CLAUDE.md`) tartalmazza az ökoszisztéma-szintű kon
 
 ---
 
+## Nyelvi szabály
+
+- Dokumentáció, Claude-utasítások, agent promptok: **magyarul**
+- Forráskód, YAML, JSON, shell script, változónevek, kódon belüli komment: **angolul**
+
+---
+
 ## Repo helyek
 
 | Alrendszer | Forrás path |
