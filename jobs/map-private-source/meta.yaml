@@ -15,10 +15,10 @@ agent:
   config_dir: "~/.claude-personal/agents/agent-01"
   model: "claude-sonnet-4-6"
 
-status: "pending"
+status: "running"
 error_message: ""
 
 timestamps:
   created: "2026-06-06T17:00:00Z"
-  started: ""
+  started: "2026-06-06T17:30:00Z"
   completed: ""
