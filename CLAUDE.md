@@ -23,22 +23,22 @@ A szülő (`CIC/CLAUDE.md`) tartalmazza az ökoszisztéma-szintű kontextust (bo
 
 | Szereplő | Hol él | Mit csinál |
 |---|---|---|
-| Orchestrátor (te + Claude) | live `workdir/` | job spec létrehozás, review, merge |
-| Agent | `~/.claude-personal/agents/<id>/workspace/<job-id>/cic-factory/` | klónból dolgozik, feature branch-re commitol |
+| Orchestrátor (te + Claude) | live `workdir/` | job spec létrehozás, review, merge döntés |
+| Agent | `jobs/<job-id>/workspace/cic-factory/` (klón) | klónban dolgozik, feature branch-re commitol és pushol |
 
 ### Job lifecycle
 
 ```
 orchestrátor: input.md + meta.yaml → commit main → push
-run-job.sh:   pending → running commit → agent clone → feature branch
-agent:        olvas input.md → ír output/ → commit + push feature/<job-id>
+run-job.sh:   pending → running commit → workspace klón → feature branch
+agent:        olvas jobs/<job-id>/ → ír output/ → commitol + pushol feature/<job-id>
 orchestrátor: review GitHubon → merge main
 ```
 
 ### Git a bizalom forrása
 
 A Vault-aláírt commit maga az igazolás (`commit-msg` hook, `cic-my-sign-key`).
-Az agent commitol és pushol a feature branch-re — ez nem véglegesítés, hanem a review artifact.
+Az agent a klónból commitol és pushol a feature branch-re — review artifact, nem véglegesítés.
 Push `main`-re kizárólag az orchestrátor joga.
 
 ---
@@ -47,33 +47,44 @@ Push `main`-re kizárólag az orchestrátor joga.
 
 ```
 jobs/
-  index.yaml              ← auto-generált állapottérkép (tools/update-index.sh)
-  .schema/meta.yaml       ← kötelező mezők sémája
+  index.yaml                  ← auto-generált állapottérkép (tools/update-index.sh)
+  .schema/meta.yaml           ← kötelező mezők sémája
   <job-id>/
-    input.md              ← agent prompt (magyarul)
-    meta.yaml             ← lifecycle: pending | running | done | error
-    output/               ← agent kimenet (git-tracked)
+    input.md                  ← agent prompt (magyarul, git-tracked)
+    meta.yaml                 ← lifecycle: pending | running | done | error (git-tracked)
+    ref/                      ← referencia anyagok (opcionális, git-tracked)
+    workspace/                ← gitignored; agent klónjai élnek itt
+      cic-factory/            ← git clone + feature/<job-id> branch
+      <egyéb repo>/           ← ha a job más repót is igényel
 ```
+
+### Sub-job lifecycle
+
+Az agent a cic-factory klónjában (`workspace/cic-factory/`) hozza létre a sub-job speceket:
+```
+workspace/cic-factory/jobs/<sub-job-id>/input.md + meta.yaml
+```
+Ezek a feature branch-re kerülnek. Merge után az orchestrátor a live workdir `jobs/<sub-job-id>/`-ban látja — és `run-job.sh <sub-job-id>`-val futtathatja.
 
 ### meta.yaml kötelező mezők
 
 ```yaml
 schema_version: "1.0"
 job_id: ""
-parent_job_id: ""         # "" ha gyökér
-level: ""                 # orchestrator | repo | domain
+parent_job_id: ""             # "" ha gyökér
+level: ""                     # orchestrator | repo | domain
 target:
   repo: ""
-  path: ""                # domain szinten kötelező
-kb_focus: []              # cic-graph focus_pack node-id-k
+  path: ""                    # domain szinten kötelező
+kb_focus: []                  # cic-graph focus_pack node-id-k
 promptmap_ref: ""
 agent:
-  config_dir: ""          # ~/.claude-personal/agents/<id>
+  config_dir: ""              # ~/.claude-personal/agents/<id>
   model: ""
 workplace:
-  repos: []               # pl. ["cic-factory", "github_private"]
-  branch: ""              # feature/<job-id>
-status: "pending"         # pending | running | done | error
+  repos: []                   # pl. ["CIC-Relay"] — workspace/<repo>/ alá klónozva
+  branch: ""                  # feature/<job-id>
+status: "pending"             # pending | running | done | error
 error_message: ""
 timestamps:
   created: ""
@@ -87,23 +98,9 @@ timestamps:
 
 | Parancs | Mit csinál |
 |---|---|
-| `./tools/run-job.sh <job-id> [agent-id]` | Teljes lifecycle: clone, running→done, commit, push |
+| `./tools/run-job.sh <job-id> [agent-id]` | Teljes lifecycle: klón, running→done, commit, push |
 | `./tools/update-index.sh` | `jobs/index.yaml` újragenerálása |
 | `~/.claude-personal/agents/new-agent.sh <név>` | Új izolált agent config létrehozása |
-
----
-
-## Agent workspace
-
-Az agent **nem** a live `workdir/`-ban dolgozik:
-
-```
-~/.claude-personal/agents/<id>/workspace/<job-id>/
-  cic-factory/            ← git clone git@github.com:CentralInfraCore/cic-factory.git
-  <egyéb repók>/          ← ha a job más repót is igényel
-```
-
-A workspace a job után törölhető (`rm -rf`).
 
 ---
 
@@ -115,7 +112,7 @@ A workspace a job után törölhető (`rm -rf`).
   settings.json           ← izolált config, auto mode
 ```
 
-Indítás: `CLAUDE_CONFIG_DIR=~/.claude-personal/agents/<id> claude --print "..."`
+Indítás: `CLAUDE_CONFIG_DIR=~/.claude-personal/agents/<id> claude --print "..." --mcp-config CIC/.mcp.json`
 
 ---
 
@@ -133,7 +130,9 @@ Indítás: `CLAUDE_CONFIG_DIR=~/.claude-personal/agents/<id> claude --print "...
 
 ## MCP szerver
 
-A `.claude/settings.local.json` automatikusan aktiválja a `cic-graph` MCP szervert (stdio mód, konfig: `CIC/.mcp.json`). Boot sequence: `kb_status` → `search_nodes` → státusz ellenőrzés.
+A `cic-graph` MCP szerver konfigja: `CIC/.mcp.json` (stdio mód).
+`run-job.sh` automatikusan átadja: `--mcp-config /home/sinkog/sync/claude_factory/CIC/.mcp.json`
+Boot sequence: `kb_status` → `search_nodes` → státusz ellenőrzés.
 
 ---
 
