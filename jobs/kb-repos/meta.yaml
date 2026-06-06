@@ -1,0 +1,30 @@
+schema_version: "1.0"
+
+job_id: "kb-repos"
+parent_job_id: "deep-inspect-private-repos"
+
+level: "orchestrator"
+target:
+  repo: "github_private"
+  path: "docs/hu/repos, docs/en/repos"
+
+kb_focus: []
+promptmap_ref: ""
+
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+
+workplace:
+  enabled: true
+  repos:
+    - "github_private@devel"
+  review_required: true
+
+status: "pending"
+error_message: ""
+
+timestamps:
+  created: "2026-06-06T21:00:00Z"
+  started: ""
+  completed: ""
