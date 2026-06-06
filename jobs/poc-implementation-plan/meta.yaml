@@ -1,0 +1,28 @@
+schema_version: "1.0"
+
+job_id: "poc-implementation-plan"
+parent_job_id: ""
+
+level: "orchestrator"
+target:
+  repo: "cic-factory"
+  path: "jobs/poc-implementation-plan"
+
+kb_focus: ["poc", "relay", "vault", "prooftrace", "schema", "iac", "drift", "ois"]
+promptmap_ref: ""
+
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+
+workplace:
+  repos: ["cic-factory"]
+  branch: "feature/poc-implementation-plan"
+
+status: "pending"
+error_message: ""
+
+timestamps:
+  created: "2026-06-06T00:00:00Z"
+  started: ""
+  completed: ""
