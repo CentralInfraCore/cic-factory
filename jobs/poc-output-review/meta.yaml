@@ -1,0 +1,28 @@
+schema_version: "1.0"
+
+job_id: "poc-output-review"
+parent_job_id: "poc-implementation-plan"
+
+level: "orchestrator"
+target:
+  repo: "cic-factory"
+  path: "jobs/poc-output-review"
+
+kb_focus: ["poc", "relay", "prooftrace", "schema", "iac", "drift", "ois", "plugin", "primitives"]
+promptmap_ref: ""
+
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+
+workplace:
+  repos: ["cic-factory"]
+  branch: "feature/poc-output-review"
+
+status: "pending"
+error_message: ""
+
+timestamps:
+  created: "2026-06-06T22:10:00Z"
+  started: ""
+  completed: ""
