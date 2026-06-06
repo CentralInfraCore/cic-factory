@@ -4,3 +4,6 @@
 
 # Job futás közbeni temp fájlok
 jobs/*/tmp/
+
+# Agent munkaterület — disposable, review után rm -rf
+jobs/*/workplace/
