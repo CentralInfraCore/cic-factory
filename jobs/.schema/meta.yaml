@@ -1,32 +1,29 @@
-# Job meta.yaml séma — minden szinten kötelező
-# Verziózott: schema_version mező alapján validálható
-
 schema_version: "1.0"
 
-# --- Azonosítás ---
-job_id: ""                  # egyedi, pl. "relay-crypto-001" vagy uuid
-parent_job_id: ""           # ha ez egy magasabb szintű job gyereke; "" ha gyökér
+# Identification
+job_id: ""                  # unique, e.g. "relay-crypto-001" or uuid
+parent_job_id: ""           # parent job id if this is a child job; "" for root
 
-# --- Hierarchia szint ---
+# Hierarchy level
 level: ""                   # orchestrator | repo | domain
 target:
-  repo: ""                  # pl. "CIC-Relay"
-  path: ""                  # pl. "core/nexus/crypto" — domain szinten kötelező; repo szinten ""
+  repo: ""                  # e.g. "CIC-Relay"
+  path: ""                  # e.g. "core/nexus/crypto"; required at domain level
 
-# --- KB kontextus ---
-kb_focus: []                # focus_pack node-id-k vagy tag-ek, pl. ["crypto", "vault"]
-promptmap_ref: ""           # ai/PROMPTMAP.yaml bejegyzés kulcsa; "" ha nincs
+# KB context
+kb_focus: []                # focus_pack node-ids or tags, e.g. ["crypto", "vault"]
+promptmap_ref: ""           # key in ai/PROMPTMAP.yaml; "" if not applicable
 
-# --- Agent ---
+# Agent
 agent:
-  config_dir: ""            # CLAUDE_CONFIG_DIR értéke, pl. "~/.claude-personal/agents/agent-01"
-  model: ""                 # pl. "claude-sonnet-4-6"
+  config_dir: ""            # CLAUDE_CONFIG_DIR value, e.g. "~/.claude-personal/agents/agent-01"
+  model: ""                 # e.g. "claude-sonnet-4-6"
 
-# --- Státusz ---
+# Status
 status: "pending"           # pending | running | done | error
-error_message: ""           # csak ha status: error
+error_message: ""           # only when status: error
 
-# --- Időbélyegek (ISO 8601) ---
+# Timestamps (ISO 8601)
 timestamps:
   created: ""
   started: ""
