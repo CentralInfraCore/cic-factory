@@ -19,10 +19,10 @@ agent:
   config_dir: ""            # CLAUDE_CONFIG_DIR value, e.g. "~/.claude-personal/agents/agent-01"
   model: ""                 # e.g. "claude-sonnet-4-6"
 
-# Workplace — gitignored, disposable working area
+# Workplace — agent saját klónjában, nem a live workdir-ban
+# Clone helye: ~/.claude-personal/agents/<id>/workspace/<job-id>/
 workplace:
-  enabled: false            # true if agent clones repos into jobs/<id>/workplace/
-  repos: []                 # cloned repos, e.g. ["github_private@devel"]
+  repos: []                 # klónozandó repók, pl. ["cic-factory", "github_private"]
   branch: ""                # feature branch neve, pl. "feature/kb-repos"
 
 # Status
