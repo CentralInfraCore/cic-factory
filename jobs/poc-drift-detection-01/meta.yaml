@@ -1,0 +1,31 @@
+schema_version: "1.0"
+job_id: "poc-drift-detection-01"
+parent_job_id: "poc-implementation-plan"
+level: "domain"
+target:
+  repo: "CIC-Relay"
+  path: "core/plugins/drift_detector"
+kb_focus:
+  - "c1815"
+  - "c2543"
+  - "c2618"
+  - "c1824"
+  - "c2585"
+  - "c2616"
+  - "c263"
+  - "c590"
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+workplace:
+  repos:
+    - "cic-factory"
+    - "CIC-Relay"
+  branch: "feature/poc-drift-detection-01"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-06-06T00:00:00Z"
+  started: ""
+  completed: ""
