@@ -5,5 +5,5 @@
 # Job futás közbeni temp fájlok
 jobs/*/tmp/
 
-# Agent workspace — a klónokban él, nem itt
-# (agents clone cic-factory to ~/.claude-personal/agents/<id>/workspace/)
+# Agent workspace — klónok és futási állapot, nem tracked
+jobs/*/workspace/
