@@ -116,6 +116,12 @@ Indítás: `CLAUDE_CONFIG_DIR=~/.claude-personal/agents/<id> claude --print "...
 
 ---
 
+## Ökoszisztéma térkép
+
+**Olvasd el session elején:** [`docs/ecosystem-map.md`](docs/ecosystem-map.md)
+
+Tartalmaz: összes repo path + szerep, adatfolyam, relay architektúra, demo fázisok (CIC szerepe 8.1–8.4), MCP lefedettség, Vault signing lánc. Ne kelljen job-onként újra feltérképezni.
+
 ## Repo helyek (CIC ökoszisztéma)
 
 | Alrendszer | Forrás path |
