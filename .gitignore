@@ -1,0 +1,6 @@
+# Agent runtime state (ne kerüljön gitbe)
+.claude/
+*.log
+
+# Job futás közbeni temp fájlok
+jobs/*/tmp/
