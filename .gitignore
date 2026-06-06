@@ -1,5 +1,5 @@
 # Agent runtime state (ne kerüljön gitbe)
-.claude/
+.claude/settings.local.json
 *.log
 
 # Job futás közbeni temp fájlok
