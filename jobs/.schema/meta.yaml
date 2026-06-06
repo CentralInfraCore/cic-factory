@@ -23,7 +23,7 @@ agent:
 workplace:
   enabled: false            # true if agent clones repos into jobs/<id>/workplace/
   repos: []                 # cloned repos, e.g. ["github_private@devel"]
-  review_required: true     # agent stops before commit; human+Claude reviews diff
+  branch: ""                # feature branch neve, pl. "feature/kb-repos"
 
 # Status
 status: "pending"           # pending | running | done | error
