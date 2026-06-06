@@ -1,0 +1,264 @@
+repos:
+  # === CentralInfraCore namespace ===
+
+  - id: "cic-basic-knowledge"
+    local_path: "/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/CIC-basic-knowledge"
+    remote_url: "git@github.com:CentralInfraCore/github_private.git"
+    description: >
+      AI-natív fogalmi tudásbázis és szemantikai gráf. Nem hagyományos dokumentáció —
+      deklaratív NDJSON gráf YAML meta-annotációkkal. Ez a `cic-graph` MCP KB forrása.
+      Kétnyelvű (en/hu) fogalmi rétegeket tartalmaz: concept, reality, interaction, usage, prompt.
+    top_level_dirs:
+      - docs/        # kétnyelvű (en/hu) fogalmi dokumentáció: concept, reality, interaction, usage
+      - meta/        # relay-modul szintű meta-adatok
+      - profile/     # gráf profil
+    related_repos:
+      - "git@github.com:CentralInfraCore/base-repo.git"
+    git_note: "Submodule worktree — .git pointer: ../../../.git/modules/source/CentralInfraCore/CIC-basic-knowledge"
+    active_branch: "(detached / main)"
+
+  - id: "base-repo"
+    local_path: "/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/base"
+    remote_url: "git@github.com:CentralInfraCore/base-repo.git"
+    description: >
+      Infrastruktúra sablon repo — az összes CIC domain repo Makefile-t, .github/ CI
+      workflow-kat, dokumentáció-struktúrát és fejlesztői eszközöket ebből veszi át
+      `remote-merge` módon. Egyszerre 6 branch/worktree-n él.
+    top_level_dirs:
+      - base/        # branch: devel — alap sablon (configs, docs, schemas, features, tools)
+      - docs/        # branch: devel — dokumentáció sablon
+      - golang/      # branch: golang/main — Go-specifikus eszközök és scriptek
+      - IaC/         # branch: devel — IaC sablon komponensek
+      - schemas/     # branch: devel — schema sablon
+      - workflows/   # branch: devel — CI/CD workflow sablonok
+    related_repos:
+      - "git@github.com:CentralInfraCore/cic-primitives.git"
+      - "git@github.com:CentralInfraCore/cic-compute.git"
+      - "git@github.com:CentralInfraCore/cic-kubernetes.git"
+      - "git@github.com:CentralInfraCore/cic-network.git"
+      - "git@github.com:CentralInfraCore/cic-storage.git"
+      - "git@github.com:CentralInfraCore/cic-yang.git"
+      - "git@github.com:CentralInfraCore/CIC_Schemas.git"
+    git_note: "Submodule — 6 párhuzamos worktree, mind ugyanarra a remote-ra mutat. Minden .git egy pointer fájl."
+
+  - id: "cic-primitives"
+    local_path: "/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/CIC-objs/cic-primitives"
+    remote_url: "git@github.com:CentralInfraCore/cic-primitives.git"
+    description: >
+      CIC meta-séma réteg. 7 irreducibilis atom (Shape, Role, Behavior, Contract, Address,
+      Identity, Event) + aggregate kompozíciók sealed/defaulted/required slot-okkal.
+      Minden domain objektum ebből vezethető le. Nem domain modell, nem IaC tool, nem YANG leíró.
+      Státusz: aktív fejlesztés (Phase 8.2 — Access atom + PolicySurface implementálva).
+    top_level_dirs:
+      - schemas/     # atomic/ (7 atom YAML), aggregate/, domain/, adapters/, examples/
+      - ai/          # ONBOARDING.md, SYSTEM_CONTEXT.md, PROMPTMAP.yaml, DECISIONS.md, ROADMAP.md
+      - docs/
+      - features/
+      - tests/
+      - tools/
+    related_repos:
+      - "git@github.com:CentralInfraCore/base-repo.git"
+      - "git@github.com:CentralInfraCore/cic-compute.git"
+      - "git@github.com:CentralInfraCore/cic-kubernetes.git"
+      - "git@github.com:CentralInfraCore/cic-network.git"
+      - "git@github.com:CentralInfraCore/cic-storage.git"
+      - "git@github.com:CentralInfraCore/cic-yang.git"
+    git_note: "Submodule worktree — branch: primitives/releases/v0.1.0"
+
+  - id: "cic-compute"
+    local_path: "/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/CIC-objs/cic-compute"
+    remote_url: "git@github.com:CentralInfraCore/cic-compute.git"
+    description: >
+      CIC compute domain — VM, bare metal és cloud instance objektumok cic-primitives
+      ManagedEntity specializációként. Saját fejlesztési fázissal: Phase 3 (AdapterContract +
+      hypervisor-adapter + ipmi-adapter). Egyedüli domain repo, amelynek ténylegesen eltér
+      a commit history-ja és a schemas/ tartalma.
+    top_level_dirs:
+      - schemas/     # aggregate/, atomic/, examples/, adapters/
+      - ai/          # ONBOARDING.md, SYSTEM_CONTEXT.md, PROMPTMAP.yaml, DECISIONS.md, ROADMAP.md
+      - docs/
+      - features/
+      - tests/
+      - tools/
+    related_repos:
+      - "git@github.com:CentralInfraCore/cic-primitives.git"
+      - "git@github.com:CentralInfraCore/base-repo.git"
+    git_note: "Submodule worktree — branch: main (compute). Dependency: cic-primitives@v0.1.0"
+
+  - id: "cic-kubernetes"
+    local_path: "/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/CIC-objs/cic-kubernetes"
+    remote_url: "git@github.com:CentralInfraCore/cic-kubernetes.git"
+    description: >
+      CIC Kubernetes domain — cluster, node, pod, service és kapcsolódó Kubernetes objektumok
+      schema-szintű leírása cic-primitives alapon. Legutóbbi release: 0.1.3.
+    top_level_dirs:
+      - schemas/     # aggregate/, atomic/, examples/
+      - ai/          # ONBOARDING.md, SYSTEM_CONTEXT.md, PROMPTMAP.yaml, DECISIONS.md, ROADMAP.md
+      - docs/
+      - features/
+      - tests/
+      - tools/
+    related_repos:
+      - "git@github.com:CentralInfraCore/cic-primitives.git"
+      - "git@github.com:CentralInfraCore/base-repo.git"
+    git_note: "Submodule worktree — branch: main. Utolsó commit: release 0.1.3"
+
+  - id: "cic-network"
+    local_path: "/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/CIC-objs/cic-network"
+    remote_url: "git@github.com:CentralInfraCore/cic-network.git"
+    description: >
+      CIC network domain — switch interface, VLAN, routing és hálózati objektumok schema-szintű
+      leírása cic-primitives alapon. Legutóbbi release: 0.1.2.
+    top_level_dirs:
+      - schemas/     # aggregate/, atomic/, examples/
+      - ai/
+      - docs/
+      - features/
+      - tests/
+      - tools/
+    related_repos:
+      - "git@github.com:CentralInfraCore/cic-primitives.git"
+      - "git@github.com:CentralInfraCore/base-repo.git"
+    git_note: "Submodule worktree — branch: main. Utolsó commit: release 0.1.2"
+
+  - id: "cic-storage"
+    local_path: "/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/CIC-objs/cic-storage"
+    remote_url: "git@github.com:CentralInfraCore/cic-storage.git"
+    description: >
+      CIC storage domain — tárolási objektumok (volume, pool, filesystem) schema-szintű
+      leírása cic-primitives alapon. Legutóbbi release: 0.1.2.
+    top_level_dirs:
+      - schemas/     # aggregate/, atomic/, examples/
+      - ai/
+      - docs/
+      - features/
+      - tests/
+      - tools/
+    related_repos:
+      - "git@github.com:CentralInfraCore/cic-primitives.git"
+      - "git@github.com:CentralInfraCore/base-repo.git"
+    git_note: "Submodule worktree — branch: main. Utolsó commit: release 0.1.2"
+
+  - id: "cic-yang"
+    local_path: "/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/CIC-objs/cic-yang"
+    remote_url: "git@github.com:CentralInfraCore/cic-yang.git"
+    description: >
+      CIC YANG domain — YANG-alapú hálózati konfigurációs objektumok schema-szintű leírása
+      cic-primitives alapon. Legutóbbi release: 0.1.2.
+    top_level_dirs:
+      - schemas/     # aggregate/, atomic/, examples/
+      - ai/
+      - docs/
+      - features/
+      - tests/
+      - tools/
+    related_repos:
+      - "git@github.com:CentralInfraCore/cic-primitives.git"
+      - "git@github.com:CentralInfraCore/base-repo.git"
+    git_note: "Submodule worktree — branch: main. Utolsó commit: release 0.1.2"
+
+  - id: "cic-relay"
+    local_path: "/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/CIC-Relay"
+    remote_url: "git@github.com:CentralInfraCore/CIC_Relay.git"
+    description: >
+      ProofTrace-alapú, auditálható végrehajtási platform (Go 1.24). Determinisztikus hash-lánc,
+      kriptográfiailag igazolható integritással. Három fő csomag: cmd/relay (HTTP API :8080),
+      core/cabinet (schema/module/workflow registry + wazero WASM végrehajtó),
+      core/nexus (IaC loader, Git recorder, Vault crypto, sync, isolation, operator).
+    top_level_dirs:
+      - cmd/         # relay/ — HTTP API, bootstrap
+      - core/        # cabinet/, nexus/, modules/
+      - pkg/         # canonicaljson/, merkle/, obs/, sourcedigest/
+      - features/
+      - context/
+      - embedded/
+      - examples/
+      - scripts/
+      - tests/
+      - tools/
+      - ai/          # PROMPTMAP.yaml és AI kontextus
+      - docs/
+      - .github/     # CI/CD workflow-k
+      - GOLDEN/      # golden test referenciák
+    related_repos:
+      - "git@github.com:CentralInfraCore/CIC_Schemas.git"
+      - "git@github.com:CentralInfraCore/cic-primitives.git"
+    git_note: "Submodule worktree. Go module: centralrelay. Deps: wazero, vault/api, logrus, uuid."
+
+  - id: "cic-schemas"
+    local_path: "/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/CIC-Schemas"
+    remote_url: "git@github.com:CentralInfraCore/CIC_Schemas.git"
+    description: >
+      Schema compiler és kriptográfiai aláírási infrastruktúra. Containerizált Docker környezet.
+      Vault-alapú signing (privát kulcs soha nem kerül ki a Vault-ból). Meta-schema validáció,
+      release workflow, Python test suite. Ugyanennek a repónak worktree-jei: schemas/postgresql
+      és schemas/template.
+    top_level_dirs:
+      - configs/     # schemas/ — meta-schema konfigok
+      - docs/        # en/ — architecture.md, workflow.md, makefile-cheatsheet.md
+      - features/
+      - schemas/
+      - source/
+      - tests/
+      - tools/
+      - mk/          # Makefile fragmentek
+      - .github/
+    related_repos:
+      - "git@github.com:CentralInfraCore/base-repo.git"
+      - "git@github.com:CentralInfraCore/CIC_Relay.git"
+      - "git@github.com:CentralInfraCore/cic-primitives.git"
+    git_note: "Submodule worktree — .git pointer: ../../../.git/modules/source/CentralInfraCore/CIC-Schemas"
+
+  - id: "cic-schemas/postgresql"
+    local_path: "/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/schemas/postgresql"
+    remote_url: "git@github.com:CentralInfraCore/CIC_Schemas.git"
+    description: >
+      CIC_Schemas repo postgresql branch worktree-je. PostgreSQL schema definíció és signed release
+      munkakönyvtár. Utolsó commit: "fix: adapt project.yaml for CIC-Schemas (repo_type=schema)".
+    top_level_dirs:
+      - configs/
+      - docs/
+      - features/
+      - schemas/
+      - source/
+      - tests/
+      - tools/
+      - mk/
+    related_repos:
+      - "git@github.com:CentralInfraCore/CIC_Schemas.git"
+    git_note: "CIC_Schemas worktree — branch: postgresql (ugyanaz a remote mint cic-schemas és schemas/template)"
+
+  - id: "cic-schemas/template"
+    local_path: "/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/schemas/template"
+    remote_url: "git@github.com:CentralInfraCore/CIC_Schemas.git"
+    description: >
+      CIC_Schemas repo template branch worktree-je. Meta-schema sablon — meghatározza az összes
+      verziózott schema artifact struktúráját. Utolsó commit azonos a postgresql branch-szel.
+    top_level_dirs:
+      - configs/
+      - docs/
+      - features/
+      - schemas/
+      - source/
+      - tests/
+      - tools/
+      - mk/
+    related_repos:
+      - "git@github.com:CentralInfraCore/CIC_Schemas.git"
+    git_note: "CIC_Schemas worktree — branch: template (ugyanaz a remote mint cic-schemas és schemas/postgresql)"
+
+  # === OpenIntentSign namespace ===
+
+  - id: "ois-github"
+    local_path: "/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/OpenIntentSign/github"
+    remote_url: "git@github.com:OpenIntentSign/.github.git"
+    description: >
+      OpenIntentSign umbrella/community repo (.github). OIS egy trust-alapú validációs modell
+      és nyílt architektúra — a CIC platform mögötti filozofiai alap. Specifikáció, nem
+      implementáció. Tartalmaz: nyílt trust modell leírást, license (CC BY-NC-SA 4.0),
+      community pozíciót.
+    top_level_dirs:
+      - docs/        # OIS dokumentáció
+    related_repos:
+      - "git@github.com:CentralInfraCore/github_private.git"
+    git_note: "Submodule worktree — .git pointer: ../../../.git/modules/source/OpenIntentSign/github"
