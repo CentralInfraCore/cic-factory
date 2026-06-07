@@ -69,7 +69,7 @@ A következő demonstráció a teljes bizalom-láncolatot mutatja be valós, meg
 
 #### 8.1 Fázis: Infrastruktúra felhúzása Terraformmal
 
-A Terraform egy deklaratív IaC-leírásból kiindulva **felprovizionálja az infrastruktúrát** (pl. hálózati szegmens, virtuális gépek, tűzfalszabályok). A folyamat indulásával egyidejűleg a CIC **rögzíti az OIS-Intent deklarációt**: ki, mit, milyen policy alapján rendelt el.
+A Terraform egy deklaratív IaC-leírásból kiindulva kézzel szokásos módon nativan **felprovizionálja az infrastruktúrát** (pl. hálózati szegmens, virtuális gépek, tűzfalszabályok). A folyamat zárása után az infrastuktúrából a CIC **rögzíti az OIS-Intent deklarációt**: ki, mit, milyen policy alapján rendelt el.
 
 A provizionálás befejeztével:
 - a CIC **ProofTrace-eseményt** hoz létre (actor, intent, schema, timestamp, signature),
