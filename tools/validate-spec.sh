@@ -40,8 +40,8 @@ if ! grep -qE '(Állítás|Claim).*(Bizonyíték|Evidence).*(Verifikáci|Verific
 fi
 
 # K7 — Forráskód audit esetén: grep kötelező
-# Ha a spec Go fájlokra hivatkozik, kell grep előírás
-if grep -qE '(\.go|Go forrás|forráskód|source code)' "$SPEC"; then
+# Csak akkor kötelező, ha a spec forrás-elemzést / call-chain audit-ot kér (nem build/format job)
+if grep -qE '(audit|call.chain|implemented|scaffold|hívódik|olvasd a forrás|statusz.meghatároz)' "$SPEC"; then
     if ! grep -qE 'grep -rn|grep -r ' "$SPEC"; then
         FAILURES+=("K7: Go forráskód audit, de nincs 'grep -rn' előírás a call-chain ellenőrzéshez")
     fi
