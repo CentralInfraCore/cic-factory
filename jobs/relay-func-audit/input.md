@@ -47,13 +47,28 @@ Ezután: minden releváns node-hoz (`get_node`, `neighbors`) gyűjtsd össze, mi
 Minden KB koncepció és komponens esetén:
 
 1. **Van-e Go implementáció?** — fájl + csomag + funkció/interfész hivatkozással
-2. **Mekkora az implementáció?** — teljes / stub / hiányzó
-3. **Státusz meghatározás:**
-   - `implemented` — kódban él, nem stub, tesztek lefedik
-   - `scaffold` — kódban van (interface, struct, placeholder), de szándékosan nem bekötött
+2. **Ténylegesen hívódik-e production kódban?** — kötelező `grep` ellenőrzés:
+   ```
+   grep -rn "<FüggvényNév>" /home/sinkog/sync/git.partners/CentralInfraCore/CIC-Relay/ \
+     --include="*.go" | grep -v "_test.go" | grep -v "mock_" | grep -v "testdata"
+   ```
+   Ha nulla találat → nem implemented, hanem **scaffold** (kódban van) vagy **concept** (csak definiált).
+3. **Mekkora az implementáció?** — teljes / stub / hiányzó
+4. **Státusz meghatározás:**
+   - `implemented` — kódban él, nem stub, **ÉS production kódban hívódik** (grep bizonyítja)
+   - `scaffold` — kódban van, de: (a) production kódban soha nem hívódik, VAGY (b) feltételhez kötött bypass létezik (pl. `if TrustStoreLoaded`), VAGY (c) explicit scaffold/stub comment van
    - `concept` — KB-ban szerepel, de nincs Go megfelelője
 
-4. **Hiány jellemzése** — scaffold/concept esetén: mi hiányzik pontosan?
+5. **Hiány jellemzése** — scaffold/concept esetén: mi hiányzik pontosan?
+
+### Kötelező ellenőrzések minden "implemented" állításhoz
+
+Mielőtt valamit implemented-nek jelölsz, futtasd le:
+- `grep -rn "<Függvény>" ... | grep -v "_test.go"` → hány non-test hívási hely?
+- Ha 0 → scaffold, nem implemented
+- Ha van hívás → megnézed a hívó kódot: feltételhez kötött-e? (`if X != nil`, `if TrustStoreLoaded`, `if secrets != nil`)
+  - Ha igen: scaffold (conditional bypass)
+  - Ha nem: implemented
 
 ## Output fájlok
 
@@ -95,8 +110,13 @@ Külön szakaszok:
 ## Fontos szabályok
 
 - **Csak Go forráskód alapján** — ne fogadd el a KB leírást implementáltnak
-- Ha egy Go fájl létezik de minden metódus `return nil, errors.New("not implemented")` vagy hasonló — az **scaffold**, nem implemented
+- **Fájl létezése ≠ implemented** — a funkció kódban van, de hívódik-e? Mindig grep-elj.
+- **Teszt lefedettség ≠ implemented** — ha csak tesztben hívódik, az scaffold (vagy concept)
+- Ha egy Go fájl létezik de minden metódus `return nil, errors.New("not implemented")` vagy hasonló — **scaffold**
 - Ha egy interfész definiált de nincs konkrét implementáció — **scaffold**
+- Ha implementált de production kódban soha nem hívódik — **scaffold** (dead code)
+- Ha feltételhez kötött bypass van (`if X == nil { skip }`, `if !TrustStoreLoaded { skip }`) — **scaffold**
 - Ha a KB ír valamiről de nincs Go fájl — **concept**
-- Teszt fájlokat (`_test.go`) ne számíts implementációnak, de jelezd ha csak tesztben szerepel valami
+- Ha struct mező definiált de sehol nem töltődik ki production kódban — **concept**
 - `mock_*.go` fájlok és testdata — nem implementáció
+- Explicit `// scaffold`, `// stub`, `// TODO`, `// M3`, `// awaits` kommentek — automatikusan scaffold
