@@ -1,0 +1,21 @@
+schema_version: "1.0"
+job_id: "relay-proof-verify-endpoint"
+parent_job_id: "relay-func-audit"
+level: "repo"
+target:
+  repo: "CIC-Relay"
+  path: "cmd/relay/"
+kb_focus: []
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+workplace:
+  repos: []
+  branch: "feature/relay-proof-verify-endpoint"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-06-07T00:00:00Z"
+  started: ""
+  completed: ""
