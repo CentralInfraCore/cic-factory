@@ -13,6 +13,13 @@
 set -euo pipefail
 
 WORKDIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Lokális path konfig betöltése (gitignored)
+[[ -f "$WORKDIR/tools/env.sh" ]] && source "$WORKDIR/tools/env.sh"
+
+# MCP config: explicit env var, vagy a cic-factory szülőkönyvtárából derive-olva
+CIC_MCP_CONFIG="${CIC_MCP_CONFIG:-$(dirname "$WORKDIR")/.mcp.json}"
+
 JOB_ID="${1:?Adj meg egy job-id-t, pl: poc-implementation-plan}"
 AGENT_ID="${2:-agent-01}"
 
@@ -67,8 +74,8 @@ git clone "$FACTORY_REMOTE" "$FACTORY_CLONE"
 git -C "$FACTORY_CLONE" checkout -b "$FEATURE_BRANCH"
 echo "[*] Feature branch: $FEATURE_BRANCH"
 
-# --- Prompt összeállítása ---
-PROMPT="$(cat "$INPUT")
+# --- Prompt összeállítása (env var-ok kifejtve) ---
+PROMPT="$(envsubst < "$INPUT")
 
 ---
 ## Munkakörnyezet
@@ -95,7 +102,7 @@ echo "[*] Agent indítása: $AGENT_ID"
 mkdir -p "$FACTORY_CLONE/jobs/$JOB_ID/output"
 set +e
 CLAUDE_CONFIG_DIR="$AGENT_CONFIG" claude --print "$PROMPT" \
-    --mcp-config /home/sinkog/sync/claude_factory/CIC/.mcp.json \
+    --mcp-config "$CIC_MCP_CONFIG" \
     > "$FACTORY_CLONE/jobs/$JOB_ID/output/agent-output.md" 2>&1
 EXIT_CODE=$?
 set -e

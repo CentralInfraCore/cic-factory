@@ -124,20 +124,22 @@ Tartalmaz: összes repo path + szerep, adatfolyam, relay architektúra, demo fá
 
 ## Repo helyek (CIC ökoszisztéma)
 
-| Alrendszer | Forrás path |
+A path-ok gép-specifikusak. Add meg `tools/env.sh`-ban (sablon: `tools/env.sh.example`).
+
+| Alrendszer | Env var |
 |---|---|
-| `CIC-Relay` | `/home/sinkog/sync/git.partners/CentralInfraCore/CIC-Relay` |
-| `CIC-Schemas` | `/home/sinkog/sync/git.partners/CentralInfraCore/CIC-Schemas` |
-| `CIC-basic-knowledge` | `/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/CIC-basic-knowledge` |
-| MCP KB adat | `/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/kb_data/pkl` |
-| MCP szerver | `/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/mcp-server/server.py` |
+| `CIC-Relay` | `$CIC_RELAY_PATH` |
+| `CIC-Schemas` | `$CIC_SCHEMAS_PATH` |
+| `CIC-basic-knowledge` | `$CIC_KB_PATH` |
+| MCP KB adat | `$CIC_MCP_KB_DATA` |
+| MCP szerver | `$CIC_MCP_SERVER` |
 
 ---
 
 ## MCP szerver
 
 A `cic-graph` MCP szerver konfigja: `CIC/.mcp.json` (stdio mód).
-`run-job.sh` automatikusan átadja: `--mcp-config /home/sinkog/sync/claude_factory/CIC/.mcp.json`
+`run-job.sh` automatikusan átadja: `--mcp-config $CIC_MCP_CONFIG` (derive-olva vagy explicit).
 Boot sequence: `kb_status` → `search_nodes` → státusz ellenőrzés.
 
 ---

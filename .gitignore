@@ -1,3 +1,6 @@
+# Lokális path konfiguráció — gép-specifikus, ne commitold
+tools/env.sh
+
 # Agent runtime state (ne kerüljön gitbe)
 .claude/settings.local.json
 *.log
