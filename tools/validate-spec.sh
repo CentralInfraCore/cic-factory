@@ -19,14 +19,14 @@ fi
 
 FAILURES=()
 
-# K1 — Konkrét forrás path vagy chunk-id megadva
-if ! grep -qE '(/home/|get_chunk\(|c[0-9]{3,}|/sync/|\.go"|\.go`)' "$SPEC"; then
-    FAILURES+=("K1: nincs konkrét forrás path vagy KB chunk-id (pl. /home/..., get_chunk, c781)")
+# K1 — Konkrét forrás path vagy chunk-id megadva (abszolút path, env var path, vagy KB chunk)
+if ! grep -qE '(/home/|get_chunk\(|c[0-9]{3,}|/sync/|\.go"|\.go`|\$\{CIC_|\$\{RELAY|\$\{WORKDIR)' "$SPEC"; then
+    FAILURES+=("K1: nincs konkrét forrás path vagy KB chunk-id (pl. /home/..., \${CIC_RELAY_PATH}, get_chunk, c781)")
 fi
 
-# K3 — Explicit tiltott rövidítés
-if ! grep -qE '(≠ implemented|nem implemented|file.*existence|fájl.*létez|existence.*does not|létezése nem)' "$SPEC"; then
-    FAILURES+=("K3: nincs explicit tiltott rövidítés (pl. 'fájl létezése ≠ implemented')")
+# K3 — Explicit tiltott rövidítés (audit: fájl létezése ≠ implemented; build: exit code ≠ siker stb.)
+if ! grep -qE '(≠ implemented|nem implemented|file.*existence|fájl.*létez|existence.*does not|létezése nem|≠ működik|≠ sikeres|exit.*code.*≠|kimenet.*olvasd|output.*olvasd)' "$SPEC"; then
+    FAILURES+=("K3: nincs explicit tiltott rövidítés (pl. 'fájl létezése ≠ implemented', 'exit code 0 ≠ sikeres')")
 fi
 
 # K4 — Output fájlnév meghatározva
