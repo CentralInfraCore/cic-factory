@@ -4,6 +4,15 @@ Egy pending job elindítása Agent tool-lal.
 
 ## Kötelező lépések sorrendben
 
+### 0. Spec validáció — KÖTELEZŐ, agent indítás előtt
+
+Futtasd le: `/job-validate <job-id>`
+
+- **GO** → folytasd a következő lépéssel
+- **NO-GO** → javítsd az input.md-t, futtasd újra a validátort, ne lépj tovább
+
+Az agent indítása NO-GO esetén tilos.
+
 ### 1. pending → running (live meta.yaml)
 
 ```python
