@@ -6,10 +6,17 @@ Egy pending job elindítása Agent tool-lal.
 
 ### 0. Spec validáció — KÖTELEZŐ, agent indítás előtt
 
+**0a. Gépi ellenőrzés — ez az első, ez a kényszer:**
+```bash
+tools/validate-spec.sh <job-id>
+```
+Ha exit 1 → stop. Nem folytatható.
+
+**0b. Evidence-alapú ellenőrzés:**
 Futtasd le: `/job-validate <job-id>`
 
-- **GO** → folytasd a következő lépéssel
-- **NO-GO** → javítsd az input.md-t, futtasd újra a validátort, ne lépj tovább
+- **GO** (mindkét lépés) → folytasd
+- **NO-GO** bármelyiknél → javítsd az input.md-t, futtasd újra
 
 Az agent indítása NO-GO esetén tilos.
 
