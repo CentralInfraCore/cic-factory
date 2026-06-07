@@ -1,0 +1,28 @@
+schema_version: "1.0"
+
+job_id: "relay-func-audit"
+parent_job_id: ""
+
+level: "repo"
+target:
+  repo: "CIC-Relay"
+  path: "core/"
+
+kb_focus: ["relay", "cabinet", "schema", "workflow", "module", "plugin", "nexus", "primitives", "prooftrace", "isolation"]
+promptmap_ref: ""
+
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+
+workplace:
+  repos: ["CIC-Relay"]
+  branch: "feature/relay-func-audit"
+
+status: "pending"
+error_message: ""
+
+timestamps:
+  created: "2026-06-07T06:00:00Z"
+  started: ""
+  completed: ""
