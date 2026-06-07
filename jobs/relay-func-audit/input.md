@@ -101,6 +101,16 @@ Külön szakaszok:
 - `## Nexus: Operator`
 - `## Relay entrypoint és handler-ek`
 
+`output/claim-evidence.md` — Kötelező claim-evidence tábla:
+
+```markdown
+| Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat |
+|---|---|---|---|---|
+| [komponens] implemented | true/false/partial | [fájl:sor vagy grep output] | grep / call-chain trace | kritikus/közepes/alacsony |
+```
+
+Minden `implemented` és `scaffold` minősítéshez kötelező sor. A tábla nélküli output nem fogadható el.
+
 `output/gap-summary.md` — Összesítő:
 - Implemented komponensek listája
 - Scaffold komponensek listája (mi az előfeltétel?)
