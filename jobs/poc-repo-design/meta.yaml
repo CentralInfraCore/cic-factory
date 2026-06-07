@@ -1,0 +1,28 @@
+schema_version: "1.0"
+
+job_id: "poc-repo-design"
+parent_job_id: "poc-bridge-check"
+
+level: "orchestrator"
+target:
+  repo: "cic-factory"
+  path: "jobs/poc-repo-design"
+
+kb_focus: ["relay", "schema", "iac", "primitives", "base-repo", "plugin"]
+promptmap_ref: ""
+
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+
+workplace:
+  repos: ["cic-factory"]
+  branch: "feature/poc-repo-design"
+
+status: "pending"
+error_message: ""
+
+timestamps:
+  created: "2026-06-07T01:20:00Z"
+  started: ""
+  completed: ""
