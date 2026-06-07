@@ -1,0 +1,28 @@
+schema_version: "1.0"
+
+job_id: "poc-bridge-check"
+parent_job_id: "poc-plan-bridge-review"
+
+level: "orchestrator"
+target:
+  repo: "cic-factory"
+  path: "jobs/poc-bridge-check"
+
+kb_focus: ["relay", "prooftrace", "pose", "drift", "ois", "schema", "axioms", "contract", "symbols"]
+promptmap_ref: ""
+
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+
+workplace:
+  repos: ["cic-factory"]
+  branch: "feature/poc-bridge-check"
+
+status: "pending"
+error_message: ""
+
+timestamps:
+  created: "2026-06-07T00:35:00Z"
+  started: ""
+  completed: ""
