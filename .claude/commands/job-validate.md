@@ -96,6 +96,20 @@ FAIL ha: "olvasd el a fájlokat" — grep előírás nélkül
 
 ---
 
+### K8 — Claim-evidence tábla az outputban (kritikus)
+**Kérdés:** Előírja-e a spec hogy az agent output tartalmazzon claim-evidence táblázatot?
+
+Elvárt minta az output szekcióban:
+```
+| Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat |
+```
+
+FAIL ha: az output csak narratív összefoglalót vagy státuszlistát kér — claim-evidence tábla nélkül.
+
+**Miért kritikus:** A tábla kikényszeríti hogy minden állítás mögé kerüljön bizonyíték és verifikációs módszer. Enélkül az agent summary elfedheti a lyukakat.
+
+---
+
 ## Output formátum
 
 ```
@@ -115,6 +129,7 @@ FAIL ha: "olvasd el a fájlokat" — grep előírás nélkül
 | K5 — Ellenőrizhetőség | PASS/FAIL | "...pontos idézet..." (N. sor) |
 | K6 — Negatív példák | PASS/FAIL | "...pontos idézet..." (N. sor) |
 | K7 — Call-chain grep | PASS/N/A/FAIL | "...pontos idézet..." (N. sor) |
+| K8 — Claim-evidence tábla | PASS/FAIL | "...pontos idézet..." (N. sor) |
 
 ## Összesítés: GO / NO-GO
 

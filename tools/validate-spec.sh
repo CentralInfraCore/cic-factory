@@ -34,6 +34,11 @@ if ! grep -qE 'output/[a-z].*\.md' "$SPEC"; then
     FAILURES+=("K4: nincs konkrét output fájlnév (pl. output/report.md)")
 fi
 
+# K8 — Claim-evidence tábla az outputban
+if ! grep -qE '(Állítás|Claim).*(Bizonyíték|Evidence).*(Verifikáci|Verification)' "$SPEC"; then
+    FAILURES+=("K8: nincs claim-evidence tábla előírva az outputban (kell: Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat)")
+fi
+
 # K7 — Forráskód audit esetén: grep kötelező
 # Ha a spec Go fájlokra hivatkozik, kell grep előírás
 if grep -qE '(\.go|Go forrás|forráskód|source code)' "$SPEC"; then
