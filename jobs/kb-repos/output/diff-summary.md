@@ -1,7 +1,7 @@
 # diff-summary — KB Repos dokumentumok létrehozása
 
 **Dátum:** 2026-06-06
-**Workplace:** `/home/sinkog/sync/claude_factory/CIC/workdir/jobs/kb-repos/workplace/github_private`
+**Workplace:** `${CIC_WORKDIR}/jobs/kb-repos/workplace/github_private`
 **Branch:** `devel`
 
 ---

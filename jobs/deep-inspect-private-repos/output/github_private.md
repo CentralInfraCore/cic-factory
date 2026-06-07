@@ -1,7 +1,7 @@
 # github_private (CIC-basic-knowledge) — Részletes Feltárás
 
 **Dátum:** 2026-06-06
-**Lokális elérési út:** `/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/CIC-basic-knowledge`
+**Lokális elérési út:** `${CIC_KB_PATH}`
 **Remote URL:** `git@github.com:CentralInfraCore/github_private.git`
 **Aktív branch:** `devel` (párhuzamosan: `d/feauture-quorumrelease`)
 **Repo jellege:** Nem kód — deklaratív szemantikai gráf (NDJSON + Markdown + YAML)

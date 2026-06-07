@@ -9,7 +9,7 @@ Az auditot a Go forráskódon végzed — nem a metaadatokon, nem az agent summa
 ## Relay forráskód helye
 
 ```
-/home/sinkog/sync/git.partners/CentralInfraCore/CIC-Relay/
+${CIC_RELAY_PATH}/
 ```
 
 Főbb package-ek (nem teszt fájlok):
@@ -49,7 +49,7 @@ Minden KB koncepció és komponens esetén:
 1. **Van-e Go implementáció?** — fájl + csomag + funkció/interfész hivatkozással
 2. **Ténylegesen hívódik-e production kódban?** — kötelező `grep` ellenőrzés:
    ```
-   grep -rn "<FüggvényNév>" /home/sinkog/sync/git.partners/CentralInfraCore/CIC-Relay/ \
+   grep -rn "<FüggvényNév>" ${CIC_RELAY_PATH}/ \
      --include="*.go" | grep -v "_test.go" | grep -v "mock_" | grep -v "testdata"
    ```
    Ha nulla találat → nem implemented, hanem **scaffold** (kódban van) vagy **concept** (csak definiált).

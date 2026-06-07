@@ -1,7 +1,7 @@
 # cic-mcp-private — Részletes Feltárás
 
 **Dátum:** 2026-06-06
-**Lokális elérési út:** `/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private`
+**Lokális elérési út:** `${CIC_MCP_PRIVATE}`
 **Remote URL:** `git@github.com:CentralInfraCore/cic-mcp-private.git`
 **Aktív branch:** `d/feature-chunk-dedup` (párhuzamosan: `main`)
 **Python verzió:** 3.12 (pycache tanúsítja)

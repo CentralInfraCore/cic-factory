@@ -1,7 +1,7 @@
 # CIC_Relay — Részletes Feltárás
 
 **Dátum:** 2026-06-06
-**Lokális elérési út:** `/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/CIC-Relay`
+**Lokális elérési út:** `${CIC_RELAY_PATH}`
 **Remote URL:** `git@github.com:CentralInfraCore/CIC_Relay.git`
 **Aktív branch:** `devel` (párhuzamosan: `d/feature-007`, `main`)
 **Go modul neve:** `centralrelay`

@@ -2,7 +2,7 @@
 
 ## Cél
 
-Térképezd fel a `/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/` könyvtárat és állíts össze egy átfogó képet, amelyet jövőbeli Claude session-ök közvetlenül felhasználhatnak a rendszer üzemeltetéséhez.
+Térképezd fel a `${CIC_PARTNERS_ROOT}/MCPs/private/source/` könyvtárat és állíts össze egy átfogó képet, amelyet jövőbeli Claude session-ök közvetlenül felhasználhatnak a rendszer üzemeltetéséhez.
 
 ## Mit kell összegyűjteni
 
@@ -37,4 +37,4 @@ repos:
 
 - Ha egy könyvtár nem git repo, azt is vedd fel (id-ben jelezd: `non-git/...`)
 - Ne hagyd ki a rejtett könyvtárakat ha relevánsak (pl. `.github/`)
-- A kimeneti fájlokat abszolút path-on írd: `/home/sinkog/sync/claude_factory/CIC/workdir/jobs/map-private-source/output/`
+- A kimeneti fájlokat abszolút path-on írd: `${CIC_WORKDIR}/jobs/map-private-source/output/`

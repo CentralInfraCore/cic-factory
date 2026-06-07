@@ -9,7 +9,7 @@ Forrás: `jobs/map-private-source`, `jobs/deep-inspect-private-repos` output-ok 
 
 | ID | Helyi path | Remote | Szerep |
 |---|---|---|---|
-| `cic-relay` | `/home/sinkog/sync/git.partners/CentralInfraCore/CIC-Relay` | `CIC_Relay.git` | Runtime végrehajtó (Go 1.24) |
+| `cic-relay` | `${CIC_RELAY_PATH}` | `CIC_Relay.git` | Runtime végrehajtó (Go 1.24) |
 | `cic-schemas` | `.../CIC-Schemas` | `CIC_Schemas.git` | Schema compiler + Vault signing (Python) |
 | `cic-schemas/postgresql` | `.../schemas/postgresql` | `CIC_Schemas.git` (branch: postgresql) | PostgreSQL schema példa + signed release |
 | `cic-schemas/template` | `.../schemas/template` | `CIC_Schemas.git` (branch: template) | Meta-schema sablon |
@@ -23,7 +23,7 @@ Forrás: `jobs/map-private-source`, `jobs/deep-inspect-private-repos` output-ok 
 | `cic-yang` | `.../CIC-objs/cic-yang` | `cic-yang.git` | YANG domain (hálózati konfig) |
 | `base-repo` | `.../base` | `base-repo.git` | Sablon repo: Makefile, CI, docs struktúra |
 | `ois-github` | `.../OpenIntentSign/github` | `OpenIntentSign/.github.git` | OIS trust modell spec (nem implementáció) |
-| `cic-factory` | `/home/sinkog/sync/claude_factory/CIC/workdir` | `cic-factory.git` | Agent factory (ez a repo) |
+| `cic-factory` | `${CIC_WORKDIR}` | `cic-factory.git` | Agent factory (ez a repo) |
 
 **Megjegyzés:** Minden CIC-objs repo a `cic-primitives`-re épül. A `base-repo` `remote-merge`-gel adja át Makefile/CI sablonokat az összes repónak.
 

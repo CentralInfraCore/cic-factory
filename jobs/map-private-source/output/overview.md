@@ -1,7 +1,7 @@
 # Private Source Directory — Rendszerszintű Áttekintés
 
 **Dátum:** 2026-06-06
-**Forráskönyvtár:** `/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/`
+**Forráskönyvtár:** `${CIC_PARTNERS_ROOT}/MCPs/private/source/`
 
 ---
 

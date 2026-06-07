@@ -1,7 +1,7 @@
 # CIC_Schemas — Részletes Feltárás
 
 **Dátum:** 2026-06-06
-**Lokális elérési út:** `/home/sinkog/sync/git.partners/CentralInfraCore/MCPs/private/source/CentralInfraCore/CIC-Schemas`
+**Lokális elérési út:** `${CIC_SCHEMAS_PATH}`
 **Remote URL:** `git@github.com:CentralInfraCore/CIC_Schemas.git`
 **Aktív branch:** detached HEAD (commit: `27925c5` — `fix: adapt project.yaml for CIC-Schemas (repo_type=schema, template-schema)`)
 **Párhuzamos worktree-k:** `schemas/postgresql` és `schemas/template` ugyanerről a remote-ról (különböző branch-ek)

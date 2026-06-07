@@ -7,12 +7,12 @@ Az előző jobokban feltérképezett CIC ökoszisztéma repóiról kétnyelvű (
 ## Forrásinformációk
 
 Olvasd el ezeket az előző job kimeneteiből:
-- `/home/sinkog/sync/claude_factory/CIC/workdir/jobs/map-private-source/output/repos.yaml`
-- `/home/sinkog/sync/claude_factory/CIC/workdir/jobs/deep-inspect-private-repos/output/CIC_Relay.md`
-- `/home/sinkog/sync/claude_factory/CIC/workdir/jobs/deep-inspect-private-repos/output/CIC_Schemas.md`
-- `/home/sinkog/sync/claude_factory/CIC/workdir/jobs/deep-inspect-private-repos/output/cic-mcp-private.md`
-- `/home/sinkog/sync/claude_factory/CIC/workdir/jobs/deep-inspect-private-repos/output/github_private.md`
-- `/home/sinkog/sync/claude_factory/CIC/workdir/jobs/deep-inspect-private-repos/output/connections.md`
+- `${CIC_WORKDIR}/jobs/map-private-source/output/repos.yaml`
+- `${CIC_WORKDIR}/jobs/deep-inspect-private-repos/output/CIC_Relay.md`
+- `${CIC_WORKDIR}/jobs/deep-inspect-private-repos/output/CIC_Schemas.md`
+- `${CIC_WORKDIR}/jobs/deep-inspect-private-repos/output/cic-mcp-private.md`
+- `${CIC_WORKDIR}/jobs/deep-inspect-private-repos/output/github_private.md`
+- `${CIC_WORKDIR}/jobs/deep-inspect-private-repos/output/connections.md`
 
 ## Workplace — git clone
 
@@ -20,8 +20,8 @@ Klónozd a `github_private` repót a workplace könyvtárba, devel branch-re:
 
 ```bash
 git clone git@github.com:CentralInfraCore/github_private.git \
-  /home/sinkog/sync/claude_factory/CIC/workdir/jobs/kb-repos/workplace/github_private
-cd /home/sinkog/sync/claude_factory/CIC/workdir/jobs/kb-repos/workplace/github_private
+  ${CIC_WORKDIR}/jobs/kb-repos/workplace/github_private
+cd ${CIC_WORKDIR}/jobs/kb-repos/workplace/github_private
 git checkout devel
 ```
 
@@ -103,7 +103,7 @@ docs/
 
 A fájlok megírása után:
 1. Futtasd le: `git status` és `git diff --stat` a workplace-ben
-2. Írd ki az eredményt: `/home/sinkog/sync/claude_factory/CIC/workdir/jobs/kb-repos/output/diff-summary.md`
+2. Írd ki az eredményt: `${CIC_WORKDIR}/jobs/kb-repos/output/diff-summary.md`
 3. **Ne futtass `git add`, `git commit` vagy `git push` parancsot!**
 
 A review és commit a szülő session feladata.

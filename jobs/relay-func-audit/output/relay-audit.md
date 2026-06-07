@@ -2,7 +2,7 @@
 
 **Audit dátuma:** 2026-06-07 (javítva: 2026-06-07)
 **Forrás:** Go forráskód közvetlen olvasása — `grep`, `Read` eszközökkel, nem KB metaadatból
-**Relay forráskód:** `/home/sinkog/sync/git.partners/CentralInfraCore/CIC-Relay/`
+**Relay forráskód:** `${CIC_RELAY_PATH}/`
 
 > **Megjegyzés:** Az első audit verzió hibás volt — a Go fájlok létezéséből következtetett implementálásra
 > anélkül hogy a hívási láncot ellenőrizte. Ez a verzió közvetlen forráskód-olvasáson alapul.
