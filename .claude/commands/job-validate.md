@@ -10,9 +10,20 @@ Minden agent indítás előtt kötelező futtatni. Nem az input.md szándékát 
 
 ## Mit csinálj
 
+### 1. lépés — Gépi ellenőrzés (shell script)
+
+```bash
+tools/validate-spec.sh <job-id>
+```
+
+Ha exit 1 → **azonnali NO-GO**, ne folytasd. Javítsd az input.md-t.
+
+### 2. lépés — Evidence-alapú ellenőrzés (csak ha a script GO-t adott)
+
 1. Olvasd el: `jobs/<job-id>/input.md`
 2. Minden kritériumra: PASS / FAIL / N/A
-3. Ha bármelyik kritikus kritérium FAIL → **NO-GO**, ne indítsd az agentet
+3. **Minden PASS mellé kötelező idézet** a specből — az a sor vagy bekezdés ami alapján PASS lett
+4. Ha bármelyik kritikus kritérium FAIL → **NO-GO**
 
 ---
 
@@ -90,20 +101,27 @@ FAIL ha: "olvasd el a fájlokat" — grep előírás nélkül
 ```
 ## Validáció: jobs/<job-id>/input.md
 
-| Kritérium | Státusz | Megjegyzés |
+### Gépi ellenőrzés (tools/validate-spec.sh)
+[script output ide]
+
+### Evidence-alapú ellenőrzés
+
+| Kritérium | Státusz | Idézet a specből |
 |---|---|---|
-| K1 — Forrás | PASS/FAIL | ... |
-| K2 — Státusz def + módszer | PASS/FAIL | ... |
-| K3 — Tiltott rövidítések | PASS/FAIL | ... |
-| K4 — Output formátum | PASS/FAIL | ... |
-| K5 — Ellenőrizhetőség | PASS/FAIL | ... |
-| K6 — Negatív példák | PASS/FAIL | ... |
-| K7 — Call-chain grep | PASS/N/A/FAIL | ... |
+| K1 — Forrás | PASS/FAIL | "...pontos idézet..." (N. sor) |
+| K2 — Státusz def + módszer | PASS/FAIL | "...pontos idézet..." (N. sor) |
+| K3 — Tiltott rövidítések | PASS/FAIL | "...pontos idézet..." (N. sor) |
+| K4 — Output formátum | PASS/FAIL | "...pontos idézet..." (N. sor) |
+| K5 — Ellenőrizhetőség | PASS/FAIL | "...pontos idézet..." (N. sor) |
+| K6 — Negatív példák | PASS/FAIL | "...pontos idézet..." (N. sor) |
+| K7 — Call-chain grep | PASS/N/A/FAIL | "...pontos idézet..." (N. sor) |
 
 ## Összesítés: GO / NO-GO
 
-[Ha NO-GO: pontosan mi hiányzik, mit kell javítani]
+[Ha NO-GO: pontosan mi hiányzik, mit kell javítani az input.md-ben]
 ```
+
+**Szabály:** Ha egy PASS mellé nem tudsz idézetet írni, az FAIL.
 
 ---
 
