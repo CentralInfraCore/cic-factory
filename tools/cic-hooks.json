@@ -90,6 +90,14 @@
           {
             "type": "command",
             "command": "python3 $CIC_WORKDIR/tools/hooks/log-event.py --event PostToolUse"
+          },
+          {
+            "type": "command",
+            "command": "bash $CIC_WORKDIR/tools/hooks/context-monitor.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash $CIC_WORKDIR/tools/hooks/no-ask-human.sh"
           }
         ]
       }
@@ -101,6 +109,16 @@
           {
             "type": "command",
             "command": "python3 $CIC_WORKDIR/tools/hooks/log-event.py --event PostToolUseFailure"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $CIC_WORKDIR/tools/hooks/no-ask-human.sh"
           }
         ]
       }
