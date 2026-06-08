@@ -13,3 +13,8 @@ A rendszer komplexitása miatt ajánlott a `workdir/` könyvtárat egy AI-val (p
 3. `jobs/` — konkrét job példák a lifecycle illusztrálásához
 
 Részletes onboarding: [`docs/onboarding.md`](docs/onboarding.md)
+
+---
+
+*Ez a repó teljes egészében AI-asszisztált fejlesztéssel készült —
+az emberi közreműködés a tervezésre, review-ra és merge döntésekre korlátozódott.*
