@@ -1,0 +1,21 @@
+schema_version: "1.0"
+job_id: "poc-schema-design"
+parent_job_id: ""
+level: "orchestrator"
+target:
+  repo: "CIC-Schemas"
+  path: ""
+kb_focus: []
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+workplace:
+  repos: []
+  branch: "feature/poc-schema-design"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-06-08T00:00:00Z"
+  started: ""
+  completed: ""
