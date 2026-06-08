@@ -84,7 +84,7 @@ FAIL ha: csak pozitív utasítások vannak
 ---
 
 ### K7 — Forráskód audit specifikus (csak forráskód joboknál kritikus)
-**Kérdés:** Explicit megköveteli-e a call-chain grep ellenőrzést?
+**Kérdés:** Explicit megköveteli-e a call-chain grep ellenőrzést, és kizárja-e a test fájlokat?
 
 Elvárt minta (vagy ekvivalens):
 ```
@@ -92,7 +92,32 @@ grep -rn "<FüggvényNév>" --include="*.go" | grep -v "_test.go"
 0 találat → scaffold
 ```
 
-FAIL ha: "olvasd el a fájlokat" — grep előírás nélkül
+FAIL ha: "olvasd el a fájlokat" — grep előírás nélkül.
+
+FAIL ha: grep van, de nincs `| grep -v "_test.go"` — exportált szimbólumoknál a teszt referenciák elfedik hogy production tényleg hívja-e.
+
+Alternatíva exportált szimbólumokhoz:
+```bash
+deadcode ./...    # unreachable from any main entrypoint → guaranteed dead in production
+```
+`deadcode` erősebb mint `staticcheck` U1000: az exportált szimbólum "használtnak látszik" pusztán attól, hogy exportált — `deadcode` egész-program call-graph reachability-t csinál.
+
+---
+
+### K9 — Reachability artifact kötelező (kritikus, forráskód audit joboknál)
+**Kérdés:** Megköveteli-e a spec hogy az agent production call site-ot (file:line) vagy `deadcode` outputot adjon az output artifact-ban?
+
+A hiba struktúrális: ha a DoD "symbol létezik + test zöld", az agent mindig pass-olhat dead code-on. A spec-nek reachability **bizonyítékot** kell követelnie, nem csak státusz állítást.
+
+Elvárt minta az output szekcióban:
+```
+Minden implemented szimbólumnál: a production hívó fájl:sor megadva
+VAGY: deadcode ./... output az outputban (ha üres → minden szimbólum elérhető)
+```
+
+FAIL ha: az output csak státuszlistát kér — reachability artifact nélkül.
+
+**Miért kritikus:** Az orchestrátor az artifact-ot ellenőrzi (file:line, deadcode output), soha nem az agent summaryját. Summary-ban a "should work" csendesen helyettesíti a "does work"-öt. Strukturális hiba — prompt-szintű javítás nem segít.
 
 ---
 
@@ -128,8 +153,9 @@ FAIL ha: az output csak narratív összefoglalót vagy státuszlistát kér — 
 | K4 — Output formátum | PASS/FAIL | "...pontos idézet..." (N. sor) |
 | K5 — Ellenőrizhetőség | PASS/FAIL | "...pontos idézet..." (N. sor) |
 | K6 — Negatív példák | PASS/FAIL | "...pontos idézet..." (N. sor) |
-| K7 — Call-chain grep | PASS/N/A/FAIL | "...pontos idézet..." (N. sor) |
+| K7 — Call-chain grep + _test.go kizárás | PASS/N/A/FAIL | "...pontos idézet..." (N. sor) |
 | K8 — Claim-evidence tábla | PASS/FAIL | "...pontos idézet..." (N. sor) |
+| K9 — Reachability artifact | PASS/N/A/FAIL | "...pontos idézet..." (N. sor) |
 
 ## Összesítés: GO / NO-GO
 
