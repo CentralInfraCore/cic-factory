@@ -82,6 +82,38 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $CIC_WORKDIR/tools/hooks/log-event.py --event PostToolUse"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $CIC_WORKDIR/tools/hooks/log-event.py --event PostToolUseFailure"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $CIC_WORKDIR/tools/hooks/log-event.py --event Stop"
+          }
+        ]
+      }
     ]
   }
 }
