@@ -39,11 +39,22 @@ if ! grep -qE '(Állítás|Claim).*(Bizonyíték|Evidence).*(Verifikáci|Verific
     FAILURES+=("K8: nincs claim-evidence tábla előírva az outputban (kell: Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat)")
 fi
 
-# K7 — Forráskód audit esetén: grep kötelező
+# K7 — Forráskód audit esetén: grep + _test.go kizárás kötelező
 # Csak akkor kötelező, ha a spec forrás-elemzést / call-chain audit-ot kér (nem build/format job)
 if grep -qE '(audit|call.chain|implemented|scaffold|hívódik|olvasd a forrás|statusz.meghatároz)' "$SPEC"; then
     if ! grep -qE 'grep -rn|grep -r ' "$SPEC"; then
         FAILURES+=("K7: Go forráskód audit, de nincs 'grep -rn' előírás a call-chain ellenőrzéshez")
+    fi
+    if ! grep -qE '_test\.go|deadcode' "$SPEC"; then
+        FAILURES+=("K7b: grep van, de nincs '_test.go' kizárás vagy 'deadcode' — exportált szimbólumoknál grep -v _test.go VAGY deadcode ./... kötelező")
+    fi
+fi
+
+# K9 — Reachability artifact kötelező: production call site (file:line) VAGY deadcode output
+# Ha a spec implemented/scaffold státuszt határoz meg forráskódon alapulva
+if grep -qE '(implemented|scaffold|hívódik|production.*call|call.*chain)' "$SPEC"; then
+    if ! grep -qE '(deadcode|call.?site|call.?path|file:line|hívó.*fájl|hívó.*sor|production.*hívás)' "$SPEC"; then
+        FAILURES+=("K9: nincs reachability artifact előírva — kell: production call site (file:line) VAGY 'deadcode ./...' output az agent outputban; 'symbol létezik' ≠ 'production hívja'")
     fi
 fi
 
