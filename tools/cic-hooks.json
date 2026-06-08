@@ -1,0 +1,87 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); CMD=$(echo \"$INPUT\" | jq -r '.tool_input.command // empty'); [ -z \"$CMD\" ] && exit 0; if echo \"$CMD\" | grep -qE '\\bgit\\b.*\\bpush\\b' && echo \"$CMD\" | grep -qE '\\b(main|master)\\b'; then echo 'BLOCKED [CIC]: push to main/master is not allowed. Agents may only push to feature/<job-id> branches.' >&2; exit 2; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); CMD=$(echo \"$INPUT\" | jq -r '.tool_input.command // empty'); [ -z \"$CMD\" ] && exit 0; if echo \"$CMD\" | grep -qE '\\bgit\\b.*\\bpush\\b.*(--force|-f)\\b'; then echo 'BLOCKED [CIC]: git push --force is not allowed. Do not overwrite pushed commits on the feature branch.' >&2; exit 2; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); CMD=$(echo \"$INPUT\" | jq -r '.tool_input.command // empty'); [ -z \"$CMD\" ] && exit 0; if echo \"$CMD\" | grep -qE 'git\\s+reset\\s+--hard|git\\s+clean\\s+(-[a-z]*f[a-z]*d|-[a-z]*d[a-z]*f|-f\\s+-d|-d\\s+-f)'; then echo 'BLOCKED [CIC]: git reset --hard / git clean -fd is not allowed. Do not discard committed work.' >&2; exit 2; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); CMD=$(echo \"$INPUT\" | jq -r '.tool_input.command // empty'); [ -z \"$CMD\" ] && exit 0; if echo \"$CMD\" | grep -qE 'git\\s+(checkout|switch)\\s+(main|master)\\b'; then echo 'BLOCKED [CIC]: checkout to main/master is not allowed inside the agent clone. Stay on feature/<job-id>.' >&2; exit 2; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); CMD=$(echo \"$INPUT\" | jq -r '.tool_input.command // empty'); [ -z \"$CMD\" ] && exit 0; if echo \"$CMD\" | grep -qE '\\brm\\s+.*-[rRf].*-[rRf]|\\brm\\s+-rf\\b|\\brm\\s+-fr\\b'; then if ! echo \"$CMD\" | grep -qE '(node_modules|/dist/|/build/|__pycache__|/tmp/|/target/)'; then echo 'BLOCKED [CIC]: rm -rf is only allowed on safe targets (node_modules, dist, build, tmp, target). Do not delete workspace directories.' >&2; exit 2; fi; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); CMD=$(echo \"$INPUT\" | jq -r '.tool_input.command // empty'); [ -z \"$CMD\" ] && exit 0; if echo \"$CMD\" | grep -qE 'git\\s+commit.*job:.*—\\s*(running|done|error|pending)'; then echo 'BLOCKED [CIC]: orchestrator status commits (running/done/error/pending) are not allowed from agents. Only output/ content may be committed.' >&2; exit 2; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | jq -r '.tool_input.file_path // empty'); [ -z \"$FILE\" ] && exit 0; if echo \"$FILE\" | grep -qE '\\.(env|pem|key|credentials|secret|crt)$'; then echo \"BLOCKED [CIC]: writing to sensitive file is not allowed: $FILE — do not modify Vault keys or credentials.\" >&2; exit 2; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | jq -r '.tool_input.file_path // empty'); [ -z \"$FILE\" ] && exit 0; if echo \"$FILE\" | grep -qE '\\.(so|wasm|\\.o|a|dylib|exe)$'; then echo \"BLOCKED [CIC]: writing binary artifact is not allowed: $FILE — do not commit build outputs, write a text report to output/ instead.\" >&2; exit 2; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | jq -r '.tool_input.file_path // empty'); [ -z \"$FILE\" ] && exit 0; if echo \"$FILE\" | grep -qE '\\.(env|pem|key|credentials|secret|crt)$'; then echo \"BLOCKED [CIC]: editing sensitive file is not allowed: $FILE\" >&2; exit 2; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
