@@ -100,6 +100,8 @@ Push csak \`$FEATURE_BRANCH\` branch-re. Main-re NEM."
 # --- Agent futtatás ---
 echo "[*] Agent indítása: $AGENT_ID"
 mkdir -p "$FACTORY_CLONE/jobs/$JOB_ID/output"
+export CIC_JOB_ID="$JOB_ID"
+export CIC_WORKDIR="$WORKDIR"
 set +e
 CLAUDE_CONFIG_DIR="$AGENT_CONFIG" claude --print "$PROMPT" \
     --mcp-config "$CIC_MCP_CONFIG" \
