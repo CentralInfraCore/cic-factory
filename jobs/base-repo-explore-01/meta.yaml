@@ -1,0 +1,21 @@
+schema_version: "1.0"
+job_id: "base-repo-explore-01"
+parent_job_id: ""
+level: "repo"
+target:
+  repo: "base-repo"
+  path: ""
+kb_focus: []
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+workplace:
+  repos: []
+  branch: "feature/base-repo-explore-01"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-06-09T00:00:00Z"
+  started: ""
+  completed: ""
