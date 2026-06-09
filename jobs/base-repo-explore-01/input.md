@@ -85,7 +85,18 @@ Azonosítsd:
 - Hogyan kap update-et egy specializációs branch a `main`-ből (merge-elve van? rebase-elve?)
 - A tag-ek melyik branch-hez kötöttek (`base@0.5.0` melyik commithoz tartozik)
 
-### 4. Renovate integráció logikája
+### 4. Branch protection állapot ellenőrzése
+
+```bash
+gh api repos/CentralInfraCore/base-repo/branches --jq '.[].name' | grep -E "^main$|/main$" | while read b; do
+  encoded=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$b', safe=''))")
+  echo "=== $b ===" && gh api "repos/CentralInfraCore/base-repo/branches/${encoded}/protection" --jq '{enforce_admins: .enforce_admins.enabled, allow_force_pushes: .allow_force_pushes.enabled, required_pr: .required_pull_request_reviews.required_approving_review_count}' 2>/dev/null || echo "NOT PROTECTED"
+done
+```
+
+**Rögzített tény (nem kell dönteni):** A `main` és az összes `*/main` branch branch protection-nel védett (`enforce_admins: true`, `allow_force_pushes: false`, PR kötelező). Ez 2026-06-09-én lett beállítva. A `claim-evidence.md`-ben ezt `true`-ként és igazoltként jelöld.
+
+### 5. Renovate integráció logikája
 
 ```bash
 cat /home/sinkog/sync/git.partners/CentralInfraCore/base-repo/renovate.json
