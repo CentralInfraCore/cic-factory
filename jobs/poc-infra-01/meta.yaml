@@ -1,6 +1,6 @@
 schema_version: "1.0"
 job_id: "poc-infra-01"
-parent_job_id: "poc-implementation-plan"
+parent_job_id: "poc-system-plan"
 level: "domain"
 target:
   repo: "cic-factory"
