@@ -1,0 +1,384 @@
+---
+metadata:
+  name: OciComputeInstance
+  version: v0.0.dev
+  description: >
+    OCI Compute Instance (Free Tier Ampere A1) mint ManagedEntity specializáció.
+    Reality check a poc-oci-schema-design-01 jobhoz: ha ebből levezethető YANG modul,
+    REST végpont és runtime reconcile contract, a primitive modell OCI-ra is működik.
+    state_surface mezői 1:1 megegyeznek a poc-system-plan/input.md actual_state.json
+    sémájával (pbs_root_hash nélkül — git state commit az anchor).
+  owner: Gabor Zoltan Sinko
+  tags:
+    - example
+    - domain-composition
+    - oci
+    - compute
+  validatedBy:
+    name: cic-primitives
+    version: v0.1.0
+
+spec:
+  kind: DomainComposition
+  base:
+    aggregate: ManagedEntity
+    ref: schemas/aggregate/managed-entity.yaml
+
+  # ── Identity ────────────────────────────────────────────────────────────────
+  identity:
+    atomic_ref: schemas/atomic/identity.yaml
+    kind: OciComputeInstance
+    namespace: "cic:oci"
+    version: v0.1.dev
+    base: "cic:core:ManagedEntity"
+    abstract: false
+    description: OCI Compute Instance — Oracle Cloud Infrastructure compute erőforrás (Free Tier Ampere A1)
+
+  # ── ConfigSurface ────────────────────────────────────────────────────────────
+  config_surface:
+    aggregate_ref: schemas/aggregate/config-surface.yaml
+    nodes:
+      - name: shape
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: OCI compute shape azonosító (pl. VM.Standard.A1.Flex)
+        contract:
+          - type: pattern
+            expression: "^VM\\.[A-Za-z0-9.]+$"
+            error_message: Érvényes OCI shape azonosító szükséges (pl. VM.Standard.A1.Flex)
+
+      - name: ocpus
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: integer
+        role: config
+        mandatory: true
+        description: OCPU-k száma (Flex shape esetén)
+        contract:
+          - type: range
+            expression: "1..4"
+            error_message: ocpus értéke 1 és 4 között kell legyen (Free Tier Ampere A1 limit)
+
+      - name: memory_gb
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: integer
+        role: config
+        mandatory: true
+        description: Memória mérete GB-ban (Flex shape esetén)
+        contract:
+          - type: range
+            expression: "1..24"
+            error_message: memory_gb értéke 1 és 24 GB között kell legyen (Free Tier Ampere A1 limit)
+
+      - name: image_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: OCI image OCID (boot volume image)
+        contract:
+          - type: pattern
+            expression: "^ocid1\\.image\\."
+            error_message: Érvényes OCI image OCID szükséges (ocid1.image....)
+
+      - name: subnet_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: A VCN subnet OCID, amelybe az instance csatlakozik (OciSubnet binding_surface referencia)
+        contract:
+          - type: pattern
+            expression: "^ocid1\\.subnet\\."
+            error_message: Érvényes OCI subnet OCID szükséges (ocid1.subnet....)
+
+      - name: display_name
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: Ember-olvasható instance név (OCI Console-ban megjelenő display_name)
+
+  # ── StateSurface ─────────────────────────────────────────────────────────────
+  # Mezők 1:1 a poc-system-plan/input.md actual_state.json sémájával
+  # (pbs_root_hash nélkül — anchor: git state commit a state/ ágon)
+  state_surface:
+    aggregate_ref: schemas/aggregate/state-surface.yaml
+    source: oci-adapter
+    freshness:
+      ttl: 30s
+      strategy: event-driven
+    nodes:
+      - name: instance_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: OCI compute instance OCID (pl. ocid1.instance...)
+
+      - name: lifecycle_state
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: Instance lifecycle állapota
+        contract:
+          - type: enum
+            expression: [PROVISIONING, RUNNING, STOPPING, STOPPED, TERMINATING, TERMINATED]
+
+      - name: shape
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: Az OCI API által visszaadott tényleges shape (drift összevetéshez a config_surface.shape ellen)
+
+      - name: ocpus
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: integer
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: Az OCI API által visszaadott tényleges OCPU szám
+
+      - name: memory_gb
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: integer
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: Az OCI API által visszaadott tényleges memória méret (GB)
+
+      - name: public_ip
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: operational
+        optional: true
+        description: Nyilvános IP cím (ha van hozzárendelve)
+
+      - name: private_ip
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: operational
+        description: Privát IP cím a VCN subnet-en belül
+
+      - name: vcn_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: A VCN OCID, amelyhez az instance subnet-je tartozik (OciVcn binding_surface referencia)
+
+      - name: security_rules_hash
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: derived
+        description: >
+          sha256 hash a vonatkozó OciSecurityList ingress/egress szabályainak
+          kanonikus JSON reprezentációjából — drift detekcióhoz (RECONCILIABLE_DRIFT
+          ha eltér a state/ ág HEAD értékétől)
+        contract:
+          - type: pattern
+            expression: "^sha256:[a-f0-9]{64}$"
+            error_message: security_rules_hash formátuma "sha256:<64 hex>" kell legyen
+
+      - name: collected_at
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: volatile
+        description: RFC3339 időbélyeg — mikor gyűjtötte be az adaptér ezt az állapotot
+
+  # ── OperationSurface ─────────────────────────────────────────────────────────
+  operation_surface:
+    aggregate_ref: schemas/aggregate/operation-surface.yaml
+    operations:
+      - name: start
+        atomic_ref: schemas/atomic/behavior.yaml
+        type: action
+        idempotent: true
+        description: Instance indítása (STOPPED → RUNNING)
+        input: null
+        output:
+          - name: lifecycle_state
+            shape_type: scalar
+            scalar_type: string
+
+      - name: stop
+        atomic_ref: schemas/atomic/behavior.yaml
+        type: action
+        idempotent: true
+        description: Instance leállítása (RUNNING → STOPPED, boot volume megőrizve)
+        input:
+          - name: force
+            shape_type: scalar
+            scalar_type: boolean
+            default: false
+        output:
+          - name: lifecycle_state
+            shape_type: scalar
+            scalar_type: string
+
+      - name: terminate
+        atomic_ref: schemas/atomic/behavior.yaml
+        type: operation
+        idempotent: false
+        description: Instance végleges törlése (boot volume is törlődik, ha preserve_boot_volume=false)
+        input:
+          - name: confirm
+            shape_type: scalar
+            scalar_type: boolean
+            mandatory: true
+        output:
+          - name: lifecycle_state
+            shape_type: scalar
+            scalar_type: string
+
+  # ── NotificationSurface ──────────────────────────────────────────────────────
+  notification_surface:
+    events:
+      - name: lifecycle-state-changed
+        atomic_ref: schemas/atomic/event.yaml
+        trigger: state_change
+        severity: info
+        description: Instance lifecycle_state megváltozott (pl. RUNNING → STOPPED)
+        payload:
+          - name: previous_state
+            shape_type: scalar
+            scalar_type: string
+          - name: current_state
+            shape_type: scalar
+            scalar_type: string
+
+  # ── BindingSurface ───────────────────────────────────────────────────────────
+  binding_surface:
+    addresses:
+      - atomic_ref: schemas/atomic/address.yaml
+        schema_path: "/cic-oci:instances/instance={ocid}"
+        api_path: "/restconf/data/cic-oci:instances/instance={ocid}"
+        logical_id: "cic:oci:instances:{ocid}"
+        namespace: "cic:oci"
+    adapter: oci-adapter
+
+# ── Levezetési lánc (reality check) ───────────────────────────────────────────
+derivation_chain:
+
+  yang:
+    module: cic-oci-compute-instance
+    namespace: "urn:cic:oci:compute-instance"
+    description: Generált YANG modul vázlat
+    content: |
+      module cic-oci-compute-instance {
+        namespace "urn:cic:oci:compute-instance";
+        prefix cic-oci-compute;
+
+        list instance {
+          key "ocid";
+          leaf ocid { type string; }
+
+          container config {
+            leaf shape        { type string; mandatory true; }
+            leaf ocpus        { type uint8;  mandatory true; }
+            leaf memory-gb    { type uint8;  mandatory true; }
+            leaf image-id     { type string; mandatory true; }
+            leaf subnet-id    { type string; mandatory true; }
+            leaf display-name { type string; mandatory true; }
+          }
+
+          container state {
+            config false;
+            leaf instance-id        { type string; }
+            leaf lifecycle-state     { type enumeration {
+              enum PROVISIONING; enum RUNNING; enum STOPPING;
+              enum STOPPED; enum TERMINATING; enum TERMINATED;
+            } }
+            leaf shape               { type string; }
+            leaf ocpus               { type uint8; }
+            leaf memory-gb           { type uint8; }
+            leaf public-ip           { type string; }
+            leaf private-ip          { type string; }
+            leaf vcn-id              { type string; }
+            leaf security-rules-hash { type string; }
+            leaf collected-at        { type string; }
+          }
+
+          action start     { output { leaf lifecycle-state { type string; } } }
+          action stop      { input { leaf force { type boolean; default false; } }
+                              output { leaf lifecycle-state { type string; } } }
+          action terminate { input { leaf confirm { type boolean; mandatory true; } }
+                              output { leaf lifecycle-state { type string; } } }
+
+          notification lifecycle-state-changed {
+            leaf previous-state { type string; }
+            leaf current-state  { type string; }
+          }
+        }
+      }
+
+  api:
+    description: >
+      OCI Compute SDK / REST végpontok (api-version 20160918), amelyekre az
+      oci-adapter a reconcile loop-ban hivatkozik.
+    endpoints:
+      get_instance:    "GET    /20160918/instances/{instanceId}"
+      list_instances:  "GET    /20160918/instances?compartmentId={compartmentId}"
+      launch_instance: "POST   /20160918/instances"
+      start:           "POST   /20160918/instances/{instanceId}/actions/start"
+      stop:            "POST   /20160918/instances/{instanceId}/actions/stop"
+      terminate:       "DELETE /20160918/instances/{instanceId}"
+      vnic_attachments: "GET   /20160918/vnicAttachments?compartmentId={compartmentId}&instanceId={instanceId}"
+      get_vnic:        "GET    /20160918/vnics/{vnicId}"
+
+  runtime:
+    reconcile_loop: |
+      1. observe:   oci-adapter.get_instance(instance_id) + get_vnic(...)
+                       → state_surface (instance_id, lifecycle_state, shape, ocpus,
+                         memory_gb, public_ip, private_ip, vcn_id)
+                     security_rules_hash külön számítás: sha256(canonical_json(
+                       OciSecurityList.config_surface ingress+egress rules))
+                     collected_at = RFC3339(now())
+      2. commit:    GitStateRecorder.RecordState → actual_state.json a state/ ágra
+                     (pbs_root_hash mező nélkül, l. poc-system-plan döntés)
+      3. compare:   diff(config_surface, state_surface) → drift osztályozás
+                       (poc-system-plan szerint):
+                       - NO_DRIFT:           actual_state.json == OCI API válasz
+                       - RECONCILIABLE_DRIFT: eltérés van, OCI API-n visszaállítható
+                                              (pl. security_rules_hash eltér)
+                       - HARD_DRIFT:         lifecycle_state == TERMINATED vagy
+                                              instance_id nem található
+      4. if drift:
+           lifecycle_state RUNNING-tól eltér és config szerint futnia kéne
+                            → start operation
+           lifecycle_state STOPPED-től eltér és config szerint állnia kéne
+                            → stop operation
+           shape/ocpus/memory_gb eltér     → terminate + reprovision
+                                               (OCI nem támogat élő resize-t A1 Flex-en
+                                               shape-váltás nélkül; v1-ben elfogadható
+                                               a teljes újraprovisionálás)
+           security_rules_hash eltér       → RECONCILIABLE_DRIFT — OciSecurityList
+                                               update vagy poc-rollback-01 intent
+      5. emit:      lifecycle-state-changed event ha lifecycle_state eltért
+      6. prooftrace: cic.iac.prooftrace@1.0 → ProofTrace lépés a state commit körül
+                     (pose_result: SKIPPED v1-ben, l. poc-system-plan)
+    adapter_contract:
+      observe: "OCI Compute SDK GetInstance + ListVnicAttachments/GetVnic"
+      apply:   "OCI Compute SDK InstanceAction (START/STOP) / TerminateInstance / LaunchInstance"
+      watch:   "nincs natív watch — periodic poll (drift detekció ttl: 30s)"
