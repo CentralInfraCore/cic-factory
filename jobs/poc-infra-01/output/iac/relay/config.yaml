@@ -1,0 +1,20 @@
+# CIC-Relay minimum configuration (Milestone 0, PoC dev mode).
+# Deploy to: /opt/cic-relay/relay.config.yaml on the cic-poc-relay VM.
+
+vault:
+  address: "http://<vault-vm-private-ip>:8200"
+  token: "<root-token>"      # Vault dev mode static root token, see ../vault/init.sh
+  key: "cic-relay-signing"   # CIC_VAULT_KEY (CryptoService, core/nexus/crypto/service.go)
+
+git_state:
+  repo_path: "/srv/cic-state.git"
+  state_branch: "state"
+  intent_branch: "intent"
+
+trust:
+  # Dev mode bypass — stays false for the whole PoC (poc-schema-signing-01 only
+  # activates Vault signing, it does not flip this flag; see system-plan.md 4. fejezet).
+  trust_store_loaded: false
+
+server:
+  listen_address: "0.0.0.0:8080"
