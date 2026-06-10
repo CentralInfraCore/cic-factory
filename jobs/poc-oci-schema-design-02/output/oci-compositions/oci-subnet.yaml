@@ -1,0 +1,227 @@
+---
+metadata:
+  name: OciSubnet
+  version: v0.0.dev
+  description: >
+    OCI Subnet mint ManagedEntity specializáció — egy OciVcn-en belüli IP
+    cím-tartomány, amelyhez OciComputeInstance erőforrások csatlakoznak
+    (config_surface.subnet_id az OciComputeInstance-ben). Egy vagy több
+    OciSecurityList-et referál (security_list_ids[]).
+  owner: Gabor Zoltan Sinko
+  tags:
+    - domain-composition
+    - oci
+    - subnet
+    - network
+  validatedBy:
+    name: cic-primitives
+    version: v0.1.0
+
+spec:
+  kind: DomainComposition
+  base:
+    aggregate: ManagedEntity
+    ref: schemas/aggregate/managed-entity.yaml
+
+  # ── Identity ────────────────────────────────────────────────────────────────
+  identity:
+    atomic_ref: schemas/atomic/identity.yaml
+    kind: OciSubnet
+    namespace: "cic:oci"
+    version: v0.1.dev
+    base: "cic:core:ManagedEntity"
+    abstract: false
+    description: OCI Subnet — Oracle Cloud Infrastructure VCN-en belüli IP cím-tartomány
+
+  # ── ConfigSurface ────────────────────────────────────────────────────────────
+  config_surface:
+    aggregate_ref: schemas/aggregate/config-surface.yaml
+    nodes:
+      - name: cidr_block
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: A subnet IPv4 CIDR blokkja (a szülő OciVcn cidr_block-jának részhalmaza, pl. 10.0.1.0/24)
+        contract:
+          - type: pattern
+            expression: "^([0-9]{1,3}\\.){3}[0-9]{1,3}/[0-9]{1,2}$"
+            error_message: cidr_block érvényes IPv4 CIDR formátumban kell legyen (pl. 10.0.1.0/24)
+
+      - name: display_name
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: Ember-olvasható subnet név (OCI Console-ban megjelenő display_name)
+
+      - name: vcn_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: A VCN OCID, amelyhez a subnet tartozik (OciVcn binding_surface referencia)
+        contract:
+          - type: pattern
+            expression: "^ocid1\\.vcn\\."
+            error_message: Érvényes OCI VCN OCID szükséges (ocid1.vcn....)
+
+      - name: availability_domain
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: Az availability domain neve (Free Tier esetén az egyetlen elérhető AD a régióban, pl. "Uocm:EU-FRANKFURT-1-AD-1")
+
+      - name: route_table_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: A route table OCID, amelyet a subnet használ (alapértelmezetten az OciVcn default_route_table_id-ja)
+
+      - name: security_list_ids
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: collection
+        collection_variant: set
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: A subnet-hez rendelt OciSecurityList OCID-k listája (legalább egy elem)
+        contract:
+          - type: pattern
+            expression: "^ocid1\\.securitylist\\."
+            error_message: Minden elem érvényes OCI security list OCID kell legyen (ocid1.securitylist....)
+
+  # ── StateSurface ─────────────────────────────────────────────────────────────
+  state_surface:
+    aggregate_ref: schemas/aggregate/state-surface.yaml
+    source: oci-adapter
+    freshness:
+      ttl: 30s
+      strategy: event-driven
+    nodes:
+      - name: subnet_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: OCI subnet OCID (pl. ocid1.subnet...)
+        contract:
+          - type: pattern
+            expression: "^ocid1\\.subnet\\."
+            error_message: Érvényes OCI subnet OCID szükséges (ocid1.subnet....)
+
+      - name: lifecycle_state
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: Subnet lifecycle állapota
+        contract:
+          - type: enum
+            expression: [PROVISIONING, AVAILABLE, TERMINATING, TERMINATED]
+
+      - name: virtual_router_ip
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: operational
+        description: Az OCI által a subnet-hez rendelt virtuális router IP címe
+
+  # ── OperationSurface ─────────────────────────────────────────────────────────
+  # Üres: a subnet lifecycle (create/delete) Terraform-vezérelt
+  # (terraform apply / destroy), nincs külön CIC operation — ugyanaz a minta,
+  # mint az OciCompartment / OciVcn esetén.
+  operation_surface:
+    aggregate_ref: schemas/aggregate/operation-surface.yaml
+    operations: []
+
+  # ── BindingSurface ───────────────────────────────────────────────────────────
+  binding_surface:
+    addresses:
+      - atomic_ref: schemas/atomic/address.yaml
+        schema_path: "/cic-oci:subnets/subnet={ocid}"
+        api_path: "/restconf/data/cic-oci:subnets/subnet={ocid}"
+        logical_id: "cic:oci:subnets:{ocid}"
+        namespace: "cic:oci"
+    adapter: oci-adapter
+
+# ── Levezetési lánc ───────────────────────────────────────────────────────────
+derivation_chain:
+
+  yang:
+    module: cic-oci-subnet
+    namespace: "urn:cic:oci:subnet"
+    description: Generált YANG modul vázlat
+    content: |
+      module cic-oci-subnet {
+        namespace "urn:cic:oci:subnet";
+        prefix cic-oci-subnet;
+
+        list subnet {
+          key "ocid";
+          leaf ocid { type string; }
+
+          container config {
+            leaf cidr-block          { type string; mandatory true; }
+            leaf display-name        { type string; mandatory true; }
+            leaf vcn-id               { type string; mandatory true; }
+            leaf availability-domain  { type string; mandatory true; }
+            leaf route-table-id       { type string; mandatory true; }
+            leaf-list security-list-ids { type string; min-elements 1; }
+          }
+
+          container state {
+            config false;
+            leaf subnet-id          { type string; }
+            leaf lifecycle-state    { type enumeration {
+              enum PROVISIONING; enum AVAILABLE; enum TERMINATING; enum TERMINATED;
+            } }
+            leaf virtual-router-ip  { type string; }
+          }
+        }
+      }
+
+  api:
+    description: >
+      OCI Networking SDK / REST végpontok (api-version 20160918), amelyekre az
+      oci-adapter a reconcile loop-ban hivatkozik.
+    endpoints:
+      get_subnet:    "GET    /20160918/subnets/{subnetId}"
+      list_subnets:  "GET    /20160918/subnets?compartmentId={compartmentId}&vcnId={vcnId}"
+      create_subnet: "POST   /20160918/subnets"
+      delete_subnet: "DELETE /20160918/subnets/{subnetId}"
+
+  runtime:
+    reconcile_loop: |
+      1. observe:   oci-adapter.get_subnet(subnet_id)
+                       → state_surface (subnet_id, lifecycle_state, virtual_router_ip)
+      2. commit:    GitStateRecorder.RecordState → actual_state.json a state/ ágra
+                     (pbs_root_hash mező nélkül, l. poc-system-plan döntés)
+      3. compare:   diff(config_surface, state_surface) → drift osztályozás
+                       (poc-system-plan szerint):
+                       - NO_DRIFT:           actual_state.json == OCI API válasz
+                       - RECONCILIABLE_DRIFT: route_table_id vagy
+                                              security_list_ids eltér — OCI
+                                              UpdateSubnet-tel visszaállítható
+                       - HARD_DRIFT:         lifecycle_state == TERMINATED vagy
+                                              subnet_id nem található
+      4. operation: nincs — a subnet create/delete kizárólag terraform apply /
+                     terraform destroy útján történik; a route_table_id és
+                     security_list_ids drift terraform apply-jal oldódik fel
+                     (v0.1.0-ban nincs külön CIC update operation a subnet-en)
+      5. prooftrace: cic.iac.prooftrace@1.0 → ProofTrace lépés a state commit körül
+                     (pose_result: SKIPPED v1-ben, l. poc-system-plan)
+    adapter_contract:
+      observe: "OCI Networking SDK GetSubnet / ListSubnets"
+      apply:   "nincs — terraform apply/destroy vezérli a lifecycle-t"
+      watch:   "nincs natív watch — periodic poll (drift detekció ttl: 30s)"

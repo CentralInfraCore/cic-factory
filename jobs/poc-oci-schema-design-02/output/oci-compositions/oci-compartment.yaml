@@ -1,0 +1,197 @@
+---
+metadata:
+  name: OciCompartment
+  version: v0.0.dev
+  description: >
+    OCI Compartment mint ManagedEntity specializáció — a tenancy logikai
+    izolációs egysége, minden további OCI erőforrás (VCN, Subnet, Security
+    List, Compute Instance) ehhez van rendelve compartment_id-n keresztül.
+    A poc-oci-schema-design-02 4 fennmaradó DomainComposition-jának első
+    tagja — az OciComputeInstance reality check (poc-oci-schema-design-01)
+    mintáját követi.
+  owner: Gabor Zoltan Sinko
+  tags:
+    - domain-composition
+    - oci
+    - compartment
+  validatedBy:
+    name: cic-primitives
+    version: v0.1.0
+
+spec:
+  kind: DomainComposition
+  base:
+    aggregate: ManagedEntity
+    ref: schemas/aggregate/managed-entity.yaml
+
+  # ── Identity ────────────────────────────────────────────────────────────────
+  identity:
+    atomic_ref: schemas/atomic/identity.yaml
+    kind: OciCompartment
+    namespace: "cic:oci"
+    version: v0.1.dev
+    base: "cic:core:ManagedEntity"
+    abstract: false
+    description: OCI Compartment — Oracle Cloud Infrastructure logikai izolációs egység (tenancy alá vagy másik compartment alá rendelve)
+
+  # ── ConfigSurface ────────────────────────────────────────────────────────────
+  config_surface:
+    aggregate_ref: schemas/aggregate/config-surface.yaml
+    nodes:
+      - name: name
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: A compartment neve (egyedi a szülő compartment-en/tenancy-n belül)
+        contract:
+          - type: pattern
+            expression: "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+            error_message: A compartment név csak alfanumerikus karaktereket, kötőjelet és aláhúzást tartalmazhat
+
+      - name: description
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: Ember-olvasható leírás a compartment céljáról
+
+      - name: parent_compartment_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: A szülő compartment vagy a tenancy OCID-ja, amely alá ez a compartment tartozik
+        contract:
+          - type: pattern
+            expression: "^ocid1\\.(tenancy|compartment)\\."
+            error_message: Érvényes tenancy vagy compartment OCID szükséges (ocid1.tenancy.... vagy ocid1.compartment....)
+
+  # ── StateSurface ─────────────────────────────────────────────────────────────
+  state_surface:
+    aggregate_ref: schemas/aggregate/state-surface.yaml
+    source: oci-adapter
+    freshness:
+      ttl: 30s
+      strategy: event-driven
+    nodes:
+      - name: compartment_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: OCI compartment OCID (pl. ocid1.compartment...)
+        contract:
+          - type: pattern
+            expression: "^ocid1\\.compartment\\."
+            error_message: Érvényes OCI compartment OCID szükséges (ocid1.compartment....)
+
+      - name: lifecycle_state
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: Compartment lifecycle állapota
+        contract:
+          - type: enum
+            expression: [ACTIVE, DELETING, DELETED]
+
+      - name: time_created
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: RFC3339 időbélyeg — a compartment OCI-beli létrehozási ideje
+
+  # ── OperationSurface ─────────────────────────────────────────────────────────
+  # Üres: a compartment lifecycle (create/delete) Terraform-vezérelt
+  # (terraform apply / destroy), nincs külön CIC operation. A managed-entity.yaml
+  # operation_surface slot mode-ja "defaulted" / "default: empty" — ez az
+  # explicit, üres megfelelője.
+  operation_surface:
+    aggregate_ref: schemas/aggregate/operation-surface.yaml
+    operations: []
+
+  # ── BindingSurface ───────────────────────────────────────────────────────────
+  binding_surface:
+    addresses:
+      - atomic_ref: schemas/atomic/address.yaml
+        schema_path: "/cic-oci:compartments/compartment={ocid}"
+        api_path: "/restconf/data/cic-oci:compartments/compartment={ocid}"
+        logical_id: "cic:oci:compartments:{ocid}"
+        namespace: "cic:oci"
+    adapter: oci-adapter
+
+# ── Levezetési lánc ───────────────────────────────────────────────────────────
+derivation_chain:
+
+  yang:
+    module: cic-oci-compartment
+    namespace: "urn:cic:oci:compartment"
+    description: Generált YANG modul vázlat
+    content: |
+      module cic-oci-compartment {
+        namespace "urn:cic:oci:compartment";
+        prefix cic-oci-compartment;
+
+        list compartment {
+          key "ocid";
+          leaf ocid { type string; }
+
+          container config {
+            leaf name                  { type string; mandatory true; }
+            leaf description           { type string; mandatory true; }
+            leaf parent-compartment-id { type string; mandatory true; }
+          }
+
+          container state {
+            config false;
+            leaf compartment-id { type string; }
+            leaf lifecycle-state { type enumeration {
+              enum ACTIVE; enum DELETING; enum DELETED;
+            } }
+            leaf time-created { type string; }
+          }
+        }
+      }
+
+  api:
+    description: >
+      OCI Identity SDK / REST végpontok (api-version 20160918), amelyekre az
+      oci-adapter a reconcile loop-ban hivatkozik.
+    endpoints:
+      get_compartment:    "GET    /20160918/compartments/{compartmentId}"
+      list_compartments:  "GET    /20160918/compartments?compartmentId={parentCompartmentId}"
+      create_compartment: "POST   /20160918/compartments"
+      delete_compartment: "DELETE /20160918/compartments/{compartmentId}"
+
+  runtime:
+    reconcile_loop: |
+      1. observe:   oci-adapter.get_compartment(compartment_id)
+                       → state_surface (compartment_id, lifecycle_state, time_created)
+      2. commit:    GitStateRecorder.RecordState → actual_state.json a state/ ágra
+                     (pbs_root_hash mező nélkül, l. poc-system-plan döntés)
+      3. compare:   diff(config_surface, state_surface) → drift osztályozás
+                       (poc-system-plan szerint):
+                       - NO_DRIFT:           actual_state.json == OCI API válasz
+                       - RECONCILIABLE_DRIFT: name/description eltér, OCI API-n
+                                              update-elhető (de v0.1.0-ban nincs
+                                              update operation — terraform apply
+                                              kezeli)
+                       - HARD_DRIFT:         lifecycle_state == DELETED vagy
+                                              compartment_id nem található
+      4. operation: nincs — a compartment create/delete kizárólag
+                     terraform apply / terraform destroy útján történik;
+                     a reconcile loop csak megfigyel és driftet jelez
+      5. prooftrace: cic.iac.prooftrace@1.0 → ProofTrace lépés a state commit körül
+                     (pose_result: SKIPPED v1-ben, l. poc-system-plan)
+    adapter_contract:
+      observe: "OCI Identity SDK GetCompartment / ListCompartments"
+      apply:   "nincs — terraform apply/destroy vezérli a lifecycle-t"
+      watch:   "nincs natív watch — periodic poll (drift detekció ttl: 30s)"
