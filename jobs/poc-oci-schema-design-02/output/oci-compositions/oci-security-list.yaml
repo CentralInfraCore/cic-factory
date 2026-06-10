@@ -1,0 +1,346 @@
+---
+metadata:
+  name: OciSecurityList
+  version: v0.0.dev
+  description: >
+    OCI Security List mint ManagedEntity specializáció — egy OciVcn-en belüli
+    ingress/egress firewall szabálykészlet, amelyet egy vagy több OciSubnet
+    referál (security_list_ids[]). Ez a drift demo célpontja: "OCI Security
+    List szabály kézi módosítása" — a state_surface.security_rules_hash a
+    poc-system-plan szerint az OciComputeInstance.state_surface-ben is
+    megjelenik (ugyanazon hash-számítással), drift összevetéshez.
+  owner: Gabor Zoltan Sinko
+  tags:
+    - domain-composition
+    - oci
+    - security-list
+    - network
+  validatedBy:
+    name: cic-primitives
+    version: v0.1.0
+
+spec:
+  kind: DomainComposition
+  base:
+    aggregate: ManagedEntity
+    ref: schemas/aggregate/managed-entity.yaml
+
+  # ── Identity ────────────────────────────────────────────────────────────────
+  identity:
+    atomic_ref: schemas/atomic/identity.yaml
+    kind: OciSecurityList
+    namespace: "cic:oci"
+    version: v0.1.dev
+    base: "cic:core:ManagedEntity"
+    abstract: false
+    description: OCI Security List — Oracle Cloud Infrastructure VCN-en belüli ingress/egress firewall szabálykészlet
+
+  # ── ConfigSurface ────────────────────────────────────────────────────────────
+  config_surface:
+    aggregate_ref: schemas/aggregate/config-surface.yaml
+    nodes:
+      - name: vcn_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: A VCN OCID, amelyhez a security list tartozik (OciVcn binding_surface referencia)
+        contract:
+          - type: pattern
+            expression: "^ocid1\\.vcn\\."
+            error_message: Érvényes OCI VCN OCID szükséges (ocid1.vcn....)
+
+      - name: display_name
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: Ember-olvasható security list név (OCI Console-ban megjelenő display_name)
+
+      - name: ingress_security_rules
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: collection
+        collection_variant: list
+        role: config
+        mandatory: true
+        description: Bejövő forgalomra vonatkozó szabályok listája
+        item_fields:
+          - name: protocol
+            shape_type: scalar
+            scalar_type: string
+            description: >
+              IANA protokoll szám stringként (pl. "6" = TCP, "17" = UDP,
+              "1" = ICMP) vagy "all" minden protokollra
+            contract:
+              - type: pattern
+                expression: "^([0-9]{1,3}|all)$"
+                error_message: protocol IANA protokoll szám (pl. "6", "17", "1") vagy "all" kell legyen
+
+          - name: source
+            shape_type: scalar
+            scalar_type: string
+            description: Forrás CIDR blokk (pl. 0.0.0.0/0)
+            contract:
+              - type: pattern
+                expression: "^([0-9]{1,3}\\.){3}[0-9]{1,3}/[0-9]{1,2}$"
+                error_message: source érvényes IPv4 CIDR formátumban kell legyen (pl. 0.0.0.0/0)
+
+          - name: port_range
+            shape_type: composite
+            optional: true
+            description: Port tartomány (csak TCP/UDP protokollnál releváns; hiánya = minden port)
+            fields:
+              - name: min
+                shape_type: scalar
+                scalar_type: integer
+                description: Tartomány alsó határa (1-65535)
+                contract:
+                  - type: range
+                    expression: "1..65535"
+              - name: max
+                shape_type: scalar
+                scalar_type: integer
+                description: Tartomány felső határa (1-65535)
+                contract:
+                  - type: range
+                    expression: "1..65535"
+
+      - name: egress_security_rules
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: collection
+        collection_variant: list
+        role: config
+        mandatory: true
+        description: Kimenő forgalomra vonatkozó szabályok listája
+        item_fields:
+          - name: protocol
+            shape_type: scalar
+            scalar_type: string
+            description: >
+              IANA protokoll szám stringként (pl. "6" = TCP, "17" = UDP,
+              "1" = ICMP) vagy "all" minden protokollra
+            contract:
+              - type: pattern
+                expression: "^([0-9]{1,3}|all)$"
+                error_message: protocol IANA protokoll szám (pl. "6", "17", "1") vagy "all" kell legyen
+
+          - name: destination
+            shape_type: scalar
+            scalar_type: string
+            description: Cél CIDR blokk (pl. 0.0.0.0/0)
+            contract:
+              - type: pattern
+                expression: "^([0-9]{1,3}\\.){3}[0-9]{1,3}/[0-9]{1,2}$"
+                error_message: destination érvényes IPv4 CIDR formátumban kell legyen (pl. 0.0.0.0/0)
+
+          - name: port_range
+            shape_type: composite
+            optional: true
+            description: Port tartomány (csak TCP/UDP protokollnál releváns; hiánya = minden port)
+            fields:
+              - name: min
+                shape_type: scalar
+                scalar_type: integer
+                description: Tartomány alsó határa (1-65535)
+                contract:
+                  - type: range
+                    expression: "1..65535"
+              - name: max
+                shape_type: scalar
+                scalar_type: integer
+                description: Tartomány felső határa (1-65535)
+                contract:
+                  - type: range
+                    expression: "1..65535"
+
+  # ── StateSurface ─────────────────────────────────────────────────────────────
+  state_surface:
+    aggregate_ref: schemas/aggregate/state-surface.yaml
+    source: oci-adapter
+    freshness:
+      ttl: 30s
+      strategy: event-driven
+    nodes:
+      - name: security_list_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: OCI security list OCID (pl. ocid1.securitylist...)
+        contract:
+          - type: pattern
+            expression: "^ocid1\\.securitylist\\."
+            error_message: Érvényes OCI security list OCID szükséges (ocid1.securitylist....)
+
+      - name: lifecycle_state
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: Security list lifecycle állapota
+        contract:
+          - type: enum
+            expression: [PROVISIONING, AVAILABLE, TERMINATING, TERMINATED]
+
+      - name: security_rules_hash
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: derived
+        description: >
+          sha256 hash a ténylegesen az OCI API-n érvényes ingress+egress
+          szabályok kanonikus JSON reprezentációjából —
+          sha256(canonical_json(ingress_security_rules + egress_security_rules)).
+          Ugyanaz a számítási mód, mint az OciComputeInstance.state_surface.security_rules_hash
+          mezőé — drift detekcióhoz: ha ez eltér a config_surface-ből számított
+          hash-től, RECONCILIABLE_DRIFT (pl. valaki kézzel módosította a
+          szabályokat az OCI Console-on).
+        contract:
+          - type: pattern
+            expression: "^sha256:[a-f0-9]{64}$"
+            error_message: security_rules_hash formátuma "sha256:<64 hex>" kell legyen
+
+  # ── OperationSurface ─────────────────────────────────────────────────────────
+  # Csak "update" — start/stop/terminate nincs (a security list nem rendelkezik
+  # futási állapottal). Az "update" a drift demo célpontja: a config_surface
+  # ingress/egress szabályainak újraküldése az OCI API felé, ha a
+  # security_rules_hash eltér.
+  operation_surface:
+    aggregate_ref: schemas/aggregate/operation-surface.yaml
+    operations:
+      - name: update
+        atomic_ref: schemas/atomic/behavior.yaml
+        type: action
+        idempotent: true
+        description: >
+          A security list ingress/egress szabályainak frissítése az OCI API-n
+          a config_surface aktuális tartalmára (RECONCILIABLE_DRIFT feloldása)
+        input:
+          - name: ingress_security_rules
+            shape_type: collection
+            collection_variant: list
+            mandatory: true
+          - name: egress_security_rules
+            shape_type: collection
+            collection_variant: list
+            mandatory: true
+        output:
+          - name: security_rules_hash
+            shape_type: scalar
+            scalar_type: string
+
+  # ── BindingSurface ───────────────────────────────────────────────────────────
+  binding_surface:
+    addresses:
+      - atomic_ref: schemas/atomic/address.yaml
+        schema_path: "/cic-oci:security-lists/security-list={ocid}"
+        api_path: "/restconf/data/cic-oci:security-lists/security-list={ocid}"
+        logical_id: "cic:oci:security-lists:{ocid}"
+        namespace: "cic:oci"
+    adapter: oci-adapter
+
+# ── Levezetési lánc ───────────────────────────────────────────────────────────
+derivation_chain:
+
+  yang:
+    module: cic-oci-security-list
+    namespace: "urn:cic:oci:security-list"
+    description: Generált YANG modul vázlat
+    content: |
+      module cic-oci-security-list {
+        namespace "urn:cic:oci:security-list";
+        prefix cic-oci-seclist;
+
+        list security-list {
+          key "ocid";
+          leaf ocid { type string; }
+
+          container config {
+            leaf vcn-id        { type string; mandatory true; }
+            leaf display-name  { type string; mandatory true; }
+
+            list ingress-security-rules {
+              leaf protocol { type string; mandatory true; }
+              leaf source   { type string; mandatory true; }
+              container port-range {
+                leaf min { type uint16; }
+                leaf max { type uint16; }
+              }
+            }
+
+            list egress-security-rules {
+              leaf protocol    { type string; mandatory true; }
+              leaf destination { type string; mandatory true; }
+              container port-range {
+                leaf min { type uint16; }
+                leaf max { type uint16; }
+              }
+            }
+          }
+
+          container state {
+            config false;
+            leaf security-list-id    { type string; }
+            leaf lifecycle-state     { type enumeration {
+              enum PROVISIONING; enum AVAILABLE; enum TERMINATING; enum TERMINATED;
+            } }
+            leaf security-rules-hash { type string; }
+          }
+
+          action update {
+            input {
+              list ingress-security-rules { uses config/ingress-security-rules; }
+              list egress-security-rules  { uses config/egress-security-rules; }
+            }
+            output {
+              leaf security-rules-hash { type string; }
+            }
+          }
+        }
+      }
+
+  api:
+    description: >
+      OCI Networking SDK / REST végpontok (api-version 20160918), amelyekre az
+      oci-adapter a reconcile loop-ban hivatkozik.
+    endpoints:
+      get_security_list:    "GET    /20160918/securityLists/{securityListId}"
+      list_security_lists:  "GET    /20160918/securityLists?compartmentId={compartmentId}&vcnId={vcnId}"
+      create_security_list: "POST   /20160918/securityLists"
+      update_security_list: "PUT    /20160918/securityLists/{securityListId}"
+      delete_security_list: "DELETE /20160918/securityLists/{securityListId}"
+
+  runtime:
+    reconcile_loop: |
+      1. observe:   oci-adapter.get_security_list(security_list_id)
+                       → state_surface (security_list_id, lifecycle_state)
+                     security_rules_hash = sha256(canonical_json(
+                       OCI API válaszban lévő ingress_security_rules +
+                       egress_security_rules))
+      2. commit:    GitStateRecorder.RecordState → actual_state.json a state/ ágra
+                     (pbs_root_hash mező nélkül, l. poc-system-plan döntés)
+      3. compare:   diff(sha256(canonical_json(config_surface ingress+egress)),
+                          state_surface.security_rules_hash) → drift osztályozás
+                       (poc-system-plan szerint):
+                       - NO_DRIFT:           a két hash megegyezik
+                       - RECONCILIABLE_DRIFT: a két hash eltér — "OCI Security
+                                              List szabály kézi módosítása" demo
+                                              eset; az update operation
+                                              visszaállítja a config_surface
+                                              szerinti szabálykészletet
+                       - HARD_DRIFT:         lifecycle_state == TERMINATED vagy
+                                              security_list_id nem található
+      4. if drift:   RECONCILIABLE_DRIFT esetén → update operation
+                      (config_surface.ingress_security_rules +
+                       egress_security_rules újraküldése)
+      5. prooftrace: cic.iac.prooftrace@1.0 → ProofTrace lépés a state commit körül
+                     (pose_result: SKIPPED v1-ben, l. poc-system-plan)
+    adapter_contract:
+      observe: "OCI Networking SDK GetSecurityList / ListSecurityLists"
+      apply:   "OCI Networking SDK UpdateSecurityList (ingress/egress szabályok teljes felülírása)"
+      watch:   "nincs natív watch — periodic poll (drift detekció ttl: 30s)"

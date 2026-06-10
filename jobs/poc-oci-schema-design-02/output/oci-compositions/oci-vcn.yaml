@@ -1,0 +1,207 @@
+---
+metadata:
+  name: OciVcn
+  version: v0.0.dev
+  description: >
+    OCI Virtual Cloud Network (VCN) mint ManagedEntity specializáció — a
+    hálózati izolációs egység, amelyen belül az OciSubnet és OciSecurityList
+    erőforrások élnek. Egy OciCompartment-hez tartozik (config_surface.compartment_id
+    az OciCompartment binding_surface-ére mutat).
+  owner: Gabor Zoltan Sinko
+  tags:
+    - domain-composition
+    - oci
+    - vcn
+    - network
+  validatedBy:
+    name: cic-primitives
+    version: v0.1.0
+
+spec:
+  kind: DomainComposition
+  base:
+    aggregate: ManagedEntity
+    ref: schemas/aggregate/managed-entity.yaml
+
+  # ── Identity ────────────────────────────────────────────────────────────────
+  identity:
+    atomic_ref: schemas/atomic/identity.yaml
+    kind: OciVcn
+    namespace: "cic:oci"
+    version: v0.1.dev
+    base: "cic:core:ManagedEntity"
+    abstract: false
+    description: OCI Virtual Cloud Network — Oracle Cloud Infrastructure hálózati izolációs egység (VCN)
+
+  # ── ConfigSurface ────────────────────────────────────────────────────────────
+  config_surface:
+    aggregate_ref: schemas/aggregate/config-surface.yaml
+    nodes:
+      - name: cidr_block
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: A VCN IPv4 CIDR blokkja (pl. 10.0.0.0/16)
+        contract:
+          - type: pattern
+            expression: "^([0-9]{1,3}\\.){3}[0-9]{1,3}/[0-9]{1,2}$"
+            error_message: cidr_block érvényes IPv4 CIDR formátumban kell legyen (pl. 10.0.0.0/16)
+
+      - name: display_name
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: Ember-olvasható VCN név (OCI Console-ban megjelenő display_name)
+
+      - name: compartment_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role: config
+        mandatory: true
+        description: A compartment OCID, amelyhez a VCN tartozik (OciCompartment binding_surface referencia)
+        contract:
+          - type: pattern
+            expression: "^ocid1\\.compartment\\."
+            error_message: Érvényes OCI compartment OCID szükséges (ocid1.compartment....)
+
+  # ── StateSurface ─────────────────────────────────────────────────────────────
+  state_surface:
+    aggregate_ref: schemas/aggregate/state-surface.yaml
+    source: oci-adapter
+    freshness:
+      ttl: 30s
+      strategy: event-driven
+    nodes:
+      - name: vcn_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: OCI VCN OCID (pl. ocid1.vcn...)
+        contract:
+          - type: pattern
+            expression: "^ocid1\\.vcn\\."
+            error_message: Érvényes OCI VCN OCID szükséges (ocid1.vcn....)
+
+      - name: lifecycle_state
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: VCN lifecycle állapota
+        contract:
+          - type: enum
+            expression: [PROVISIONING, AVAILABLE, TERMINATING, TERMINATED]
+
+      - name: default_route_table_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: Az OCI által automatikusan létrehozott alapértelmezett route table OCID-ja
+
+      - name: default_security_list_id
+        atomic_ref: schemas/atomic/shape.yaml
+        shape_type: scalar
+        scalar_type: string
+        role_ref: schemas/atomic/role.yaml
+        role: state
+        description: Az OCI által automatikusan létrehozott alapértelmezett security list OCID-ja
+
+  # ── OperationSurface ─────────────────────────────────────────────────────────
+  # Üres: a VCN lifecycle (create/delete) Terraform-vezérelt
+  # (terraform apply / destroy), nincs külön CIC operation — ugyanaz a minta,
+  # mint az OciCompartment-nél.
+  operation_surface:
+    aggregate_ref: schemas/aggregate/operation-surface.yaml
+    operations: []
+
+  # ── BindingSurface ───────────────────────────────────────────────────────────
+  binding_surface:
+    addresses:
+      - atomic_ref: schemas/atomic/address.yaml
+        schema_path: "/cic-oci:vcns/vcn={ocid}"
+        api_path: "/restconf/data/cic-oci:vcns/vcn={ocid}"
+        logical_id: "cic:oci:vcns:{ocid}"
+        namespace: "cic:oci"
+    adapter: oci-adapter
+
+# ── Levezetési lánc ───────────────────────────────────────────────────────────
+derivation_chain:
+
+  yang:
+    module: cic-oci-vcn
+    namespace: "urn:cic:oci:vcn"
+    description: Generált YANG modul vázlat
+    content: |
+      module cic-oci-vcn {
+        namespace "urn:cic:oci:vcn";
+        prefix cic-oci-vcn;
+
+        list vcn {
+          key "ocid";
+          leaf ocid { type string; }
+
+          container config {
+            leaf cidr-block    { type string; mandatory true; }
+            leaf display-name  { type string; mandatory true; }
+            leaf compartment-id { type string; mandatory true; }
+          }
+
+          container state {
+            config false;
+            leaf vcn-id                    { type string; }
+            leaf lifecycle-state           { type enumeration {
+              enum PROVISIONING; enum AVAILABLE; enum TERMINATING; enum TERMINATED;
+            } }
+            leaf default-route-table-id    { type string; }
+            leaf default-security-list-id  { type string; }
+          }
+        }
+      }
+
+  api:
+    description: >
+      OCI Networking SDK / REST végpontok (api-version 20160918), amelyekre az
+      oci-adapter a reconcile loop-ban hivatkozik.
+    endpoints:
+      get_vcn:    "GET    /20160918/vcns/{vcnId}"
+      list_vcns:  "GET    /20160918/vcns?compartmentId={compartmentId}"
+      create_vcn: "POST   /20160918/vcns"
+      delete_vcn: "DELETE /20160918/vcns/{vcnId}"
+
+  runtime:
+    reconcile_loop: |
+      1. observe:   oci-adapter.get_vcn(vcn_id)
+                       → state_surface (vcn_id, lifecycle_state,
+                         default_route_table_id, default_security_list_id)
+      2. commit:    GitStateRecorder.RecordState → actual_state.json a state/ ágra
+                     (pbs_root_hash mező nélkül, l. poc-system-plan döntés)
+      3. compare:   diff(config_surface, state_surface) → drift osztályozás
+                       (poc-system-plan szerint):
+                       - NO_DRIFT:           actual_state.json == OCI API válasz
+                       - RECONCILIABLE_DRIFT: cidr_block/display_name eltér,
+                                              de OCI API-n nem módosítható
+                                              élőben (cidr_block immutable) →
+                                              gyakorlatban HARD_DRIFT-hez közelít,
+                                              de v0.1.0-ban RECONCILIABLE_DRIFT-ként
+                                              jelölve, terraform apply oldja fel
+                       - HARD_DRIFT:         lifecycle_state == TERMINATED vagy
+                                              vcn_id nem található
+      4. operation: nincs — a VCN create/delete kizárólag terraform apply /
+                     terraform destroy útján történik; a reconcile loop csak
+                     megfigyel és driftet jelez
+      5. prooftrace: cic.iac.prooftrace@1.0 → ProofTrace lépés a state commit körül
+                     (pose_result: SKIPPED v1-ben, l. poc-system-plan)
+    adapter_contract:
+      observe: "OCI Networking SDK GetVcn / ListVcns"
+      apply:   "nincs — terraform apply/destroy vezérli a lifecycle-t"
+      watch:   "nincs natív watch — periodic poll (drift detekció ttl: 30s)"
