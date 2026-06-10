@@ -1,0 +1,28 @@
+schema_version: "1.0"
+
+job_id: "poc-system-plan"
+parent_job_id: "poc-bridge-check"
+
+level: "orchestrator"
+target:
+  repo: "cic-factory"
+  path: "jobs/poc-system-plan"
+
+kb_focus: ["relay", "prooftrace", "pose", "drift", "ois", "schema", "iac"]
+promptmap_ref: ""
+
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+
+workplace:
+  repos: ["cic-factory"]
+  branch: "feature/poc-system-plan"
+
+status: "pending"
+error_message: ""
+
+timestamps:
+  created: "2026-06-07T01:10:00Z"
+  started: ""
+  completed: ""
