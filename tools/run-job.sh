@@ -38,6 +38,7 @@ AGENT_CONFIG="$HOME/.claude-personal/agents/$AGENT_ID"
 [[ -d "$AGENT_CONFIG" ]] || { echo "[ERROR] Agent nem létezik: $AGENT_CONFIG"; exit 1; }
 
 STATUS=$(grep '^status:' "$META" | awk -F'"' '{print $2}')
+MODEL=$(grep '^  model:' "$META" | awk -F'"' '{print $2}' || true)
 if [[ "$STATUS" == "running" ]]; then
     echo "[WARN] Job már fut. Folytatod? (y/N)"; read -r ans; [[ "$ans" == "y" ]] || exit 1
 fi
@@ -99,12 +100,16 @@ Push csak \`$FEATURE_BRANCH\` branch-re. Main-re NEM."
 
 # --- Agent futtatás ---
 echo "[*] Agent indítása: $AGENT_ID"
+echo "[*] Model: ${MODEL:-default}"
+MODEL_FLAG=()
+[[ -n "$MODEL" ]] && MODEL_FLAG=(--model "$MODEL")
 mkdir -p "$FACTORY_CLONE/jobs/$JOB_ID/output"
 export CIC_JOB_ID="$JOB_ID"
 export CIC_WORKDIR="$WORKDIR"
 set +e
 CLAUDE_CONFIG_DIR="$AGENT_CONFIG" claude --print "$PROMPT" \
     --mcp-config "$CIC_MCP_CONFIG" \
+    "${MODEL_FLAG[@]}" \
     > "$FACTORY_CLONE/jobs/$JOB_ID/output/agent-output.md" 2>&1
 EXIT_CODE=$?
 set -e
