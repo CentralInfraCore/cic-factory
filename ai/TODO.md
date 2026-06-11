@@ -18,26 +18,27 @@
 
 ## Séma-réteg → cél-repo: `cic-primitives`
 
-### T1 — A 7→8 atom átmenet félbemaradt `[drift]`
+### T1 — A 8. atom (Access) propagációja lemaradt `[drift]`
+**Pontosítás:** az Access mint 8. atom **lezárt, dátumozott döntés** —
+`ai/DECISIONS.md` D-011 (2026-05-04). Nem dokumentálatlan beszúrás; a drift
+szűkebb: a downstream artifactok nem propagálták a D-011-et.
+
 **Bizonyíték:**
 - `schemas/atomic/access.yaml` — az Access atom **él**, teljes (field-szintű
   mTLS CertPattern jogosultság, `default_injection` information hiding,
-  `inherit: 0/true/false` reset-lánc).
-- `schemas/aggregate/config-surface.yaml:64` — még a régi világban:
-  *"Jövőbeli atomic: PolicyRef (nem része az első 7 atomnak)"*, az `access`
-  slot `type: TBD`.
-- `ai/ROADMAP.md` Phase 3 (3.1–3.7) **csak 7 atomot** sorol — Access nincs benne,
-  pedig a fájl létezik → a roadmap lezárása után, dokumentálatlanul került be.
-- `managed-entity.yaml:31` viszont **már hivatkozik** az Access atomra
-  (`used_by: [policy_surface, minden field értéke implicit]`).
+  `inherit: 0/true/false` reset-lánc); `managed-entity.yaml:31` **már hivatkozik** rá.
+- DE `schemas/aggregate/config-surface.yaml:64` még a régi világban:
+  *"Jövőbeli atomic: PolicyRef (nem része az első 7 atomnak)"*, `access` slot `type: TBD`.
+- `ai/ROADMAP.md` Phase 3 (3.1–3.7) **csak 7 atomot** sorol — Access nincs benne.
+- `docs/ecosystem-map.md` (98–104) és az orchestrátor memória **7 atomot** mond.
 
-→ A sémakészlet önellentmondó: ManagedEntity már 8-atomos, ConfigSurface + ROADMAP
-+ ecosystem-map még 7-atomos.
+→ Önellentmondás: ManagedEntity + DECISIONS (D-011) már 8-atomos; ConfigSurface +
+ROADMAP + ecosystem-map még 7-atomos. A döntés megvan, a propagáció hiányzik.
 
 **Teendő:**
 1. `config-surface.yaml`: `access` slot `type: TBD` → `type: Access` +
    `atomic_ref: schemas/atomic/access.yaml`; "nem része az első 7 atomnak" törlés
-2. `ai/ROADMAP.md`: Phase 3.8 — Access atom utólagos felvétele
+2. `ai/ROADMAP.md`: Phase 3.8 — Access atom felvétele D-011 hivatkozással
 3. orchestrátor oldal: `docs/ecosystem-map.md` (98–104) 7 → 8 atom + memória
 
 ### T2 — Scaffold slotok nincsenek gépileg jelölve `[scaffold]`
@@ -95,3 +96,34 @@ implementált Root→Intermediate→Source CA-lánccal (`CIC-Relay/ai/TRUST_TODO
 **concept**.
 **Teendő:** dokumentált interim döntés (DECISIONS / teads) — a CA-lánc tudatos
 átmenet a quorum-trust megvalósulásáig, ne maradjon kezeletlen ellentmondásként.
+
+---
+
+## Ismert nyitott bridge (NEM hiba — tudatos döntés, követésre)
+
+### T8 — primitives `DomainComposition` → relay végrehajtás `[concept]`
+**Ez NEM felfedezett hiba — lezárt, dátumozott döntés:** `cic-primitives/ai/DECISIONS.md`
+**D-009** (2026-04-30): *"ExecutionSurface szándékosan hiányzik... nyitott bridge marad
+amíg a Relay modell nincs."* A helyes sorrend explicit: előbb relay execution modell,
+abból visszavezetni az ExecutionSurface slot-jait — nem fordítva.
+
+**Kontextus (verifikáció a döntés mellé, 2026-06-11):** a híd ténylegesen nyitott:
+- relay `core/cabinet/types.go:21` `SchemaDef` = `StateRequirement/Dependencies/NextHops`
+  (végrehajtási gráf-node); a relay Go+YAML kódban **nulla** primitives-referencia.
+- `cic-primitives/tools/compiler.py` (422 sor) csak validál+aláír — **nincs** yang/
+  restconf/emit fordító; a `kubernetes-pod.yaml` `derivation_chain` **kézi illusztráció**
+  ("reality check"), nem generált kimenet.
+- D-003 (`DECISIONS:43`): a primitívekből *"bármilyen target formátum generálható"* —
+  a fordító tehát tervezett, de még nem létezik.
+
+**Tervezett irány (orchestrátor megerősítés):** a szolgáltatás-leíró sémák (jelenleg
+CIC-Schemas saját formátum, szolgáltatás-oldalról megfogva) primitives-formátumra
+konvergálnak. Függőségi lánc: relay execution modell érik (PoC cert-flow) → D-009
+ExecutionSurface visszavezethető → szolgáltatás-sémák primitives-re hozhatók
+végrehajtási szemantikával. A config/state/binding surface-ek már most felvehetők
+(nem relay-függők); csak a végrehajtási rész vár az ExecutionSurface-re.
+
+**Teendő:** nincs azonnali akció — követni, amikor a relay execution modell stabil,
+D-009 feloldható. A `derivation_chain` "reality check" megfogalmazását érdemes
+egyértelműsíteni (kézi illusztráció, nem automatikus leképezés), hogy ne keltsen
+generált-kimenet benyomást.
