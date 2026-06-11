@@ -4,7 +4,7 @@ parent_job_id: "poc-implementation-plan"
 level: "domain"
 target:
   repo: "CIC-Relay"
-  path: "core/plugins/drift_detector"
+  path: "core/modules/pocobs"
 kb_focus:
   - "c1815"
   - "c2543"
