@@ -1,0 +1,26 @@
+schema_version: "1.0"
+job_id: "wasm-template-design"
+parent_job_id: ""
+level: "orchestrator"
+target:
+  repo: "base-repo"
+  path: ""
+kb_focus:
+  - "c689"
+  - "c781"
+  - "c912"
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-opus-4-8"
+workplace:
+  repos:
+    - "cic-factory"
+    - "base-repo"
+  branch: "feature/wasm-template-design"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-06-11T00:00:00Z"
+  started: ""
+  completed: ""
