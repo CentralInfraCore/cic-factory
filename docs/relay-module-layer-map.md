@@ -88,6 +88,53 @@ nem volna szabad végrehajtani), üzemeltetésileg pragmatikus. Fontos tudni, ho
 
 ---
 
+## 3. `cicwasm.go` — a WASM host-frame (a dispatch szándék-fele)
+
+A `Setx` WASM-ágának másik fele: a `cicwasm.go` (416 sor, wazero-alapú). A session
+során látott **legérettebb izolációs réteg** — és érdemben árnyalja a 2. szakasz
+"jelen vs szándék" megfigyelését: a szándék már megépült, nem koncepció.
+
+**Nyelvfüggetlen ABI: egyetlen belépő + op-dispatch.** A guest **egyetlen** `call`
+függvényt exportál, plusz `allocate`/`deallocate`-et. A négy művelet
+(Init/Process/Get/Notify) nem négy export — egyetlen `call`-on mennek át, az `op`
+stringgel megkülönböztetve (`callGuest`, 317). Bármely nyelvből fordított WASM
+implementálhatja, ha kihozza az `allocate`/`deallocate`/`call` hármast. Ez a
+"nyelvfüggetlen modul" ígéret konkrét alapja.
+
+**Memória-tulajdon a guesté.** A host nem nyúl közvetlenül a guest heap-jéhez: a
+három bemenő stringet (op, auth, input) a guest **saját** `allocate`-jén keresztül
+írja be (`writeStringToWasm`, 369), és minden blokkot `defer deallocate`-tel
+takarít — a result-ot is. A dealloc-hibák non-fatal (warn), konzisztensen a
+recorder filozófiájával.
+
+**Eredmény-szerződés.** A guest packed `uint64`-et ad vissza:
+`(size << 32) | pointer` (325–328); a host kiolvassa, JSON `{data, error}`-ként
+parse-olja. `packed == 0` → tiszta null-eset. Determinisztikus.
+
+**Stateless, de amortizált.** A *compiled module* LRU-cache-elt (a fordítás drága),
+de minden híváshoz **friss instance** nyílik (`NewHostInstance`). Az állapot nem
+hordozódik át hívások között — a c912 "a relay stateless" elv kódban.
+
+### Két pontosítás a 2. szakaszhoz (a host-frame fényében)
+
+**(a) A natív↔WASM aszimmetria oka világos — valódi, kikényszerített timeout.**
+A `callGuest` `context.WithTimeout` (284) + a runtime `WithCloseOnContextDone(true)`
+(62) együtt **ténylegesen megszakítja** a WASM-végrehajtást
+(`DeadlineExceeded → TIMEOUT`, 319). Ezt a natív ág nem tudja. Tehát nem "a natív
+ág hibás" — a WASM-út megkapta az izolációt, sandboxot, megszakíthatóságot, tiszta
+memória-tulajdont; a natív-út a beágyazott pragmatizmus. A szándék már **kész**,
+nem koncepció.
+
+**(b) Az auth-csatorna létezik — korábbi "gyanús" megfigyelés korrigálva.**
+A `callGuest` az `authContextJson`-t **külön, elsőrangú paraméterként** adja át a
+guestnek (op + **auth** + input, három független string). A `Setx`-ben látott
+`authContextJson := step.ComponentID` nem hiányzó auth, hanem **egy kész csatorna,
+amit jelenleg a ComponentID-vel töltenek fel placeholderként**. Pontos állapot:
+**a csatorna implemented, a tartalom scaffold** — érdemben jobb, mint amit a `Setx`
+önmagában mutatott.
+
+---
+
 ## Illeszkedés — a séma→workflow→modul→ProofTrace lánc runtime-zárása
 
 ```
@@ -107,11 +154,16 @@ ProofTrace-építés, dispatch-absztrakció, registry-alapú feloldás) pontosan
 amit a koncepció ígér — itt a concept→runtime híd be van kötve.
 
 A karaktere két helyen árulja el, hol tart:
-1. **natív vs WASM aszimmetria** — jelen vs szándék,
+1. **natív vs WASM aszimmetria** — jelen vs szándék. A host-frame (3. szakasz)
+   fényében: a szándék-oldal (WASM-izoláció, valódi timeout, auth-csatorna) **már
+   megépült** — tudatos kétsebességes architektúra, ahol a jövő kész, csak a jelen
+   még a gyorsabb, kevésbé védett natív úton fut. Nem féltermék.
 2. **workflow-step vs séma-gráf kettősség** — a végrehajtó egyszerűbb, mint a
    deklaratív modell.
 
-Egyik sem hiba; mindkettő egy fejlődő rendszer becsületes pillanatképe.
+Egyik sem hiba; mindkettő egy fejlődő rendszer becsületes pillanatképe. A
+host-frame (`cicwasm.go`) a session során látott legkiforrottabb kódrész —
+felülírja azt a benyomást, hogy a relay "peremein nyers".
 
 A legmegfontolásra érdemesebb pont a `go.meta.gen.py`: nem mert hibás, hanem mert
 az AI-réteg bemenete rajta áll. A viszonya a célhoz (hű kódkép) érdemes lenne
