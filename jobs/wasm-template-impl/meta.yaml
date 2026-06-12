@@ -19,7 +19,7 @@ workplace:
     - "CIC-Relay"
   branch: "feature/wasm-template-impl"
 status: "error"
-error_message: ""
+error_message: "agent hit Claude session limit mid-run; work salvaged uncommitted in workspace-saved/, continued by wasm-template-finish"
 timestamps:
   created: "2026-06-12T00:00:00Z"
   started: "2026-06-12T05:30:35Z"

@@ -10,6 +10,7 @@ jobs/*/tmp/
 
 # Agent workspace — klónok és futási állapot, nem tracked
 jobs/*/workspace/
+jobs/*/workspace-saved/
 
 # Hook telemetria az élő workdir-ben futás közben
 jobs/*/output/events.jsonl
