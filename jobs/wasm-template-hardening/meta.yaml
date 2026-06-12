@@ -1,0 +1,26 @@
+schema_version: "1.0"
+job_id: "wasm-template-hardening"
+parent_job_id: "wasm-template-finish"
+level: "repo"
+target:
+  repo: "base-repo"
+  path: ""
+kb_focus:
+  - "c689"
+  - "c1503"
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+workplace:
+  repos:
+    - "cic-factory"
+    - "base-repo"
+    - "CIC-Relay"
+  branch: "feature/wasm-template-hardening"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-06-12T21:00:52Z"
+  started: ""
+  completed: ""
