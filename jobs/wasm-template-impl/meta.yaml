@@ -18,9 +18,9 @@ workplace:
     - "base-repo"
     - "CIC-Relay"
   branch: "feature/wasm-template-impl"
-status: "running"
+status: "error"
 error_message: ""
 timestamps:
   created: "2026-06-12T00:00:00Z"
   started: "2026-06-12T05:30:35Z"
-  completed: ""
+  completed: "2026-06-12T05:44:15Z"
