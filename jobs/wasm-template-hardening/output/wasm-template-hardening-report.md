@@ -225,6 +225,21 @@ $ grep -n "canonical_source_file" project.yaml
 7. `docs(wasm): make the WASM module template the primary README identity` — B.4
 8. `build(wasm): regenerate MANIFEST.sha256` — A.1 (végső regenerálás minden korábbi módosítás után)
 
+## PR-megnyitás státusza
+
+A `wasm/f/hardening` branch push-olva van a base-repo `origin`-jére
+(`git push -u origin wasm/f/hardening` — sikeres, `new branch`). A
+`gh pr create --base wasm/main --head wasm/f/hardening` viszont elhasalt:
+
+```
+none of the git remotes configured for this repository point to a known GitHub host.
+```
+
+A base-repo `origin` egy lokális bare repo (`/home/sinkog/sync/git.partners/CentralInfraCore/.git_repos/base-repo.git`),
+nem GitHub — ez környezeti korlát, nem a jelen job hibája. A branch pusholva
+van és PR-re kész (`wasm/f/hardening` → `wasm/main`); a PR-t a `gh` GitHub-host
+konfigurálása után (vagy a tényleges GitHub remote-on) kell megnyitni.
+
 ## Összefoglalás
 
 A 9 review-pont (A.1–A.3, B.4–B.6, C.7–C.9) mindegyike `implemented` státuszú,
