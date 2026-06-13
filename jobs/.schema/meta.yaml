@@ -18,6 +18,9 @@ promptmap_ref: ""           # key in ai/PROMPTMAP.yaml; "" if not applicable
 agent:
   config_dir: ""            # CLAUDE_CONFIG_DIR value, e.g. "~/.claude-personal/agents/agent-01"
   model: ""                 # e.g. "claude-sonnet-4-6"
+  session_id: ""            # optional; Claude Code session UUID, set by run-job.sh after each run.
+                             # Used by `run-job.sh <job-id> <agent-id> --resume` to continue
+                             # exactly where a session-limit/error cutoff happened.
 
 # Workplace — agent saját klónjában, nem a live workdir-ban
 # Clone helye: ~/.claude-personal/agents/<id>/workspace/<job-id>/
