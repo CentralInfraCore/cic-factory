@@ -1,0 +1,25 @@
+schema_version: "1.0"
+job_id: "wasm-release-pipeline-audit"
+parent_job_id: "wasm-template-contracts"
+level: "repo"
+target:
+  repo: "base-repo"
+  path: ""
+kb_focus:
+  - "c1503"
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+workplace:
+  repos:
+    - "cic-factory"
+    - "base-repo"
+    - "CIC-Schemas"
+  branch: "feature/wasm-release-pipeline-audit"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-06-14T00:00:00Z"
+  started: ""
+  completed: ""
