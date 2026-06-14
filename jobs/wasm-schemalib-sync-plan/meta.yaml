@@ -17,9 +17,9 @@ workplace:
     - "base-repo"
     - "CIC-Schemas"
   branch: "feature/wasm-schemalib-sync-plan"
-status: "running"
+status: "done"
 error_message: ""
 timestamps:
   created: "2026-06-14T00:00:00Z"
   started: "2026-06-14T09:10:19Z"
-  completed: ""
+  completed: "2026-06-14T09:19:19Z"
