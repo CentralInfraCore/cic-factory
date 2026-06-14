@@ -17,9 +17,9 @@ workplace:
     - "base-repo"
     - "CIC-Schemas"
   branch: "feature/wasm-infra-migration-plan"
-status: "running"
+status: "done"
 error_message: ""
 timestamps:
   created: "2026-06-14T00:00:00Z"
   started: "2026-06-14T13:16:38Z"
-  completed: ""
+  completed: "2026-06-14T13:28:49Z"
