@@ -1,0 +1,25 @@
+schema_version: "1.0"
+job_id: "wasm-infra-migration-plan"
+parent_job_id: "wasm-validation-gate-audit"
+level: "repo"
+target:
+  repo: "base-repo"
+  path: ""
+kb_focus:
+  - "c1295"
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-4-6"
+workplace:
+  repos:
+    - "cic-factory"
+    - "base-repo"
+    - "CIC-Schemas"
+  branch: "feature/wasm-infra-migration-plan"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-06-14T00:00:00Z"
+  started: ""
+  completed: ""
