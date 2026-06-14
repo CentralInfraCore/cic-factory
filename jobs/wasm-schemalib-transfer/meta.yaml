@@ -17,9 +17,9 @@ workplace:
     - "base-repo"
     - "CIC-Schemas"
   branch: "feature/wasm-schemalib-transfer"
-status: "pending"
+status: "running"
 error_message: ""
 timestamps:
   created: "2026-06-14T00:00:00Z"
-  started: ""
+  started: "2026-06-14T10:47:47Z"
   completed: ""
