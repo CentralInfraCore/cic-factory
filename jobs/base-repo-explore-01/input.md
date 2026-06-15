@@ -162,17 +162,18 @@ Konkrét összehasonlítás: mi van CIC-Relay-ben, mi van base-repo golang/main-
 
 ### `output/claim-evidence.md`
 
-| Állítás | Státusz | Bizonyíték (fájl/sor) |
-|---|---|---|
-| base@0.5.0 tag melyik commithoz tartozik | true/false | git show-ref output |
-| golang/main eltéréseit azonosítottam | true/false | konkrét diff vagy fájl neve |
-| Release lépések sorban dokumentálva | true/false | tools/release.sh elolvasva |
-| CIC-Relay Makefile vs golang/main Makefile összehasonlítva | true/false | konkrét delta |
+| Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat |
+|---|---|---|---|---|
+| base@0.5.0 tag melyik commithoz tartozik | true/false | git show-ref output | `git show-ref --tags` | alacsony |
+| golang/main eltéréseit azonosítottam | true/false | konkrét diff vagy fájl neve | `git show golang/main:<fájl>` diff | közepes |
+| Release lépések sorban dokumentálva | true/false | tools/release.sh elolvasva (file:sor) | forráskód idézet | alacsony |
+| CIC-Relay Makefile vs golang/main Makefile összehasonlítva | true/false | konkrét delta | diff idézet | közepes |
 
 ---
 
 ## Szabályok
 
+- **A fájl létezése nem jelenti, hogy elolvastad és megértetted** — minden `claim-evidence.md` sorhoz konkrét fájl:sor idézet kell, nem csak "létezik".
 - **Fájl listázás ≠ megértés** — olvasd el, ne csak `ls`-ezd
 - **Nyitott kérdés jelzése kötelező** — ha nem tudod megmondani, mondd meg és miért
 - Semmit nem módosítasz — sem base-repo-ban, sem CIC-Relay-ben, sem cic-factory-ban
