@@ -81,9 +81,16 @@ A táblázat formátuma (egy sorban, K8 miatt):
 |---|---|---|---|---|
 ```
 
-**"A két meglévő fájl léte ≠ a bennük szereplő állítások igazolása"** — minden
-táblázat-sornak saját, frissen futtatott bizonyítéka legyen, ne csak a meglévő
-fájlra mutató hivatkozás.
+**"A fájl létezése ≠ az állítások igazolása"** — minden táblázat-sornak saját,
+frissen futtatott bizonyítéka legyen, ne csak a meglévő fájlra mutató hivatkozás.
+
+### Reachability / N/A indoklás
+
+Ez egy Python/YAML/Git-konfigurációs audit (`base-repo` release-infrastruktúra,
+nem Go forráskód) — `grep -rn`-alapú call-chain ellenőrzés és `deadcode ./...`
+N/A. A `_test.go` kizárás sem releváns (nincs Go production szimbólum). A
+fenti `git show-ref`/`git merge-base`/`diff`/`gh api` parancsok adják a
+runtime-bizonyítékot ehhez a job-hoz.
 
 ### 3. Commit + push
 
