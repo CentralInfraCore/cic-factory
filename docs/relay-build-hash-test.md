@@ -24,12 +24,72 @@ Ez maga is lelet. A forrásból kiolvasva:
 | relay image a gyökér `Dockerfile`-ban | **nincs** — az egy `python:3.11-slim` alapú schema-compiler image |
 | `make run` / `make serve` cél | **nincs** — a Makefile-ban csak `build: infra.build ## Build Docker images` |
 
-Tehát ma a relay indítása **kézi lépés** (`go run ./cmd/relay` vagy egy lefordított
-bináris), és nincs olyan konténerizált belépési pont, ami „kap egy repót +
-commitot, ad egy `build_hash`-t". Ez az audit **#7-es rése**, és a teszt-eljárás
-első lépésénél azonnal szembejön.
+Tehát a relay indítása ma **kézi lépés**, és nincs olyan konténerizált belépési
+pont, ami „kap egy repót + commitot, ad egy `build_hash`-t". Ez az audit **#7-es rése**.
 
 Alapértelmezett port: `:8080` (`cmd/relay/main.go:770`).
+
+### Működő indítási recept (2026-07-25-én kipróbálva)
+
+Lokális Go nincs a gépen; a relay a `golang:1.25.11` imageben fordul, a repo
+**read-only** mountolva (nem módosítjuk). A cache-ek a `go-builder` compose-mintáját követik.
+
+```bash
+source tools/env.sh
+# 1. fordítás — a repo RO, a bináris kifelé megy
+docker run --rm \
+  -v "$CIC_RELAY_PATH":/git-source:ro \
+  -v ~/tmp/cache/CIC-Relay/gomodcache:/go/pkg/mod \
+  -v ~/tmp/cache/CIC-Relay/cache:/go/cache \
+  -v ~/tmp/cache/CIC-Relay/build:/out \
+  -e GOMODCACHE=/go/pkg/mod -e GOCACHE=/go/cache -e GOFLAGS=-mod=readonly \
+  -w /git-source golang:1.25.11 \
+  go build -buildvcs=false -o /out/relay ./cmd/relay
+```
+
+`-buildvcs=false` **kötelező**: RO mounton a VCS-stamping `exit status 128`-cal elhasal.
+Mellékhatás: a `CommitHash` / `SourceTreeHash` ldflag-ek üresek maradnak.
+
+```bash
+# 2. indítás
+printf '[safe]\n\tdirectory = *\n' > ~/tmp/relay-gitconfig
+docker run -d --name cic-relay-test --network host \
+  -v "$CIC_RELAY_PATH":/git-source:ro \
+  -v "$CIC_SCHEMAS_PATH":/src/cic-schemas:ro \
+  -v ~/tmp/relay-test-build:/build \
+  -v ~/tmp/relay-test-audit:/var/lib/cic-relay \
+  -v ~/tmp/relay-gitconfig:/etc/relay-gitconfig:ro \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /usr/bin/docker:/usr/local/bin/docker:ro \
+  -v ~/tmp/cache/CIC-Relay/build:/opt/bin:ro \
+  -e GIT_CONFIG_GLOBAL=/etc/relay-gitconfig \
+  -e CIC_SCHEMA_BUILD_DIR=/build \
+  -e CIC_SCHEMA_BUILDER_CONTAINER=cic-schemas-builder \
+  -e VAULT_TOKEN="$(cat ~/.vault-token)" -e VAULT_ADDR=http://127.0.0.1:8200 \
+  -w /git-source golang:1.25.11 /opt/bin/relay
+```
+
+Buktatók, mind kipróbálva:
+
+| Tünet | Ok | Megoldás |
+|---|---|---|
+| `VAULT_TOKEN not set — ProofTrace recording disabled` | nincs token | `-e VAULT_TOKEN=…`; sikeres esetben `ProofTrace recording enabled`, `vault_mount=transit`, `vault_key=cic-dev-sign-key` |
+| `Failed to init audit git recorder … mkdir /var/lib/cic-relay: permission denied` | nem-root user, nem írható út | írható könyvtárat mountolni `/var/lib/cic-relay`-re |
+| `git clone … detected dubious ownership` | konténer root, repo más tulajdonosé | `GIT_CONFIG_GLOBAL` egy `[safe] directory = *` fájlra. **A `GIT_CONFIG_COUNT`/`KEY_0`/`VALUE_0` env-forma NEM működött.** |
+| `docker exec: executable file not found in $PATH` | a `golang` imageben nincs docker CLI | a hoszt `/usr/bin/docker` bemountolása + docker socket |
+| `cic.pipeline.start: build_dir is required` | nincs alapérték | `CIC_SCHEMA_BUILD_DIR` vagy a kérés `build_dir` mezője |
+| `cic.pipeline.test: builder_container is required` | nincs alapérték | `CIC_SCHEMA_BUILDER_CONTAINER` vagy a kérés mezője |
+
+A builder konténer külön indul, és a **workdir-jének a klón helyére kell mutatnia**
+(a relay `docker exec <builder> make <target>`-et hív `-w` nélkül):
+
+```bash
+docker run -d --name cic-schemas-builder \
+  -v ~/tmp/relay-test-build:/build -w /build/<build_dir-neve> \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /usr/bin/docker:/usr/local/bin/docker:ro \
+  cic-relay-py-builder:latest tail -f /dev/null
+```
 
 ---
 
@@ -127,13 +187,63 @@ ha az is azonos, az megerősíti, hogy a relay saját build-konstansaiból szár
 
 ---
 
+## Első éles futás — 2026-07-25
+
+**Eredmény: T0 PASS, T1–T6 nem futott le. `build_hash`-t NEM sikerült előállítani.**
+
+Ameddig eljutottunk, lépésről lépésre:
+
+| Lépés | Eredmény |
+|---|---|
+| relay fordítás konténerben, RO forrással | ✅ 16.3 MB bináris |
+| relay indul, `✅ Central relay API started on :8080` | ✅ |
+| **T0** — `/healthz`, `/readyz` | ✅ **PASS**, mindkettő 200 |
+| ProofTrace recording Vaulttal | ✅ engedélyezve (`transit` / `cic-dev-sign-key`) |
+| `cic.pipeline.start` — git clone a megadott `repo_url`-ről | ✅ **lefutott** |
+| `cic.pipeline.test` — `docker exec <builder> make test` | ⚠️ **elindult és futott**, de a CIC-Schemas saját `make test`-je hasalt el |
+| `validate` → `release` → `assert` → `build` → `sign` | ❌ nem jutottunk el idáig |
+| **T1–T6** | ❌ nem futott — nincs `build_hash`, nincs `proof_trace` |
+
+Az utolsó hiba **nem a relayben** van:
+
+```
+cic.pipeline.test: make test exit 2:
+  --- Running pytest for the compiler infrastructure ---
+  unknown shorthand flag: 'm' in -m
+  make: *** [mk/infra.mk:79: infra.test] Error 125
+```
+
+A CIC-Schemas `mk/infra.mk:79` targetje ebben a környezetben rosszul paraméterezett
+`docker` hívást állít elő (valószínűleg egy Makefile-változó `python` helyett
+`docker`-re oldódik fel). Ez a **cél-repó build-konfigurációja**, nem a relay.
+
+### Amit ez a futás mégis bizonyít
+
+Két dolgot, amit eddig csak statikusan tudtunk:
+
+1. **A relay tényleg klónoz** egy neki megadott `repo_url`-t (`cic.pipeline.start`
+   lefutott, a hiba utána jött).
+2. **A relay tényleg `docker exec <builder> make <target>`-et futtat** — a hiba
+   szövege maga a `make test` kimenete, tehát a hívás megtörtént. Ez pontosan az a
+   mechanizmus, amit az eredeti kérés leírt: Makefile-célok egyenként, konténerben,
+   lépésenként rögzített eredménnyel (`schemapipeline.go:223` — a modul
+   `stdout_digest`-et és `command_digest`-et is számol a lépéshez).
+
+### Ami továbbra is nyitva van
+
+**A döntő kérdést (T5) ez a futás nem válaszolta meg.** Nincs `build_hash`, tehát
+nem tudjuk, hogy forrás-kötött-e. Az audit statikus megállapítása
+(`main.go:713-715` → `schemacompile.go:245-252`) továbbra is csak statikus.
+
+A továbblépéshez a CIC-Schemas `make test` / `make validate` targetjeit kell
+működésre bírni a builder konténerben — vagy egy egyszerűbb cél-repót választani,
+aminek a Makefile-ja beágyazott docker nélkül fut le.
+
+---
+
 ## Amit ez az eljárás NEM fed le
 
 Őszintén, hogy ne lehessen többet olvasni ki belőle, mint amennyit ér:
-
-- **Nem futott le még egyszer sem.** Az itt leírt kérés/válasz alakok forrásból
-  vannak kiolvasva (`file:sor` hivatkozásokkal), de a tényleges futás
-  visszaigazolása hiányzik. Az első éles futás után ezt a szakaszt frissíteni kell.
 - **Nem teszteli a commit-pinnelést** — mert nincs mit tesztelni: a
   `PipelineRequest`-ben nincs `commit` mező (audit #1), a klónozás pedig
   `--branch --depth 1` (`schemapipeline.go:129`, audit #8). A T5 ezért
