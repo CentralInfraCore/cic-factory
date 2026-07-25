@@ -30,23 +30,93 @@ for job in $(ls "$CLONE/jobs/" | grep -v "^$JOB_ID$" | grep "^poc-\|^<prefix>-")
 done
 ```
 
-### 3. running → done (live meta.yaml)
+### 3. Gépi output-kapu — a forma ellenőrzése géppel
+
+```bash
+bash tools/validate-output.sh $JOB_ID
+```
+
+Ha **NO-GO** → ne zárd le a jobot. A hiányzó/üres output, a hiányzó claim-evidence
+tábla és a hiányzó reachability artifact gépi kérdés — ne te pótold kézzel, és ne
+nézd el. Javíttasd az agenttel, vagy írj jobb `input.md`-t.
+
+**Miért itt van:** a drága review (te / erős modell) a TARTALOMRA menjen, ne a formára.
+Amit gép el tud dönteni, azt döntse el a gép — a `base-repo-explore-01-finish` jobnál
+pont ez a kapu szúrta ki utólag, hogy a spec által megnevezett három output a szülő
+job könyvtárába került. Emberi review + merge átengedte.
+
+### 4. Review artifact — `jobs/$JOB_ID/review.md`
+
+**Ez kötelező, és nem az agent írja — te írod.**
+
+A factory minden rétege bizonyítékot termel (Vault-aláírt commit, claim-evidence tábla,
+`deadcode` output, headSha). Egy kivétel volt: az orchestrátori review, ami eddig egy
+chat-üzenet volt — aláíratlan, nem reprodukálható, a session végén elveszett.
+Ez a fájl zárja be azt a rést.
+
+Sablon:
+
+```markdown
+# review — <job-id>
+
+- Reviewer: orchestrátor (<modell>)
+- Dátum: <ISO 8601>
+- Feature branch: feature/<job-id>
+- Review-zott commit: <sha>
+
+## Gépi kapuk
+
+| Kapu | Eredmény | Megjegyzés |
+|---|---|---|
+| `tools/validate-spec.sh` | GO / NO-GO | |
+| `tools/validate-output.sh` | GO / NO-GO | |
+| CI (ha van) | zöld / n/a | headSha: `<sha>` — egyeztetve a tesztelt committal |
+
+## Amit ténylegesen ellenőriztem
+
+Konkrét predikátumok, nem összefoglaló. Minden sor mellé a parancs vagy a fájl:sor.
+
+| Állítás az outputban | Hogyan ellenőriztem | Eredmény |
+|---|---|---|
+| pl. „X implemented" | `grep -rn "X" --include="*.go" \| grep -v _test.go` | 3 találat, prod hívó: `core/a.go:42` |
+| pl. „112/112 teszt zöld" | nem ellenőriztem — agent állítása | **nem igazolt** |
+
+## Amit NEM ellenőriztem
+
+Sorold fel. A csend nem azt jelenti, hogy rendben van.
+
+## Döntés
+
+MERGE / VISSZAKÜLDVE — indoklás egy mondatban.
+```
+
+**Szabály:** ha egy állítás mellé nem tudsz verifikációs módszert írni, az a
+„nem igazolt" sorba megy — nem hagyható ki. A cél nem a szép review, hanem az,
+hogy a következő session (vagy a felhasználó) meg tudja nézni, mit ellenőriztél
+ténylegesen, és mit vettél át az agent summaryjából.
+
+### 5. running → done (live meta.yaml)
 
 ```python
 status: "done"
 timestamps.completed: "<ISO 8601 now>"
 ```
 
-### 4. Commit és push
+A `usage:` blokkot (költség, turns, tokenek) a `run-job.sh` már kitöltötte — ne írd át kézzel.
+
+### 6. Commit és push
 
 ```bash
 bash tools/update-index.sh
 git add jobs/$JOB_ID/ jobs/<sub-job-id>/ jobs/index.yaml
-git commit -m "job: $JOB_ID — done + output"
+git commit -m "job: $JOB_ID — done + output + review"
 git push
 ```
 
-### 5. Workspace takarítás (opcionális)
+Az `update-index.sh` az `index.yaml`-ba beteszi a job modelljét, költségét és turn-számát,
+plus egy `totals:` blokkot. Ez teszi mérhetővé a modell-rétegzés hatását.
+
+### 7. Workspace takarítás (opcionális)
 
 ```bash
 rm -rf jobs/$JOB_ID/workspace
@@ -59,3 +129,6 @@ A workspace gitignored, de helyet foglal. Törölhető ha az output már a live 
 - ❌ A workspace klón `output/`-ját nézni a live workdir `output/` helyett ("jó az anyag" ellenőrzés nélkül)
 - ❌ Sub-job speceket nem másolni át — akkor nem futtathatók `run-job.sh`-val
 - ❌ done commit előtt nem futtatni `update-index.sh`-t
+- ❌ `validate-output.sh` NO-GO mellett lezárni a jobot
+- ❌ `review.md` nélkül mergelni — akkor a review nem hagy nyomot, és nem ellenőrizhető utólag
+- ❌ A `review.md`-be az agent summaryját átmásolni. Az a review tárgya, nem az eredménye.

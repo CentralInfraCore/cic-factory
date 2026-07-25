@@ -4,6 +4,28 @@ Felülvizsgált AI párbeszéd dokumentációja (orchestrátor session, 2026-06-
 Előzmények: `docs/dev-environment-assessment.md` (1. rész),
 `docs/kb-synthesis.md` (2. rész).
 
+---
+
+## Megvalósítási státusz (2026-07-25)
+
+| Tétel | Státusz | Hol |
+|---|---|---|
+| **P1** modell-rétegzés | **implemented** | `run-job.sh:58,148` (`--model`) + `validate-spec.sh` K10 (üres model = NO-GO) + `settings.template.json` `"model": "sonnet"` |
+| **P2** `kb_focus` injektálás | **implemented** | `run-job.sh` — kötelező első olvasási lista a promptban; inline és block YAML lista is parse-olódik |
+| **P3** költség-guard + mérés | **implemented** | `run-job.sh` — `--max-turns` (level-alapú default) + `--output-format json` → `meta.yaml` `usage:` + `index.yaml` `totals:` |
+| **P4** KB chunk-minőség | **nem kezdve** | külön repo (`cic-mcp-private`), külön job |
+| **P5** `theads/` sablon | **implemented** | `theads/README.md` |
+| **P6** output-validátor | **implemented** | `tools/validate-output.sh` (O1–O5), bekötve `/job-close` 3. és `/job-review` 0. lépésébe |
+
+Az eredeti P1 megállapítás („`run-job.sh:106` — `--model` flag nélkül") azóta részben
+elavult: a flag bekerült, de **semmi nem kényszerítette ki**, hogy a `meta.yaml`-ban ki
+legyen töltve — üres értéknél a job csendben a defaulton futott. Ezt a K10 zárja le.
+
+Ezen felül, a tervben nem szereplő tétel: **`jobs/<id>/review.md`** — az orchestrátori
+review artifactja. Ez volt az egyetlen aláíratlan, nem reprodukálható láncszem a
+bizalmi láncban (minden más réteg — Vault-aláírt commit, claim-evidence, `deadcode`
+output, headSha — bizonyítékot termel). Sablon: `/job-close` 4. pont.
+
 Cél: a drága, átfogó-kép modell (Fable/Opus) ritka session-jei mellett a
 napi munka olcsó modellekkel fusson — hatékonyság-vesztés nélkül.
 Minden javaslat tényekre épül (file:line evidenciával).
