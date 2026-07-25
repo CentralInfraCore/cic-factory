@@ -41,6 +41,12 @@ A Vault-aláírt commit maga az igazolás (`commit-msg` hook, `cic-my-sign-key`)
 Az agent a klónból commitol és pushol a feature branch-re — review artifact, nem véglegesítés.
 Push `main`-re kizárólag az orchestrátor joga.
 
+**Az orchestrátori review is bizonyítékot termel.** Minden réteg artifactot hagy
+(aláírt commit, claim-evidence tábla, `deadcode` output, headSha) — kivéve régen a
+review-t, ami egy chat-üzenet volt: aláíratlan, nem reprodukálható, a session végén
+elveszett. Ezért kötelező a `jobs/<job-id>/review.md` (sablon: `/job-close` 4. pont).
+Amihez nem tudsz verifikációs módszert írni, az a „nem igazolt" sorba megy.
+
 ---
 
 ## Job struktúra
@@ -51,7 +57,8 @@ jobs/
   .schema/meta.yaml           ← kötelező mezők sémája
   <job-id>/
     input.md                  ← agent prompt (magyarul, git-tracked)
-    meta.yaml                 ← lifecycle: pending | running | done | error (git-tracked)
+    meta.yaml                 ← lifecycle + usage (költség/turns/tokenek, git-tracked)
+    review.md                 ← orchestrátori review artifact (kötelező merge előtt)
     ref/                      ← referencia anyagok (opcionális, git-tracked)
     workspace/                ← gitignored; agent klónjai élnek itt
       cic-factory/            ← git clone + feature/<job-id> branch
@@ -98,9 +105,22 @@ timestamps:
 
 | Parancs | Mit csinál |
 |---|---|
-| `./tools/run-job.sh <job-id> [agent-id]` | Teljes lifecycle: klón, running→done, commit, push |
-| `./tools/update-index.sh` | `jobs/index.yaml` újragenerálása |
+| `./tools/run-job.sh <job-id> [agent-id]` | Teljes lifecycle: klón, running→done, commit, push. Injektálja a `kb_focus`-t, `--max-turns` guardot ad, és JSON-ból kiírja a költséget a `meta.yaml`-ba |
+| `./tools/validate-spec.sh <job-id>` | **Gépi kapu indítás előtt** (K1–K11). NO-GO → ne indítsd az agentet |
+| `./tools/validate-output.sh <job-id>` | **Gépi kapu merge előtt** (O1–O5). NO-GO → ne zárd le a jobot |
+| `./tools/update-index.sh` | `jobs/index.yaml` újragenerálása (modell, költség, turns, `totals:`) |
 | `~/.claude-personal/agents/new-agent.sh <név>` | Új izolált agent config létrehozása |
+
+### A két gépi kapu
+
+```
+spec  →  validate-spec.sh   →  agent fut  →  validate-output.sh  →  emberi review  →  merge
+         (K1–K11)                             (O1–O5)                (review.md)
+```
+
+Az elv: **amit gép el tud dönteni, azt döntse el a gép.** A drága figyelem (te / erős
+modell) a tartalomra menjen, ne a formára. A `validate-output.sh` első éles futása pont
+egy olyan hibát talált, amit emberi review és merge átengedett.
 
 ---
 

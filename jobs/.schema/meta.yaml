@@ -11,13 +11,20 @@ target:
   path: ""                  # e.g. "core/nexus/crypto"; required at domain level
 
 # KB context
-kb_focus: []                # focus_pack node-ids or tags, e.g. ["crypto", "vault"]
+kb_focus: []                # chunk-ids (c…) or node-ids (n…), e.g. ["c781", "c912"].
+                            # run-job.sh injects these into the prompt as a mandatory
+                            # first-read list — not a hint. Inline or block list both parse.
 promptmap_ref: ""           # key in ai/PROMPTMAP.yaml; "" if not applicable
 
 # Agent
 agent:
   config_dir: ""            # CLAUDE_CONFIG_DIR value, e.g. "~/.claude-personal/agents/agent-01"
-  model: ""                 # e.g. "claude-sonnet-4-6"
+  model: ""                 # REQUIRED — validate-spec.sh K10 rejects an empty value.
+                            # Current ids: claude-opus-5 | claude-sonnet-5 | claude-haiku-4-5
+                            # (claude-sonnet-4-6 and claude-opus-4-8 are still active.)
+                            # Claude Code aliases also work: opus | sonnet | haiku
+  max_turns: ""             # optional hard runaway guard. Empty → level-based default:
+                            # domain 40, repo 60, orchestrator 80.
   session_id: ""            # optional; Claude Code session UUID, set by run-job.sh after each run.
                              # Used by `run-job.sh <job-id> <agent-id> --resume` to continue
                              # exactly where a session-limit/error cutoff happened.
@@ -31,6 +38,16 @@ workplace:
 # Status
 status: "pending"           # pending | running | done | error
 error_message: ""           # only when status: error
+
+# Usage — written by run-job.sh from `claude --output-format json`.
+# Do not fill in by hand; it is overwritten on every run.
+usage:
+  cost_usd: ""
+  turns: ""
+  max_turns: ""
+  input_tokens: ""
+  output_tokens: ""
+  duration_ms: ""
 
 # Timestamps (ISO 8601)
 timestamps:
