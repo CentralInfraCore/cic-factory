@@ -187,6 +187,61 @@ ha az is azonos, az megerősíti, hogy a relay saját build-konstansaiból szár
 
 ---
 
+## A döntő mérés — 2026-07-25, valódi `source_assertion`-nel
+
+**Kérdés:** követi-e a `build_hash` a fordított forrás tartalmát?
+**Válasz: IGEN a tartalmat, NEM a provenance-t.**
+
+Aláírt `source_assertion`-t adtunk be (a `cic.source.assert` teljes útja lefutott,
+cert-lánc ellenőrizve), majd ugyanazt megismételtük **tartalmilag más** speckel:
+
+| | `build_hash` | `verification_root` | `source_digest` |
+|---|---|---|---|
+| **A** `{alma:1, korte:"ketto"}` | `sha256:c085049f…3f4c` | `85af5a1f…d8cb` | **`unknown`** |
+| **B** `{banan:999, szilva:"harom", extra:true}` | `sha256:04a32b37…b310` | `cb8922e4…d39d` | **`unknown`** |
+
+- ✅ A `build_hash` **és** a `verification_root` is **eltér** → a lánc **tartalom-kötött**.
+- ❌ A `source_digest` **mindkét futásnál `unknown`** → a lánc **nincs forrás-revízióhoz horgonyozva**.
+
+### Amit ez pontosan jelent
+
+A relay `build_hash`-e **azt attesztálja, *amit* lefordított** — nem azt, hogy
+*honnan* jött. A `source_digest` mező, aminek épp az volna a dolga, hogy a láncot
+egy forrás-revízióhoz kösse, a relay **saját** build-konstansaiból töltődik
+(`main.go:333-337`); nálunk `unknown`, mert `-buildvcs=false`-szal fordítottunk.
+
+CI-célra ez a különbség dönt:
+
+| Kérdés | Válaszol rá a mai `build_hash`? |
+|---|---|
+| „Ugyanaz a tartalom lett-e lefordítva?" | ✅ igen |
+| „A repo X commit Y állapotából jött-e?" | ❌ nem |
+
+Az audit **#5-ös rése tehát megáll, de pontosítva**: nem az a baj, hogy a
+`build_hash` nem követ semmit — hanem hogy a **forrás-provenance** hiányzik
+belőle. Ez pontosan az a rés, amit az #1 (nincs commit mező) és a #4
+(a `source_ref`/`source_tree_digest` elveszik) ír le.
+
+Súlyosbítja a korábban talált **warning-rés**: a `VerifyProofArtifact` csak üres
+`source_digest`-re figyelmeztetne, az `"unknown"` sentinel átcsúszik — tehát az
+ellenőrzés **nem is jelzi**, hogy a lánc nincs forráshoz kötve.
+
+### A fixture-recept, ami ezt lehetővé tette
+
+A `cic.source.assert` **csak a cert láncát** ellenőrzi — nem azt, hogy az
+artifactot azzal a certtel írták-e alá (`schemacompile.go:118-131`). Ezért
+elegendő egy érvényes, trust store-hoz kötött cert; nem kell hozzá a CA privát
+kulcsa. A `CIC-Relay/output/test_dev_cert.pem` (kiállító: *Embedded Test Root CA*,
+ami benne van a betöltött trust store-ban) megfelel.
+
+Kötelező `metadata` mezők (`schemacompile.go:86-98`): `name`, `version`,
+`checksum`, `sign`, `createdBy.certificate`. A `sign` csak **nem-üres** kell
+legyen — tartalmilag nincs ellenőrizve. A `checksum` a spec kanonikus JSON-jának
+sha256-ja; ha rosszat adsz meg, a relay hibaüzenete **megmondja a helyeset**
+(`computed="…"`), tehát egy körrel kideríthető.
+
+---
+
 ## Második futás — 2026-07-25, `/v1/schema/compile` úton
 
 **Eredmény: mind a hat teszt PASS. `build_hash` előállt és ellenőrizhető.**
