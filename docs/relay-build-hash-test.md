@@ -187,9 +187,81 @@ ha az is azonos, az megerősíti, hogy a relay saját build-konstansaiból szár
 
 ---
 
-## Első éles futás — 2026-07-25
+## Második futás — 2026-07-25, `/v1/schema/compile` úton
 
-**Eredmény: T0 PASS, T1–T6 nem futott le. `build_hash`-t NEM sikerült előállítani.**
+**Eredmény: mind a hat teszt PASS. `build_hash` előállt és ellenőrizhető.**
+
+A teljes `/v1/schemas/pipeline` úton nem jutottunk át (lásd lentebb), ezért a
+**rövidebb `/v1/schema/compile`** utat használtuk. Az ugyanazt a záró láncot
+futtatja — `assert → build → sign` (`bootstrap.go:122-126`) —, csak a
+clone/test/validate/release előlépések nélkül. Ez az út `source_assertion`
+nélkül **stub módban** fut (`schemacompile.go:46`), így nem kell aláírt artifact.
+
+| Teszt | Eredmény | Bizonyíték |
+|---|---|---|
+| **T0** preflight | ✅ PASS | `/healthz`, `/readyz` → 200 |
+| **T1** `build_hash` előáll | ✅ PASS | `sha256:7b76d3d8…dd91`, `verification_root=dd5a1a85…6113`, `cic_sign=vault:v1:MEQCIC4k…`, trace 3 lépéssel |
+| **T2** verify(érintetlen) | ✅ PASS | `valid=true`, nincs error |
+| **T3** elrontott `chain_hash` | ✅ PASS | `valid=false` — `chain_hash mismatch: declared=0a4faf… recomputed=8a4faf…` |
+| **T4** elrontott `step.output_hash` | ✅ PASS | `valid=false` — a **újraszámolt** lánc eltér: `recomputed=fcb889ca…` |
+| **T5** más bemenet → más hash | ✅ PASS | `demo/v1.0.0` → `…dd91`, `teljesen-mas-sema/v9.9.9` → `…5617`; a `verification_root` is eltér |
+| **T6** determinizmus | ✅ PASS | ugyanaz a bemenet kétszer → bitre azonos `build_hash` |
+
+**T4 a legfontosabb pozitív eredmény:** egyetlen lépés `output_hash`-ének
+elrontása más `chain_hash`-t eredményez. A lépések tehát **ténylegesen bele
+vannak kötve** a láncba — ez a Merkle-jelleg működik, nem csak deklarált.
+
+### Hogyan árnyalja ez az audit #5-ös megállapítását
+
+Az audit azt állította, hogy a `build_hash`/`verification_root` a relay **saját**
+build-adataira épül. A mérés ezt **pontosítja, nem cáfolja**:
+
+- A `build_hash` és a `verification_root` **változik a bemenettel** (T5) — tehát
+  nem *kizárólag* a relay konstansai határozzák meg.
+- Ugyanakkor a ProofTrace `source_digest` mezője a futásainkban végig
+  **`"unknown"`** volt. Ez pontosan a `main.go:333-337` fallback-je: a relay a
+  *saját* `SourceTreeHash`/`CommitHash` értékét tenné ide, ami nálunk üres, mert
+  `-buildvcs=false`-szal fordítottunk.
+
+Vagyis a manifest **kever**: a tartalmi rész a bemeneti artifactból jön, a
+**forrás-provenance rész viszont a relay sajátja**. Az audit mechanizmus-leírása
+helytálló; a megfogalmazása („a build_hash a relay saját adataira mutat")
+túl tág volt.
+
+**Amit ez a futás továbbra sem dönt el:** hogy a `build_hash` követi-e egy
+**külső repo** tartalmát. Ezen az úton nincs repo egyáltalán. A CI-szempontból
+lényeges kérdés csak a teljes pipeline-on válaszolható meg.
+
+### Új lelet — a `source_digest` warning nem sül el
+
+A `VerifyProofArtifact` figyelmeztet, ha a `source_digest` **üres**
+(`proof_verify.go`: *„chain is not anchored to a source revision"*). De a mi
+futásainkban az érték `"unknown"` volt — ami nem üres, tehát **a figyelmeztetés
+nem sült el**, `warnings=None` jött vissza, miközben a lánc valóban nincs
+forráshoz horgonyozva.
+
+Ez ellenőrzési rés: a `"unknown"` sentinel átcsúszik a nem-üres teszten.
+
+### A harness saját hibája, javítva
+
+A `/v1/proof/verify` **`{"proof_artifact": {…}}` burkolót vár**
+(`proof_verify_handler.go:54-59`), nem a csupasz trace-t. Az első verzióm a
+trace-t küldte közvetlenül, és `400 missing_fields`-et kapott. Javítva; a T3/T4
+tamper-lépések is a burkolón belül módosítanak.
+
+### Vault — melyik kulcs
+
+A `~/.vault-token` (`root`) **érvénytelen** ehhez a Vaulthoz. A működő token:
+`$XDG_RUNTIME_DIR/vault/sign-token`, a Vault pedig **`https://127.0.0.1:18200`**
+TLS-sel (`server.crt` ugyanott), nem a 8200-on. A token a `sign-policy`-val
+**`cic-my-sign-key`-re** tud aláírni; a relay alapértelmezett
+`cic-dev-sign-key`-ére **403**. Ezért kell `CIC_VAULT_KEY=cic-my-sign-key`.
+
+---
+
+## Első futás — 2026-07-25, teljes pipeline úton
+
+**Eredmény: T0 PASS, T1–T6 nem futott le ezen az úton. `build_hash` nem állt elő.**
 
 Ameddig eljutottunk, lépésről lépésre:
 

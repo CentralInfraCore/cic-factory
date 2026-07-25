@@ -101,7 +101,9 @@ hdr "T2 — /v1/proof/verify accepts the unmodified artifact"
 if [[ ! -s "$OUTDIR/run_a.json" ]]; then
     skip "T2: no pipeline result from T1"
 else
-    jq '.proof_trace' "$OUTDIR/run_a.json" > "$OUTDIR/trace_a.json"
+    # NOTE: /v1/proof/verify expects {"proof_artifact": {...}}, not the bare trace.
+    # Sending the bare trace returns 400 missing_fields — verified 2026-07-25.
+    jq '{proof_artifact: .proof_trace}' "$OUTDIR/run_a.json" > "$OUTDIR/trace_a.json"
     code=$(curl -s -o "$OUTDIR/verify_a.json" -w '%{http_code}' --max-time 60 \
         -X POST -H 'Content-Type: application/json' \
         -d @"$OUTDIR/trace_a.json" "$RELAY_URL/v1/proof/verify")
@@ -118,9 +120,8 @@ hdr "T3 — verify REJECTS a tampered chain_hash"
 if [[ ! -s "$OUTDIR/trace_a.json" ]]; then
     skip "T3: no trace from T2"
 else
-    jq '.chain_hash = (.chain_hash | sub("^.";"0"))' "$OUTDIR/trace_a.json" > "$OUTDIR/trace_t3.json" 2>/dev/null \
-      || jq '.chain_hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"' \
-           "$OUTDIR/trace_a.json" > "$OUTDIR/trace_t3.json"
+    jq '.proof_artifact.chain_hash = (.proof_artifact.chain_hash | sub("^.";"0"))' \
+       "$OUTDIR/trace_a.json" > "$OUTDIR/trace_t3.json"
     curl -s -o "$OUTDIR/verify_t3.json" --max-time 60 \
         -X POST -H 'Content-Type: application/json' \
         -d @"$OUTDIR/trace_t3.json" "$RELAY_URL/v1/proof/verify" >/dev/null
@@ -137,11 +138,12 @@ hdr "T4 — verify REJECTS a tampered step output_hash"
 if [[ ! -s "$OUTDIR/trace_a.json" ]]; then
     skip "T4: no trace from T2"
 else
-    nsteps=$(jq -r '.steps // [] | length' "$OUTDIR/trace_a.json")
+    nsteps=$(jq -r '.proof_artifact.steps // [] | length' "$OUTDIR/trace_a.json")
     if [[ "${nsteps:-0}" -lt 1 ]]; then
         skip "T4: trace has no steps to tamper with"
     else
-        jq '.steps[0].output_hash = "sha256:deadbeef"' "$OUTDIR/trace_a.json" > "$OUTDIR/trace_t4.json"
+        jq '.proof_artifact.steps[0].output_hash = "sha256:deadbeef"' \
+           "$OUTDIR/trace_a.json" > "$OUTDIR/trace_t4.json"
         curl -s -o "$OUTDIR/verify_t4.json" --max-time 60 \
             -X POST -H 'Content-Type: application/json' \
             -d @"$OUTDIR/trace_t4.json" "$RELAY_URL/v1/proof/verify" >/dev/null
