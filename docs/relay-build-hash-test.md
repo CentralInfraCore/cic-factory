@@ -187,6 +187,60 @@ ha az is azonos, az megerősíti, hogy a relay saját build-konstansaiból szár
 
 ---
 
+## PERDÖNTŐ — a teljes pipeline valódi repóval, 2026-07-25
+
+**A teljes 7 lépéses `/v1/schemas/pipeline` végigment** egy minimál fixture-repón:
+`start(clone) → test → validate → release → assert → build → sign`, HTTP 200.
+
+Három futás, ugyanaz a repo, három **különböző commit**:
+
+| Futás | Mi változott | `build_hash` | `source_digest` |
+|---|---|---|---|
+| **A** | alap | `sha256:0636abb1…7e7b` | `unknown` |
+| **C** | **csak a `README.md`** — az artifact változatlan | `sha256:0636abb1…7e7b` | `unknown` |
+| **B** | az artifact tartalma | `sha256:f7030f11…5607` | `unknown` |
+
+```
+  A == C ?  True   <- két külön commit MEGKÜLÖNBÖZTETHETETLEN
+  A != B ?  True   <- a tartalmat viszont követi
+```
+
+### Amit ez kimond
+
+**Két különböző repo-állapot bitre azonos `build_hash`-t kap**, ha a lefordított
+artifact nem változott. A `source_digest` mind a három futásban `unknown` — pedig
+a relay **valóban klónozta** a repót (a clone lépés lefutott, a `make` célok
+lefutottak a builder konténerben).
+
+CI-attesztációra ez diszkvalifikáló: **nem bizonyítható vele, hogy melyik
+commitból készült a build.** Aki a `build_hash`-t elfogadja bizonyítéknak, az a
+tartalomra kap garanciát, a provenance-ra nem.
+
+Ez a mérés a `#1` (nincs commit mező), `#4` (a provenance elveszik a láncon) és
+`#5` (a `source_digest` a relay sajátja) réseket **egyszerre és élesben** igazolja,
+nem statikus következtetésből.
+
+### A fixture-recept (reprodukálható)
+
+```
+fixture-repo/
+  Makefile            # test / validate / release — mind csak `echo`
+  source/demo.yaml    # a signed assertion (lásd lentebb)
+  README.md           # a C futásnál ezt módosítottuk
+```
+
+A `source/demo.yaml`-hez nem kell CA privát kulcs: a `cic.source.assert` csak a
+cert **láncát** ellenőrzi (`schemacompile.go:118-131`), így a repóban lévő
+`output/test_dev_cert.pem` (kiállító: *Embedded Test Root CA*, benne van a
+betöltött trust store-ban) megfelel. A `metadata.sign` bármilyen nem-üres string
+lehet. A `checksum`-ot a relay hibaüzenete megmondja (`computed="…"`).
+
+Indítás: a relay konténerbe a fixture-repót `-v <fx>:/src/fixture:ro`, a builder
+konténer `-w /build/<build_dir>` a klón helyére mutatva, majd
+`repo_url=file:///src/fixture`.
+
+---
+
 ## A döntő mérés — 2026-07-25, valódi `source_assertion`-nel
 
 **Kérdés:** követi-e a `build_hash` a fordított forrás tartalmát?

@@ -50,10 +50,23 @@ Ezt fontos előrebocsátani: a lánc nagy része kész, és jól működik.
 | Kérdés | Válaszol rá ma? |
 |---|---|
 | „Ugyanaz a tartalom lett lefordítva?" | ✅ igen |
-| „A repo X commit Y állapotából jött?" | ❌ nem |
+| „A repo X commit Y állapotából jött?" | ❌ **nem** |
 
-Mérési bizonyíték: két különböző tartalommal futtatva a `build_hash` **eltért**,
-de a `proof_trace.source_digest` **mindkétszer `"unknown"`** volt.
+**Mérve a teljes 7 lépéses pipeline-on, valódi klónozott repóval** (nem statikus
+következtetés). Ugyanaz a repo, három különböző commit:
+
+| Futás | Mi változott | `build_hash` | `source_digest` |
+|---|---|---|---|
+| **A** | alap | `sha256:0636abb1…7e7b` | `unknown` |
+| **C** | **csak a `README.md`**, az artifact nem | `sha256:0636abb1…7e7b` | `unknown` |
+| **B** | az artifact tartalma | `sha256:f7030f11…5607` | `unknown` |
+
+**A ≡ C: két különböző commit bitre azonos `build_hash`-t kap.**
+
+CI-attesztációra ez diszkvalifikáló: a `build_hash`-sel **nem bizonyítható,
+melyik commitból készült a build**. A `source_digest` mind a három futásban
+`unknown`, pedig a relay ténylegesen klónozott és ténylegesen lefuttatta a
+`make` célokat a builder konténerben.
 
 ---
 
@@ -163,10 +176,11 @@ használhatóvá teszi a láncot CI-attesztációra.
 
 ## 7. Amit nem állítunk
 
-- Nem mértük a **teljes** `/v1/schemas/pipeline` utat végig: a CIC-Schemas saját
-  `make test`-je elhasalt a mi környezetünkben (`mk/infra.mk:79`). A méréseink a
-  `/v1/schema/compile` úton készültek, ami ugyanazt a záró láncot
-  (`assert → build → sign`) futtatja.
+- A **teljes** `/v1/schemas/pipeline` utat egy minimál fixture-repón végigmértük
+  (7 lépés, HTTP 200) — a CIC-Schemas saját `make test`-jén viszont nem jutottunk
+  át (`mk/infra.mk:79` rosszul paraméterezett `docker` hívást állít elő a mi
+  környezetünkben). Tehát a lánc működését igazoltuk, egy valódi termelési
+  séma-repó teljes buildjét nem.
 - Nem vizsgáltuk a cross-környezeti reprodukálhatóságot. A CIC-ben erre van
   rögzített döntés (aláírás-alapú bizalom a `buildHash`-en), és ez a javaslat
   **nem** írja felül.
