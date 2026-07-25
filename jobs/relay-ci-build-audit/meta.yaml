@@ -1,0 +1,28 @@
+schema_version: "1.0"
+job_id: "relay-ci-build-audit"
+parent_job_id: ""
+level: "repo"
+target:
+  repo: "CIC-Relay"
+  path: ""
+kb_focus:
+  - "c781"
+  - "c912"
+  - "c927"
+  - "c365"
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-5"
+  max_turns: 60
+  session_id: ""
+workplace:
+  repos:
+    - "cic-factory"
+  branch: "feature/relay-ci-build-audit"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-07-25T00:00:00Z"
+  started: ""
+  completed: ""
