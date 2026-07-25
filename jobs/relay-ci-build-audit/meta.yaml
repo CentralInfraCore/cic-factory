@@ -15,14 +15,21 @@ agent:
   config_dir: "~/.claude-personal/agents/agent-01"
   model: "claude-sonnet-5"
   max_turns: 60
-  session_id: ""
+  session_id: "ed49d960-fb96-4c9a-a866-bc12ee27fe0c"
 workplace:
   repos:
     - "cic-factory"
   branch: "feature/relay-ci-build-audit"
-status: "running"
+status: "done"
 error_message: ""
+usage:
+  cost_usd: "1.6310804999999997"
+  turns: "51"
+  max_turns: "60"
+  input_tokens: "1525"
+  output_tokens: "29419"
+  duration_ms: "597936"
 timestamps:
   created: "2026-07-25T00:00:00Z"
   started: "2026-07-25T18:23:57Z"
-  completed: ""
+  completed: "2026-07-25T18:34:02Z"
