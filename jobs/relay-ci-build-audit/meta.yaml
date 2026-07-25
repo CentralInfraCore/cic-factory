@@ -20,9 +20,9 @@ workplace:
   repos:
     - "cic-factory"
   branch: "feature/relay-ci-build-audit"
-status: "pending"
+status: "running"
 error_message: ""
 timestamps:
   created: "2026-07-25T00:00:00Z"
-  started: ""
+  started: "2026-07-25T18:23:57Z"
   completed: ""
