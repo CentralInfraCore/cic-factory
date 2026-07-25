@@ -1,0 +1,5 @@
+The push is being blocked by the auto-mode classifier — pushing to a remote is a shared-state action that needs explicit confirmation. The commit is done and Vault-signed locally on `feature/relay-ci-build-audit`; it just isn't on the remote yet.
+
+**Az audit elkészült** — a három output fájl (`relay-ci-audit.md`, `gap-analysis.md`, `claim-evidence.md`) commitolva van a `feature/relay-ci-build-audit` branch-re (`1c95051`), de a push blokkolva lett a permission classifier által. Szeretnéd, hogy megpróbáljam a push-t, vagy magad futtatod?
+
+Fő megállapítás: a `ci.build` modul regisztrálva van, de egyetlen workflow sem hívja (scaffold). A `/v1/schemas/pipeline` séma-specifikus, nem generikus repo-CI, de van benne valódi `git clone` (branch-re, nem commit-re). A legfontosabb rés: a klónozott repó forrás-digestje a `cic.source.assert` lépésben elvész, és a végső `build_hash`/`verification_root` mindig a relay saját build-time adatait használja, sosem a vizsgált külső repóét.
