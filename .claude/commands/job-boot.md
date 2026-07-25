@@ -5,6 +5,30 @@ Ezt NEM delegálod agentnek — te futtatod le.
 
 ## Kötelező lépések
 
+### 0. Delta — mi változott a legutóbbi session óta
+
+**Ezt futtasd először.** Fontosabb, mint bármelyik alábbi lépés: a „mi volt igaz
+48 napja" sokkal kevesebbet ér, mint a „mi változott azóta".
+
+```bash
+git -C . log --oneline -15
+git -C . status --short
+tail -20 jobs/index.yaml          # totals: + a legutóbbi jobok állapota
+gh pr list --state open           # nyitott review-k
+```
+
+Ez adja meg, hol tartunk. A `jobs/index.yaml` **auto-generált** (`tools/update-index.sh`) —
+ez a job-állapot kanonikus forrása. Ne memóriából idézd fel, melyik job készült el.
+
+### 0/b. Memória: index most, fájl később
+
+Olvasd el a `MEMORY.md` indexet — **de ne olvasd el az összes memóriafájlt előre.**
+Egy memóriafájlt akkor nyiss meg, amikor a feladat kijelöli, hogy releváns.
+
+A memóriák dátumozottak és elavulhatnak; a repó és a KB az élő forrás. Ha egy
+memória fájlt, függvényt vagy flaget nevez meg, ellenőrizd hogy még létezik-e,
+mielőtt tényként hivatkozol rá.
+
 ### 1. KB státusz
 `kb_status` — elérhető és friss?
 
@@ -18,6 +42,14 @@ get_chunk("c912")  — relay pozicionálás: deklarált gráfot hajt végre, nem
 get_chunk("c927")  — séma belső viselkedés: StateRequirement/PluginRef/NextHops
 get_chunk("c365")  — Cabinet interface: schema/module/workflow registry
 ```
+
+Ez a négy chunk együtt ~20 sor egy 2875 node-os KB-ból. Szándékosan ennyi:
+nem áttekintés, hanem **horgony** egy konkrét múltbeli tévút ellen (lásd lentebb).
+A `c365` önmagában két sor — a `c781`+`c912`+`c927` hármas hordozza a tartalmat.
+
+Ha egy jövőbeli session azt találja, hogy ez a négy már nem a legjobb horgony
+erre a célra, az a szabály felülvizsgálata — nem a kihagyása. A költség/haszon
+arányt is figyelni kell, nem csak végrehajtani.
 
 ### 4. Amit ebből tudni kell mielőtt jobot írsz
 

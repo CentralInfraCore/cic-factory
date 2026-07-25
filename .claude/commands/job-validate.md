@@ -121,6 +121,32 @@ FAIL ha: az output csak státuszlistát kér — reachability artifact nélkül.
 
 ---
 
+### K10 — `agent.model` kitöltve (kritikus, gépi)
+**Kérdés:** A `meta.yaml` `agent.model` mezője nem üres?
+
+Ezt a `validate-spec.sh` gépileg ellenőrzi — nem Claude-döntés.
+
+**Miért kritikus:** üres `model` esetén a `run-job.sh` nem ad `--model` flaget, és a job
+csendben a (drága) default modellen fut. Ez néma hiba: sehol nem látszik, hogy megtörtént,
+és a modell-rétegzés — az egész költség-optimalizálás alapja — hatástalan marad.
+
+Érvényes értékek: `claude-opus-5` | `claude-sonnet-5` | `claude-haiku-4-5`
+(`claude-sonnet-4-6` és `claude-opus-4-8` is aktív). Claude Code alias is jó: `opus` | `sonnet` | `haiku`.
+
+A validátor **szándékosan nem** ellenőriz konkrét modellnév-listát — az elavulna.
+Csak azt, hogy ne legyen üres.
+
+---
+
+### K11 — `kb_focus` kitöltve (figyelmeztetés, nem blokkol)
+**Kérdés:** A `meta.yaml` `kb_focus` listája tartalmaz-e kiindulási chunk/node id-t?
+
+A `run-job.sh` a `kb_focus`-t **kötelező első olvasási listaként** injektálja a promptba.
+Üresen hagyva az agent magától keres a KB-ban — a felfedezés a gyenge modell gyenge pontja,
+a végrehajtás az erős. Ha tudsz kiindulási pontot (pl. `c781`), írd be.
+
+---
+
 ### K8 — Claim-evidence tábla az outputban (kritikus)
 **Kérdés:** Előírja-e a spec hogy az agent output tartalmazzon claim-evidence táblázatot?
 
@@ -156,10 +182,12 @@ FAIL ha: az output csak narratív összefoglalót vagy státuszlistát kér — 
 | K7 — Call-chain grep + _test.go kizárás | PASS/N/A/FAIL | "...pontos idézet..." (N. sor) |
 | K8 — Claim-evidence tábla | PASS/FAIL | "...pontos idézet..." (N. sor) |
 | K9 — Reachability artifact | PASS/N/A/FAIL | "...pontos idézet..." (N. sor) |
+| K10 — agent.model kitöltve | PASS/FAIL | meta.yaml agent.model értéke |
+| K11 — kb_focus kitöltve | PASS/WARN | meta.yaml kb_focus értéke |
 
 ## Összesítés: GO / NO-GO
 
-[Ha NO-GO: pontosan mi hiányzik, mit kell javítani az input.md-ben]
+[Ha NO-GO: pontosan mi hiányzik, mit kell javítani az input.md-ben / meta.yaml-ben]
 ```
 
 **Szabály:** Ha egy PASS mellé nem tudsz idézetet írni, az FAIL.
