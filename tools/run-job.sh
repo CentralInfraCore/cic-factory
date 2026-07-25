@@ -237,8 +237,9 @@ EXIT_CODE=$?
 set -e
 
 # --- JSON kibontás: result → agent-output.md, usage → shell változók ---
-RUN_SESSION_ID=""; RUN_COST=""; RUN_TURNS=""
-RUN_IN_TOKENS=""; RUN_OUT_TOKENS=""; RUN_DURATION_MS=""; RUN_JSON_OK="0"
+RUN_SESSION_ID=""; RUN_COST=""; RUN_TURNS=""; RUN_STOP_REASON=""
+RUN_IN_TOKENS=""; RUN_OUT_TOKENS=""; RUN_CACHE_READ=""; RUN_CACHE_CREATE=""
+RUN_TOTAL_IN=""; RUN_MODELS=""; RUN_DURATION_MS=""; RUN_JSON_OK="0"
 eval "$(python3 - "$RAW_JSON" "$OUTPUT_FILE" <<'PYEOF'
 import sys, json, shlex
 
@@ -265,13 +266,42 @@ except Exception:
 with open(out_path, "w", encoding="utf-8") as f:
     f.write(str(data.get("result", "")))
 
-usage = data.get("usage") or {}
+# Token accounting.
+#
+# `usage` covers the MAIN model only, and its `input_tokens` is the UNCACHED
+# input — on a cached run that is a tiny number (measured: 2, while the real
+# input was 15912 cache_read + 8634 cache_creation). Reporting it alone is
+# misleading, which is exactly the bug this block fixes.
+#
+# `modelUsage` is the per-model breakdown and includes auxiliary models the run
+# spun up. Verified on a probe run: sum(modelUsage[*].costUSD) == total_cost_usd
+# exactly, so it is the correct aggregate. Fall back to `usage` if absent.
+model_usage = data.get("modelUsage") or {}
+if model_usage:
+    def s(field):
+        return sum(int(m.get(field) or 0) for m in model_usage.values())
+    in_tok, out_tok = s("inputTokens"), s("outputTokens")
+    cache_read, cache_create = s("cacheReadInputTokens"), s("cacheCreationInputTokens")
+    models = ",".join(sorted(model_usage))
+else:
+    usage = data.get("usage") or {}
+    in_tok = int(usage.get("input_tokens") or 0)
+    out_tok = int(usage.get("output_tokens") or 0)
+    cache_read = int(usage.get("cache_read_input_tokens") or 0)
+    cache_create = int(usage.get("cache_creation_input_tokens") or 0)
+    models = data.get("model") or ""
+
 emit(
     RUN_SESSION_ID=data.get("session_id"),
     RUN_COST=data.get("total_cost_usd"),
     RUN_TURNS=data.get("num_turns"),
-    RUN_IN_TOKENS=usage.get("input_tokens"),
-    RUN_OUT_TOKENS=usage.get("output_tokens"),
+    RUN_STOP_REASON=data.get("stop_reason") or data.get("terminal_reason"),
+    RUN_IN_TOKENS=in_tok,
+    RUN_OUT_TOKENS=out_tok,
+    RUN_CACHE_READ=cache_read,
+    RUN_CACHE_CREATE=cache_create,
+    RUN_TOTAL_IN=in_tok + cache_read + cache_create,
+    RUN_MODELS=models,
     RUN_DURATION_MS=data.get("duration_ms"),
     RUN_JSON_OK="1",
 )
@@ -301,7 +331,9 @@ fi
 rm -f "$SESSION_MARKER"
 
 if [[ "$RUN_JSON_OK" == "1" ]]; then
-    echo "[*] Költség: ${RUN_COST:-n/a} USD | turns: ${RUN_TURNS:-n/a}/$MAX_TURNS | tokens: ${RUN_IN_TOKENS:-?} in / ${RUN_OUT_TOKENS:-?} out"
+    echo "[*] Költség: ${RUN_COST:-n/a} USD | turns: ${RUN_TURNS:-n/a}/$MAX_TURNS | stop: ${RUN_STOP_REASON:-n/a}"
+    echo "[*] Tokenek: ${RUN_TOTAL_IN:-?} bemenet összesen (${RUN_IN_TOKENS:-?} friss + ${RUN_CACHE_READ:-?} cache-olvasás + ${RUN_CACHE_CREATE:-?} cache-írás) / ${RUN_OUT_TOKENS:-?} kimenet"
+    [[ -n "$RUN_MODELS" ]] && echo "[*] Modellek: $RUN_MODELS"
 else
     echo "[WARN] Az agent kimenete nem JSON — nyers szöveg az output fájlban, nincs költség-adat"
 fi
@@ -312,11 +344,13 @@ echo "[$([ "$NEW_STATUS" = "done" ] && echo "✓" || echo "!")] $JOB_ID — $NEW
 
 # --- running → done/error + usage (live meta) ---
 python3 - "$META" "$NEW_STATUS" "$END" "$SESSION_ID" \
-         "$RUN_COST" "$RUN_TURNS" "$RUN_IN_TOKENS" "$RUN_OUT_TOKENS" "$RUN_DURATION_MS" "$MAX_TURNS" <<'PYEOF'
+         "$RUN_COST" "$RUN_TURNS" "$RUN_IN_TOKENS" "$RUN_OUT_TOKENS" "$RUN_DURATION_MS" "$MAX_TURNS" \
+         "$RUN_CACHE_READ" "$RUN_CACHE_CREATE" "$RUN_TOTAL_IN" "$RUN_MODELS" "$RUN_STOP_REASON" <<'PYEOF'
 import sys, re
 
 (meta_path, status, end, session_id,
- cost, turns, in_tok, out_tok, duration_ms, max_turns) = sys.argv[1:11]
+ cost, turns, in_tok, out_tok, duration_ms, max_turns,
+ cache_read, cache_create, total_in, models, stop_reason) = sys.argv[1:16]
 
 with open(meta_path) as f:
     content = f.read()
@@ -331,14 +365,22 @@ if session_id:
         content = re.sub(r'^(\s+model:.*)$', rf'\1\n  session_id: "{session_id}"', content, flags=re.MULTILINE, count=1)
 
 # usage block — cost visibility per job (P3). Rewritten in full on every run.
+# Token fields are aggregated across ALL models the run used (main + auxiliary),
+# from `modelUsage`. Read total_input_tokens, not input_tokens: the latter is
+# only the UNCACHED share and is near-zero on a cached run.
 usage_block = (
     "usage:\n"
     f'  cost_usd: "{cost}"\n'
     f'  turns: "{turns}"\n'
     f'  max_turns: "{max_turns}"\n'
-    f'  input_tokens: "{in_tok}"\n'
-    f'  output_tokens: "{out_tok}"\n'
+    f'  stop_reason: "{stop_reason}"\n'
     f'  duration_ms: "{duration_ms}"\n'
+    f'  models: "{models}"\n'
+    f'  total_input_tokens: "{total_in}"\n'
+    f'  input_tokens: "{in_tok}"\n'
+    f'  cache_read_input_tokens: "{cache_read}"\n'
+    f'  cache_creation_input_tokens: "{cache_create}"\n'
+    f'  output_tokens: "{out_tok}"\n'
 )
 if re.search(r'^usage:\s*$', content, flags=re.MULTILINE):
     content = re.sub(r'^usage:\s*\n(?:[ \t]+\S.*\n)*', usage_block, content, flags=re.MULTILINE, count=1)

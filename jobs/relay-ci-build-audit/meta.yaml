@@ -26,9 +26,18 @@ usage:
   cost_usd: "1.6310804999999997"
   turns: "51"
   max_turns: "60"
-  input_tokens: "1525"
-  output_tokens: "29419"
+  stop_reason: ""
   duration_ms: "597936"
+  models: ""
+  # Token counts unavailable: this run predates the modelUsage-based
+  # accounting. The old fields held final-turn-only values and dropped
+  # cache_read/cache_creation, so they understated the run by ~an order
+  # of magnitude. cost_usd above is unaffected and remains authoritative.
+  total_input_tokens: ""
+  input_tokens: ""
+  cache_read_input_tokens: ""
+  cache_creation_input_tokens: ""
+  output_tokens: ""
 timestamps:
   created: "2026-07-25T00:00:00Z"
   started: "2026-07-25T18:23:57Z"
