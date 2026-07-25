@@ -3,6 +3,7 @@
 **Címzett:** CIC-Relay csapat · **Küldő:** cic-factory orchestrátor
 **Státusz:** javaslat, nem implementáció. A CIC-Relay a mi oldalunkról read-only.
 **Dátum:** 2026-07-25
+**Beküldve:** [CIC_Relay#96](https://github.com/CentralInfraCore/CIC_Relay/issues/96) (2026-07-25)
 
 Minden alábbi állítás mögött **mért vagy forrásból olvasott bizonyíték** áll
 (`fájl:sor`, illetve élő futás kimenete). A méréseket a
