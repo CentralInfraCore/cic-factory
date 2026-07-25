@@ -17,7 +17,30 @@ if [[ ! -f "$SPEC" ]]; then
     exit 1
 fi
 
+META="jobs/$JOB_ID/meta.yaml"
+if [[ ! -f "$META" ]]; then
+    echo "NO-GO: $META not found" >&2
+    exit 1
+fi
+
 FAILURES=()
+WARNINGS=()
+
+# K10 — agent.model kitöltve (kritikus)
+# Üres model esetén a run-job.sh nem ad --model flaget, és a job csendben a
+# (drága) default modellen fut. Néma hiba: sehol nem látszik, hogy megtörtént.
+# Szándékosan NEM ellenőrzünk konkrét modellnév-listát — az elavulna.
+MODEL_VALUE=$(grep -E '^\s+model:' "$META" | head -1 | sed -E 's/^\s+model:\s*"?([^"]*)"?\s*$/\1/' || true)
+if [[ -z "$MODEL_VALUE" ]]; then
+    FAILURES+=("K10: meta.yaml agent.model üres — a job a default modellen futna, mérhetetlenül. Tölts ki egyet: claude-opus-5 | claude-sonnet-5 | claude-haiku-4-5 (alias is jó: opus | sonnet | haiku)")
+fi
+
+# K11 — kb_focus kitöltve (figyelmeztetés, nem blokkoló)
+# A run-job.sh a kb_focus-t kötelező első olvasási listaként injektálja a promptba.
+# Üresen hagyva a gyenge modell magától keres a KB-ban — ott a leggyengébb.
+if grep -qE '^kb_focus:\s*\[\s*\]\s*$' "$META" || ! grep -qE '^kb_focus:' "$META"; then
+    WARNINGS+=("K11: kb_focus üres — az agent magától keres a KB-ban. Ha tudsz kiindulási chunk/node id-t (pl. c781), írd be: a felfedezés a gyenge modell gyenge pontja.")
+fi
 
 # K1 — Konkrét forrás path vagy chunk-id megadva (abszolút path, env var path, vagy KB chunk)
 if ! grep -qE '(/home/|get_chunk\(|c[0-9]{3,}|/sync/|\.go"|\.go`|\$\{CIC_|\$\{RELAY|\$\{WORKDIR)' "$SPEC"; then
@@ -60,6 +83,12 @@ fi
 
 # Eredmény
 echo "=== validate-spec: $JOB_ID ==="
+if [[ ${#WARNINGS[@]} -gt 0 ]]; then
+    for w in "${WARNINGS[@]}"; do
+        echo "  WARN: $w"
+    done
+    echo ""
+fi
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
     echo "MECHANIKUS ELLENŐRZÉS: GO"
     echo "Folytasd: /job-validate $JOB_ID (evidence-alapú ellenőrzés)"
@@ -70,6 +99,6 @@ else
         echo "  FAIL: $f"
     done
     echo ""
-    echo "Javítsd az input.md-t, majd futtasd újra."
+    echo "Javítsd az input.md-t / meta.yaml-t, majd futtasd újra."
     exit 1
 fi

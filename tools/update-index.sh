@@ -39,6 +39,9 @@ for entry in sorted(os.listdir(jobs_dir)):
         "started":   read_nested(content, "started"),
         "completed": read_nested(content, "completed"),
         "repo":      read_nested(content, "repo"),
+        "model":     read_nested(content, "model"),
+        "cost_usd":  read_nested(content, "cost_usd"),
+        "turns":     read_nested(content, "turns"),
     })
 
 now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -56,9 +59,30 @@ for j in jobs:
         lines.append(f"    started: \"{j['started']}\"")
     if j["completed"]:
         lines.append(f"    completed: \"{j['completed']}\"")
+    if j["model"]:
+        lines.append(f"    model: \"{j['model']}\"")
+    if j["cost_usd"]:
+        lines.append(f"    cost_usd: \"{j['cost_usd']}\"")
+    if j["turns"]:
+        lines.append(f"    turns: \"{j['turns']}\"")
+
+# Cost roll-up — makes the model-layering effect measurable rather than assumed
+total = 0.0
+priced = 0
+for j in jobs:
+    try:
+        total += float(j["cost_usd"])
+        priced += 1
+    except (TypeError, ValueError):
+        pass
+lines.append("")
+lines.append("totals:")
+lines.append(f"  jobs: {len(jobs)}")
+lines.append(f"  priced_jobs: {priced}")
+lines.append(f"  cost_usd: \"{total:.4f}\"")
 
 index_path = os.path.join(jobs_dir, "index.yaml")
 with open(index_path, "w") as f:
     f.write("\n".join(lines) + "\n")
-print(f"Index updated: {len(jobs)} job(s)")
+print(f"Index updated: {len(jobs)} job(s), {priced} with cost data, total ${total:.4f}")
 EOF
