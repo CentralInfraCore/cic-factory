@@ -57,7 +57,7 @@ ProofTrace (chain_hash + Vault Transit signature)
 
 | Réteg | Csomag | Funkció |
 |---|---|---|
-| HTTP API | `cmd/relay` | `:8080`, `/set`, `/v1/schema/compile`, `/healthz` |
+| HTTP API | `cmd/relay` | `:8080`, `/set`, `/v1/schema/compile`, `/v1/schemas/pipeline`, `/v1/repo/ci`, `/v1/proof/verify`, `/healthz` |
 | Végrehajtó | `core/cabinet` | Schema/module/workflow registry, wazero WASM, ProofTrace |
 | Natív modulok | `core/modules/` | `certselfsigned`, `cibuild`, `schemacompile`, `schemapipeline` |
 | GitOps | `core/nexus/git` | ExecGitOps, RepoRegistry, git host functions WASM-nak |
@@ -65,6 +65,37 @@ ProofTrace (chain_hash + Vault Transit signature)
 | Crypto | `core/nexus/crypto` | Vault Transit signing (ProofTrace) |
 | Operator | `core/nexus/operator` | PollingWatcher, Lifecycle, Operator |
 | Recorder | `core/nexus/recorder` | GitStateRecorder → Vault-signed audit commit |
+
+### A relay mint CI-végrehajtó (2026-07-26 óta)
+
+A relay kap egy **git repót és egy commit id-t**, végigviszi a buildet, és
+aláírt artifactot ad vissza. Két útvonal:
+
+| Útvonal | Workflow | Mire |
+|---|---|---|
+| `POST /v1/repo/ci` | `cic.repo.ci` | bármely repó, amiben van `Makefile` |
+| `POST /v1/schemas/pipeline` | `cic.schemas.pipeline` | CIC-Schemas repók |
+
+A build **a builder konténerben** fut (`docker exec <builder> make <target>`),
+nem a relay folyamatában — a toolchain abban a konténerben marad, amit az
+üzemeltető felügyel. Indítás: `make relay.up`, futtatás: `make relay.ci`
+(lásd a relay repó `docs/{en,hu}/pipeline/relay-container.md`).
+
+**Mit attesztál a kimenet:**
+
+| Érték | Mit jelent |
+|---|---|
+| `build_hash` | `sha256(raw_artifact)` — **tiszta tartalom-digest**; két különböző commit azonos kimenettel azonos értéket ad, és ez helyes |
+| `verification_root` | a verification manifest Merkle-gyökere — **ez azonosítja a buildelt revíziót** |
+| `source_ref` / `source_tree_digest` | a klónozott repó commitja és fatörzs-digestje |
+
+CI-attesztációhoz a `verification_root`-ot kell nézni, nem a `build_hash`-t.
+2026-07-25 előtt a provenance elveszett a láncon, és két különböző commit
+megkülönböztethetetlen volt (CIC_Relay#96/#97).
+
+**Szándékosan elérhetetlen:** a `ci.build@1.0` modul regisztrált, de egyik
+workflow `Steps[]`-jében sincs — a relay saját folyamatában futtatna make-et,
+ami felszámolná az izolációt. Sorsa: CIC_Relay#101.
 
 **Plugin rendszer:** A valódi végrehajtók `.so` fájlok (Go plugin, `plugin.Open()` + `Lookup()`). A WASM modulok iSDK (guest) + host frame (executor) kettőssel futnak.
 
