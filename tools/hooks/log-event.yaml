@@ -1,0 +1,38 @@
+---
+module: log-event
+description: 'CIC agent event logger — lightweight PostToolUse/PostToolUseFailure/Stop
+  observer. Reads Claude Code hook JSON from stdin, appends one JSONL line to: $CIC_WORKDIR/jobs/$CIC_JOB_ID/output/events.jsonl
+  No-ops silently if CIC_JOB_ID or CIC_WORKDIR is unset, or if the output directory
+  does not exist. Always exits 0 — never blocks the agent.'
+tags:
+- builder
+- core
+category: []
+used_in: []
+entrypoint: true
+related_nodes: []
+objects:
+- name: ts
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls: []
+- name: summarize
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - data.get
+  - inp.get
+  - resp.get
+- name: main
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - f.write
+  - parser.add_argument
+  - parser.parse_args
