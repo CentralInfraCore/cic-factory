@@ -14,6 +14,10 @@ jobs/*/workspace-saved/
 
 # Hook telemetria az élő workdir-ben futás közben
 jobs/*/output/events.jsonl
+# Context-evacuation stubs written by tools/hooks/context-monitor.sh before a
+# /compact. Transient working state, same class as events.jsonl above — the
+# ones left behind were never filled in ([TODO] placeholders).
+jobs/*/output/context-state.md
 
 # IDE / tooling scratch
 .idea/

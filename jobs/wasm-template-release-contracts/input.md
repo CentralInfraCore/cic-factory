@@ -114,6 +114,10 @@ nem minden push-hoz releváns).
 - `grep -rn` a kulcs-bekötésekre: `abi.schema.yaml` `$ref` a
   `project.schema.yaml`-ból, `verify-release` make target, `tools/verify_release.py`
   hívásai a `wasm.rebuild-verify`/`manifest-verify` logikára.
+- Minden `implemented` állításhoz **production hívás file:line** (pl. a
+  `verify-release` make target melyik `tools/verify_release.py` függvényt
+  hívja, és az melyik meglévő `make`/Python függvényt hívja tovább —
+  `Makefile`/`mk/*.mk` + `tools/verify_release.py` file:line hivatkozással).
 - Teljes verifikációs lánc: `make validate`, `make manifest-verify`,
   `make wasm.build`, `make wasm.rebuild-verify`, `make wasm.test`,
   `make verify-release`, `make golang.quality`, `make check`, `make test`,
