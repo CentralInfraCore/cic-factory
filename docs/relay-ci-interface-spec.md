@@ -1,9 +1,31 @@
 # Interfész-javaslat a relay felé — „repo + commit → build_hash"
 
 **Címzett:** CIC-Relay csapat · **Küldő:** cic-factory orchestrátor
-**Státusz:** javaslat, nem implementáció. A CIC-Relay a mi oldalunkról read-only.
 **Dátum:** 2026-07-25
-**Beküldve:** [CIC_Relay#96](https://github.com/CentralInfraCore/CIC_Relay/issues/96) (2026-07-25)
+**Beküldve:** [CIC_Relay#96](https://github.com/CentralInfraCore/CIC_Relay/issues/96)
+**Státusz: a provenance-rész LESZÁLLÍTVA** — [CIC_Relay#97](https://github.com/CentralInfraCore/CIC_Relay/pull/97) mergelve (`635d84ee`).
+A maradék (generikus repo-CI + belépési pont): [CIC_Relay#98](https://github.com/CentralInfraCore/CIC_Relay/issues/98).
+
+---
+
+## ⚠️ Pontosítás — `build_hash` vs. `verification_root`
+
+**Ez a dokumentum eredetileg végig `build_hash`-ről beszélt. Az pontatlan volt.**
+
+A `build_hash` az `sha256(raw_artifact)` — **tiszta tartalom-digest**, és *helyes*, hogy
+két olyan commit között azonos marad, amelyek lefordított artifactja bájtra egyezik.
+
+A provenance-kötött érték a **`verification_root`**: a verification manifest
+Merkle-gyökere. A mérés helyesen így olvasandó:
+
+| | javítás előtt | javítás után (#97) |
+|---|---|---|
+| `verification_root` A | `c65d09c8…` | `d5b49cba…` |
+| `verification_root` C | `c65d09c8…` | `84bff072…` |
+| megkülönböztethető? | **nem** | **igen** |
+
+Az alábbi szakaszokban a „`build_hash` nem követi a forrást" típusú megfogalmazásokat
+**`verification_root`-ként** kell érteni.
 
 Minden alábbi állítás mögött **mért vagy forrásból olvasott bizonyíték** áll
 (`fájl:sor`, illetve élő futás kimenete). A méréseket a
@@ -73,17 +95,25 @@ melyik commitból készült a build**. A `source_digest` mind a három futásban
 
 ## 4. A kilenc konkrét rés — mind verifikálva
 
-| # | Rés | Bizonyíték |
-|---|---|---|
-| 1 | Nincs `commit` mező a bemeneten | `cmd/relay/pipeline_handler.go:15-22` — `PipelineRequest`: `schema, version, branch, repo_url, build_dir, builder_container` |
-| 2 | A route séma-specifikus, nem generikus repo-CI | `pipeline_handler.go:64-67` — `schema` és `version` **kötelező**, különben 400; `schemapipeline.go:307` fix `source/<schema>.yaml` útvonal |
-| 3 | `ci.build@1.0` regisztrálva, de **egyik workflow `Steps[]`-jében sincs** → scaffold | `bootstrap.go:55,64` (regisztráció) vs. `bootstrap.go:122-126` és `218-226` (a két Steps lista teljes tartalma) |
-| 4 | A `source_ref`/`source_tree_digest` **elveszik** a láncon | `schemacompile.go:146-154` — az `assertSourceImpl` return-map kimerítő mezőlistája nem tartalmazza őket |
-| 5 | A `source_digest` a relay **saját** build-konstansaiból jön | `main.go:713-715` (`bctx.SourceRef = CommitHash`), `main.go:333-337` (fallback), `schemacompile.go:245-252`; **mérve:** `"unknown"` mindkét futásban |
-| 6 | A válasz nem tartalmaz forrás-azonosítót | **mérve** élő válaszon: kulcsok = `artifact{artifact, build_hash, cic_sign, cic_signed_ca, verification_root}` + `proof_trace`; nincs `repo_url`/`commit`/`branch`/`source_ref` |
-| 7 | Nincs konténerizált CI-belépési pont | **mérve:** nincs relay szolgáltatás a `docker-compose.yml`-ben, a gyökér `Dockerfile` Python schema-compiler image, nincs `make run/serve`. Kézzel kellett összeraknunk az indítást |
-| 8 | Sekély, branch-hez kötött klónozás | `schemapipeline.go:129` — `git clone --branch <branch> --depth 1` |
-| 9 | A `ci.build` nem ismer gitet és izolációt | `core/modules/cibuild/cibuild.go:52` — egyetlen `exec.CommandContext(buildCtx, "make", target)`, nincs `docker`/`git`/`isolation` |
+**Állapot #97 után:** az 1, 4, 5, 6, 8 és a sentinel-rés **megoldva**. A 2, 3, 7, 9
+nyitva, [CIC_Relay#98](https://github.com/CentralInfraCore/CIC_Relay/issues/98) alatt.
+
+Egy dolog, amit csak az éles futás fogott meg: a **#4-nek két ejtési pontja volt**,
+nem egy. A `cic.source.assert` mellett a `cic.schema.build` is nulláról építi a
+map-jét. Csak az elsőt javítva a `source_ref` továbbra is `unknown` maradt — ezt
+unit teszt nem mutatta meg, csak a mérés.
+
+| # | Rés | Állapot | Bizonyíték |
+|---|---|---|---|
+| 1 | Nincs `commit` mező a bemeneten | ✅ | `cmd/relay/pipeline_handler.go:15-22` — `PipelineRequest`: `schema, version, branch, repo_url, build_dir, builder_container` |
+| 2 | A route séma-specifikus, nem generikus repo-CI | ❌ | `pipeline_handler.go:64-67` — `schema` és `version` **kötelező**, különben 400; `schemapipeline.go:307` fix `source/<schema>.yaml` útvonal |
+| 3 | `ci.build@1.0` regisztrálva, de **egyik workflow `Steps[]`-jében sincs** → scaffold | ❌ | `bootstrap.go:55,64` (regisztráció) vs. `bootstrap.go:122-126` és `218-226` (a két Steps lista teljes tartalma) |
+| 4 | A `source_ref`/`source_tree_digest` **elveszik** a láncon | ✅ | `schemacompile.go:146-154` — az `assertSourceImpl` return-map kimerítő mezőlistája nem tartalmazza őket |
+| 5 | A `source_digest` a relay **saját** build-konstansaiból jön | ✅ | `main.go:713-715` (`bctx.SourceRef = CommitHash`), `main.go:333-337` (fallback), `schemacompile.go:245-252`; **mérve:** `"unknown"` mindkét futásban |
+| 6 | A válasz nem tartalmaz forrás-azonosítót | ✅ | **mérve** élő válaszon: kulcsok = `artifact{artifact, build_hash, cic_sign, cic_signed_ca, verification_root}` + `proof_trace`; nincs `repo_url`/`commit`/`branch`/`source_ref` |
+| 7 | Nincs konténerizált CI-belépési pont | ❌ | **mérve:** nincs relay szolgáltatás a `docker-compose.yml`-ben, a gyökér `Dockerfile` Python schema-compiler image, nincs `make run/serve`. Kézzel kellett összeraknunk az indítást |
+| 8 | Sekély, branch-hez kötött klónozás | ✅ | `schemapipeline.go:129` — `git clone --branch <branch> --depth 1` |
+| 9 | A `ci.build` nem ismer gitet és izolációt | ❌ | `core/modules/cibuild/cibuild.go:52` — egyetlen `exec.CommandContext(buildCtx, "make", target)`, nincs `docker`/`git`/`isolation` |
 
 **Külön lelet — csendes ellenőrzési rés:** a `VerifyProofArtifact` csak **üres**
 `source_digest`-re figyelmeztet (*„chain is not anchored to a source revision"*).
