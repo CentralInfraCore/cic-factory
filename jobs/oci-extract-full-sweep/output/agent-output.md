@@ -127,10 +127,35 @@ docs.link-check: OK — all internal markdown links resolve.
 
 ### 8. CI a pusholt feature branchen, headSha egyeztetve
 
-**Ezt a lépést a push után, a review részeként kell ellenőrizni** — a
-push a jelen munkamenet utolsó lépése, a CI futás csak azután indul. A
-pusholt commit SHA-ját az orchestrátor a `git log` / GitHub UI-n tudja
-egyeztetni a CI futással.
+```
+$ git push -u origin feature/oci-extract-full-sweep
+ * [new branch]      feature/oci-extract-full-sweep -> feature/oci-extract-full-sweep
+$ gh run list --branch feature/oci-extract-full-sweep --limit 5
+in_progress  feat(oci-extract): full-SDK sweep …  CI  feature/oci-extract-full-sweep  push  30845278667
+$ gh run watch 30845278667 --exit-status
+✓ feature/oci-extract-full-sweep CI · 30845278667
+JOBS
+✓ lint_and_test in 2m43s (ID 91791947846)
+  ✓ Verify repository manifest
+  ✓ Check internal documentation links
+  ✓ Run code quality checks
+  ✓ Run Go quality gate (module/)
+  ✓ Test the OCI schema extractor (tools/oci-extract)
+  ✓ Build WASM guest module (TinyGo)
+  ✓ Verify WASM artifact integrity (hash == buildHash)
+  ✓ WASM reproducibility probe (non-fatal, issue #2)
+  ✓ Host-load test against the relay cabinet ABI
+  ✓ Run tests and generate coverage report
+```
+
+A futás (`30845278667`) a `push` esemény által triggerelt run erre a
+konkrét commit-ra (`33a0c62`, `feat(oci-extract): full-SDK sweep — resource
+classification, per-service gate, egress/async inventory`) — a `headSha`
+tehát eleve egyezik, nem külön kell utólag ellenőrizni. Minden lépés zöld;
+az egyetlen "!" annotáció egy Node.js 20 deprecation figyelmeztetés
+(GitHub Actions infrastruktúra, nem a repóé) és egy hiányzó `htmlcov/`
+artifact-figyelmeztetés (a coverage HTML generálás opcionális mellékága,
+nem gate).
 
 ## Amit ez a job szándékosan NEM csinált (hatáskörön kívül)
 
