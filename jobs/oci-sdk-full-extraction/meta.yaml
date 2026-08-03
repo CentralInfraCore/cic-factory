@@ -1,0 +1,59 @@
+schema_version: "1.0"
+
+# Identification
+job_id: "oci-sdk-full-extraction"
+parent_job_id: ""
+
+# Hierarchy level
+level: "repo"
+target:
+  repo: "cic-module-oracle-cloud"
+  path: "tools/oci-extract"
+
+# KB context
+# NOTE: chunk ids are NOT stable identifiers. The cic-graph KB was re-indexed on
+# 2026-08-02 (2875 -> 10590 chunks) and the previously used anchor ids (c781,
+# c912, c927, c365) now resolve to unrelated symbols. The ids below were read and
+# content-verified on 2026-08-03. If one returns something other than what
+# input.md states it should, report it — do not work from the wrong content.
+kb_focus:
+  - "c1719"
+  - "c1734"
+  - "c4147"
+promptmap_ref: ""
+
+# Agent
+agent:
+  config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
+  model: "claude-opus-5"
+  max_turns: "80"
+  session_id: ""
+
+# Workplace
+workplace:
+  repos:
+    - "cic-factory"
+    - "cic-module-oracle-cloud"
+  branch: "feature/oci-sdk-full-extraction"
+
+# Status
+status: "pending"
+error_message: ""
+
+usage:
+  cost_usd: ""
+  turns: ""
+  max_turns: ""
+  stop_reason: ""
+  duration_ms: ""
+  models: ""
+  total_input_tokens: ""
+  input_tokens: ""
+  cache_read_input_tokens: ""
+  cache_creation_input_tokens: ""
+  output_tokens: ""
+
+timestamps:
+  created: "2026-08-03T00:00:00Z"
+  started: ""
+  completed: ""
