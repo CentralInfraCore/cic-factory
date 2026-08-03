@@ -32,7 +32,14 @@ promptmap_ref: ""
 agent:
   config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
   model: "claude-sonnet-5"
-  max_turns: "70"
+  # Raised 70 -> 150 after the first run hit the ceiling at 71/70 with
+  # stop_reason tool_use. Second time today an implementation job blew a budget
+  # I set: oci-extract-generalize needed ~145 turns across three runs. The
+  # level-based defaults in run-job.sh (domain 40, repo 60, orchestrator 80) are
+  # calibrated for audit and documentation jobs; a job that writes and iterates
+  # on Go code needs multiples of that, because every compile-run-read cycle is
+  # a turn.
+  max_turns: "150"
   session_id: "fb244b21-ce2e-4137-9c7c-358743d07e0e"
 
 # Workplace
