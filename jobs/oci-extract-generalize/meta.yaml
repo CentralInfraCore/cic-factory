@@ -31,7 +31,13 @@ promptmap_ref: ""
 agent:
   config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
   model: "claude-opus-5"
-  max_turns: "50"
+  # Raised 50 -> 100 after the first run hit the ceiling at 51/50 with
+  # stop_reason tool_use. The discovery work did land — two real
+  # service-specific assumptions found and removed in tools/oci-extract/
+  # client.go — but nothing was committed and no output was written. What
+  # remains (regression tests, make check, MANIFEST.sha256, push, four output
+  # documents) needs headroom, not a tighter budget.
+  max_turns: "100"
   session_id: "9f0ba8b7-fcb2-4855-86ff-a21f23846a17"
 
 # Workplace

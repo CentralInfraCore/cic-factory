@@ -127,3 +127,46 @@ végrehajtási szemantikával. A config/state/binding surface-ek már most felve
 D-009 feloldható. A `derivation_chain` "reality check" megfogalmazását érdemes
 egyértelműsíteni (kézi illusztráció, nem automatikus leképezés), hogy ne keltsen
 generált-kimenet benyomást.
+
+---
+
+## Tooling-réteg — 2026-08-03 (oci-extract-generalize futásból)
+
+### T9 — `meta.yaml` `agent.config_dir` halott konfiguráció `[drift]`
+**Bizonyíték:** `tools/run-job.sh:31` `AGENT_ID="agent-01"` a default, és a
+`tools/run-job.sh:33-38` ciklus a **parancssori argumentumból** veszi az agentet
+(`AGENT_CONFIG="$HOME/.claude-personal/agents/$AGENT_ID"`, `run-job.sh:47`).
+A `meta.yaml` `agent.config_dir` mezőjét **semmi nem olvassa** — grep-pel egyetlen
+hivatkozás sincs rá a `run-job.sh`-ban.
+
+→ Ha az orchestrátor elfelejti átadni az agent-id-t, a job **csendben a default
+`agent-01`-gyel fut**, miközben a spec mást deklarál. A `oci-extract-generalize`
+esetén ez a `cic-module-wasm-claude` agent lett volna — a modul-repo saját
+`CLAUDE.md`-je szerint kizárólag az az agent építheti azt a repót.
+
+**Ugyanaz a hibaosztály, mint a T3** (`agent.model` szintén halott volt, amíg
+`run-job.sh:41` ki nem olvasta). A séma deklarál valamit, a futtató figyelmen
+kívül hagyja.
+
+**Teendő:** `run-job.sh` olvassa ki a `agent.config_dir`-t a `meta.yaml`-ból
+(a `MODEL` mintájára), a parancssori argumentum maradjon felülbíráló. Ha egyik
+sincs → `agent-01` és **kiírt figyelmeztetés**, ne néma default.
+
+### T10 — `make build` untracked, nem-ignorált artifactokat hagy `[drift]`
+**Cél-repo:** `cic-module-oracle-cloud` (és feltehetően minden `base-repo`
+származék — ellenőrizendő).
+
+**Bizonyíték:** a `oci-extract-generalize` agent-klónjában a `make build` után
+`git status` ~55 untracked `.yaml` fájlt mutat, minden `.go`/`.py` mellé egyet
+(`module/provider.yaml`, `tools/oci-extract/client.yaml`, `tests/*.yaml`, …).
+Tartalmuk KB-ingest formátum (`package` / `description` / `tags` / `objects`).
+- `git check-ignore -v module/provider.yaml` → **nincs találat**, tehát nem ignorált
+- a live repóban `git ls-files | grep -c '^module/.*\.yaml$'` → **0**, és a fájlok
+  a lemezen sem léteznek → nem szándékosan követett artifactok
+
+→ Egy `git add -A` mind az 55-öt becommitolná. Mivel a `MANIFEST.sha256` képlete
+`git ls-files`-ra épül, a generált szemét bekerülne az **aláírt manifestbe** is.
+
+**Teendő:** eldönteni, hogy ezek build-artifactok (→ `.gitignore`) vagy szándékos
+KB-forrás (→ tracked + dokumentált). Addig is: az agent-promptokban `git add -A`
+helyett explicit path-listás `git add`.
