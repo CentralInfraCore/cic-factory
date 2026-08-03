@@ -1,0 +1,65 @@
+schema_version: "1.0"
+
+# Identification
+job_id: "oci-extract-full-sweep"
+parent_job_id: "oci-extract-generalize"
+
+# Hierarchy level
+level: "repo"
+target:
+  repo: "cic-module-oracle-cloud"
+  path: "tools/oci-extract"
+
+# KB context
+# NOTE: chunk ids are NOT stable identifiers — the cic-graph KB was re-indexed on
+# 2026-08-02 and the older anchor ids (c781, c912, c927, c365) now resolve to
+# unrelated symbols. The ids below were content-verified on 2026-08-03.
+kb_focus:
+  - "c1719"
+  - "c4147"
+promptmap_ref: ""
+
+# Agent
+# Model rationale: by the time this runs, oci-extract-generalize has already
+# settled the open-ended question (does the extractor survive OCI's
+# heterogeneity). What remains is running the proven mechanism at scale,
+# recording numbers, and two well-specified engineering pieces (gate
+# granularity, embedding measurement). Machine-checkable DoD throughout, so a
+# mid-tier model is the right price for the work.
+#
+# DEPENDENCY: do not start before oci-extract-generalize is merged. This job
+# assumes a service-agnostic extractor and reads its sweep-input.md.
+agent:
+  config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
+  model: "claude-sonnet-5"
+  max_turns: "70"
+  session_id: ""
+
+# Workplace
+workplace:
+  repos:
+    - "cic-factory"
+    - "cic-module-oracle-cloud"
+  branch: "feature/oci-extract-full-sweep"
+
+# Status
+status: "pending"
+error_message: ""
+
+usage:
+  cost_usd: ""
+  turns: ""
+  max_turns: ""
+  stop_reason: ""
+  duration_ms: ""
+  models: ""
+  total_input_tokens: ""
+  input_tokens: ""
+  cache_read_input_tokens: ""
+  cache_creation_input_tokens: ""
+  output_tokens: ""
+
+timestamps:
+  created: "2026-08-03T00:00:00Z"
+  started: ""
+  completed: ""

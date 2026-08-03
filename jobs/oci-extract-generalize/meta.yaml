@@ -1,7 +1,7 @@
 schema_version: "1.0"
 
 # Identification
-job_id: "oci-sdk-full-extraction"
+job_id: "oci-extract-generalize"
 parent_job_id: ""
 
 # Hierarchy level
@@ -23,10 +23,15 @@ kb_focus:
 promptmap_ref: ""
 
 # Agent
+# Model rationale: this is the one open-ended piece of the OCI-extraction effort
+# — finding hidden core/network assumptions in a go/ast extractor is research,
+# not recipe-following, and it is exactly where a weaker model produces
+# confident wrong output. The mechanical remainder runs on sonnet in the
+# follow-up job (oci-extract-full-sweep).
 agent:
   config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
   model: "claude-opus-5"
-  max_turns: "80"
+  max_turns: "50"
   session_id: ""
 
 # Workplace
@@ -34,7 +39,7 @@ workplace:
   repos:
     - "cic-factory"
     - "cic-module-oracle-cloud"
-  branch: "feature/oci-sdk-full-extraction"
+  branch: "feature/oci-extract-generalize"
 
 # Status
 status: "pending"
