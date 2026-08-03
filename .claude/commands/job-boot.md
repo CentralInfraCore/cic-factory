@@ -33,19 +33,46 @@ mielőtt tényként hivatkozol rá.
 `kb_status` — elérhető és friss?
 
 ### 2. Kanonikus invariánsok
-`search_nodes` → `["axioms", "symbols", "contract", "limits"]`
 
-### 3. Relay fundamentumok — kötelező chunk-ok
-```
-get_chunk("c781")  — Cabinet: schema→workflow→modul összerendelés
-get_chunk("c912")  — relay pozicionálás: deklarált gráfot hajt végre, nem dönt
-get_chunk("c927")  — séma belső viselkedés: StateRequirement/PluginRef/NextHops
-get_chunk("c365")  — Cabinet interface: schema/module/workflow registry
-```
+`search_nodes` → `axioms`, `symbols`, `contract`, `limits` — **egyenként.**
 
-Ez a négy chunk együtt ~20 sor egy 2875 node-os KB-ból. Szándékosan ennyi:
-nem áttekintés, hanem **horgony** egy konkrét múltbeli tévút ellen (lásd lentebb).
-A `c365` önmagában két sor — a `c781`+`c912`+`c927` hármas hordozza a tartalmat.
+A `search_nodes` több szavas lekérdezésre üres listát ad (mérve 2026-08-03:
+`"axioms symbols contract limits"` → `[]`, `"axioms"` → 2 találat). Ha egy
+lekérdezésbe fűzöd őket, üres kézzel jössz ki, és azt hiheted, nincs a KB-ban.
+
+### 3. Relay fundamentumok — kötelező horgonyok
+
+**A chunk-id NEM stabil azonosító. A file path az.**
+
+A KB újraindexelésekor a chunk-id-k eltolódnak. 2026-08-02-én ez meg is történt
+(2875 → 10590 chunk), és a korábbi négy horgony-id — `c781`, `c912`, `c927`,
+`c365` — azóta **teljesen más tartalmat ad** (Go teszt-függvényeket és egy WASM
+méret-konstanst). Ez rosszabb, mint ha nem létezne: a boot némán lefutottnak
+látszik, rossz anyaggal.
+
+Ezért a horgonyt **tartalom + file path** azonosítja, és a chunk-id csak
+kényelmi gyorsítás, ami önellenőrző:
+
+| Amit el kell olvasnod | File path (stabil) | chunk-id 2026-08-03-án |
+|---|---|---|
+| relay pozicionálás — végrehajtó motor, nem dönt, `NextHops` | `CIC-Relay/docs/hu/concept/relay_pozicionalas.md` | `c1719` |
+| gráf-alapú végrehajtás — determinált, `ExecutionGraph` + séma + állapot | `CIC-Relay/docs/hu/concept/graf_vegrehajtas.md` | `c1677` |
+| séma belső viselkedés — `StateRequirement`/`Dependencies`/`PluginRef`/`NextHops` | `CIC-Relay/docs/hu/concept/schema_kezeles.md` | `c1734` |
+| `core/cabinet/` — schema/module/workflow registry + WASM | `CIC-basic-knowledge/docs/hu/repos/cic-relay.md` | `c4147` |
+
+**Eljárás:**
+
+1. Próbáld a chunk-id-t: `get_chunk("c1719")` stb.
+2. **Ellenőrizd a visszakapott `file_path`-t** a fenti táblázat ellen. Ha nem
+   egyezik, az id elavult — ne dolgozz vele.
+3. Elavulás esetén keresd meg tartalom alapján:
+   `search_query("relay executes declared operational graph, does not decide")`
+   — a találat `file_paths` mezője azonosítja, hogy jó helyen jársz.
+4. **Ha új id-ket találtál, írd be ide őket** a régiek helyére, és a memóriába is
+   (`project_mcp_connect_fix`). A következő session ne fizesse ki újra.
+
+Ez a négy horgony együtt ~20 sor. Szándékosan ennyi: nem áttekintés, hanem
+**horgony** egy konkrét múltbeli tévút ellen (lásd lentebb).
 
 Ha egy jövőbeli session azt találja, hogy ez a négy már nem a legjobb horgony
 erre a célra, az a szabály felülvizsgálata — nem a kihagyása. A költség/haszon
@@ -68,11 +95,13 @@ A relay:
 
 Ha nem futtatod le: architektúrális állításokat teszel anélkül hogy tudnád
 mi van a KB-ban. Ez a Terraform-centrikus tévút forrása volt — a Cabinet
-séma→workflow→modul összerendelési modelljét (c781) nem olvastuk el,
-és egy külső eszközre épülő post-apply observer modellt gyártottunk helyette.
+séma→workflow→modul összerendelési modelljét nem olvastuk el, és egy külső
+eszközre épülő post-apply observer modellt gyártottunk helyette.
 
 ## Jel hogy kihagytad
 
 - Terraformot vagy más külső eszközt teszel a relay elé orchestrátorként
 - "A relay megfigyeli amit X csinál" — relay nem observer, hanem executor
-- Job spec-et írsz relay architektúráról anélkül hogy c781/c912/c927 elolvastad
+- Job spec-et írsz relay architektúráról anélkül hogy a 3. pont négy horgonyát elolvastad
+- `get_chunk` visszaad valamit, és te **nem nézted meg a `file_path`-ját** — akkor
+  nem tudod, hogy a horgonyt olvastad-e vagy valami mást

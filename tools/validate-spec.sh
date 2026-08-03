@@ -39,12 +39,12 @@ fi
 # A run-job.sh a kb_focus-t kötelező első olvasási listaként injektálja a promptba.
 # Üresen hagyva a gyenge modell magától keres a KB-ban — ott a leggyengébb.
 if grep -qE '^kb_focus:\s*\[\s*\]\s*$' "$META" || ! grep -qE '^kb_focus:' "$META"; then
-    WARNINGS+=("K11: kb_focus üres — az agent magától keres a KB-ban. Ha tudsz kiindulási chunk/node id-t (pl. c781), írd be: a felfedezés a gyenge modell gyenge pontja.")
+    WARNINGS+=("K11: kb_focus üres — az agent magától keres a KB-ban. Ha tudsz kiindulási chunk/node id-t (pl. c1719), írd be: a felfedezés a gyenge modell gyenge pontja. FIGYELEM: a chunk-id nem stabil — újraindexelés eltolja. Ellenőrizd a get_chunk file_path-ját, mielőtt beírod.")
 fi
 
 # K1 — Konkrét forrás path vagy chunk-id megadva (abszolút path, env var path, vagy KB chunk)
 if ! grep -qE '(/home/|get_chunk\(|c[0-9]{3,}|/sync/|\.go"|\.go`|\$\{CIC_|\$\{RELAY|\$\{WORKDIR)' "$SPEC"; then
-    FAILURES+=("K1: nincs konkrét forrás path vagy KB chunk-id (pl. /home/..., \${CIC_RELAY_PATH}, get_chunk, c781)")
+    FAILURES+=("K1: nincs konkrét forrás path vagy KB chunk-id (pl. /home/..., \${CIC_RELAY_PATH}, get_chunk, c1719)")
 fi
 
 # K3 — Explicit tiltott rövidítés (audit: fájl létezése ≠ implemented; build: exit code ≠ siker stb.)
