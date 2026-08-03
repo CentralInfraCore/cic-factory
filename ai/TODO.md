@@ -170,3 +170,36 @@ Tartalmuk KB-ingest formátum (`package` / `description` / `tags` / `objects`).
 **Teendő:** eldönteni, hogy ezek build-artifactok (→ `.gitignore`) vagy szándékos
 KB-forrás (→ tracked + dokumentált). Addig is: az agent-promptokban `git add -A`
 helyett explicit path-listás `git add`.
+
+### T11 — `--resume` soha nem működött ebben a workdirben `[done]` (2026-08-03)
+**Bizonyíték:** `tools/run-job.sh:49` a projekt-slugot így képezte:
+```
+PROJECT_SLUG=$(echo "$WORKDIR" | sed 's#/#-#g')
+```
+Ez **csak a `/`-t** cseréli kötőjelre. A Claude Code viszont az **aláhúzást is**
+kötőjelre cseréli a projekt-könyvtár nevében. Mivel ez a workdir a
+`/home/sinkog/sync/claude_factory/...` alatt él, a két útvonal eltért:
+
+```
+valódi    ~/.claude-personal/agents/<id>/projects/-home-sinkog-sync-claude-factory-CIC-workdir
+derivált  ~/.claude-personal/agents/<id>/projects/-home-sinkog-sync-claude_factory-CIC-workdir
+```
+
+Következmény: `[ERROR] Session jsonl nem található: …` — a `--resume` **minden
+eddigi próbálkozáson elbukott**, nem most romlott el. A
+`project_wasm_template_state` memória „session-limit restart minta dokumentálva"
+tétele tehát dokumentált volt, de élesben soha nem futott le.
+
+**Felszínre hozta:** a `oci-extract-generalize` első futása, ami 51/50 turn-nél
+munka közben állt le, és pont ezt az utat igényelte a folytatáshoz.
+
+**Megoldva:** `run-job.sh:49` → `sed 's#[/_]#-#g'` (commit `17135e0`).
+Verifikálva: a derivált útvonal megtalálja a `9f0ba8b7-…jsonl`-t, és a resume
+lefutott (`68cb3e7`, max-turns 100, meglévő workspace újrahasználva).
+
+**Tanulság — ez a nap negyedik példája ugyanarra:** olyan azonosító, ami nincs a
+tartalmához kötve, némán másra mutat. KB chunk-id (`project_mcp_connect_fix`),
+`agent.config_dir` (T9), `make build` sidecarok (T10), és ez. Egyik sem hangosan
+bukott — mind csendben. Ahol a factory azonosítót *származtat* string-műveletből,
+ott ellenőrizni kell, hogy a származtatott dolog **létezik-e**, és hangosan
+elbukni, ha nem.
