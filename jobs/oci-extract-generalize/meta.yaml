@@ -48,23 +48,23 @@ workplace:
   branch: "feature/oci-extract-generalize"
 
 # Status
-status: "running"
+status: "done"
 error_message: ""
 
 usage:
-  cost_usd: "10.916973999999998"
-  turns: "81"
+  cost_usd: "4.497125500000001"
+  turns: "13"
   max_turns: "100"
-  stop_reason: "stop_sequence"
-  duration_ms: "1175876"
+  stop_reason: "end_turn"
+  duration_ms: "463494"
   models: "claude-opus-5"
-  total_input_tokens: "14287987"
-  input_tokens: "146"
-  cache_read_input_tokens: "14068828"
-  cache_creation_input_tokens: "219013"
-  output_tokens: "67668"
+  total_input_tokens: "3008864"
+  input_tokens: "21"
+  cache_read_input_tokens: "2752851"
+  cache_creation_input_tokens: "255992"
+  output_tokens: "22427"
 
 timestamps:
   created: "2026-08-03T00:00:00Z"
   started: "2026-08-03T12:57:22Z"
-  completed: ""
+  completed: "2026-08-03T13:05:13Z"
