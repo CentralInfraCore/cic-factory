@@ -213,6 +213,26 @@ cic-factoryban.
 - ❌ NE nyiss PR-t — a review és a merge az orchestrátoré
 - Minden commit Vault-aláírt, `MANIFEST.sha256` utána regenerálva
 
+### ⚠️ `git add -A` TILOS ebben a repóban
+
+A `make build` **untracked, nem-gitignore-olt** `.yaml` sidecar fájlokat hagy
+minden `.go`/`.py` mellé (KB-ingest formátum). Az első futásnál ez ~55 fájl volt.
+Ezek **nem** a repo követett artifactjai — a `git ls-files` egyet sem tart
+nyilván belőlük, és `git check-ignore` sem fogja meg őket.
+
+Mivel a `MANIFEST.sha256` képlete `git ls-files`-ra épül, egy `git add -A` a
+generált szemetet **az aláírt manifestbe** vinné.
+
+**Ezért: mindig explicit path-listával commitolj**, pl.
+
+```bash
+git add tools/oci-extract/ module/schemas/ docs/design/ oci-sdk.lock.yaml
+```
+
+Commit előtt nézd meg `git status --short`-tal, mi kerülne be, és ha bizonytalan
+vagy egy fájlban, hagyd ki és írd le az outputban. Ez a `cic-factory`
+`ai/TODO.md` **T10** tétele — ismert, még nem javított csapda.
+
 **`cic-factory`** — csak az output dokumentumok, a feature branchre.
 
 ## Nyelvi szabály
