@@ -50,7 +50,7 @@ workplace:
   branch: "feature/oci-extract-full-sweep"
 
 # Status
-status: "error"
+status: "running"
 error_message: ""
 
 usage:
@@ -68,5 +68,5 @@ usage:
 
 timestamps:
   created: "2026-08-03T00:00:00Z"
-  started: "2026-08-03T14:48:25Z"
-  completed: "2026-08-03T14:59:52Z"
+  started: "2026-08-03T15:02:45Z"
+  completed: ""
