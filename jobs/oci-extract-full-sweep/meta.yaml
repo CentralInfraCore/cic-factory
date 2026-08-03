@@ -33,7 +33,7 @@ agent:
   config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
   model: "claude-sonnet-5"
   max_turns: "70"
-  session_id: ""
+  session_id: "fb244b21-ce2e-4137-9c7c-358743d07e0e"
 
 # Workplace
 workplace:
@@ -43,23 +43,23 @@ workplace:
   branch: "feature/oci-extract-full-sweep"
 
 # Status
-status: "running"
+status: "error"
 error_message: ""
 
 usage:
-  cost_usd: ""
-  turns: ""
-  max_turns: ""
-  stop_reason: ""
-  duration_ms: ""
-  models: ""
-  total_input_tokens: ""
-  input_tokens: ""
-  cache_read_input_tokens: ""
-  cache_creation_input_tokens: ""
-  output_tokens: ""
+  cost_usd: "3.3836612999999987"
+  turns: "71"
+  max_turns: "70"
+  stop_reason: "tool_use"
+  duration_ms: "678496"
+  models: "claude-haiku-4-5-20251001,claude-sonnet-5"
+  total_input_tokens: "6779874"
+  input_tokens: "5717"
+  cache_read_input_tokens: "6642661"
+  cache_creation_input_tokens: "131496"
+  output_tokens: "39740"
 
 timestamps:
   created: "2026-08-03T00:00:00Z"
   started: "2026-08-03T14:48:25Z"
-  completed: ""
+  completed: "2026-08-03T14:59:52Z"
