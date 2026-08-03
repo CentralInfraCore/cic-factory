@@ -50,23 +50,23 @@ workplace:
   branch: "feature/oci-extract-full-sweep"
 
 # Status
-status: "running"
+status: "error"
 error_message: ""
 
 usage:
-  cost_usd: "3.3836612999999987"
-  turns: "71"
-  max_turns: "70"
+  cost_usd: "13.750846500000002"
+  turns: "151"
+  max_turns: "150"
   stop_reason: "tool_use"
-  duration_ms: "678496"
-  models: "claude-haiku-4-5-20251001,claude-sonnet-5"
-  total_input_tokens: "6779874"
-  input_tokens: "5717"
-  cache_read_input_tokens: "6642661"
-  cache_creation_input_tokens: "131496"
-  output_tokens: "39740"
+  duration_ms: "1768296"
+  models: "claude-sonnet-5"
+  total_input_tokens: "34878100"
+  input_tokens: "300"
+  cache_read_input_tokens: "34559205"
+  cache_creation_input_tokens: "318595"
+  output_tokens: "98041"
 
 timestamps:
   created: "2026-08-03T00:00:00Z"
   started: "2026-08-03T18:45:19Z"
-  completed: ""
+  completed: "2026-08-03T19:14:52Z"
