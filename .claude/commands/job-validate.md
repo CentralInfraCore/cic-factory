@@ -143,7 +143,12 @@ Csak azt, hogy ne legyen üres.
 
 A `run-job.sh` a `kb_focus`-t **kötelező első olvasási listaként** injektálja a promptba.
 Üresen hagyva az agent magától keres a KB-ban — a felfedezés a gyenge modell gyenge pontja,
-a végrehajtás az erős. Ha tudsz kiindulási pontot (pl. `c781`), írd be.
+a végrehajtás az erős. Ha tudsz kiindulási pontot (pl. `c1719`), írd be.
+
+**A chunk-id nem stabil azonosító** — a KB újraindexelése eltolja, és az elavult
+id némán *más* tartalmat ad. Mielőtt `kb_focus`-ba írsz egy id-t, hívd meg a
+`get_chunk`-ot és nézd meg a visszakapott `file_path`-t. A job spec-ben írd le,
+minek kell lennie az adott id-ben, hogy az agent is észrevegye az elcsúszást.
 
 ---
 
