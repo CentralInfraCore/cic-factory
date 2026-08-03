@@ -42,7 +42,7 @@ workplace:
   branch: "feature/oci-extract-generalize"
 
 # Status
-status: "pending"
+status: "running"
 error_message: ""
 
 usage:
@@ -60,5 +60,5 @@ usage:
 
 timestamps:
   created: "2026-08-03T00:00:00Z"
-  started: ""
+  started: "2026-08-03T09:08:42Z"
   completed: ""
