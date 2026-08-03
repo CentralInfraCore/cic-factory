@@ -46,7 +46,12 @@ FACTORY_CLONE="$WORKSPACE/cic-factory"
 FACTORY_REMOTE="git@github.com:CentralInfraCore/cic-factory.git"
 FEATURE_BRANCH="feature/$JOB_ID"
 AGENT_CONFIG="$HOME/.claude-personal/agents/$AGENT_ID"
-PROJECT_SLUG=$(echo "$WORKDIR" | sed 's#/#-#g')
+# Claude Code slugs a project path by replacing BOTH separators and underscores
+# with dashes. Replacing only '/' silently produced a directory that does not
+# exist for any path containing '_' — here /home/sinkog/sync/claude_factory/...
+# resolved to ...-claude_factory-... instead of ...-claude-factory-..., which is
+# why --resume could never find its session jsonl.
+PROJECT_SLUG=$(echo "$WORKDIR" | sed 's#[/_]#-#g')
 SESSION_DIR="$AGENT_CONFIG/projects/$PROJECT_SLUG"
 
 # --- Ellenőrzések ---
