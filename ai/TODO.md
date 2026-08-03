@@ -203,3 +203,51 @@ tartalmához kötve, némán másra mutat. KB chunk-id (`project_mcp_connect_fix
 bukott — mind csendben. Ahol a factory azonosítót *származtat* string-műveletből,
 ott ellenőrizni kell, hogy a származtatott dolog **létezik-e**, és hangosan
 elbukni, ha nem.
+
+### T12 — resume-olt job költsége rendszerszinten alulmért `[drift]`
+**Cél-repo:** `cic-factory` (ez a repo)
+
+**Bizonyíték:** `tools/run-job.sh:391` a teljes `usage:` blokkot **lecseréli**,
+nem összegzi:
+```python
+content = re.sub(r'^usage:\s*\n(?:[ \t]+\S.*\n)*', usage_block, content, ...)
+```
+A `tools/update-index.sh:74` pedig ebből az egyetlen `cost_usd` mezőből képzi a
+`totals:`-t (`total += float(j["cost_usd"])`). Minden `--resume` tehát **eldobja**
+az előző futás(ok) költségét.
+
+**Mért eset — `oci-extract-generalize`, négy futás:**
+
+| Futás | Költség | Miért állt le |
+|---|---:|---|
+| 1. | $3.94 | turn-plafon (51/50) |
+| 2. | — | `--resume` elbukott (T11, slug-hiba) |
+| 3. | $10.92 | Claude session-kvóta (81/100) |
+| 4. | $4.50 | `end_turn` — befejezte |
+
+```
+meta.yaml cost_usd:  "4.497125500000001"   ← csak az utolsó futás
+index totals:        $6.1282               ← 4.50 + 1.63 (másik job)
+valóság ezen a jobon: $19.36
+```
+
+→ A job **háromszoros** költséggel futott ahhoz képest, amit a könyvelés mutat.
+
+**Miért fáj ez pont most:** a modell-rétegzés (T3, és a
+`oci-extract-generalize` / `oci-extract-full-sweep` opus/sonnet felosztás) egész
+értelme az, hogy a költség **mérhető** legyen. Egy resume-olt job pont a drága
+esetekben méri alul magát — mert épp azok szoktak megszakadni.
+
+**Ugyanaz a hibaosztály, mint az `e56258a`-ban javított token-számolás:** a
+`usage` blokk az *utolsó futást* írja le, miközben az olvasó a *job* költségét
+feltételezi. Ott a mező jelentése tért el a nevétől, itt a hatóköre.
+
+**Teendő:** a `usage:` blokk kapjon kumulatív szemantikát. Két épkézláb út:
+- `cost_usd` legyen összegző (`+=` a meglévő értékre), és jöjjön mellé egy
+  `runs:` számláló — a legkevesebb változás, de elveszti a per-futás bontást;
+- vagy `runs:` lista futásonkénti rekordokkal (`cost_usd`, `turns`,
+  `stop_reason`, `started`), és a `cost_usd` ennek a származtatott összege —
+  többet mond, és a `stop_reason`-önkénti elemzést is lehetővé teszi.
+
+Amíg nincs javítva: **resume-olt jobnál a `meta.yaml` költsége nem a job
+költsége** — a `run-job.sh` stdout-jából kell összeadni.
