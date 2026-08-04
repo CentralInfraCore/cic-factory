@@ -76,10 +76,17 @@ kívül esik — a job tette *láthatóvá* azzal, hogy megírta a Poll tesztet.
 - **A `contracts_test.go` és a `module/testdata/instance-fixture.json`
   tartalmi helyességét** — hogy tényleg azt a viselkedést rögzítik, amit
   állítanak.
-- **A #1–#5 helyek javítás utáni viselkedését** külön-külön. A #6-ot (renderBody)
-  valós OCI igazolta; a `Destroy` (#3/#4) a `TerminateInstance` 204-gyel
-  igazoltnak tekinthető; a #1 (replace-plan) és #2 (update) **nincs élesben
-  meghajtva**.
+- **A `Destroy()` handlert egyáltalán nem.** Javítom egy korábbi állításomat:
+  azt írtam, hogy a #3/#4 (a `Destroy` step-címkéje és a `resolveOp`) a
+  `TerminateInstance` 204-gyel igazoltnak tekinthető — **ez téves**. A harness
+  soha nem hívja a `Destroy()`-t (csak `Observe`/`Validate`/`Plan`/`Execute`/
+  `Poll`/`Describe` szerepel benne, `manual_real_oci_test.go`); minden törlésem
+  `Execute()`-on ment át, `OCI_EXEC_OPERATION=TerminateInstance`-szal. Tehát a
+  két legsúlyosabb lelet — hogy a `Destroy` alternatív igés erőforrásra
+  működésképtelen volt, és hogy hazug műveletnevet írt volna a ProofTrace-be —
+  **kizárólag fixture-szinten igazolt**, valós OCI-n nem.
+- **A #1 (replace-plan) és #2 (update) helyeket** — élesben nincsenek meghajtva.
+- **`Invoke`** — a harness ezt sem hívja.
 - **A polimorf create-modelleket** — továbbra is `exit 5`, változatlan hatókör.
 
 ## Nyitott tételek
