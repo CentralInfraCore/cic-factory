@@ -27,7 +27,14 @@ promptmap_ref: ""
 agent:
   config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
   model: "claude-sonnet-5"
-  max_turns: "150"
+  # Raised 150 -> 250. Fourth implementation job today to hit a ceiling I set
+  # (50, 70, 150 — all short), so this one is measured rather than guessed:
+  # oci-extract-generalize took ~145 turns across three runs, oci-extract-full-
+  # sweep ~240, and this run reached 151 with all four parts touched but nothing
+  # committed. run-job.sh's level defaults (domain 40, repo 60, orchestrator 80)
+  # fit audit work, where a turn is a read; an implementation job spends turns on
+  # compile-run-read cycles and needs several times that.
+  max_turns: "250"
   session_id: "7ab2f211-2415-48cb-9b1e-446f12096d14"
 
 # Workplace
