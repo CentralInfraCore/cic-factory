@@ -45,7 +45,7 @@ workplace:
   branch: "feature/oci-lifecycle-role-bridge"
 
 # Status
-status: "error"
+status: "running"
 error_message: ""
 
 usage:
@@ -63,5 +63,5 @@ usage:
 
 timestamps:
   created: "2026-08-04T00:00:00Z"
-  started: "2026-08-04T11:37:43Z"
-  completed: "2026-08-04T11:59:57Z"
+  started: "2026-08-04T12:01:36Z"
+  completed: ""
