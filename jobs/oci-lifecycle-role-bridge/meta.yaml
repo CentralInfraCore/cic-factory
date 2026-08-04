@@ -1,0 +1,60 @@
+schema_version: "1.0"
+
+# Identification
+job_id: "oci-lifecycle-role-bridge"
+parent_job_id: "oci-extract-full-sweep"
+
+# Hierarchy level
+level: "repo"
+target:
+  repo: "cic-module-oracle-cloud"
+  path: "module"
+
+# KB context
+# NOTE: chunk ids are NOT stable identifiers — the cic-graph KB was re-indexed on
+# 2026-08-02 and the older anchor ids (c781, c912, c927, c365) now resolve to
+# unrelated symbols. The ids below were content-verified on 2026-08-03.
+kb_focus:
+  - "c1719"
+  - "c1734"
+promptmap_ref: ""
+
+# Agent
+# Model rationale: the fix itself is well specified (emit a role, consume the
+# role), but finding *every* place the guest re-derives lifecycle from a Go name
+# is discovery, and getting it half-right reproduces exactly the bug being
+# fixed. Mid-tier with a generous turn budget rather than a cheap short run.
+agent:
+  config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
+  model: "claude-sonnet-5"
+  max_turns: "150"
+  session_id: ""
+
+# Workplace
+workplace:
+  repos:
+    - "cic-factory"
+    - "cic-module-oracle-cloud"
+  branch: "feature/oci-lifecycle-role-bridge"
+
+# Status
+status: "pending"
+error_message: ""
+
+usage:
+  cost_usd: ""
+  turns: ""
+  max_turns: ""
+  stop_reason: ""
+  duration_ms: ""
+  models: ""
+  total_input_tokens: ""
+  input_tokens: ""
+  cache_read_input_tokens: ""
+  cache_creation_input_tokens: ""
+  output_tokens: ""
+
+timestamps:
+  created: "2026-08-04T00:00:00Z"
+  started: ""
+  completed: ""
