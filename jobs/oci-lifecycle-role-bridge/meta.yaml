@@ -28,7 +28,7 @@ agent:
   config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
   model: "claude-sonnet-5"
   max_turns: "150"
-  session_id: ""
+  session_id: "7ab2f211-2415-48cb-9b1e-446f12096d14"
 
 # Workplace
 workplace:
@@ -38,23 +38,23 @@ workplace:
   branch: "feature/oci-lifecycle-role-bridge"
 
 # Status
-status: "running"
+status: "error"
 error_message: ""
 
 usage:
-  cost_usd: ""
-  turns: ""
-  max_turns: ""
-  stop_reason: ""
-  duration_ms: ""
-  models: ""
-  total_input_tokens: ""
-  input_tokens: ""
-  cache_read_input_tokens: ""
-  cache_creation_input_tokens: ""
-  output_tokens: ""
+  cost_usd: "8.719249500000002"
+  turns: "151"
+  max_turns: "150"
+  stop_reason: "tool_use"
+  duration_ms: "1313487"
+  models: "claude-haiku-4-5-20251001,claude-sonnet-5"
+  total_input_tokens: "21138234"
+  input_tokens: "5548"
+  cache_read_input_tokens: "20916975"
+  cache_creation_input_tokens: "215711"
+  output_tokens: "76259"
 
 timestamps:
   created: "2026-08-04T00:00:00Z"
   started: "2026-08-04T11:37:43Z"
-  completed: ""
+  completed: "2026-08-04T11:59:57Z"
