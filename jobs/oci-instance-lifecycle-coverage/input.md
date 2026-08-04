@@ -1,5 +1,16 @@
 # oci-instance-lifecycle-coverage — legyen szállított alternatív-igés erőforrás, és teszt a `Destroy`/`Invoke`-ra
 
+## Ki vagy — olvasd el először
+
+**Te vagy a végrehajtó agent.** Te írod a kódot ebben a jobban. Nem te
+indítottad ezt a jobot, nem te figyeled a futását, és nincs mire várnod: a
+munka, amit az alábbiak leírnak, **a te dolgod, most**.
+
+Ahol a szöveg „az orchestrátor"-t említi, az egy **másik** szereplő (a
+`workdir` operátora, aki a specet írta és a valós OCI tesztet futtatja majd).
+Ne beszélj az ő nevében, és ne írj állapotjelentést erről a jobról — írd meg a
+kódot.
+
 ## Reasoning mód
 
 **implementation.** Kódot és tesztet írsz. A megoldandó rés **azonosítva és

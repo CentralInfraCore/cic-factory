@@ -31,7 +31,7 @@ agent:
   # (50, 70, 150, 150). The observed shape is 150-250 turns, because an
   # implementation turn is a compile-run-read cycle, not a read.
   max_turns: "250"
-  session_id: "9fdf1f3e-0f40-40e9-9e4b-59292964ac28"
+  session_id: ""
 
 # Workplace
 workplace:
@@ -41,7 +41,7 @@ workplace:
   branch: "feature/oci-instance-lifecycle-coverage"
 
 # Status
-status: "done"
+status: "pending"
 error_message: ""
 
 usage:
