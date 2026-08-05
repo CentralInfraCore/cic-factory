@@ -89,10 +89,37 @@ terminális, nem CLI-vel gyártott Work Requesten.
 Dokumentálva: `cic-module-oracle-cloud` PR #20 (`verify/destroy-real-oci`),
 két commit — `24e15ea` (A) és `883c10a` (B). Tenancy takarítva, üres.
 
+A **C recept** is lefuttatva (scratch compartment létrehozva hozzá):
+
+| Lépés | Mérés |
+|---|---|
+| `Invoke(ChangeInstanceCompartment)` | `http_status: 202`, `status: succeeded` |
+| `oci compute instance get` utána | `compartment-id` = az új compartment ✅ |
+| `oci raw-request` header-mérés ugyanarra a végpontra | `202 Accepted` + **`opc-work-request-id`** |
+
+Ezzel a claim-evidence tábla „`TestManualRealOCIInvoke` valós OCI ellen fut és sikeres
+— **NEM igazolt** (közepes-magas kockázat)" sora is lezárva. Mind a három recept megvan.
+
+### A C recept egy valós hibát talált
+
+`Invoke()` **`succeeded`-et jelent egy aszinkron `202`-re**, és eldobja a Work Request
+id-t: az `operationResult` (`provider.go:626`) nem is tartalmaz `work_request_id`
+mezőt, a státusz `:668`-ban fixen `"succeeded"`, csak `>=400`-nál lesz `failed`.
+Az `Execute`/`Destroy` ezt helyesen kezeli, és a kód ki is mondja (`:983-985`):
+*„An async op … is not done — the caller must poll the Work Request. Surface the id,
+not a false success."* Az `Invoke` az egyetlen út, ami ezt nem követi.
+
+Ez pont az a fajta hiba, amit **csak valós futtatás** talál meg: a fixture-tesztek
+zöldek voltak, a CI zöld volt, és a job outputja is helyesen állította, hogy a teszt
+létezik és env-guardolt. Az, hogy az eredmény *hazudik a befejezettségről*, csak
+akkor derült ki, amikor egy éles OCI 202-t adott vissza.
+
+Dokumentálva: PR #21 (`verify/invoke-real-oci`) — jegyzőkönyv, nem javítás.
+
 **Nyitva marad:**
-- **C recept** (`Invoke` / `ChangeInstanceCompartment`) — ehhez második compartment kell.
+- **Az `Invoke` async-hibájának javítása** — `provider.go` kódváltozás, külön munka.
 - **Hibás út**: egy OCI által *elutasított* törlés (függő erőforrás, jogosultsághiány)
-  nem futott — a `Destroy()` hibaleképezése fixture-szinten marad. Mindkét futás
+  nem futott — a `Destroy()` hibaleképezése fixture-szinten marad. Mindhárom futás
   happy-path volt.
 
 Futtatási buktató, amit a job outputja nem tudhatott: a recept host Go toolchaint
