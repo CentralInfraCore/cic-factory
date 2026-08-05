@@ -40,7 +40,7 @@ agent:
   # harness tests and a doc set; this one is a struct field, a header read, a
   # status rule and fixtures.
   max_turns: "200"
-  session_id: ""
+  session_id: "eff8c358-4926-4532-9400-287e51872190"
 
 # Workplace
 workplace:
@@ -50,23 +50,23 @@ workplace:
   branch: "feature/oci-invoke-async-result"
 
 # Status
-status: "running"
+status: "done"
 error_message: ""
 
 usage:
-  cost_usd: ""
-  turns: ""
-  max_turns: ""
-  stop_reason: ""
-  duration_ms: ""
-  models: ""
-  total_input_tokens: ""
-  input_tokens: ""
-  cache_read_input_tokens: ""
-  cache_creation_input_tokens: ""
-  output_tokens: ""
+  cost_usd: "5.3201833999999995"
+  turns: "122"
+  max_turns: "200"
+  stop_reason: "end_turn"
+  duration_ms: "1256231"
+  models: "claude-haiku-4-5-20251001,claude-sonnet-5"
+  total_input_tokens: "11963141"
+  input_tokens: "5297"
+  cache_read_input_tokens: "11799188"
+  cache_creation_input_tokens: "158656"
+  output_tokens: "54860"
 
 timestamps:
   created: "2026-08-05T00:00:00Z"
   started: "2026-08-05T11:13:58Z"
-  completed: ""
+  completed: "2026-08-05T11:35:09Z"
