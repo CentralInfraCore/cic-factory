@@ -56,6 +56,32 @@ a session logból számolt érték. A wrapper javítása (`trap '' PIPE` + `fina
 EXIT trap) a live workdirben **uncommitted** — külön commitba kívánkozik, nem
 ebbe a jobba.
 
+## Utóélet — az orchestrátori verifikáció (2026-08-05, a merge után)
+
+A review „nem igazolt" sorai közül az egyik lezárva. Az `output/orchestrator-verification.md`
+**A receptje** lefuttatva a POC trial tenancy ellen (`eu-frankfurt-1`, commercial realm):
+
+| Lépés | Mérés |
+|---|---|
+| `Execute(CreateVcn)` eldobható VCN-re | `http_status: 200` |
+| **`Destroy()`** ugyanarra | `Destroy resolved operation label: DeleteVcn`, `http_status: 204`, `succeeded` |
+| `oci network vcn get` utána | `404 NotAuthorizedOrNotFound` |
+| `oci network vcn list` | üres |
+
+A claim-evidence tábla „`TestManualRealOCIDestroy` valós OCI ellen fut és sikeres —
+**NEM igazolt** (közepes kockázat)" sora ezzel **igazolt** — `cic:network:vcn`-re.
+Dokumentálva: `cic-module-oracle-cloud` PR #20 (`verify/destroy-real-oci`).
+
+**Nyitva marad:** a B recept (`TerminateInstance` a `cic:compute:instance`-en — más
+névalakú ÉS aszinkron, ez a `oci-lifecycle-role-bridge` hibaosztálya; a VCN-futás nem
+helyettesíti) és a C recept (`Invoke`, ehhez második compartment kell).
+
+Futtatási buktató, amit a job outputja nem tudhatott: a recept host Go toolchaint
+feltételez, de a Go a builder konténerben van, és a `docker-compose.yml` nem mountolja
+a `$HOME/.oci`-t. A `mk/golang.mk` a repo alatti gitignore-olt kulcs-path-ot javasolja —
+de a `.gitignore`-ban nincs `*.pem` szabály. Egyszeri `docker compose run --rm -v
+$OCI_KEY_PATH:/run/oci-key.pem:ro builder` volt a megoldás.
+
 ## Döntés
 
 **MERGE** — a job három szállítandója (Instance séma, `Destroy()` harness,
