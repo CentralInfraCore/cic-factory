@@ -157,3 +157,34 @@ miért nem derült ki *merge előtt*, nem azt, hogy miért nem derült ki egyál
 push-futását is meg kell nézni, ne csak a PR checkjeit — és `exec`-alapú lokális
 kapu eredményét csak azután hidd el, hogy a konténer mountját és HEAD-jét
 ellenőrizted.
+
+### A két nyitott tétel lezárva
+
+**1. A `verify/**` CI-lyuk — javítva (#26, `6130de7`).** Nem a hiányzó névteret
+pótoltam, hanem a feltevést cseréltem le: a `pull_request` trigger mostantól
+`devel` bázisra is fut, tehát a kapu **nem függ attól, hogy hívják a
+forrásbranchet**. A `verify/**` bekerült a push listába is (PR előtti
+visszajelzés), de a push lista kommentben immár *kényelemnek, nem kapunak* van
+jelölve — hogy a következő szerkesztés ne állítsa vissza a régi feltevést.
+Vállalt ár: `feature/**` → `devel` PR mostantól kétszer fut (~3 CI-perc).
+
+A PR maga a bizonyíték: ez az első `devel` bázisú PR, amin egyáltalán lefutott
+`pull_request` esemény — zöld, ahogy a `devel` push-futása is a merge után
+(`bb65c33`, ezt most **megnéztem**).
+
+**2. Parse-olja-e valaki a `"resource already gone: <ocid> (<OCI üzenete>)"`
+alakot? — Nem.** A relay a modul hibaobjektumát `json.RawMessage`-ként veszi át
+és **átlátszatlanul** továbbadja (`core/cabinet/cicwasm.go:363-366, 378-382`) —
+nem néz bele, nem képez le, nem illeszt. Az ökoszisztéma-szintű keresés a
+`"resource already gone"` sztringre és a `provider_code` mezőre a modulon kívül
+**egyetlen kódfogyasztót sem** adott (csak egy design-thread szövegfájl és a KB
+index adat). A #22 üzenetformátum-változása tehát nem tört el semmit.
+
+**Korlát:** ez ennek a gépnek az ökoszisztéma-checkoutjaira igaz. Repón kívüli,
+downstream ProofTrace-fogyasztóról (dashboard, audit eszköz) nem tudok
+nyilatkozni — ilyet nem kerestem, mert nem tudom, hol lenne.
+
+**Ami tudatosan nyitva marad:** a `NotAuthorizedOrNotFound` az OCI szándékos
+összemosása a „nincs jogod" és a „nincs ilyen" esetnek, a `class: not-found`
+leképezés tehát erősebbet állít, mint amit a válasz alátámaszt. Ez leképezési
+döntés, nem hiba — nem írtam át magamtól.
