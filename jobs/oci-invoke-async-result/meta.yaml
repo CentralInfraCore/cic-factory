@@ -50,7 +50,7 @@ workplace:
   branch: "feature/oci-invoke-async-result"
 
 # Status
-status: "pending"
+status: "running"
 error_message: ""
 
 usage:
@@ -68,5 +68,5 @@ usage:
 
 timestamps:
   created: "2026-08-05T00:00:00Z"
-  started: ""
+  started: "2026-08-05T11:13:58Z"
   completed: ""
