@@ -31,7 +31,7 @@ agent:
   # (50, 70, 150, 150). The observed shape is 150-250 turns, because an
   # implementation turn is a compile-run-read cycle, not a read.
   max_turns: "250"
-  session_id: ""
+  session_id: "a1cb28d0-1146-49c1-8239-39b2e6ce64c1"
 
 # Workplace
 workplace:
@@ -41,23 +41,29 @@ workplace:
   branch: "feature/oci-instance-lifecycle-coverage"
 
 # Status
-status: "running"
+status: "done"
 error_message: ""
 
 usage:
-  cost_usd: "0.25417490000000004"
-  turns: "6"
+  # Not recorded by the wrapper. The launch was piped through `head`, the pipe
+  # closed while run-job.sh was still writing, and the wrapper died before the
+  # step that parses the run JSON into this block. The agent kept running as an
+  # orphan, completed its work and pushed both branches; only the bookkeeping
+  # was lost. Counted from the session log instead: 306 assistant messages, and
+  # no terminating result record, so cost and token figures are unavailable.
+  cost_usd: ""
+  turns: "306"
   max_turns: "250"
-  stop_reason: "end_turn"
-  duration_ms: "51355"
-  models: "claude-haiku-4-5-20251001,claude-sonnet-5"
-  total_input_tokens: "190770"
-  input_tokens: "5251"
-  cache_read_input_tokens: "158163"
-  cache_creation_input_tokens: "27356"
-  output_tokens: "2503"
+  stop_reason: "wrapper-killed-orphan-completed"
+  duration_ms: ""
+  models: ""
+  total_input_tokens: ""
+  input_tokens: ""
+  cache_read_input_tokens: ""
+  cache_creation_input_tokens: ""
+  output_tokens: ""
 
 timestamps:
   created: "2026-08-04T00:00:00Z"
   started: "2026-08-04T18:29:46Z"
-  completed: ""
+  completed: "2026-08-04T19:03:17Z"
