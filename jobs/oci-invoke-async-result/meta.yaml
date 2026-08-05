@@ -1,0 +1,72 @@
+schema_version: "1.0"
+
+# Identification
+job_id: "oci-invoke-async-result"
+parent_job_id: "oci-instance-lifecycle-coverage"
+
+# Hierarchy level
+level: "repo"
+target:
+  repo: "cic-module-oracle-cloud"
+  path: "module"
+
+# KB context
+# Chunk ids are NOT stable — the KB is re-indexed and older anchors drift onto
+# unrelated symbols. These three were content-verified on 2026-08-05 against
+# their file_path, which is the real anchor:
+#   c761 -> CIC-Relay/core/cabinet/proof_trace.yaml   (struct ProofTraceStep)
+#   c762 -> CIC-Relay/core/cabinet/proof_trace.yaml   (struct ProofTrace)
+#   c163 -> CIC-Relay/ai/SYSTEM_CONTEXT.md            ("A ProofTrace")
+# They are here to make the *why* concrete: a "succeeded" that means "started"
+# is false evidence in exactly the record this platform exists to protect.
+kb_focus:
+  - "c761"
+  - "c762"
+  - "c163"
+promptmap_ref: ""
+
+# Agent
+# Model rationale: the defect is already located, measured against real OCI, and
+# the fix is named down to the struct field and the line numbers. The judgement
+# left is small — match the async rule the other codepath already uses instead of
+# inventing one — and the spec points at it explicitly. Same class of work as the
+# parent job, which ran on sonnet-5.
+agent:
+  config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
+  model: "claude-sonnet-5"
+  # Measured, not guessed: implementation jobs in this repo land at 150-250 turns
+  # because an implementation turn is a compile-run-read cycle. The parent job
+  # overran 250 (306 counted from the session log), but it shipped a schema, two
+  # harness tests and a doc set; this one is a struct field, a header read, a
+  # status rule and fixtures.
+  max_turns: "200"
+  session_id: ""
+
+# Workplace
+workplace:
+  repos:
+    - "cic-factory"
+    - "cic-module-oracle-cloud"
+  branch: "feature/oci-invoke-async-result"
+
+# Status
+status: "pending"
+error_message: ""
+
+usage:
+  cost_usd: ""
+  turns: ""
+  max_turns: ""
+  stop_reason: ""
+  duration_ms: ""
+  models: ""
+  total_input_tokens: ""
+  input_tokens: ""
+  cache_read_input_tokens: ""
+  cache_creation_input_tokens: ""
+  output_tokens: ""
+
+timestamps:
+  created: "2026-08-05T00:00:00Z"
+  started: ""
+  completed: ""
