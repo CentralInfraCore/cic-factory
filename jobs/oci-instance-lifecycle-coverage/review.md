@@ -116,11 +116,31 @@ akkor derült ki, amikor egy éles OCI 202-t adott vissza.
 
 Dokumentálva: PR #21 (`verify/invoke-real-oci`) — jegyzőkönyv, nem javítás.
 
+### Hibás utak mérése (a happy path után)
+
+Az `ociError` (`provider.go:893`) leképezését is megmértem valós OCI ellen — ezt
+olvassa egy ProofTrace-fogyasztó, ha valami elszáll:
+
+| Eset | Provokálás | HTTP | Hol jött ki | `error_class` | `provider_code` |
+|---|---|---|---|---|---|
+| konfliktus | `Destroy()` VCN-re rácsatolt subnettel | `409` | step-szinten, `failed` | `conflict` | `IncorrectState` |
+| not-found | ugyanaz a subnet kétszer törölve | `404` | **envelope-szinten**, `error` | `not-found` | — (elveszik) |
+| validáció | `Execute(CreateVcn)`, `cidrBlock: 999.0.0.0/16` | `400` | step-szinten, `failed` | `validation` | `InvalidParameter` |
+
+A leképezés helyes. Az érdemi megfigyelés: a **`404` más alakban jön vissza**, mint
+minden más hiba — a `Destroy()` szándékosan rövidre zárja (`provider.go:598`),
+így az envelope maga lesz `status: error`, és **az OCI natív `code`/`message`-e
+elveszik**, míg minden más úton megmarad. Vagyis egy 404 kevesebb
+provider-bizonyítékot visz a ProofTrace-be, mint egy 409.
+
+Nem mért ágak, néven nevezve: `401`/`403`, `412`, `429` (az egyetlen `retryable`),
+`5xx`. Dokumentálva: PR #21, `088a9a2`.
+
 **Nyitva marad:**
-- **Az `Invoke` async-hibájának javítása** — `provider.go` kódváltozás, külön munka.
-- **Hibás út**: egy OCI által *elutasított* törlés (függő erőforrás, jogosultsághiány)
-  nem futott — a `Destroy()` hibaleképezése fixture-szinten marad. Mindhárom futás
-  happy-path volt.
+- **Az `Invoke` async-hibájának javítása** — `provider.go` kódváltozás, külön job.
+- A `404` provider-kód-vesztése — kisebb, de ugyanabba a családba tartozik.
+- A nem mért hibaágak (`401`/`403`, `412`, `429`, `5xx`) — alulprivilegizált
+  principal vagy terhelés kell hozzájuk, ez a harness nem állítja elő.
 
 Futtatási buktató, amit a job outputja nem tudhatott: a recept host Go toolchaint
 feltételez, de a Go a builder konténerben van, és a `docker-compose.yml` nem mountolja
