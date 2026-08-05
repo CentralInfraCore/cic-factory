@@ -35,7 +35,8 @@
 - A `manual-verification.md` és az `orchestrator-verification.md` **minden** módosított
   sorát — az `invoke` sort és a Usage-receptet néztem, a többit nem.
 - A `module.wasm` binárist a `project.yaml` `buildHash`-hez (a CI futtatja).
-- Az `orchestrator-verification.md` receptjét **nem futtattam le** — az a következő lépés.
+- ~~Az `orchestrator-verification.md` receptjét **nem futtattam le** — az a következő lépés.~~
+  **Lefuttatva 2026-08-05, lásd az „Utólag" szakaszt a fájl végén.**
 - A B feladat üzenet-formátumát (`"... (<OCI üzenete>)"`) nem vetettem össze azzal,
   hogy egy ProofTrace-fogyasztó parse-olja-e ezt a zárójeles alakot. Ha valaki az
   üzenetre illeszt, ez a változás érintheti — nem néztem meg, van-e ilyen fogyasztó.
@@ -64,3 +65,63 @@ forráskódszinten és futtatott teszttel is ellenőrizve, a negatív irányt **
 mértem meg**, a reachability valós production kódútra mutat, és a doc nem állít
 többet, mint amit fixture bizonyít. A valós OCI újraverifikáció nyitott tétel,
 nem a merge blokkolója.
+
+---
+
+## Utólag — a valós OCI verifikáció lefuttatva (2026-08-05)
+
+A merge nem a lezárás volt, csak a feltétele. A `review.md` fenti verziója egy
+fixture-szinten bizonyított javítást engedett át; ez a szakasz zárja a hurkot.
+
+- Modul repo PR-ek: **#22** (`feature/oci-invoke-async-result` → `devel`, `488ca54`),
+  **#23** (`verify/invoke-async-real-oci` → `devel`, `12c9209`)
+- Tenancy: `oc1` / `eu-frankfurt-1` (commercial trial), frissen indított Always Free
+  `VM.Standard.E2.1.Micro` + scratch compartment
+
+### Amit ténylegesen megmértem
+
+| Állítás | Mérés | Eredmény |
+|---|---|---|
+| `Invoke` async esetben `accepted`, nem `succeeded` | `TestManualRealOCIInvoke`, `ChangeInstanceCompartment` élő instance-on | `{"status":"accepted","http_status":202,"work_request_id":"ocid1.coreservicesworkrequest.oc1.eu-frankfurt-1.abtheljtmotbcz…"}` — **igazolt**, ez pontosan az az action, ami korábban hamis sikert adott |
+| A `work_request_id` valódi és pollozható | `TestManualRealOCIPoll` ugyanazzal az id-vel | `SUCCEEDED` / `percent_complete: 100` / `terminal: true` — **igazolt** |
+| A lánc zárul: `Invoke → accepted → Poll → terminal` | a fenti kettő egymás után, ugyanazon az id-n | **igazolt** — és a Work Requestet maga az `Invoke` termelte, nem CLI-vel gyártott kerülőút |
+| Az action tényleg végrehajtódott | `oci compute instance get` (független a modultól) | `compartment-id` = a scratch compartment — **igazolt** |
+| A 404 megőrzi az OCI kódját | `TestManualRealOCIDestroy` egy előtte létrehozott és törölt VCN-en | `provider_code: "NotAuthorizedOrNotFound"`, üzenet: `"resource already gone: … (Authorization failed or requested resource not found.)"`, `class`/`retryable`/envelope-alak változatlan — **igazolt** |
+| Takarítás | `compute instance list` / `vcn list` / aktív compartment lista | mind üres, a tenancy újra üres — **igazolt** |
+
+### Amit a futás derített ki, és nem volt benne a specben
+
+1. **A recept rossz kulcsot párosít a régióhoz.** Az
+   `output/orchestrator-verification.md` `eu-frankfurt-1`-hez a
+   `~/.oci/oci_api_key.pem`-et adja meg, de az a `oc19`/`eu-frankfurt-2`
+   tenancy kulcsa; `eu-frankfurt-1` a `oci_api_key_poc.pem`-hez tartozik.
+   Az agent ezt nem tudhatta — nem futtathatta le. A modul doc `Usage`
+   szekciójába bekerült táblázatként (#23).
+
+2. **`TestManualRealOCIDestroy` ezen a méréssen szándékosan bukik.** Sikeres
+   törlést állít, mi meg épp egy megszűnt erőforrást adunk neki — a mérés az
+   envelope, nem a teszt verdiktje. Ez pont az a fajta „piros, tehát baj"
+   félreolvasás, ami egy következő futót megállítana; a doc most kimondja.
+
+3. **A `verify/**` branchekre nem fut CI.** A `.github/workflows/ci.yml`
+   push-triggere `main`/`devel`/`feat`/`feature`/`fix`/`chore` — a `verify/**`
+   nincs benne, a `pull_request` trigger pedig csak `main` bázisra fut. Így a
+   #20, #21 és #23 PR-ek **mind CI nélkül** mentek `devel`-be. Doc-only
+   változásoknál ez alacsony kockázat, és `make docs.link-check`-et lokálisan
+   futtattam — de a lyuk valódi, és nem doc-only tartalomra is nyitva áll.
+   Nem javítottam: külön döntés, nem ennek a jobnak a scope-ja.
+
+### Ami továbbra sem igazolt
+
+- A `NotAuthorizedOrNotFound` az OCI szándékos összemosása a „nincs jogod" és a
+  „nincs ilyen" esetnek. A `class: not-found` leképezés tehát **erősebbet állít,
+  mint amit az OCI válasza alátámaszt**. Nem ennek a jobnak a hibája — a mérés
+  hozta felszínre, és eddig sehol nincs kimondva a modulon kívül.
+- A `"resource already gone: <ocid> (<OCI üzenete>)"` alak parse-olása: továbbra
+  sem néztem meg, van-e olyan ProofTrace-fogyasztó, amelyik az üzenetre illeszt.
+
+### Döntés
+
+A job **lezárva**. Az `invoke` sor és a `not-found` sor a
+`docs/design/manual-verification.md`-ben `verified` a konkrét mért értékekkel,
+és nem többet állít annál, amit megmértem.
