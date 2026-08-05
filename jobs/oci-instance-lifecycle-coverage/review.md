@@ -68,13 +68,32 @@ A review „nem igazolt" sorai közül az egyik lezárva. Az `output/orchestrato
 | `oci network vcn get` utána | `404 NotAuthorizedOrNotFound` |
 | `oci network vcn list` | üres |
 
-A claim-evidence tábla „`TestManualRealOCIDestroy` valós OCI ellen fut és sikeres —
-**NEM igazolt** (közepes kockázat)" sora ezzel **igazolt** — `cic:network:vcn`-re.
-Dokumentálva: `cic-module-oracle-cloud` PR #20 (`verify/destroy-real-oci`).
+A **B recept** is lefuttatva, élő Always Free `VM.Standard.E2.1.Micro` instance-en:
 
-**Nyitva marad:** a B recept (`TerminateInstance` a `cic:compute:instance`-en — más
-névalakú ÉS aszinkron, ez a `oci-lifecycle-role-bridge` hibaosztálya; a VCN-futás nem
-helyettesíti) és a C recept (`Invoke`, ehhez második compartment kell).
+| Lépés | Mérés |
+|---|---|
+| `Destroy()` | `Destroy resolved operation label: **TerminateInstance**`, `204`, `status: **accepted**`, + `work_request_id` |
+| `Poll()` a Destroy saját Work Requestjén | `IN_PROGRESS 0% terminal:false` → `SUCCEEDED 100% terminal:true` |
+| `oci compute instance get` | `TERMINATED` |
+
+A claim-evidence tábla „`TestManualRealOCIDestroy` valós OCI ellen fut és sikeres —
+**NEM igazolt** (közepes kockázat)" sora ezzel **igazolt**, mindkét úton: szinkron
+(`DeleteVcn`/`succeeded`) és aszinkron (`TerminateInstance`/`accepted`).
+
+Amit a B a VCN-futáson felül rögzít: a `resolveOp` **szerep szerint** választ a
+beágyazott kontraktusból, nem névalak alapján (`TerminateInstance`, nem
+`DeleteInstance`) — ez az `oci-lifecycle-role-bridge` hibaosztálya, most valós
+OCI-n igazolva. És a lánc végig zárt: `Destroy` → `work_request_id` → `Poll` →
+terminális, nem CLI-vel gyártott Work Requesten.
+
+Dokumentálva: `cic-module-oracle-cloud` PR #20 (`verify/destroy-real-oci`),
+két commit — `24e15ea` (A) és `883c10a` (B). Tenancy takarítva, üres.
+
+**Nyitva marad:**
+- **C recept** (`Invoke` / `ChangeInstanceCompartment`) — ehhez második compartment kell.
+- **Hibás út**: egy OCI által *elutasított* törlés (függő erőforrás, jogosultsághiány)
+  nem futott — a `Destroy()` hibaleképezése fixture-szinten marad. Mindkét futás
+  happy-path volt.
 
 Futtatási buktató, amit a job outputja nem tudhatott: a recept host Go toolchaint
 feltételez, de a Go a builder konténerben van, és a `docker-compose.yml` nem mountolja
