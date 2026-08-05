@@ -18,7 +18,73 @@
 #       <egyéb repo>/       ← ha a job más repót is igényel
 set -euo pipefail
 
+# Launching this through a pipe that closes early (`... | head -20`) used to send
+# SIGPIPE mid-flight: the wrapper died on the signal, meta.yaml stayed "running"
+# forever, and the agent carried on as an orphan with nobody left to record what
+# it did.
+#
+# Ignoring PIPE does NOT keep the script alive — the next `echo` still fails with
+# EPIPE and `set -e` ends the run (measured, not assumed). What it changes is the
+# manner of death: an untrapped signal skips the EXIT trap, a `set -e` exit does
+# not. So the finalizer below always gets to run, and the job is recorded as
+# error instead of being left claiming "running".
+trap '' PIPE
+
 WORKDIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+# --- Finalizer -------------------------------------------------------------
+# Runs on every exit path, including a failure under `set -e`, Ctrl-C, or a
+# TERM. Its one job: never leave meta.yaml claiming "running" when nothing is
+# running. It writes to a log file and to stderr rather than stdout, so it still
+# works when stdout is the closed pipe that caused the exit in the first place.
+FINALIZED=0
+WE_SET_RUNNING=0
+AGENT_PID=""
+RUN_LOG=""
+finalize() {
+    local rc=$?
+    [[ "$FINALIZED" -eq 1 ]] && return
+    FINALIZED=1
+    trap - EXIT INT TERM
+
+    # A normal run finalizes inline and sets FINALIZED itself; reaching here with
+    # a still-"running" meta means the wrapper is dying early.
+    #
+    # WE_SET_RUNNING matters: a meta can already say "running" when this process
+    # starts (a previous stuck run). Declining the "Job már fut. Folytatod?"
+    # prompt must not rewrite someone else's job to error — only a run that put
+    # the status there is allowed to take it back.
+    local st
+    st=$(grep '^status:' "${META:-/dev/null}" 2>/dev/null | awk -F'"' '{print $2}' || true)
+    if [[ "$WE_SET_RUNNING" -eq 1 && "$st" == "running" ]]; then
+        local end; end=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        python3 - "$META" "$end" <<'PYFIN' || true
+import re, sys
+meta, end = sys.argv[1], sys.argv[2]
+with open(meta) as f: c = f.read()
+c = re.sub(r'^status:.*$', 'status: "error"', c, flags=re.MULTILINE)
+c = re.sub(r'^(\s+)completed:.*$', rf'\1completed: "{end}"', c, flags=re.MULTILINE)
+# error_message is a top-level key (jobs/.schema/meta.yaml) — matching it with a
+# leading-whitespace group never fires, and the field stayed empty on every error.
+c = re.sub(r'^error_message:.*$',
+           'error_message: "wrapper exited before finalizing — see the job log; the agent may have kept running"',
+           c, flags=re.MULTILINE)
+with open(meta, "w") as f: f.write(c)
+PYFIN
+        {
+            echo "[!] A wrapper idő előtt kilépett (rc=$rc). meta.yaml → error."
+            [[ -n "$AGENT_PID" ]] && kill -0 "$AGENT_PID" 2>/dev/null && \
+                echo "[!] Az agent MÉG FUT árván: PID $AGENT_PID — nézd meg, mielőtt újraindítasz."
+            [[ -n "$RUN_LOG" ]] && echo "[*] Napló: $RUN_LOG"
+        } >&2
+        [[ -n "$RUN_LOG" ]] && {
+            echo "wrapper exited early rc=$rc at $end; agent pid=${AGENT_PID:-none}"
+        } >>"$RUN_LOG" 2>/dev/null || true
+    fi
+    [[ $rc -eq 0 ]] && rc=1
+    exit $rc
+}
+trap finalize EXIT INT TERM
 
 # Lokális path konfig betöltése (gitignored)
 [[ -f "$WORKDIR/tools/env.sh" ]] && source "$WORKDIR/tools/env.sh"
@@ -131,6 +197,7 @@ content = re.sub(r'^\s+completed:.*$', '  completed: ""', content, flags=re.MULT
 with open(meta_path, "w") as f:
     f.write(content)
 PYEOF
+WE_SET_RUNNING=1   # from here on, an early exit is ours to clean up
 
 bash "$WORKDIR/tools/update-index.sh"
 git -C "$WORKDIR" add "$META" jobs/index.yaml
@@ -225,11 +292,18 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUTPUT_FILE="$FACTORY_CLONE/jobs/$JOB_ID/output/agent-output.md"
 [[ "$RESUME" -eq 1 ]] && OUTPUT_FILE="$FACTORY_CLONE/jobs/$JOB_ID/output/agent-output-resume-$STAMP.md"
 RAW_JSON="$(mktemp)"
+RUN_LOG="$RAW_JSON.stderr"   # what the finalizer points the human at
 
 # Fallback marker: ha a JSON parse elszáll, a jsonl mtime-keresés még megmenti a session_id-t
 SESSION_MARKER=$(mktemp)
 sleep 1  # mtime-felbontás miatt biztosan a marker UTÁN íródjon az új jsonl
 
+# Run the agent as a background child and wait for it, rather than in the
+# foreground. Two reasons, both about the orphan case: the wrapper learns the
+# agent's PID (a foreground child has none the shell can name), and a signal
+# sent to the wrapper alone no longer takes the agent down with it. `wait`
+# still yields the agent's exit status, so the normal path is unchanged.
+# stdin is closed — a background job reading the terminal would take SIGTTIN.
 set +e
 CLAUDE_CONFIG_DIR="$AGENT_CONFIG" claude --print "$PROMPT" \
     --mcp-config "$CIC_MCP_CONFIG" \
@@ -237,8 +311,11 @@ CLAUDE_CONFIG_DIR="$AGENT_CONFIG" claude --print "$PROMPT" \
     --max-turns "$MAX_TURNS" \
     "${MODEL_FLAG[@]}" \
     "${RESUME_FLAG[@]}" \
-    > "$RAW_JSON" 2>"$RAW_JSON.stderr"
+    < /dev/null > "$RAW_JSON" 2>"$RUN_LOG" &
+AGENT_PID=$!
+wait "$AGENT_PID"
 EXIT_CODE=$?
+AGENT_PID=""   # reaped — nothing to warn about from here on
 set -e
 
 # --- JSON kibontás: result → agent-output.md, usage → shell változók ---
@@ -405,6 +482,7 @@ git -C "$WORKDIR" add "$META" jobs/index.yaml
 git -C "$WORKDIR" commit -m "job: $JOB_ID — $NEW_STATUS"
 git -C "$WORKDIR" push
 
+FINALIZED=1   # the normal path recorded the status itself; the trap must not override it
 echo "[✓] Kész: $JOB_ID — $NEW_STATUS"
 echo "[*] Feature branch pusholt: $FEATURE_BRANCH"
 echo "[*] Review: gh pr create --head $FEATURE_BRANCH"
