@@ -125,3 +125,35 @@ fixture-szinten bizonyított javítást engedett át; ez a szakasz zárja a hurk
 A job **lezárva**. Az `invoke` sor és a `not-found` sor a
 `docs/design/manual-verification.md`-ben `verified` a konkrét mért értékekkel,
 és nem többet állít annál, amit megmértem.
+
+### Utóirat — a review saját kapui is elcsúsztak
+
+A fenti szakasz `docs.link-check` zöldjét vissza kell vonnom: az **az agent
+klónjában futott, nem az enyémben**. A `make manifest-verify`/`manifest-update`/
+`docs.link-check` mind `docker compose exec builder`-en megy, ami a **már futó**
+konténerre csatlakozik — és a compose a projektnevet a könyvtár basename-jéből
+képzi. Az agent workspace-klónja (`jobs/<job-id>/workspace/cic-module-oracle-cloud`)
+ugyanazt a basename-et kapja, mint a live checkout, így az ő 11:21-kor indított
+konténere birtokolta a nevet. `docker inspect`: `/app` →
+`jobs/oci-invoke-async-result/workspace/cic-module-oracle-cloud`, `17c8549`-en állva.
+
+Következmény: a `manifest-verify` **átment** egy törött manifesten, a
+`manifest-update` „updated"-et írt és nem változtatott semmit. A `MANIFEST.sha256`
+a #23 doc-változás után elavult maradt, és a törés a `main` bázisú release PR-en
+(#24) bukott ki. Javítva: **#25** (`f9a359b`) — a konténert a live checkoutból
+újraindítva, a kapuk élesben újrafuttatva (`manifest-verify` OK, `docs.link-check`
+OK, `make check` exit 0).
+
+**Amit a `docker compose run` nem érint:** a valós OCI mérések épek — azok az
+aktuális könyvtár compose fájljából hoznak létre új konténert.
+
+**A második pontosítás:** azt írtam, a `verify/**`-on hiányzó CI miatt derült ki
+csak a release PR-en. A futáslista mást mond — a `devel` **benne van** a push
+triggerben, tehát `12c9209` push-futása azonnal pirosra váltott a #23 merge után
+(18:24). A jelzés ott volt; nem néztem meg. A `verify/**` lyuk azt magyarázza,
+miért nem derült ki *merge előtt*, nem azt, hogy miért nem derült ki egyáltalán.
+
+**Merge előtti szabály, ami ebből következik:** merge után a célbranch saját
+push-futását is meg kell nézni, ne csak a PR checkjeit — és `exec`-alapú lokális
+kapu eredményét csak azután hidd el, hogy a konténer mountját és HEAD-jét
+ellenőrizted.
