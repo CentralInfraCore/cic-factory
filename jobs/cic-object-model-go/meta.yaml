@@ -1,0 +1,67 @@
+schema_version: "1.0"
+
+# Identification
+job_id: "cic-object-model-go"
+parent_job_id: "cic-object-model-spec"
+
+# Hierarchy level
+level: "repo"
+target:
+  repo: "cic-object-model"
+  path: "go"
+
+# KB context
+# Chunk ids are NOT stable — verify file_path before trusting one. These three
+# were content-verified on 2026-08-07 by the parent job:
+#   c4135 -> CIC-basic-knowledge/docs/hu/repos/cic-primitives.md  (meta-schema layer)
+#   c4255 -> CIC-objs/*/ai/DECISIONS.md  (D-003 — the irreducible atom set)
+#   c4367 -> CIC-objs/*/ai/DECISIONS.md  (D-011 — Access as the 8th atom)
+# NOTE: the parent job measured that the LIVE repos say 8 atoms (D-003 amended
+# 2026-05-04), while c4255 still says 7. The KB snapshot is stale on this point.
+# The spec is the authority here, not the KB.
+kb_focus:
+  - "c4135"
+  - "c4255"
+  - "c4367"
+promptmap_ref: ""
+
+# Agent
+# Model rationale: this is the FIRST implementation of a spec that has never
+# been executed. Its real job is not to write Go — it is to be the first thing
+# that discovers where SPEC.md is ambiguous, self-contradictory, or unimplementable.
+# Reporting a spec defect correctly is worth more here than shipping code, and
+# recognising one requires holding the whole model in view.
+agent:
+  config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
+  model: "claude-opus-5"
+  max_turns: "180"
+  session_id: ""
+
+# Workplace
+workplace:
+  repos:
+    - "cic-factory"
+    - "cic-object-model"
+  branch: "feature/cic-object-model-go"
+
+# Status
+status: "pending"
+error_message: ""
+
+usage:
+  cost_usd: ""
+  turns: ""
+  max_turns: ""
+  stop_reason: ""
+  duration_ms: ""
+  models: ""
+  total_input_tokens: ""
+  input_tokens: ""
+  cache_read_input_tokens: ""
+  cache_creation_input_tokens: ""
+  output_tokens: ""
+
+timestamps:
+  created: "2026-08-07T00:00:00Z"
+  started: ""
+  completed: ""

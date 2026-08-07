@@ -1,0 +1,9 @@
+---
+id: invalid/008_cyclic_primitive_declaration
+title: Cyclic primitive declaration is rejected at schema load
+invariants: [INV-005]
+description: >-
+  Without INV-005 the model is not implementable: materialization would not
+  terminate. Here `access` declares a `contract` which re-declares the `access`
+  it hangs from. The cycle must be detected when the schema is loaded, not
+  discovered by exhausting memory during materialization.

@@ -1,0 +1,8 @@
+---
+error:
+  code: E_ORIGIN_EMPTY
+  invariant: INV-018
+  stage: final-validation
+  path: $.mtu.origin
+  detail: >-
+    origin must not be empty; the node's authority is unattributable.

@@ -1,0 +1,7 @@
+---
+id: materialization/009_normalize_map
+title: Short-form map normalizes; mixed yaml/schema origins per child
+invariants: [INV-001, INV-002, INV-013, INV-027]
+description: >-
+  One child authored, one defaulted, in the same map. Demonstrates that origin
+  is per-node, not per-document.

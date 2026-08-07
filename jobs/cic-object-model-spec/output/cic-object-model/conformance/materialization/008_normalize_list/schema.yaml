@@ -1,0 +1,10 @@
+---
+model: "0.1"
+root:
+  shape: object
+  children:
+    addresses:
+      shape: list
+      item:
+        shape: scalar
+        scalar_type: string

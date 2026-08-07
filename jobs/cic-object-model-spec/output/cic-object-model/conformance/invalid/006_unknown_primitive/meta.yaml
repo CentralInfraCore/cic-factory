@@ -1,0 +1,8 @@
+---
+id: invalid/006_unknown_primitive
+title: Unknown primitive member is rejected
+invariants: [INV-021, INV-022]
+description: >-
+  `priority` is neither `values`, `origin`, nor one of the eight atoms. A node
+  with undefined primitive semantics is not valid, and a module must never
+  receive one (INV-031f).

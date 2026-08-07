@@ -1,0 +1,16 @@
+---
+cic:
+  model: "0.1"
+values:
+  payload:
+    values:
+      whatever: anything
+      access: not-a-primitive
+      nested:
+        completely: arbitrary
+    origin: [yaml]
+    shape:
+      values:
+        type: opaque
+      origin: [schema]
+origin: [yaml]

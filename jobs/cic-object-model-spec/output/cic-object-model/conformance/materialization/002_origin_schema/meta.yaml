@@ -1,0 +1,10 @@
+---
+id: materialization/002_origin_schema
+title: Absent value materializes from schema default, origin [schema]
+truth_table_row: 2
+invariants: [INV-002, INV-013, INV-030]
+description: >-
+  Truth-table row 2 (sealed=no, yaml=no, schema=yes). The author asserts the
+  root object but supplies no mtu; the schema default fills it. Note the root
+  node's origin is [yaml] (the author asserted its presence) while the child's
+  is [schema].

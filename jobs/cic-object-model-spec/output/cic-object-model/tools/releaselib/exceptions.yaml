@@ -1,0 +1,67 @@
+---
+module: tools.releaselib.exceptions
+description: ''
+tags:
+- builder
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: ReleaseError
+  kind: class
+  decorators: []
+  description: Base exception for all release-related errors.
+  implements:
+  - Exception
+  references: []
+- name: __init__
+  kind: method
+  receiver: ReleaseError
+  decorators: []
+  description: ''
+  references: []
+  calls: []
+- name: GitStateError
+  kind: class
+  decorators: []
+  description: Exception for errors related to the Git repository's state.
+  implements:
+  - ReleaseError
+  references: []
+- name: GitServiceError
+  kind: class
+  decorators: []
+  description: Exception for errors originating from the Git service wrapper.
+  implements:
+  - ReleaseError
+  references: []
+- name: VersionMismatchError
+  kind: class
+  decorators: []
+  description: Exception for version string mismatches or invalid increments.
+  implements:
+  - ReleaseError
+  references: []
+- name: ConfigurationError
+  kind: class
+  decorators: []
+  description: Exception for configuration-related errors (e.g., in project.yaml).
+  implements:
+  - ReleaseError
+  references: []
+- name: VaultServiceError
+  kind: class
+  decorators: []
+  description: Exception for errors originating from the Vault service.
+  implements:
+  - ReleaseError
+  references: []
+- name: ManualInterventionRequired
+  kind: class
+  decorators: []
+  description: Custom exception to signal that the process has stopped gracefully
+    and requires manual user action to continue. This is not a fatal error.
+  implements:
+  - ReleaseError
+  references: []

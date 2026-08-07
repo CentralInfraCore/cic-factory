@@ -1,0 +1,10 @@
+---
+id: materialization/012_discriminator_payload_keywords
+title: Primitive-named keys below `values` are domain data
+invariants: [INV-011, INV-008, INV-028]
+description: >-
+  The critical false-positive case. Under an opaque payload, keys named
+  `values`, `default`, `origin` and `access` are ordinary domain data and MUST
+  be preserved verbatim. This is why the model needs no global reserved words.
+  Note `default: false` here is domain data, not a CIC marker — the case that
+  makes a purely syntactic values+default discriminator unsound (SPEC 4.2).

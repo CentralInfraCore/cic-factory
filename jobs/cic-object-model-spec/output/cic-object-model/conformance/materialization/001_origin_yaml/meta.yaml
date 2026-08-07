@@ -1,0 +1,9 @@
+---
+id: materialization/001_origin_yaml
+title: Explicit YAML value yields origin [yaml]
+truth_table_row: 1
+invariants: [INV-001, INV-002, INV-013, INV-030]
+description: >-
+  Truth-table row 1 (sealed=no, yaml=yes, schema=no). The author supplies the
+  value explicitly, so origin is [yaml] even though the schema declares a
+  default. The short form normalizes to a full node.

@@ -1,0 +1,74 @@
+schema_version: "1.0"
+
+# Identification
+job_id: "cic-object-model-rust"
+parent_job_id: "cic-object-model-spec"
+
+# Hierarchy level
+level: "repo"
+target:
+  repo: "cic-object-model"
+  path: "rust"
+
+# KB context
+# Chunk ids are NOT stable — verify file_path before trusting one. These three
+# were content-verified on 2026-08-07 by the parent job:
+#   c4135 -> CIC-basic-knowledge/docs/hu/repos/cic-primitives.md  (meta-schema layer)
+#   c4255 -> CIC-objs/*/ai/DECISIONS.md  (D-003 — the irreducible atom set)
+#   c4367 -> CIC-objs/*/ai/DECISIONS.md  (D-011 — Access as the 8th atom)
+# NOTE: the parent job measured that the LIVE repos say 8 atoms (D-003 amended
+# 2026-05-04), while c4255 still says 7. The KB snapshot is stale on this point.
+# The spec is the authority here, not the KB.
+kb_focus:
+  - "c4135"
+  - "c4255"
+  - "c4367"
+promptmap_ref: ""
+
+# Agent
+# Model rationale: this job is the independence check on cic-object-model-go.
+# Its value comes entirely from NOT inheriting the Go implementation's reading
+# of the spec — where the two disagree, the spec was ambiguous, and that is the
+# finding. An agent that resolves a disagreement by copying Go's behaviour
+# destroys the only reason for writing the model twice. Holding that line under
+# pressure to make tests pass is judgement, not throughput.
+#
+# This job additionally extracts mk/rust.mk from CIC-Relay's Makefile — the
+# ecosystem's only Rust build machinery, currently inline in one file.
+agent:
+  config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
+  model: "claude-opus-5"
+  max_turns: "180"
+  session_id: ""
+
+# Workplace
+# CIC-Relay is cloned READ-ONLY: this job lifts the Rust gate out of its
+# Makefile. It must not be modified — see input.md hard constraints.
+workplace:
+  repos:
+    - "cic-factory"
+    - "cic-object-model"
+    - "CIC-Relay"
+  branch: "feature/cic-object-model-rust"
+
+# Status
+status: "pending"
+error_message: ""
+
+usage:
+  cost_usd: ""
+  turns: ""
+  max_turns: ""
+  stop_reason: ""
+  duration_ms: ""
+  models: ""
+  total_input_tokens: ""
+  input_tokens: ""
+  cache_read_input_tokens: ""
+  cache_creation_input_tokens: ""
+  output_tokens: ""
+
+timestamps:
+  created: "2026-08-07T00:00:00Z"
+  started: ""
+  completed: ""

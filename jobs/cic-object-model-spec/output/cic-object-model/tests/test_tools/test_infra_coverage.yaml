@@ -1,0 +1,219 @@
+---
+module: test_tools.test_infra_coverage
+description: ''
+tags:
+- schema
+- test
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: mock_git_service
+  kind: function
+  decorators:
+  - pytest.fixture
+  description: Mock GitService.
+  references:
+  - pytest.fixture
+  - tools.releaselib.git_service.GitService
+  calls:
+  - mocker.MagicMock
+- name: mock_vault_service
+  kind: function
+  decorators:
+  - pytest.fixture
+  description: Mock VaultService.
+  references:
+  - pytest.fixture
+  - tools.releaselib.vault_service.VaultService
+  calls:
+  - mocker.MagicMock
+- name: full_mock_config
+  kind: function
+  decorators:
+  - pytest.fixture
+  description: Provides a full, valid config dictionary for complex tests.
+  references:
+  - pytest.fixture
+  calls: []
+- name: manager
+  kind: function
+  decorators:
+  - pytest.fixture
+  description: Creates a base ReleaseManager instance.
+  references:
+  - pytest.fixture
+  - tools.infra.ReleaseManager
+  calls:
+  - mocker.MagicMock
+  - tools.infra.ReleaseManager
+- name: TestInfraCoverage
+  kind: class
+  decorators: []
+  description: This class contains tests specifically aimed at increasing code coverage.
+  implements: []
+  references: []
+- name: test_load_yaml_empty_content
+  kind: method
+  receiver: TestInfraCoverage
+  decorators: []
+  description: Covers the case where a YAML file contains only whitespace.
+  references:
+  - tools.infra.load_yaml
+  calls:
+  - mocker.mock_open
+  - mocker.patch
+  - tools.infra.load_yaml
+- name: test_write_yaml_cleanup_on_error
+  kind: method
+  receiver: TestInfraCoverage
+  decorators: []
+  description: Covers the finally block in write_yaml to ensure cleanup.
+  references:
+  - tools.infra.write_yaml
+  - tools.infra.ReleaseError
+  - pytest.raises
+  calls:
+  - OSError
+  - mocker.patch
+  - pytest.raises
+  - tools.infra.write_yaml
+- name: test_release_manager_init_no_logger
+  kind: method
+  receiver: TestInfraCoverage
+  decorators: []
+  description: Covers the else branch in ReleaseManager.__init__ for the logger.
+  references:
+  - tools.infra.ReleaseManager
+  calls:
+  - tools.infra.ReleaseManager
+- name: test_finalization_dry_run
+  kind: method
+  receiver: TestInfraCoverage
+  decorators: []
+  description: Covers the dry_run=True path in _execute_finalization_phase.
+  references: []
+  calls:
+  - manager._execute_finalization_phase
+  - mocker.patch
+- name: test_run_release_close_no_vault_service
+  kind: method
+  receiver: TestInfraCoverage
+  decorators: []
+  description: Covers the VaultService not initialized error.
+  references:
+  - tools.releaselib.exceptions.VaultServiceError
+  - pytest.raises
+  calls:
+  - manager.run_release_close
+  - pytest.raises
+- name: test_load_and_resolve_schema_yaml_error
+  kind: method
+  receiver: TestInfraCoverage
+  decorators: []
+  description: ''
+  references:
+  - tools.infra.load_and_resolve_schema
+  - tools.infra.ConfigurationError
+  - pytest.raises
+  calls:
+  - mocker.mock_open
+  - mocker.patch
+  - pytest.raises
+  - tools.infra.load_and_resolve_schema
+- name: test_validate_final_yaml_empty_schema
+  kind: method
+  receiver: TestInfraCoverage
+  decorators: []
+  description: ''
+  references:
+  - tools.infra.ValidationFailureError
+  - pytest.raises
+  calls:
+  - manager._validate_final_project_yaml
+  - mocker.patch
+  - pytest.raises
+- name: test_validate_final_yaml_empty_instance
+  kind: method
+  receiver: TestInfraCoverage
+  decorators: []
+  description: ''
+  references:
+  - tools.infra.ValidationFailureError
+  - pytest.raises
+  calls:
+  - manager._validate_final_project_yaml
+  - mocker.patch
+  - pytest.raises
+- name: test_validate_final_yaml_generic_exception
+  kind: method
+  receiver: TestInfraCoverage
+  decorators: []
+  description: ''
+  references:
+  - tools.infra.ReleaseError
+  - pytest.raises
+  calls:
+  - Exception
+  - manager._validate_final_project_yaml
+  - mocker.patch
+  - pytest.raises
+- name: test_developer_prep_with_main_component
+  kind: method
+  receiver: TestInfraCoverage
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - manager._execute_developer_preparation_phase
+  - mocker.patch
+- name: test_developer_prep_cleanup_fails
+  kind: method
+  receiver: TestInfraCoverage
+  decorators: []
+  description: ''
+  references:
+  - tools.infra.ReleaseError
+  - pytest.raises
+  calls:
+  - Exception
+  - ValueError
+  - manager._execute_developer_preparation_phase
+  - mocker.patch
+  - pytest.raises
+- name: test_finalization_with_dirty_repo
+  kind: method
+  receiver: TestInfraCoverage
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - manager._execute_finalization_phase
+  - mocker.patch
+- name: test_run_validation_value_error
+  kind: method
+  receiver: TestInfraCoverage
+  decorators: []
+  description: ''
+  references:
+  - tools.infra.ReleaseError
+  - pytest.raises
+  calls:
+  - ValueError
+  - manager.run_validation
+  - mocker.patch
+  - pytest.raises
+- name: test_run_validation_generic_error
+  kind: method
+  receiver: TestInfraCoverage
+  decorators: []
+  description: ''
+  references:
+  - tools.infra.ReleaseError
+  - pytest.raises
+  calls:
+  - Exception
+  - manager.run_validation
+  - mocker.patch
+  - pytest.raises

@@ -1,0 +1,9 @@
+---
+error:
+  code: E_UNKNOWN_PRIMITIVE
+  invariant: INV-021
+  stage: primitive-evaluation
+  path: $.mtu.priority
+  detail: >-
+    `priority` is not a member of the primitive set
+    (shape, role, behavior, contract, address, identity, event, access).

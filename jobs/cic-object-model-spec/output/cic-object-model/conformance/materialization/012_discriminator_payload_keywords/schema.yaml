@@ -1,0 +1,7 @@
+---
+model: "0.1"
+root:
+  shape: object
+  children:
+    checkbox:
+      shape: opaque

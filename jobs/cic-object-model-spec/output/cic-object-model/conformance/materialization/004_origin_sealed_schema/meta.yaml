@@ -1,0 +1,11 @@
+---
+id: materialization/004_origin_sealed_schema
+title: Sealed structure with value from the template's schema default
+truth_table_row: 4
+invariants: [INV-013, INV-015, INV-019]
+description: >-
+  Truth-table row 4 (sealed=yes, yaml=no, schema=yes) — the case simpler models
+  cannot express. The template defines and closes the node, but the value comes
+  from the template node's schema default. Two facts on different dimensions:
+  structural origin = sealed template, value origin = schema default. Identical
+  to vector 003 except the template supplies no `content`.

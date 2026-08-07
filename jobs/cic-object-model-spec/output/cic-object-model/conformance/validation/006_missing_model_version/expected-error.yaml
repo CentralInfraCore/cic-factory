@@ -1,0 +1,8 @@
+---
+error:
+  code: E_MISSING_MODEL_VERSION
+  invariant: INV-033
+  stage: final-validation
+  path: $.cic.model
+  detail: >-
+    Every canonical CIC object must carry the model version it conforms to.

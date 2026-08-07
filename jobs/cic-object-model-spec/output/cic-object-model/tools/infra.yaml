@@ -1,0 +1,167 @@
+---
+module: tools.infra
+description: ''
+tags:
+- builder
+- executor
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: _parse_certificate_info
+  kind: const
+  description: ''
+  references: []
+- name: ReleaseManager
+  kind: class
+  decorators: []
+  description: ''
+  implements: []
+  references: []
+- name: __init__
+  kind: method
+  receiver: ReleaseManager
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - project_root.resolve
+- name: _path
+  kind: method
+  receiver: ReleaseManager
+  decorators: []
+  description: ''
+  references: []
+  calls: []
+- name: _check_base_branch_and_version
+  kind: method
+  receiver: ReleaseManager
+  decorators: []
+  description: Checks git branch and version validity.
+  references: []
+  calls: []
+- name: _check_api_accessibility
+  kind: method
+  receiver: ReleaseManager
+  decorators: []
+  description: Checks if a given API URL is accessible.
+  references:
+  - requests.exceptions
+  - requests.get
+  calls:
+  - requests.get
+  - response.raise_for_status
+- name: _validate_final_project_yaml
+  kind: method
+  receiver: ReleaseManager
+  decorators: []
+  description: 'Validates the project.yaml against the project.schema.yaml. Note:
+    `compiler_settings.meta_schema_file` (e.g. md.meta.schema.yaml) is the meta-schema
+    for *documentation/schema* metadata blocks (used by run_validation), not for project.yaml
+    itself. project.yaml''s own structure is always validated against the fixed `project.schema.yaml`,
+    which is a plain JSON Schema (no top-level ''spec'' wrapper).'
+  references:
+  - .releaselib.exceptions.ReleaseError
+  - .schemalib.validator.ValidationFailureError
+  - jsonschema.ValidationError
+  - .releaselib.exceptions.ConfigurationError
+  - jsonschema.validate
+  - .schemalib.loader.load_yaml
+  - .schemalib.loader.load_and_resolve_schema
+  calls:
+  - .releaselib.exceptions.ConfigurationError
+  - .releaselib.exceptions.ReleaseError
+  - .schemalib.loader.load_and_resolve_schema
+  - .schemalib.loader.load_yaml
+  - .schemalib.validator.ValidationFailureError
+  - instance.get
+  - jsonschema.validate
+  - self._path
+- name: _execute_developer_preparation_phase
+  kind: method
+  receiver: ReleaseManager
+  decorators: []
+  description: 'Handles the developer preparation phase: creates release branch, updates
+    project.yaml, commits.'
+  references:
+  - .releaselib.exceptions.ReleaseError
+  - .schemalib.loader.write_yaml
+  - yaml.dump
+  - .schemalib.loader.load_yaml
+  - .schemalib.artifact.build_signing_payload
+  - .schemalib.artifact.compute_spec_checksum
+  - .schemalib.loader.load_and_resolve_schema
+  - .releaselib.exceptions.GitStateError
+  calls:
+  - .releaselib.exceptions.GitStateError
+  - .releaselib.exceptions.ReleaseError
+  - .schemalib.artifact.build_signing_payload
+  - .schemalib.artifact.compute_spec_checksum
+  - .schemalib.loader.load_and_resolve_schema
+  - .schemalib.loader.load_yaml
+  - .schemalib.loader.write_yaml
+  - _parse_certificate_info
+  - project_data.get
+  - self._path
+  - source_data.get
+  - yaml.dump
+- name: _resign_with_build_hash
+  kind: method
+  receiver: ReleaseManager
+  decorators: []
+  description: 'Re-signs project.yaml metadata so the Vault signature also covers
+    metadata.buildHash (wasm-template-plan.md, sec. 2.2/a — option (a)): a single
+    signature binds source-spec checksum + binary buildHash together (provenance +
+    integrity in one signature).'
+  references:
+  - .schemalib.loader.write_yaml
+  - .schemalib.artifact.to_canonical_json
+  - .schemalib.loader.load_yaml
+  calls:
+  - .schemalib.artifact.to_canonical_json
+  - .schemalib.loader.load_yaml
+  - .schemalib.loader.write_yaml
+  - metadata.get
+  - project_data.get
+- name: _execute_finalization_phase
+  kind: method
+  receiver: ReleaseManager
+  decorators: []
+  description: 'Handles the finalization phase: validates project.yaml, commits, tags,
+    merges, and cleans up.'
+  references: []
+  calls:
+  - self._path
+  - self._resign_with_build_hash
+  - self._validate_final_project_yaml
+- name: run_release_close
+  kind: method
+  receiver: ReleaseManager
+  decorators: []
+  description: Orchestrates the release process based on the current Git branch and
+    dry_run status.
+  references:
+  - .releaselib.exceptions.GitStateError
+  - .releaselib.exceptions.VaultServiceError
+  calls:
+  - .releaselib.exceptions.GitStateError
+  - .releaselib.exceptions.VaultServiceError
+  - self._check_base_branch_and_version
+  - self._execute_developer_preparation_phase
+  - self._execute_finalization_phase
+- name: run_validation
+  kind: method
+  receiver: ReleaseManager
+  decorators: []
+  description: Runs offline validation on the canonical source schema.
+  references:
+  - .releaselib.exceptions.ReleaseError
+  - jsonschema.ValidationError
+  - .releaselib.exceptions.ConfigurationError
+  - .schemalib.loader.load_and_resolve_schema
+  calls:
+  - .releaselib.exceptions.ReleaseError
+  - .schemalib.loader.load_and_resolve_schema
+  - self._path
+  - source_data.get

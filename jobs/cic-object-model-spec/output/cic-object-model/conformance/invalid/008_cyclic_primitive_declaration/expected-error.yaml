@@ -1,0 +1,9 @@
+---
+error:
+  code: E_CYCLIC_PRIMITIVE_DECLARATION
+  invariant: INV-005
+  stage: schema-load
+  path: $.mtu.access.read.contract.rules.guard.access
+  detail: >-
+    The primitive declaration graph must be acyclic: a primitive must not
+    directly or transitively re-declare the node it hangs from.

@@ -1,0 +1,38 @@
+---
+# Canonical source index for cic-object-model.
+# Referenced by project.yaml (compiler_settings.canonical_source_file); this is
+# the file the release process hashes and signs.
+metadata:
+  name: cic-object-model
+  version: "0.1"
+  description: >-
+    Machine-readable companions to SPEC.md. SPEC.md remains the authority:
+    these schemas encode what can be encoded in JSON Schema, which is the node
+    envelope and the origin grammar. Everything requiring the schema context of
+    a position — the structural discriminator (SPEC 4), the three-rule object
+    closure (SPEC 7), the pipeline stage ordering (SPEC 8) — is NOT expressible
+    here and is enforced by the implementations against conformance/.
+  owner: Gabor Zoltan Sinko
+
+spec:
+  model_version: "0.1"
+  normative_document: ../SPEC.md
+  schemas:
+    - id: node
+      file: node.schema.yaml
+      covers: [INV-001, INV-002, INV-003, INV-006, INV-012, INV-021]
+    - id: origin
+      file: origin.schema.yaml
+      covers: [INV-013, INV-014, INV-015, INV-016, INV-017, INV-018]
+  conformance_root: ../conformance
+  # The eight irreducible atoms (D-003 as amended 2026-05-04).
+  # origin is an envelope member, not an atom — see docs/decision-delta.md.
+  primitives:
+    - shape
+    - role
+    - behavior
+    - contract
+    - address
+    - identity
+    - event
+    - access

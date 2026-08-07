@@ -1,0 +1,10 @@
+---
+error:
+  code: E_ORIGIN_YAML_SCHEMA_CONFLICT
+  invariant: INV-017
+  stage: final-validation
+  path: $.mtu.origin
+  detail: >-
+    origin holds both `yaml` and `schema`; these are mutually exclusive value
+    sources. Contrast [sealed(t,p), schema], which is valid because the terms
+    describe different dimensions.

@@ -1,0 +1,22 @@
+pyyaml
+types-PyYAML
+jsonschema
+requests
+types-requests
+cryptography
+pyopenssl
+jsonref
+
+# Testing
+pytest
+pytest-mock
+pytest-cov
+
+# Linting and Formatting
+ruff
+black
+isort
+mypy
+yamllint
+semver
+bandit

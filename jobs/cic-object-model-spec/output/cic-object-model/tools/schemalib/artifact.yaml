@@ -1,0 +1,76 @@
+---
+module: tools.schemalib.artifact
+description: ''
+tags:
+- builder
+- parser
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: to_canonical_json
+  kind: function
+  decorators: []
+  description: Converts a Python object to a canonical (sorted, no whitespace) JSON
+    bytes.
+  references: []
+  calls: []
+- name: compute_spec_checksum
+  kind: function
+  decorators: []
+  description: 'Computes a canonical SHA-256 hex digest of the spec block. Uses json.dumps(sort_keys=True)
+    for determinism. Returns: hex string (64 chars)'
+  references: []
+  calls: []
+- name: get_sha256_hex
+  kind: function
+  decorators: []
+  description: Calculates the SHA256 hash and returns it as a hex digest.
+  references: []
+  calls: []
+- name: get_sha256_b64
+  kind: function
+  decorators: []
+  description: Calculates the SHA256 hash and returns it as a base64 encoded string.
+  references: []
+  calls: []
+- name: parse_certificate_info
+  kind: function
+  decorators: []
+  description: 'Parses a PEM-encoded certificate using pyOpenSSL. Extracts Common
+    Name and email (from SubjectAltName or emailAddress field). Returns: (name, email)
+    — falls back to ("Unknown", "unknown@example.com") on error.'
+  references:
+  - OpenSSL.SSL.Error
+  - OpenSSL.crypto.FILETYPE_PEM
+  - OpenSSL.crypto
+  - OpenSSL.crypto.load_certificate
+  calls:
+  - OpenSSL.crypto.load_certificate
+  - alt_name.startswith
+  - cert.get_extension
+  - cert.get_extension_count
+  - cert.get_subject
+  - ext.get_short_name
+  - logger.warning
+  - pem_cert_data.encode
+- name: build_signing_payload
+  kind: function
+  decorators: []
+  description: 'Constructs the base64-encoded SHA-256 digest of the canonical signing
+    metadata dict. This is the input to VaultService.sign() with prehashed=True. Returns:
+    base64 string (suitable for Vault''s transit sign endpoint)'
+  references: []
+  calls: []
+- name: generate_signed_artifact
+  kind: function
+  decorators: []
+  description: 'Assembles the complete release artifact dict to be written to release/<name>-<version>.yaml
+    (schema repos) or equivalent. The returned structure contains: metadata: name,
+    version, checksum, sign, build_timestamp, createdBy, validatedBy (if provided),
+    buildHash: ""      (placeholder, filled by build step) cicSign: ""        (placeholder,
+    filled by relay) cicSignedCA.certificate: ""  (placeholder) spec: <the resolved
+    spec dict>'
+  references: []
+  calls: []

@@ -1,0 +1,6 @@
+---
+payload:
+  whatever: anything
+  access: not-a-primitive
+  nested:
+    completely: arbitrary

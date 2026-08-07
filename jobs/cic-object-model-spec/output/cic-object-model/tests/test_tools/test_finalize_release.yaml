@@ -1,0 +1,290 @@
+---
+module: test_tools.test_finalize_release
+description: ''
+tags:
+- test
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: mock_args
+  kind: function
+  decorators:
+  - pytest.fixture
+  description: Fixture to mock argparse arguments with MagicMocks for paths.
+  references:
+  - pytest.fixture
+  calls:
+  - mocker.patch
+- name: mock_env
+  kind: function
+  decorators:
+  - pytest.fixture
+  description: Fixture to mock environment variables.
+  references:
+  - pytest.fixture
+  calls:
+  - mocker.patch
+- name: mock_vault
+  kind: function
+  decorators:
+  - pytest.fixture
+  description: Fixture to mock the VaultService.
+  references:
+  - pytest.fixture
+  calls:
+  - mocker.patch
+- name: mock_sys_exit
+  kind: function
+  decorators:
+  - pytest.fixture
+  description: Fixture to mock sys.exit to prevent test termination.
+  references:
+  - pytest.fixture
+  calls:
+  - mocker.patch
+- name: TestHelperFunctions
+  kind: class
+  decorators: []
+  description: Tests for helper functions like logging and YAML handling.
+  implements: []
+  references: []
+- name: test_setup_logging
+  kind: method
+  receiver: TestHelperFunctions
+  decorators:
+  - pytest.mark.parametrize
+  description: Tests that logging is configured correctly for different verbosity
+    levels.
+  references:
+  - pytest.mark
+  - tools.finalize_release.setup_logging
+  - tools.finalize_release
+  - tools.finalize_release.logging
+  - pytest.MonkeyPatch
+  calls:
+  - m.setattr
+  - tools.finalize_release.setup_logging
+- name: test_colored_formatter
+  kind: method
+  receiver: TestHelperFunctions
+  decorators: []
+  description: Tests the custom colored formatter.
+  references:
+  - tools.finalize_release.LOG_FORMAT
+  - tools.finalize_release
+  - tools.finalize_release.ColoredFormatter
+  calls:
+  - formatter.format
+  - tools.finalize_release.ColoredFormatter
+- name: test_load_yaml_io_error
+  kind: method
+  receiver: TestHelperFunctions
+  decorators: []
+  description: Tests the exception handling in load_yaml for IOError.
+  references:
+  - tools.finalize_release.load_yaml
+  - tools.finalize_release
+  - pytest.raises
+  calls:
+  - IOError
+  - caplog.set_level
+  - mocker.patch
+  - pytest.raises
+  - tools.finalize_release.load_yaml
+- name: test_load_yaml_yaml_error
+  kind: method
+  receiver: TestHelperFunctions
+  decorators: []
+  description: Tests the exception handling in load_yaml for YAMLError.
+  references:
+  - tools.finalize_release.load_yaml
+  - tools.finalize_release
+  - yaml.YAMLError
+  - pytest.raises
+  calls:
+  - caplog.set_level
+  - mocker.mock_open
+  - mocker.patch
+  - pytest.raises
+  - tools.finalize_release.load_yaml
+- name: test_write_yaml_io_error
+  kind: method
+  receiver: TestHelperFunctions
+  decorators: []
+  description: Tests the exception handling in write_yaml.
+  references:
+  - tools.finalize_release.write_yaml
+  - tools.finalize_release
+  - pytest.raises
+  calls:
+  - IOError
+  - caplog.set_level
+  - mocker.patch
+  - pytest.raises
+  - tools.finalize_release.write_yaml
+- name: TestMainExecution
+  kind: class
+  decorators: []
+  description: Test suite for the main execution logic of the script.
+  implements: []
+  references: []
+- name: setup_main_mocks
+  kind: method
+  receiver: TestMainExecution
+  decorators:
+  - pytest.fixture
+  description: Mock dependencies for the main function execution tests.
+  references:
+  - pytest.fixture
+  calls:
+  - mocker.patch
+  - pytest.fixture
+- name: test_main_success_with_cert_file
+  kind: method
+  receiver: TestMainExecution
+  decorators: []
+  description: ''
+  references:
+  - tools.finalize_release.main
+  - tools.finalize_release
+  calls:
+  - mock_open.assert_called_once_with
+  - mocker.mock_open
+  - mocker.patch
+  - tools.finalize_release.main
+- name: test_main_success_with_vault_path
+  kind: method
+  receiver: TestMainExecution
+  decorators: []
+  description: ''
+  references:
+  - tools.finalize_release.main
+  - tools.finalize_release
+  calls:
+  - tools.finalize_release.main
+- name: test_main_dry_run
+  kind: method
+  receiver: TestMainExecution
+  decorators: []
+  description: ''
+  references:
+  - tools.finalize_release.main
+  - tools.finalize_release
+  calls:
+  - caplog.set_level
+  - capsys.readouterr
+  - mocker.mock_open
+  - mocker.patch
+  - tools.finalize_release.main
+- name: test_error_filepath_not_found
+  kind: method
+  receiver: TestMainExecution
+  decorators: []
+  description: ''
+  references:
+  - tools.finalize_release.main
+  - tools.finalize_release
+  calls:
+  - mock_sys_exit.assert_called_once_with
+  - tools.finalize_release.main
+- name: test_error_cert_file_not_found
+  kind: method
+  receiver: TestMainExecution
+  decorators: []
+  description: ''
+  references:
+  - tools.finalize_release.main
+  - tools.finalize_release
+  calls:
+  - mock_sys_exit.assert_called_once_with
+  - tools.finalize_release.main
+- name: test_error_checksum_mismatch
+  kind: method
+  receiver: TestMainExecution
+  decorators: []
+  description: ''
+  references:
+  - tools.finalize_release.main
+  - tools.finalize_release
+  calls:
+  - mock_sys_exit.assert_called_once_with
+  - mocker.patch
+  - tools.finalize_release.main
+- name: test_error_no_metadata_block
+  kind: method
+  receiver: TestMainExecution
+  decorators: []
+  description: ''
+  references:
+  - tools.finalize_release.main
+  - tools.finalize_release
+  calls:
+  - mock_sys_exit.assert_called_once_with
+  - mocker.patch
+  - tools.finalize_release.main
+- name: test_error_vault_signing_fails
+  kind: method
+  receiver: TestMainExecution
+  decorators: []
+  description: ''
+  references:
+  - tools.finalize_release.main
+  - tools.finalize_release
+  - tools.releaselib.exceptions.VaultServiceError
+  calls:
+  - mock_sys_exit.assert_called_once_with
+  - mocker.mock_open
+  - mocker.patch
+  - tools.finalize_release.main
+  - tools.releaselib.exceptions.VaultServiceError
+- name: test_error_vault_cert_fetch_fails
+  kind: method
+  receiver: TestMainExecution
+  decorators: []
+  description: ''
+  references:
+  - tools.finalize_release.main
+  - tools.finalize_release
+  - tools.releaselib.exceptions.VaultServiceError
+  calls:
+  - mock_sys_exit.assert_called_once_with
+  - tools.finalize_release.main
+  - tools.releaselib.exceptions.VaultServiceError
+- name: test_error_invalid_vault_path_format
+  kind: method
+  receiver: TestMainExecution
+  decorators: []
+  description: ''
+  references:
+  - tools.finalize_release.main
+  - tools.finalize_release
+  calls:
+  - mock_sys_exit.assert_called_once_with
+  - tools.finalize_release.main
+- name: test_error_missing_env_vars
+  kind: method
+  receiver: TestMainExecution
+  decorators: []
+  description: ''
+  references:
+  - tools.finalize_release.main
+  - tools.finalize_release
+  calls:
+  - mock_sys_exit.assert_called_once_with
+  - mocker.patch
+  - tools.finalize_release.main
+- name: test_unexpected_error_handling
+  kind: method
+  receiver: TestMainExecution
+  decorators: []
+  description: ''
+  references:
+  - tools.finalize_release.main
+  - tools.finalize_release
+  calls:
+  - Exception
+  - mock_sys_exit.assert_called_once_with
+  - mocker.patch
+  - tools.finalize_release.main

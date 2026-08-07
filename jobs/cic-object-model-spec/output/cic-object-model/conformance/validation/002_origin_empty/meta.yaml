@@ -1,0 +1,9 @@
+---
+id: validation/002_origin_empty
+title: Canonical object with empty origin is rejected
+truth_table_row: 8
+invariants: [INV-018, INV-002]
+description: >-
+  Truth-table row 8 — the all-negative case, absent from the source material
+  this model was derived from and closed by INV-018. Every materialized node
+  has an authority; a node with no origin is unattributable.

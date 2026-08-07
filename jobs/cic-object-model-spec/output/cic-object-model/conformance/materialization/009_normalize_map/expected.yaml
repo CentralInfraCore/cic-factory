@@ -1,0 +1,28 @@
+---
+cic:
+  model: "0.1"
+values:
+  interface:
+    values:
+      mtu:
+        values: 9000
+        origin: [yaml]
+        shape:
+          values:
+            type: scalar
+            scalar_type: integer
+          origin: [schema]
+      enabled:
+        values: true
+        origin: [schema]
+        shape:
+          values:
+            type: scalar
+            scalar_type: boolean
+          origin: [schema]
+    origin: [yaml]
+    shape:
+      values:
+        type: object
+      origin: [schema]
+origin: [yaml]

@@ -1,0 +1,14 @@
+---
+module: tools.schemalib.__init__
+description: ''
+tags:
+- builder
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: __all__
+  kind: const
+  description: ''
+  references: []

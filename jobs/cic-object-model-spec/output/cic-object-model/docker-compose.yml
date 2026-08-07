@@ -1,0 +1,59 @@
+---
+version: '3.8'
+
+services:
+  # Service for initializing and updating the Python virtual environment cache
+  setup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Run as the current host user to avoid file permission issues
+    # on mounted volumes.
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      # Mount the project root to access requirements files
+      - ./:/app
+      # Mount the venv directory to be populated
+      - ./p_venv:/app/p_venv:rw
+    # Command to run to setup the environment
+    command:
+      - sh
+      - -c
+      - >-
+        pip-compile --cache-dir /app/.pip-cache -o requirements.txt
+        requirements.in && pip install --no-cache-dir -r requirements.txt
+        --target /app/p_venv
+
+  # Main service for running build, validation, and release tasks
+  builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Run as the current host user to avoid file permission issues
+    # on mounted volumes.
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      # Mount the populated venv directory as a read-only cache
+      - ./p_venv:/app/p_venv:ro
+      # Mount the project root to access spec/ + conformance/ and write to source
+      - ./:/app:rw
+      # Mount the host's Vault token file for scripts to use
+      - "${XDG_RUNTIME_DIR}/vault/sign-token:/var/run/secrets/vault-token:ro"
+      # Mount the host's Vault server CA certificate for TLS verification
+      - "${XDG_RUNTIME_DIR}/vault/server.crt:/var/run/secrets/vault-ca.crt:ro"
+    # Allows the container to reach the host machine (for Vault)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Pass through environment variables for the release process
+    environment:
+      - PYTHONPATH=/app:/app/p_venv   # Add /app to PYTHONPATH
+      - VAULT_ADDR=https://host.docker.internal:18200
+      - CIC_VAULT_TOKEN_FILE=/var/run/secrets/vault-token
+      - CIC_VAULT_CA_FILE=/var/run/secrets/vault-ca.crt
+      # HOME for the non-root user — the Go caches (GOCACHE/GOPATH) need a
+      # writable home directory; the host UID has no /etc/passwd entry.
+      - HOME=/tmp/home
+      - GOCACHE=/tmp/home/.cache/go-build
+      - GOPATH=/tmp/home/go
+    # Keep the container running in the background
+    command: ["tail", "-f", "/dev/null"]

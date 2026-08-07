@@ -1,0 +1,22 @@
+---
+model: "0.1"
+root:
+  shape: object
+  children:
+    mtu:
+      shape: scalar
+      scalar_type: integer
+      role: config
+      access:
+        read:
+          rules:
+            operator:
+              subjects: ["OU=operators,O=acme"]
+              effect: allow
+          default_injection: 0
+        modify:
+          rules:
+            network-admin:
+              subjects: ["OU=network-admins,O=acme"]
+              effect: allow
+          inherit: 0

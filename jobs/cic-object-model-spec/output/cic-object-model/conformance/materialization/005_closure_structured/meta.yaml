@@ -1,0 +1,8 @@
+---
+id: materialization/005_closure_structured
+title: Closure rule 1 — schema-known structured object is recursively materialized
+closure_rule: 1
+invariants: [INV-027, INV-001, INV-002]
+description: >-
+  Every schema-known child becomes a CIC node. The nested map does NOT survive
+  as a raw map<string,any>; `b.c` is a node with its own values/origin/shape.

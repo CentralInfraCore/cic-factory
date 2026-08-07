@@ -1,0 +1,27 @@
+---
+tags:
+  - doc
+  - workflow
+  - ecosystem
+  - ci-cd
+  - platform-engineering
+related_nodes:
+  - concept/git-management
+category:
+  - concept
+  - architecture
+  - ci-cd
+entrypoint: false
+used_in:
+  - onboarding
+  - architecture-review
+  - development-process
+description: >
+  Ez a dokumentum egy deklaratív, kétsebességes ökoszisztéma tervrajzát
+  vázolja fel a szoftverkomponensek közötti függőségek kezelésére.
+  A rendszer egy "gyors" (commit-szintű) és egy "lassú" (release-szintű)
+  integrációs folyamatot használ a maximális fejlesztési sebesség és a
+  rendszerstabilitás egyidejű biztosítására. A központi elem egy
+  verziókezelt "ökoszisztéma térkép", ami a komponensek közötti
+  kapcsolatokat definiálja, lehetővé téve az automatizált, transzparens
+  visszacsatolást a teljes rendszerről.

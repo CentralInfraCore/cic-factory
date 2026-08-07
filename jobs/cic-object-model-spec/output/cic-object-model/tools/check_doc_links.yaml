@@ -1,0 +1,53 @@
+---
+module: tools.check_doc_links
+description: docs.link-check — verify that relative markdown links in docs/ and the
+  top-level READMEs resolve to files that exist in the repository. Stdlib-only (no
+  project.schema.yaml / compiler / infra dependencies). Used by `make docs.link-check`
+  and the CI `docs.link-check` step.
+tags:
+- builder
+category: []
+used_in: []
+entrypoint: true
+related_nodes: []
+objects:
+- name: REPO_ROOT
+  kind: const
+  description: ''
+  references: []
+- name: LINK_RE
+  kind: const
+  description: ''
+  references: []
+- name: DOC_GLOBS
+  kind: const
+  description: ''
+  references: []
+- name: is_external_or_special
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - target.startswith
+- name: check_file
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - LINK_RE.finditer
+  - errors.append
+  - match.group
+  - md_file.read_text
+  - md_file.relative_to
+  - resolved.exists
+  - target.split
+- name: main
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - REPO_ROOT.glob
+  - all_errors.extend

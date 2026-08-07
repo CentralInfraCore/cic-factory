@@ -1,0 +1,9 @@
+---
+id: invalid/005_origin_in_authoring_input
+title: Authoring input declaring its own origin is rejected
+invariants: [INV-007, INV-014]
+description: >-
+  A node must not be able to claim its own provenance — that is what makes
+  origin trustworthy. Rejected at entry validation. Contrast with
+  materialization/012, where `origin` appears inside an opaque payload and is
+  ordinary domain data.

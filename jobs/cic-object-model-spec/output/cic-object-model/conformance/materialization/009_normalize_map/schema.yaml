@@ -1,0 +1,16 @@
+---
+model: "0.1"
+root:
+  shape: object
+  children:
+    interface:
+      shape: object
+      children:
+        mtu:
+          shape: scalar
+          scalar_type: integer
+          default: 1500
+        enabled:
+          shape: scalar
+          scalar_type: boolean
+          default: true

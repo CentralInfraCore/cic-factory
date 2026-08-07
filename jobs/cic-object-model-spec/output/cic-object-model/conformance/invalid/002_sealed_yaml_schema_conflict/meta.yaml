@@ -1,0 +1,9 @@
+---
+id: invalid/002_sealed_yaml_schema_conflict
+title: Authoring below a sealed boundary that also has a schema default
+truth_table_row: 6
+invariants: [INV-016, INV-019]
+description: >-
+  Truth-table row 6 (sealed=yes, yaml=yes, schema=yes) — the wildcard half of
+  the `sealed + yaml -> invalid` rule. The presence of a schema default does
+  NOT soften the sealed boundary; the rejection is identical to row 5.

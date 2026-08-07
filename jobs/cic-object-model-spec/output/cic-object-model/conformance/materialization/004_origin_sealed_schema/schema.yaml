@@ -1,0 +1,18 @@
+---
+model: "0.1"
+templates:
+  $network-object:
+    $.access.read:
+      shape: object
+      children:
+        enabled:
+          shape: scalar
+          scalar_type: boolean
+          default: true
+root:
+  shape: object
+  children:
+    access_policy:
+      sealed_from:
+        template: $network-object
+        path: $.access.read

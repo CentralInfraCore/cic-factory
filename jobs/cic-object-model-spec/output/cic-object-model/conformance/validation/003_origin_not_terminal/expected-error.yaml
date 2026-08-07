@@ -1,0 +1,9 @@
+---
+error:
+  code: E_ORIGIN_NOT_TERMINAL
+  invariant: INV-004
+  stage: final-validation
+  path: $.mtu.origin
+  detail: >-
+    origin must be a value in the grammar of SPEC 5.2, not a CIC node. It must
+    not carry values, origin or primitives.

@@ -1,0 +1,8 @@
+---
+error:
+  code: E_UNDECLARED_OBJECT
+  invariant: INV-029
+  stage: entry-validation
+  path: $.surprise
+  detail: >-
+    $.surprise is neither declared in the schema nor declared opaque.

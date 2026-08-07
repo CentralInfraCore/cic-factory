@@ -1,0 +1,9 @@
+---
+error:
+  code: E_AUTHORING_BELOW_SEALED
+  invariant: INV-019
+  stage: entry-validation
+  path: $.access_policy.enabled
+  detail: >-
+    Authoring is closed at and below $.access_policy, which originates from
+    sealed template $network-object at $.access.read.

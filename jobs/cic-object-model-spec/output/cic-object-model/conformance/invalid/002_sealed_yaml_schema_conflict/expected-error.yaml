@@ -1,0 +1,9 @@
+---
+error:
+  code: E_AUTHORING_BELOW_SEALED
+  invariant: INV-019
+  stage: entry-validation
+  path: $.access_policy.enabled
+  detail: >-
+    Authoring is closed at and below $.access_policy. A schema default on the
+    sealed node does not reopen it.

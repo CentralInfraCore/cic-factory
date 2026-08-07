@@ -1,0 +1,9 @@
+---
+error:
+  code: E_SCHEMA_RESERVED_CHILD_VALUES
+  invariant: INV-010
+  stage: schema-load
+  path: $.config.values
+  detail: >-
+    A schema must not declare a child property named `values` at a structured
+    object position; it would collide with the envelope discriminator.

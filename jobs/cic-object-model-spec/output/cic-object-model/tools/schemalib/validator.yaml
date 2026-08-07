@@ -1,0 +1,65 @@
+---
+module: tools.schemalib.validator
+description: ''
+tags:
+- builder
+- executor
+- schema
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: ValidationFailureError
+  kind: class
+  decorators: []
+  description: Raised when schema validation or validator integrity check fails.
+  implements:
+  - ReleaseError
+  references:
+  - ..releaselib.exceptions.ReleaseError
+- name: verify_validator_integrity
+  kind: function
+  decorators: []
+  description: 'Verifies the SHA-256 checksum of a validator schema''s spec block
+    against the expected value stored in its own metadata. This is a security control:
+    a tampered validator could silently accept invalid schemas. Raises: ValidationFailureError:
+    if the checksum is missing or does not match.'
+  references:
+  - .artifact.compute_spec_checksum
+  calls:
+  - .artifact.compute_spec_checksum
+  - ValidationFailureError
+  - logger.debug
+  - validator_schema.get
+- name: get_validator_schema
+  kind: function
+  decorators: []
+  description: 'Loads a validator schema from the dependencies/ directory. Expected
+    file name pattern: <name>-<version>.yaml Special case: if the validator_name matches
+    the source schema''s own name, self-validation (bootstrap) is detected and the
+    source schema itself is returned as the validator. Before returning, calls verify_validator_integrity()
+    to ensure the schema has not been tampered with. (Skipped for self-validation.)
+    Args: validator_name: name field from source_schema[''metadata''][''validatedBy''][''name'']
+    validator_version: version field from validatedBy source_schema: the already-loaded
+    source schema dict dependencies_dir: path to the dependencies/ directory Raises:
+    ConfigurationError: if the validator file is not found. ValidationFailureError:
+    if the integrity check fails.'
+  references:
+  - .loader.load_and_resolve_schema
+  calls:
+  - .loader.load_and_resolve_schema
+  - source_schema.get
+- name: run_validation
+  kind: function
+  decorators: []
+  description: 'Runs jsonschema.validate() against instance using validator_schema[''spec''].
+    Raises: ValidationFailureError: on validation failure.'
+  references:
+  - jsonschema.ValidationError
+  - jsonschema.validate
+  calls:
+  - ValidationFailureError
+  - jsonschema.validate
+  - logger.info
+  - validator_schema.get
