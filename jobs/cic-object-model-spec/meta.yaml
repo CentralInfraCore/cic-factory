@@ -48,23 +48,23 @@ workplace:
   branch: "feature/cic-object-model-spec"
 
 # Status
-status: "running"
+status: "done"
 error_message: ""
 
 usage:
-  cost_usd: "12.058786000000001"
-  turns: "107"
+  cost_usd: "4.950915499999999"
+  turns: "12"
   max_turns: "150"
-  stop_reason: "stop_sequence"
-  duration_ms: "2088060"
-  models: "claude-haiku-4-5-20251001,claude-opus-5"
-  total_input_tokens: "12640436"
-  input_tokens: "7454"
-  cache_read_input_tokens: "12384988"
-  cache_creation_input_tokens: "247994"
-  output_tokens: "135150"
+  stop_reason: "end_turn"
+  duration_ms: "438984"
+  models: "claude-opus-5"
+  total_input_tokens: "3359121"
+  input_tokens: "24"
+  cache_read_input_tokens: "3075671"
+  cache_creation_input_tokens: "283426"
+  output_tokens: "23148"
 
 timestamps:
   created: "2026-08-07T00:00:00Z"
   started: "2026-08-07T12:59:40Z"
-  completed: ""
+  completed: "2026-08-07T13:07:11Z"
