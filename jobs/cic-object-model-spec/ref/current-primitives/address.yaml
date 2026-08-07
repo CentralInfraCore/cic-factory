@@ -1,0 +1,87 @@
+---
+metadata:
+  name: Address
+  version: v0.0.dev
+  description: >
+    Egy entitás elérhetőségét leíró atomic primitive — hogyan és hol érhető el
+    a management plane, az API és a runtime számára.
+    Fontos: az Address nem az entitás tulajdonsága — hanem a BindingSurface-é.
+    Az entitás létezhet cím nélkül; a cím a binding kontextusban értelmes.
+  owner: Gabor Zoltan Sinko
+  tags:
+    - primitive
+    - atomic
+    - address
+  validatedBy:
+    name: cic-primitives
+    version: v0.0.dev
+
+spec:
+  kind: AtomicPrimitive
+
+  layers:
+    schema_path:
+      description: >
+        Belső séma-fa pozíció — hogyan azonosítja az entitást a CIC modell.
+        Hierarchikus, slash-szeparált útvonal a schema tree-ben.
+      format: "/{module}:{container}/{list}={key}/{sub-container}"
+      example: "/cic-network:interfaces/interface=eth0/config"
+      used_by: [compiler, validator, schema-registry]
+
+    api_path:
+      description: >
+        HTTP/RESTCONF URL — hogyan éri el az API kliens az entitást.
+        RESTCONF konvenció szerint épül fel a schema_path-ból.
+      format: "/restconf/data/{module}:{container}/{list}={key}"
+      example: "/restconf/data/cic-network:interfaces/interface=eth0"
+      used_by: [api-gateway, client, openapi-spec]
+
+    logical_id:
+      description: >
+        Logikai azonosító — emberbarát, rendszer-független neve az entitásnak.
+        Nem feltétlenül egyedi globálisan — csak a namespace-en belül.
+      formats:
+        uuid: "550e8400-e29b-41d4-a716-446655440000"
+        name: "eth0 / default-ns / prod-cluster"
+        composite: "namespace:kind:name"
+      used_by: [runtime, audit-log, notification]
+
+  fields:
+    description: Egy Address definíciójának mezői — legalább egy layer kötelező
+    properties:
+      schema_path:
+        type: string
+        optional: true
+        description: Séma-fa útvonal (lásd layers.schema_path)
+      api_path:
+        type: string
+        optional: true
+        description: HTTP/RESTCONF URL (lásd layers.api_path)
+      logical_id:
+        type: string
+        optional: true
+        description: Logikai azonosító (lásd layers.logical_id)
+      namespace:
+        type: string
+        description: >
+          CIC névtér amiben ez a cím értelmezendő.
+          Pl. cic:network, cic:kubernetes, cic:compute
+      note:
+        type: string
+        optional: true
+        description: Megjegyzés az Address kontextusáról
+
+  constraints:
+    - type: must
+      expression: "schema_path or api_path or logical_id"
+      error_message: "Legalább egy Address layer kötelező"
+
+  semantic_mapping:
+    yang:
+      note: >
+        YANG-ban nincs közvetlen Address fogalom — a schema_path a YANG node XPath-nak
+        felel meg, az api_path a RESTCONF instance-identifier-nek.
+    api:
+      note: api_path → OpenAPI servers + paths kombináció
+    runtime:
+      note: logical_id → runtime lookup key az entity store-ban

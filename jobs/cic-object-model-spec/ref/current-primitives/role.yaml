@@ -1,0 +1,73 @@
+---
+metadata:
+  name: Role
+  version: v0.0.dev
+  description: >
+    Egy node menedzsment szemantikáját leíró atomic primitive — mit jelent ez a node
+    a management plane szempontjából. A Role nem az adatot írja le (azt a Shape teszi),
+    hanem azt hogy hogyan kezeli a rendszer: írható-e, csak olvasható-e, kulcs-e, stb.
+  owner: Gabor Zoltan Sinko
+  tags:
+    - primitive
+    - atomic
+    - role
+  validatedBy:
+    name: cic-primitives
+    version: v0.0.dev
+
+spec:
+  kind: AtomicPrimitive
+
+  values:
+    config:
+      description: >
+        Írható, kívánt állapot. A management plane állítja be — ez a desired state.
+      yang_mapping: "leaf/container without 'config false'"
+      api_mapping: PUT/PATCH request body
+      runtime_mapping: desired state store — reconciler target
+
+    state:
+      description: >
+        Csak olvasható, aktuális állapot. Az adapter tölti fel a valós rendszerből.
+      yang_mapping: "config false"
+      api_mapping: GET only
+      runtime_mapping: observed state store — reconciler source
+
+    operational:
+      description: >
+        Operacionális adat — futásidőben számolt vagy gyűjtött érték (pl. byte counter,
+        uptime, error count). Nem konfigurálható, nem tárolt desired state-ként.
+      yang_mapping: "config false — tipikusan state container alatt"
+      api_mapping: GET only
+      runtime_mapping: telemetry / metrics feed
+
+    key:
+      description: >
+        Lista kulcs — egyedi azonosítója a list példánynak. Kötelezően jelen kell lennie,
+        nem módosítható a lista elem létrehozása után.
+      yang_mapping: "key statement in list"
+      api_mapping: URL path parameter (pl. /interfaces/interface={name})
+      runtime_mapping: lookup key in state/config store
+
+    reference:
+      description: >
+        Más node-ra mutató pointer. A hivatkozott node-nak léteznie kell (referential integrity).
+      yang_mapping: leafref
+      api_mapping: string value — external resource identifier
+      runtime_mapping: foreign key / join key
+
+    derived:
+      description: >
+        Más mezőkből számolt érték — nem tárolható önállóan, mindig kiszámítható.
+        Pl. admin_state + oper_state → effective_state.
+      yang_mapping: "config false — computed, nem adapterből jön"
+      api_mapping: GET only — read-only computed field
+      runtime_mapping: computed on read, not stored
+
+    volatile:
+      description: >
+        Rövid életű, nem tartós állapot. Nem kerül a desired state-be, a cache TTL után eldobható.
+        Pl. last_seen timestamp, connection_count pillanatképe.
+      yang_mapping: "config false"
+      api_mapping: GET only — best-effort freshness
+      runtime_mapping: short-lived cache, not persisted

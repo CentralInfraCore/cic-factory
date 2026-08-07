@@ -1,0 +1,70 @@
+schema_version: "1.0"
+
+# Identification
+job_id: "cic-object-model-spec"
+parent_job_id: ""
+
+# Hierarchy level
+level: "repo"
+target:
+  repo: "cic-object-model"
+  path: ""
+
+# KB context
+# Chunk ids are NOT stable — the KB is re-indexed and older anchors drift onto
+# unrelated symbols. These three were content-verified on 2026-08-07 against
+# their file_path, which is the real anchor:
+#   c4135 -> CIC-basic-knowledge/docs/hu/repos/cic-primitives.md  (the 7 atoms, meta-schema layer)
+#   c4255 -> CIC-objs/*/ai/DECISIONS.md                           (D-003 — 7 atoms as the irreducible level)
+#   c4367 -> CIC-objs/*/ai/DECISIONS.md                           (D-011 — Access as the 8th atom)
+# They are here because this job proposes to change what these two decisions
+# settled. Read them before writing a line of the new spec.
+kb_focus:
+  - "c4135"
+  - "c4255"
+  - "c4367"
+promptmap_ref: ""
+
+# Agent
+# Model rationale: this is normative design reconciliation, not implementation.
+# The job must weigh a new model against two recorded architectural decisions
+# (D-003, D-011) that six repos already depend on, and decide what is superseded
+# versus what is lost by accident. A wrong call here propagates into every domain
+# repo. That is judgement work, not a compile-run loop.
+agent:
+  config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
+  model: "claude-opus-5"
+  # Spec work reads far more than it writes: six repos' atomic primitives, two
+  # decision records, a 2067-line research log, and two base-repo template
+  # branches. The writing itself is a handful of files.
+  max_turns: "150"
+  session_id: ""
+
+# Workplace
+workplace:
+  repos:
+    - "cic-factory"
+    - "base-repo"
+  branch: "feature/cic-object-model-spec"
+
+# Status
+status: "pending"
+error_message: ""
+
+usage:
+  cost_usd: ""
+  turns: ""
+  max_turns: ""
+  stop_reason: ""
+  duration_ms: ""
+  models: ""
+  total_input_tokens: ""
+  input_tokens: ""
+  cache_read_input_tokens: ""
+  cache_creation_input_tokens: ""
+  output_tokens: ""
+
+timestamps:
+  created: "2026-08-07T00:00:00Z"
+  started: ""
+  completed: ""

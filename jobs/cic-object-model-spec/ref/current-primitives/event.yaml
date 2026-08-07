@@ -1,0 +1,100 @@
+---
+metadata:
+  name: Event
+  version: v0.0.dev
+  description: >
+    Aszinkron jelzést leíró atomic primitive — mit küldhet ki egy ManagedEntity
+    a management plane felé saját kezdeményezésére. Az Event nem kérés-válasz:
+    a forrás entitás dobja, a feliratkozott megfigyelők fogják. A NotificationSurface
+    Event-ekből épül fel.
+  owner: Gabor Zoltan Sinko
+  tags:
+    - primitive
+    - atomic
+    - event
+  validatedBy:
+    name: cic-primitives
+    version: v0.0.dev
+
+spec:
+  kind: AtomicPrimitive
+
+  triggers:
+    state_change:
+      description: >
+        Egy node értéke megváltozott — az observed state eltér az előző értéktől.
+        Pl. interface oper-status: up → down, pod phase: Running → Failed.
+      yang_mapping: notification triggered by state transition
+      typical_payload: [previous_value, current_value, timestamp, entity_ref]
+
+    threshold:
+      description: >
+        Egy mért érték átlépett egy határt — felfelé vagy lefelé.
+        Pl. CPU utilization > 90%, error_rate > threshold, queue depth critical.
+      yang_mapping: notification triggered by threshold crossing
+      typical_payload: [metric_name, threshold_value, current_value, direction, timestamp]
+
+    lifecycle:
+      description: >
+        Az entitás lifecycle állapota változott — create, update, delete, vagy
+        állapotgép átmenet (active → degraded → terminating).
+      yang_mapping: notification triggered by lifecycle transition
+      typical_payload: [previous_state, current_state, entity_ref, timestamp, actor]
+
+    explicit:
+      description: >
+        Egy action vagy rpc váltotta ki explicit módon — nem automatikus, hanem
+        egy végrehajtott Behavior mellékhatásaként keletkezett.
+        Pl. backup-completed, reconcile-finished, config-applied.
+      yang_mapping: notification triggered by rpc/action execution
+      typical_payload: [operation_name, operation_result, entity_ref, timestamp]
+
+  fields:
+    description: Egy Event definíciójának kötelező és opcionális mezői
+    properties:
+      name:
+        type: string
+        description: Az event neve — múlt idejű igés forma ajánlott (state-changed, threshold-crossed)
+        mandatory: true
+
+      trigger:
+        type: string
+        enum: [state_change, threshold, lifecycle, explicit]
+        description: Mi váltja ki ezt az event-et (lásd triggers fent)
+        mandatory: true
+
+      payload:
+        type: reference
+        description: >
+          A kiküldött adat sémája — Shape referencia vagy inline Shape.
+          Mi van az event-ben amit a megfigyelő megkap.
+        optional: true
+
+      severity:
+        type: string
+        enum: [info, warning, error, critical]
+        default: info
+        description: Az event súlyossága — befolyásolja az alerting és routing logikát
+
+      description:
+        type: string
+        description: Mit jelent ez az event és milyen reakciót igényel
+        optional: true
+
+  semantic_mapping:
+    yang:
+      construct: notification
+      format: |
+        notification <name> {
+          leaf trigger { ... }
+          container payload { ... }
+        }
+      note: YANG notification = push, nem poll — a szerver küldi a kliens felé
+    api:
+      note: >
+        Event → WebSocket push / SSE stream / webhook POST.
+        RESTCONF: GET /restconf/streams/{stream} subscription.
+    runtime:
+      note: >
+        Event → message bus (NATS/Kafka/AMQP) topic publish.
+        A NotificationSurface regisztrálja az Event-eket a runtime event registry-ben.

@@ -1,0 +1,105 @@
+---
+metadata:
+  name: Access
+  version: v0.0.dev
+  description: >
+    Jogosultsági burok atomic primitive — minden Shape érték Access atomba ágyazott.
+    Két szintaktikailag ekvivalens reprezentáció:
+      key: value
+      key: {value: value, access: [...], modify: [...], inherit: true, default_injection: null}
+    A compiler a rövid formát normalizálja hosszúvá az örökölt szabályok alapján.
+    A runtime mindig a kibontott formán értékel.
+  owner: Gabor Zoltan Sinko
+  tags:
+    - primitive
+    - atomic
+    - access
+    - security
+  validatedBy:
+    name: cic-primitives
+    version: v0.0.dev
+
+spec:
+  kind: AtomicPrimitive
+
+  fields:
+    description: Az Access atom belső struktúrája
+    properties:
+      value:
+        type: any
+        description: >
+          A tényleges adat — típusát a befoglaló Shape határozza meg.
+          Rövid forma: `key: value` ekvivalens `key: {value: value, ...}` -val.
+
+      access:
+        type: list<CertPattern>
+        default: inherit
+        description: >
+          Ki olvashatja ezt az értéket — CertPattern lista, OR szemantika.
+          Ha üres: senki sem olvashatja (csak default_injection látszik).
+          default = szülő objektum PolicySurface szabályaiból örökölt.
+
+      modify:
+        type: list<CertPattern>
+        default: inherit
+        description: >
+          Ki írhatja ezt az értéket — CertPattern lista, OR szemantika.
+          Ha üres: senki sem módosíthatja (read-only minden kérező számára).
+          Adapter cert-je jelenik meg itt a state/operational mezőknél.
+
+      inherit:
+        type: boolean | 0
+        default: true
+        description: >
+          Sub-objektumok öröklik-e ezt a szabályt erre a mezőre.
+          true  = örökli (default)
+          false = nem örökli, sub-objektum default szabályait kapja
+          0     = teljes reset — a sub-objektum PolicySurface-től újraszámol
+
+      default_injection:
+        type: any
+        default: null
+        description: >
+          Mit kap a kérező ha nincs access joga az értékre.
+          null    = a mező nem jelenik meg a válaszban (information hiding)
+          <érték> = injektált default (pl. 0, "", false) — egységes viselkedés,
+                    nem szivárog ki hogy a mező létezik-e és mi az értéke
+
+  cert_pattern:
+    description: >
+      X.509 cert alapú identity pattern. A kérező mTLS cert-je ellen értékelődik.
+      Identity forrás: Subject DN, SAN, vagy custom X.509 extension —
+      implementációs részletkérdés, a cert PEM az anchor.
+    syntax:
+      format: '"field=value" párok, wildcard (csillag) támogatással'
+      combinator: "lista = OR — bármely illeszkedő pattern hozzáférést ad"
+    examples:
+      - pattern: "O=acme-corp"
+        meaning: bármely acme-corp cert
+      - pattern: "OU=operators,O=acme-corp"
+        meaning: acme-corp operátor csoport
+      - pattern: "CN=*,O=partner-a"
+        meaning: partner-a bármely user-je
+      - pattern: "OU=adapters,O=cic"
+        meaning: CIC adapter service account-ok (state/operational mezőkhöz)
+
+  semantic_mapping:
+    role_relation: >
+      Az Access atom ortogonális a Role atomhoz.
+      Role = mit jelent a mező (config/state/operational).
+      Access = ki érheti el.
+      Együtt: role: state + modify: [OU=adapters,O=cic] → adapter írja, user olvassa.
+    compiler:
+      short_form: "key: value → key: {value: value, ...inherited rules}"
+      normalization: a compiler az örökölt PolicySurface szabályokat tölti be
+    runtime:
+      evaluation: mTLS cert kiértékelés a CertPattern lista ellen
+      miss_behavior: default_injection visszaadása ha nincs access joga
+    yang:
+      note: >
+        YANG NACM (RFC 8341) analóg — de field szinten, nem path alapon.
+        YANG levezetéskor az Access metadata NACM rule-okká fordítható.
+    api:
+      note: >
+        RESTCONF válaszból a nem hozzáférhető mezők kiszűrődnek vagy
+        default_injection értékükkel jelennek meg.

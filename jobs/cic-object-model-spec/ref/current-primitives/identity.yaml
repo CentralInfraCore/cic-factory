@@ -1,0 +1,107 @@
+---
+metadata:
+  name: Identity
+  version: v0.0.dev
+  description: >
+    Típusazonosságot leíró atomic primitive — nem példány azonosítás, hanem
+    annak leírása MI ez az entitás a CIC modellben. Az Identity mondja meg az
+    entitás típusát, névterét, verzióját és örökítési láncolatát.
+    Hasonló a YANG identity/identityref-hez, de általánosabb és verziózott.
+  owner: Gabor Zoltan Sinko
+  tags:
+    - primitive
+    - atomic
+    - identity
+  validatedBy:
+    name: cic-primitives
+    version: v0.0.dev
+
+spec:
+  kind: AtomicPrimitive
+
+  fields:
+    description: Egy Identity definíciójának kötelező és opcionális mezői
+    properties:
+      kind:
+        type: string
+        description: >
+          A típus neve — PascalCase. Ez azonosítja az entitás-típust a névteren belül.
+          Pl. NetworkInterface, KubernetesPod, PostgresDatabase, ManagedSwitch.
+        mandatory: true
+
+      namespace:
+        type: string
+        description: >
+          CIC névtér — fordított domain vagy cic: prefix konvencióval.
+          Pl. cic:network, cic:kubernetes, cic:compute, cic:storage.
+          A kind-dal együtt globálisan egyedi típusazonosítót ad.
+        mandatory: true
+
+      version:
+        type: string
+        description: >
+          Az Identity verziója — szemantikus verziózás.
+          A séma változásakor inkrementálódik, nem az entitás példány verziója.
+        pattern: "^v(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(\\.dev)?$"
+        mandatory: true
+
+      base:
+        type: reference
+        description: >
+          Örökítési lánc — melyik Identity-ből specializálódik ez a típus.
+          Több szintű örökítés lehetséges: KubernetesPod → ManagedEntity.
+          Ha nincs megadva: ez egy gyökér Identity (pl. maga a ManagedEntity).
+        optional: true
+        example: "cic:ManagedEntity"
+
+      abstract:
+        type: boolean
+        default: false
+        description: >
+          Ha true, ez az Identity nem példányosítható közvetlenül — csak
+          alapként szolgálhat más Identity-k számára. Pl. ManagedEntity abstract.
+
+      description:
+        type: string
+        description: Mit képvisel ez a típus a domain-ben
+        optional: true
+
+  inheritance_rules:
+    description: >
+      Az Identity örökítés szabályai — hogyan terjed a szemantika a chain mentén.
+    rules:
+      - A leszármazott megörökli az alap aggregate surface-eit (ConfigSurface, StateSurface, stb.)
+      - A leszármazott szűkítheti (sealed) vagy bővítheti (required/defaulted) az alap slot-jait
+      - Az örökítési lánc mentén minden szint validálható önállóan
+      - Körkörös örökítés tiltott
+
+  examples:
+    managed_entity:
+      kind: ManagedEntity
+      namespace: "cic:core"
+      version: v0.1.dev
+      abstract: true
+
+    network_interface:
+      kind: NetworkInterface
+      namespace: "cic:network"
+      version: v0.1.dev
+      base: "cic:core:ManagedEntity"
+
+    kubernetes_pod:
+      kind: KubernetesPod
+      namespace: "cic:kubernetes"
+      version: v0.1.dev
+      base: "cic:core:ManagedEntity"
+
+  semantic_mapping:
+    yang:
+      identity: "identity <kind> { base <base>; }"
+      identityref: "type identityref { base <kind>; }"
+      note: >
+        A YANG identity csak névteret és örökítést ír le — a CIC Identity ennél
+        több: verziózott és aggregate surface-öket hordoz.
+    api:
+      note: Identity → OpenAPI discriminator / x-cic-kind extension
+    runtime:
+      note: kind + namespace → runtime type registry lookup, handler dispatch

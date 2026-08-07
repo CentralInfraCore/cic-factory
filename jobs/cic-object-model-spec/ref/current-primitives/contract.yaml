@@ -1,0 +1,100 @@
+---
+metadata:
+  name: Contract
+  version: v0.0.dev
+  description: >
+    Kényszerfeltételt leíró atomic primitive — milyen feltételeknek kell teljesülnie
+    egy node értékére vagy egy node aktivitására. A Contract a ConfigSurface.validation
+    slot-ját tölti ki, de bármely Shape field mellé rendelhető.
+  owner: Gabor Zoltan Sinko
+  tags:
+    - primitive
+    - atomic
+    - contract
+  validatedBy:
+    name: cic-primitives
+    version: v0.0.dev
+
+spec:
+  kind: AtomicPrimitive
+
+  types:
+    range:
+      description: Numerikus értékkorlát — minimum, maximum, vagy mindkettő
+      yang_mapping: range statement in type
+      example: "range: 1..65535"
+
+    pattern:
+      description: Reguláris kifejezés — string formátum validáció
+      yang_mapping: pattern statement in type
+      example: "pattern: ^[a-z][a-z0-9-]*$"
+
+    must:
+      description: >
+        Logikai kényszer XPath/JPath kifejezésként — igaznak kell lennie
+        a konfiguráció alkalmazása előtt. Több node közötti összefüggést is leírhat.
+      yang_mapping: must statement
+      example: "must: count(../interface) > 0"
+
+    when:
+      description: >
+        Feltételes aktivitás — a node csak akkor érvényes/aktív ha a kifejezés igaz.
+        Ha hamis, a node figyelmen kívül marad (mintha nem létezne).
+      yang_mapping: when statement
+      example: "when: ../mode = 'layer3'"
+
+    enum:
+      description: Felsorolt értékkészlet — csak ezek az értékek érvényesek
+      yang_mapping: enumeration type
+      example: "enum: [up, down, testing, unknown]"
+
+    mandatory:
+      description: >
+        A node kötelezően jelen kell legyen — nem hagyható ki, nem lehet null.
+        Erősebb mint az optional: false, mert validáció-time is ellenőrzött.
+      yang_mapping: mandatory true
+      example: "mandatory: true"
+
+    unique:
+      description: >
+        List-en belüli egyediség — a megadott field kombinációnak egyedinek kell lennie
+        az összes list példány között.
+      yang_mapping: unique statement in list
+      example: "unique: ip-address port"
+
+  fields:
+    description: Egy Contract definíciójának kötelező és opcionális mezői
+    properties:
+      type:
+        type: string
+        enum: [range, pattern, must, when, enum, mandatory, unique]
+        description: A kényszer típusa (lásd types fent)
+      expression:
+        type: string
+        description: >
+          A kényszer konkrét tartalma — típusonként eltérő formátum.
+          range: "min..max" | pattern: regex | must/when: XPath | enum: értéklista
+      error_message:
+        type: string
+        description: >
+          Az üzenet amit a validátor ad vissza ha a kényszer nem teljesül.
+          Legyen emberbarát és cselekvőképes.
+        optional: true
+      description:
+        type: string
+        description: Miért létezik ez a kényszer — az üzleti/szemantikai indok
+        optional: true
+
+  semantic_mapping:
+    yang:
+      range: "type integer { range '...'; }"
+      pattern: "type string { pattern '...'; }"
+      must: "must '...' { error-message '...'; }"
+      when: "when '...';"
+      enum: "type enumeration { enum up; enum down; }"
+      mandatory: "mandatory true;"
+      unique: "unique '...';"
+    api:
+      note: Contract-ok → OpenAPI enum/pattern/minimum/maximum/required constraints
+    runtime:
+      note: Contract-ok → pre-apply validation, hibaüzenet visszaadása API-n

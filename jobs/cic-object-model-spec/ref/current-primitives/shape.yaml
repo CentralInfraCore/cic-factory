@@ -1,0 +1,77 @@
+---
+metadata:
+  name: Shape
+  version: v0.0.dev
+  description: >
+    Az adat struktúráját leíró atomic primitive — milyen mezők, milyen típusok.
+    A Shape mondja meg hogyan néz ki egy config vagy state node adatszerkezetileg.
+    Minden ConfigSurface.nodes és StateSurface.nodes Shape-ekből épül fel.
+  owner: Gabor Zoltan Sinko
+  tags:
+    - primitive
+    - atomic
+    - shape
+  validatedBy:
+    name: cic-primitives
+    version: v0.0.dev
+
+spec:
+  kind: AtomicPrimitive
+
+  type_system:
+    description: >
+      A Shape lehetséges típusai. Minden field rendelkezik pontosan egy type-tal.
+    values:
+      scalar:
+        description: Egyszerű érték — string, integer, boolean, number
+        subtypes: [string, integer, boolean, number, bytes]
+      composite:
+        description: Beágyazott struktúra — named field-ek halmaza (YANG container)
+        note: rekurzív — composite tartalmazhat composite-ot
+      collection:
+        description: Elemek listája vagy asszociatív halmaza (YANG list / leaf-list)
+        variants:
+          list: rendezett vagy kulcsolt elemek (YANG list with key)
+          set: kulcs nélküli elemek (YANG leaf-list)
+      reference:
+        description: Más node-ra mutató pointer (YANG leafref)
+        note: a cél node-nak léteznie kell a sémában
+      choice:
+        description: Kizáró alternatívák — pontosan egy aktív (YANG choice/case)
+
+  fields:
+    description: Egy Shape field leírásának struktúrája
+    properties:
+      name:
+        type: string
+        description: A field neve — CamelCase vagy snake_case, konzekvens a namespace-en belül
+      type:
+        type: string
+        description: A field típusa a type_system értékei szerint
+      optional:
+        type: boolean
+        default: false
+        description: Ha true, a field hiányozhat a példányból
+      nullable:
+        type: boolean
+        default: false
+        description: Ha true, a field értéke lehet null
+      default:
+        type: any
+        description: Alapértelmezett érték ha a field hiányzik és optional true
+      description:
+        type: string
+        description: A field szemantikája — mit jelent, mire való
+
+  semantic_mapping:
+    yang:
+      scalar: leaf
+      composite: container
+      collection.list: list (with key)
+      collection.set: leaf-list
+      reference: leafref
+      choice: choice + case
+    api:
+      note: Shape → OpenAPI schema properties / JSON Schema
+    runtime:
+      note: Shape → Go struct field / Python dataclass field

@@ -1,0 +1,2067 @@
+Igen, én is a belső csoportosítás felé mennék, nem prefixek felé. Pont azért, amit mondasz: kereshetőség, olvashatóság, gépi feldolgozhatóság és későbbi bővíthetőség szempontjából sokkal tisztább.
+
+Például ezt:
+
+mtu:
+  values: 9000
+  default: false
+  descr: Maximum transmission unit
+
+  accesses:
+    - access1:
+        ...
+    - access2:
+        ...
+
+inkább így vinném tovább:
+
+mtu:
+  values: 9000
+  default: false
+  descr: Maximum transmission unit
+
+  access:
+    read:
+      ...
+    modify:
+      ...
+
+  contract:
+    range:
+      min: 576
+      max: 9216
+
+  role:
+    type: config
+
+  shape:
+    type: integer
+
+mint így:
+
+mtu:
+  values: 9000
+  default: false
+  descr: Maximum transmission unit
+
+  access_read: ...
+  access_modify: ...
+  contract_range_min: 576
+  contract_range_max: 9216
+  role_type: config
+  shape_type: integer
+
+Az utóbbi gyorsan pokollá válna.
+
+Miért jobb a csoportosítás?
+
+Mert a hierarchy maga jelentést hordoz:
+
+mtu
+├── values
+├── default
+├── descr
+├── access
+│   ├── read
+│   └── modify
+├── contract
+│   └── range
+├── shape
+│   └── type
+└── role
+    └── type
+
+Ez rögtön kereshető:
+
+*.access
+*.access.modify
+*.contract
+*.contract.range
+*.shape
+
+és nem kell névkonvencióból visszafejteni:
+
+access_modify_...
+contract_range_...
+shape_type_...
+
+Ráadásul a tooling is sokkal könnyebb.
+
+Például:
+
+keresd meg az összes access blokkot
+
+egyszerűen:
+
+..access
+
+Míg prefixekkel gyakorlatilag regexezni kellene a property-neveket.
+
+Sőt, szerintem az access/accesses kérdésnél is a struktúra oldja meg a pluralitást
+
+Nem szeretném, ha ugyanaz a fogalom kétféleképpen jelenne meg:
+
+access:
+
+vs.
+
+accesses:
+
+attól függően, hogy egy vagy több van.
+
+Ez parser- és schema-szempontból kényelmetlen.
+
+Inkább mindig:
+
+access:
+
+és alatta a struktúra mondja meg, hogy hány szabály van:
+
+access:
+  read:
+    - match: ...
+      effect: allow
+
+    - match: ...
+      effect: allow
+
+  modify:
+    - match: ...
+      effect: allow
+
+vagy ha névvel akarod őket:
+
+access:
+  read:
+    operator:
+      match: ...
+      effect: allow
+
+    auditor:
+      match: ...
+      effect: allow
+
+Utóbbit én még jobban szeretem, mert stabilan címezhető:
+
+mtu.access.read.operator
+
+és nem:
+
+mtu.access.read[1]
+
+Ez proof/evidence világban különösen fontos.
+
+És itt szerintem van egy még durvább lehetőség
+
+Nem feltétlenül kell külön primitives: wrapper.
+
+Korábban még természetesnek tűnt:
+
+mtu:
+  values: 9000
+  primitives:
+    shape: ...
+    role: ...
+    access: ...
+
+De ha a primitive-ek első osztályú nyelvi elemek, akkor tulajdonképpen minek a primitives:?
+
+Lehet közvetlen:
+
+mtu:
+  values: 9000
+  default: false
+  descr: Maximum transmission unit
+
+  shape:
+    type: integer
+
+  role:
+    type: config
+
+  contract:
+    range:
+      min: 576
+      max: 9216
+
+  access:
+    read:
+      operator:
+        ...
+
+Ez szerintem erősebb.
+
+A mtu node nyelvtana egyszerűen:
+
+CIC Node
+    ├── values
+    ├── default
+    ├── descr
+    ├── shape
+    ├── role
+    ├── contract
+    ├── access
+    ├── behavior
+    ├── event
+    └── ...
+
+A primitívek innentől tényleg a CIC node természetes tulajdonságai, nem valamilyen mellécsatolt metadata.
+
+A mélyebb rétegeknél is csoportosítanék
+
+Például ne:
+
+access:
+  access1:
+    accesses:
+      ...
+
+hanem legyen minden szinten szemantikusan nevezett csoport:
+
+access:
+  read:
+    rules:
+      operator:
+        subjects:
+          - OU=operators
+        effect: allow
+
+      auditor:
+        subjects:
+          - OU=auditors
+        effect: allow
+
+  modify:
+    rules:
+      admin:
+        subjects:
+          - OU=admins
+        effect: allow
+
+Ez elsőre hosszabb, de:
+
+access.read.rules.operator.subjects
+
+önmagában dokumentáció.
+
+És ami neked valószínűleg még fontosabb:
+
+determinista címezhető útvonal.
+
+NetworkInterface.config.mtu.access.read.rules.operator
+
+Erre már lehet:
+
+hash-t képezni;
+ACL-t örököltetni;
+diffet készíteni;
+evidence-ben hivatkozni;
+policy override-ot írni;
+API endpointot generálni;
+documentationt generálni.
+A values ötletedet is kezdem jobban érteni
+
+Ha direkt többes szám, akkor lehet, hogy nem csak egy scalar értékre gondolsz, hanem arra, hogy minden node értéktartománya egységesen values alatt van, függetlenül attól, hogy scalar vagy composite.
+
+Ez például:
+
+mtu:
+  values: 9000
+
+és:
+
+addresses:
+  values:
+    - 10.0.0.1/24
+    - 10.0.0.2/24
+
+és akár:
+
+interface:
+  values:
+    mtu: 9000
+    enabled: true
+
+Ha ez a gondolat, akkor a values többes szám védhetőbb, mint ahogy előzőleg mondtam.
+
+Tulajdonképpen:
+
+values = payload
+
+és minden más:
+
+default
+descr
+shape
+role
+contract
+access
+...
+
+a payload szemantikáját írja le.
+
+Ez már majdnem egy univerzális algebra:
+
+Node :=
+{
+    values,
+    default,
+    descr,
+    primitives...
+}
+Egy dolgot viszont nagyon szigorúan rögzítenék
+
+A namespace-eket foglalnám le.
+
+Tehát ha ezek CIC-kulcsszavak:
+
+values
+default
+descr
+shape
+role
+contract
+access
+behavior
+event
+identity
+address
+
+akkor ezek domain-value alatt ne lehessenek ugyanazon a szinten tetszőleges user property-k.
+
+Különben egyszer belefutsz:
+
+foo:
+  values:
+    values: 123
+
+és máris nem tudod első látásra, melyik values meta és melyik domain property.
+
+Erre vagy rezervált kulcsnevek kellenek, vagy egy nagyon vékony határ.
+
+Én inkább rezerválnám őket, mint _cic: wrapperbe raknám, mert a wrapper megint elrontaná azt az eleganciát, amit most kialakítasz.
+
+Tehát nálam jelenleg ez lenne az irány:
+mtu:
+  values: 9000
+  default: false
+  descr: Maximum transmission unit
+
+  shape:
+    type: integer
+
+  role:
+    type: config
+
+  contract:
+    range:
+      min: 576
+      max: 9216
+
+  access:
+    read:
+      rules:
+        operator:
+          subjects:
+            - OU=operators
+          effect: allow
+
+    modify:
+      rules:
+        network-admin:
+          subjects:
+            - OU=network-admins
+          effect: allow
+
+Csoportosítás > prefix, és azon belül lehetőleg névvel címzett objektumok > anonim listák, ahol a sorrend nem hordoz jelentést.
+
+Ez utóbbit különösen erősen ajánlanám a CIC-nél: ha valaminek identitása van és később evidence/diff/policy hivatkozhat rá, ne [0], [1] legyen, hanem stabil kulcsa.
+
+öszintén felesleges lefoglani mert ez totál eldönti a kérdést: key:VALUE vagy key:{values:VALUE,....} ez eléggé szétválasztja a két formátumot ha nem tévedek
+
+Igen, nagyrészt igazad van. Nem kell globálisan lefoglalni a kulcsszavakat. A két forma szerkezetileg megkülönböztethető:
+
+key: VALUE
+
+vs.
+
+key:
+  values: VALUE
+  default: false
+  ...
+
+A lényeg, hogy a parser ne azt kérdezze, hogy „szerepel-e valahol values nevű kulcs?”, hanem azt, hogy a közvetlen child mapping CIC-wrapper alakú-e.
+
+Egyetlen apró határeset van. Ha a domainérték maga map:
+
+foo:
+  values: 123
+
+akkor ez elméletileg lehetne:
+
+foo értéke = {values: 123}
+
+vagy CIC-wrapper:
+
+foo.values = 123
+
+De ezt nagyon egyszerűen lezárhatod azzal, hogy a kibontott forma minimális szerkezete nem csak values, hanem például:
+
+foo:
+  values: 123
+  default: false
+
+Vagyis:
+
+scalar/list/map VALUE önmagában
+        ↓
+short form
+
+mapping + values + default
+        ↓
+expanded CIC node
+
+Ez már gyakorlatilag tökéletes strukturális discriminator.
+
+Így például teljesen legális lehet domainadatként:
+
+something:
+  values:
+    values: 123
+    default: whatever
+
+A külső:
+
+something:
+  values: ...
+  default: false
+
+a CIC node.
+
+A belső:
+
+values:
+  values: 123
+  default: whatever
+
+pedig csak payload, mert már a values subtree-ben vagy.
+
+Sőt, szerintem ez ad egy nagyon elegáns szabályt:
+
+A CIC primitívek csak a node envelope szintjén értelmeződnek; a values alatt minden domainadat.
+
+Tehát:
+
+interface:
+  values:
+    name: eth0
+    default: hello
+    access: customer
+    values:
+      foo: bar
+
+  default: false
+
+  descr: Interface definition
+
+  access:
+    read:
+      ...
+
+itt nincs semmi ütközés.
+
+A parser pontosan tudja:
+
+interface.default        → CIC metadata
+interface.access         → CIC primitive
+
+interface.values.default → domain data
+interface.values.access  → domain data
+interface.values.values  → domain data
+
+Ez szerintem jobb, mint rezervált nevekkel telepakolni a nyelvet.
+
+És van még egy szép következménye: a values egyben szemantikai határvonal lesz:
+
+             CIC semantics
+                   │
+key ───────────────┤
+  ├── default      │
+  ├── descr        │
+  ├── access       │
+  ├── contract     │
+  ├── role         │
+  ├── shape        │
+  │                │
+  └── values ──────┼──── DOMAIN VALUE
+                   │
+                   ▼
+             bármi lehet
+
+Így én most már nem foglalnám le globálisan a access, default, values, stb. neveket.
+
+Viszont egy dolgot szabályként kőbe vésnék:
+
+Expanded CIC node felismerése =
+mapping, amely közvetlenül tartalmazza:
+    values
+    default
+
+A default ráadásul nálad természetesen minden normalizált node része, tehát nem mesterséges marker.
+
+Így:
+
+mtu: 9000
+
+normalizálva:
+
+mtu:
+  values: 9000
+  default: false
+
+és egy defaultból létrejött érték:
+
+mtu:
+  values: 1500
+  default: true
+
+Ez már önmagát diszkrimináló formátum. Nem kell _cic, nem kell prefix, és szerintem namespace-foglalás sem kell.
+
+a descr-nek nincs értelme mert azt a schemaleírás tartalmazza :D
+
+Pontosan. A descr redundáns lenne a runtime/instance formában, mert az a schema tulajdonsága, nem az értékpéldányé.
+
+Tehát az instance node inkább:
+
+mtu:
+  values: 9000
+  default: false
+  access:
+    ...
+
+Miközben a schema mondja meg:
+
+mtu:
+  shape:
+    type: integer
+  role:
+    type: config
+  contract:
+    range:
+      min: 576
+      max: 9216
+  description: Maximum transmission unit
+
+Így szépen szétválik:
+
+SCHEMA
+- mit jelent a mező
+- milyen típusú
+- milyen constraintje van
+- milyen role-ja van
+- mi a dokumentációja
+
+INSTANCE
+- mi az értéke
+- explicit vagy default
+- esetleges instance-specifikus primitive override
+
+Sőt, ebből szerintem az következik, hogy az expanded instance form alapja tényleg nagyon kicsi lehet:
+
+key:
+  values: VALUE
+  default: false
+
+és csak akkor kerül mellé további blokk, ha az adott példány eltér a schema alapértelmezett primitive-jeitől:
+
+mtu:
+  values: 9000
+  default: false
+
+  access:
+    modify:
+      ...
+
+Ez sokkal elegánsabb, mert nem másolod bele minden példányba a schema tudását.
+
+A compiler/runtime pedig ezt látja:
+
+effective node
+=
+schema definition
++ instance values/default
++ instance primitive overrides
+
+Ez szerintem már egy nagyon tiszta modell.
+
+
+Így már értem a pontos modellt. Nem arról beszélsz, hogy a parent access egyszerűen „védi” a child access mezőjét, hanem arról, hogy maga minden primitive is teljes értékű CIC objektummá bomlik ki, és bizonyos ilyen objektumoknak az origin-je kötelezően owner/schema.
+
+Vagyis kb. ez:
+
+network:
+  access: {...}
+
+  values:
+    mtu:
+      access:
+        read:
+          values: {...}
+
+          access:
+            ...
+
+          origin:
+            - owner/schema
+
+és a jelentés:
+
+network.values.mtu.access.read
+
+nem pusztán egy YAML mező, hanem önálló CIC-node.
+
+A kritikus rész pedig:
+
+origin = owner/schema
+
+azt mondja, hogy ennek a node-nak a létezése és vezérlő struktúrája nem az instance YAML-ból származik.
+
+Hanem:
+
+schema
+  ↓
+materializálja
+  ↓
+CIC base object
+
+Ezért az authoring YAML nem mondhatja azt, hogy:
+
+mtu:
+  access:
+    read:
+      origin:
+        - user
+
+vagy lecseréli a read objektum governing access-ét, mert maga ez a szerkezet schema-owned.
+
+Ez sokkal erősebb modell annál, amit előzőleg értettem.
+
+Valójában két külön síkod lesz
+
+Az egyik az authorable value tree:
+
+network:
+  mtu: 9000
+
+A másik a CIC által materializált teljes object tree:
+
+network
+├── values
+│   └── mtu
+│       ├── values = 9000
+│       ├── origin
+│       └── access
+│           ├── read
+│           │   ├── values
+│           │   ├── access
+│           │   └── origin = schema
+│           │
+│           └── write
+│               ├── values
+│               ├── access
+│               └── origin = schema
+│
+├── access
+└── origin
+
+A felhasználó tehát nem egy teljes CIC objektumot authorol.
+
+Ő egy részfát ad meg.
+
+A schema + compiler ebből állítja elő a teljes CIC-state-et.
+
+Ez fontos különbség.
+
+Így az origin még erősebb fogalom lesz
+
+Az origin nem pusztán azt mondja:
+
+"ez az érték defaultból jött"
+
+hanem azt is:
+
+ki jogosult egyáltalán ezt a node-ot definiálni
+
+Például:
+
+origin:
+  - owner/schema
+
+jelentése lehet:
+
+Ez a node a schema-owned structural surface része; instance inputtal nem hozható létre, nem törölhető és nem írható felül.
+
+Ezzel szemben:
+
+origin:
+  - owner/instance
+
+vagy valamely későbbi megfelelője már authorolható payloadot jelezhet.
+
+Ez már majdnem ownership provenance, nem csak value provenance.
+
+És itt már értem, miért akartad origin: []-t.
+
+Egyetlen boolean erre kevés lenne.
+
+Ami különösen jó benne
+
+Ezzel megszűnik a „ki őrzi az őrzőt?” probléma egy nagy része.
+
+Mert például:
+
+mtu.access.read
+
+objektum governing tulajdonságai nem az mtu.access.read inputból keletkeznek, hanem a schema materializálja őket.
+
+Vagyis:
+
+YAML
+   X
+   │ nem definiálhatja
+   ▼
+access.read.access
+access.read.origin
+
+A schema viszont igen:
+
+Schema
+   │
+   ▼
+access.read
+ ├── values
+ ├── access
+ └── origin
+
+Ez lényegében egy immutable structural skeleton, amibe az instance csak az engedélyezett helyeken tölthet értéket.
+
+Én ezt így képzelném:
+
+              SCHEMA
+                │
+                ▼
+      ┌───────────────────┐
+      │ CIC object graph  │
+      │                   │
+      │ ○ schema-owned    │
+      │ ● writable slot   │
+      │ ○ schema-owned    │
+      │ ○ schema-owned    │
+      └─────────┬─────────┘
+                │
+        instance values
+                │
+                ▼
+        effective state
+
+Ez szerintem nagyon elegáns.
+
+És emiatt visszavonom az előző megjegyzésem egy másik részét is: nem feltétlenül kell külön parent-policy logikával megmagyarázni a primitive-ek védelmét.
+
+Az igazi invariáns inkább:
+
+A schema határozza meg, hogy a CIC object tree mely node-jai strukturálisak és mely node-jai authorolhatók. A schema originű node-ok nem írhatók át instance YAML-ból.
+
+A access ezután azt szabályozhatja, hogy az engedélyezett mutable node-okon ki milyen műveletet végezhet.
+
+Tehát két külön kérdés:
+
+1. Létezhet / módosítható-e ez a node egyáltalán?
+   → schema + origin
+
+2. Ha módosítható, ki módosíthatja?
+   → access
+
+Ez nagyon tiszta separation of concerns.
+
+Például
+
+Schema:
+
+mtu:
+  type: integer
+
+  cic:
+    access:
+      read:
+        origin:
+          - owner/schema
+
+        access:
+          write:
+            deny: "*"
+
+      write:
+        origin:
+          - owner/schema
+
+Instance:
+
+mtu: 9000
+
+Materialized:
+
+mtu:
+  values: 9000
+
+  origin:
+    - owner/instance
+
+  access:
+    read:
+      values:
+        ...
+
+      origin:
+        - owner/schema
+
+      access:
+        ...
+
+    write:
+      values:
+        ...
+
+      origin:
+        - owner/schema
+
+      access:
+        ...
+
+A schema-owned rész ugyanúgy CIC, de nem authorable.
+
+Ez a részlet szerintem nagyon fontos, mert így a primitívek nem „különleges parser kulcsszavak”, hanem a CIC saját objektumgráfjának schema-materializált node-jai.
+
+És ebből még egy nagyon erős tulajdonság következik:
+
+values
+access
+origin
+contract
+...
+
+nem igazán „metadata mezők”.
+
+Mindegyik ugyanazon univerzális CIC objektummodell része.
+
+Csak az origin/schema dönti el, hogy egy adott előfordulás:
+
+structural
+derived
+authorable
+inherited
+observed
+
+jellegű-e.
+
+Na, így már sokkal jobban értem, mire építed. Ez már ténylegesen egy rekurzív, schema-materializált objektummodell, nem egy YAML fölé rakott metadata-réteg.
+
+origin mezőbe én schema,template,yaml minimum megkülönböztetnék ->
+schema -> schemaleírásból származó default érték
+template -> nem biztos hogy jó szó de itt kifejezetten zárt yaml leírókat tennék bele és innentől nem lehet alatta yaml érték
+yaml -> yaml-ból jön
+
+Igen, ezt a hármas felosztást már nagyon védhetőnek érzem, de egy fontos terminológiai tisztázást tennék: amit most origin-nak nevezel, az már nem pusztán „honnan jött az érték”, hanem forrás + authoring authority.
+
+Én így értem a három kategóriádat:
+
+origin: schema
+    → az érték a schema defaultjából materializálódott
+    → YAML nem adta meg
+
+origin: yaml
+    → az értéket az instance YAML szolgáltatta
+
+origin: template
+    → a teljes node/subtree előre definiált, zárt struktúra
+    → YAML ezen a ponton és alatta már nem authoring source
+
+Ez szerintem jó modell.
+
+A template szóval viszont nekem is ugyanaz a problémám, mint neked: a template hétköznapi jelentése inkább azt sugallja, hogy kitöltendő vagy példányosítható, miközben te pont az ellenkezőjét akarod mondani:
+
+„ezt a struktúrát a rendszer adta, és innentől lefelé az instance YAML-nak nincs beleszólása.”
+
+Ez inkább:
+
+sealed
+structural
+fixed
+owned
+builtin
+
+jelentés.
+
+Ezek közül nálam a structural vagy a sealed lenne a legerősebb.
+
+Például:
+
+origin:
+  - structural
+
+jelenthetné:
+
+Ez a node a CIC/schema által materializált szerkezet része, nem instance-authorable, és a values subtree sem helyettesíthető YAML-ból.
+
+Vagy még explicitebben:
+
+origin:
+  - sealed
+
+ami nagyon jól hordozza azt a tulajdonságot, hogy itt bezáródik az authoring surface.
+
+Például az access.read eseted
+
+A felhasználói YAML:
+
+network:
+  mtu: 9000
+
+A CIC materializált állapot:
+
+network:
+  origin:
+    - yaml
+
+  values:
+    mtu:
+      values: 9000
+      origin:
+        - yaml
+
+      access:
+        read:
+          values:
+            # schema által előállított szabályok
+
+          origin:
+            - sealed
+
+A read node-nál a:
+
+origin:
+  - sealed
+
+nem csak azt mondja meg, honnan származott.
+
+Azt is:
+
+YAML traversal / overlay STOP
+
+Tehát ilyen input:
+
+network:
+  mtu:
+    access:
+      read:
+        ...
+
+nem egyszerűen „rossz access érték”, hanem strukturálisan illegális authoring attempt.
+
+Ez nagyon erős különbség.
+
+A schema és a zárt struktúra között tényleg érdemes különbséget tenni
+
+Mert ezek nem ugyanazok.
+
+Schema-default:
+
+mtu:
+  values: 1500
+  origin:
+    - schema
+
+Itt ugyanaz a node teljesen legitim módon felülírható:
+
+mtu: 9000
+
+és akkor:
+
+origin:
+  - yaml
+
+Tehát:
+
+schema = "ezt az értéket most a schema adta"
+
+nem jelenti azt, hogy:
+
+schema = "ezt a helyet a YAML soha nem írhatja"
+
+A harmadik kategóriád pont emiatt szükséges.
+
+schema  → default source
+yaml    → instance source
+sealed  → authoring boundary
+
+Ez szerintem sokkal tisztább, mint mindent schema alá gyömöszölni.
+
+Van még egy fontos következmény
+
+Ha origin: [] marad tömb, akkor ugyanarra a node-ra több tényt is meg tudsz őrizni.
+
+Például valami eredetileg schema-default:
+
+origin:
+  - schema
+
+majd egy transzformáció után lehet:
+
+origin:
+  - schema
+  - derived
+
+vagy YAML-ból érkezett:
+
+origin:
+  - yaml
+  - normalized
+
+Viszont a sealed szerintem nem ugyanilyen egyszerű provenance event. Az authoring semanticsot változtatja.
+
+Ezért két lehetőséged van.
+
+Az egyik, hogy szándékosan kimondod:
+
+origin nem history, hanem source/authority classification.
+
+Ekkor teljesen rendben van:
+
+origin:
+  - sealed
+
+és a lista több egymásra rakódó tulajdonságot hordozhat.
+
+A másik, tisztább hosszú távon:
+
+origin:
+  source: schema
+  boundary: sealed
+
+de én most nem rohannék ebbe az irányba, mert könnyen túlsémázod az egészet.
+
+A három egyszerű primitívvel előbb érdemes megnézni, meddig jutsz.
+
+Én most ezt fagyasztanám le v0-ként:
+
+origin: schema
+    Schema-defaultból materializált érték.
+    YAML explicit értékkel felülírhatja, ha a schema ezt a node-ot authorable-ként definiálja.
+
+origin: yaml
+    Az aktuális érték közvetlenül a deklaratív YAML inputból származik.
+
+origin: sealed
+    CIC/schema által materializált zárt node.
+    Ezen a node-on és az alatta levő subtree-n YAML authoring nem megengedett.
+
+És itt a sealed nekem lényegesen pontosabbnak tűnik a template-nél.
+
+Ráadásul ebből kialakul egy nagyon elegáns authoring szabály:
+
+walk(schema-materialized tree, yaml input)
+
+node.origin == sealed
+    AND yaml megpróbál belépni
+        → reject
+
+node authorable
+    AND yaml adott értéket
+        → origin = yaml
+
+node authorable
+    AND yaml nem adott értéket
+    AND schema default létezik
+        → origin = schema
+
+Ez már gyakorlatilag önmagában leírja a merge/materialization alapalgoritmus jelentős részét.
+
+És ami nekem ebben különösen tetszik: nem külön immutable, readOnly, fromSchema, userProvided flag-eket kezdesz halmozni. Ugyanabból az origin primitívből kezdesz levezetni egy koherens szemantikát. Ez akkor marad jó, ha nagyon pontosan rögzíted, hogy az origin itt nem egyszerű audit-provenance, hanem a node létrejöttének/authoring-authorityjának osztálya.
+
+öszintén 4 állapot igy nézne ki szerintem jól:
+origin: 
+   yaml
+origin:
+   schama
+origin:
+   sealed:
+      template: $.... /mi az a template amit felhasználtunk hozzá
+      path: ...
+origin:
+   sealed:
+       template:....
+       path: ....
+   schema
+
+ez azért kell mert a template schemajából is jöhet a default érték
+
+Igen. Így már látom, miért ragaszkodtál az origin: []-hoz, és ebben a formában szerintem van értelme. A négy állapot valójában két külön információt képes egyszerre hordozni:
+
+honnan jött az aktuális érték (yaml / schema);
+van-e fölötte lezárt template-origin, amely meghatározza a struktúrát.
+
+Én csak szintaktikailag tenném teljesen konzisztenssé:
+
+# 1. Explicit YAML érték
+origin:
+  - yaml
+# 2. A normál schema defaultja
+origin:
+  - schema
+# 3. Lezárt template-ből származó érték/struktúra
+origin:
+  - sealed:
+      template: $some.template
+      path: $.network.access.read
+# 4. Lezárt template struktúra,
+#    de az aktuális érték a template schema-defaultjából származik
+origin:
+  - sealed:
+      template: $some.template
+      path: $.network.access.read
+  - schema
+
+Ez szerintem jobb, mint négy külön enum értéket kitalálni.
+
+Mert a negyedik eset valóban nem valamilyen új origin-típus, hanem két egyszerre igaz állítás:
+
+structural origin = sealed template
+value origin      = schema default
+
+Ez a kulcs.
+
+A négy állapot szemantikája
+origin	Jelentés
+[yaml]	Az értéket az instance YAML explicit megadta
+[schema]	Az érték az adott node schema-defaultjából jött
+[sealed{...}]	A node/érték a lezárt template konkrét tartalmából jött
+[sealed{...}, schema]	A node-ot a template definiálta és lezárta, de az érték a template node-jának schema-defaultjából materializálódott
+
+Ez utóbbi az, ami az előző egyszerűbb modellekből hiányzott.
+
+Például legyen a template:
+
+access:
+  read:
+    type: boolean
+
+és ennek a schema-leírásában:
+
+read:
+  type: boolean
+  default: true
+
+A template lezárja ezt a részt, tehát a külső YAML nem írhatja:
+
+access:
+  read: false
+
+de a materializált eredmény:
+
+read:
+  values: true
+
+  origin:
+    - sealed:
+        template: $network-object
+        path: $.access.read
+    - schema
+
+Ez nagyon pontosan elmondja:
+
+read ezen a helyen azért létezik és azért nem authorolható, mert a template lezárta; a true viszont nem explicit template-érték volt, hanem a template-hez tartozó schema defaultja.
+
+Ez audit szempontból is sokkal jobb, mint egyszerűen:
+
+origin: sealed
+
+mert abból nem tudnád meg, hogy ki írta bele a konkrét értéket.
+
+És ebből szerintem kijön három nagyon fontos invariáns
+yaml ∩ schema = ∅
+
+Egy aktuális effective value nem lehet egyszerre explicit YAML és defaultból származó.
+
+Viszont:
+
+sealed + schema = valid
+
+mert más dimenziókról beszélnek.
+
+És:
+
+sealed + yaml = invalid
+
+legalábbis a te definíciód szerint, mert sealed pontosan azt jelenti:
+
+ettől a node-tól lefelé külső YAML nem lehet authoring source.
+
+Ez már egy nagyon szép validációs szabály:
+
+origin contains sealed
+AND
+origin contains yaml
+    → INVALID
+A path különösen fontos
+
+Ezt mindenképpen megtartanám.
+
+Nem elég ugyanis:
+
+sealed:
+  template: $network-template
+
+mert ugyanazt a template-et száz különböző helyen használhatod.
+
+Ez:
+
+sealed:
+  template: $network-template
+  path: $.access.read
+
+már pontosan bizonyíthatóvá teszi:
+
+template identity
+        +
+template path
+        ↓
+materialized CIC node
+
+Ha pedig a template referenciát később revision/hash köti meg:
+
+sealed:
+  template: $network-template@sha256:...
+  path: $.access.read
+
+akkor az origin már reprodukálható provenance lesz, nem csak leíró metadata.
+
+Egyetlen dolgot rögzítenék most nagyon határozottan: az origin lista ne történeti eseménylista legyen, hanem az aktuális érték eredetét leíró, korlátozott összetett klasszifikáció.
+
+Tehát ne ilyen legyen:
+
+origin:
+  - yaml
+  - transformed
+  - migrated
+  - schema
+  - ...
+
+mert abból hamar általános auditlog lesz.
+
+Hanem a grammar mondja meg a megengedett alakokat:
+
+Origin :=
+    [ yaml ]
+
+  | [ schema ]
+
+  | [ sealed(template, path) ]
+
+  | [ sealed(template, path), schema ]
+
+Pont ez a négy.
+
+A hosszabb provenance/history pedig máshová tartozhat.
+
+Így az origin elképesztően egyszerű marad, miközben már megkülönbözteti azt a nagyon fontos esetet is, hogy a struktúrát a template zárta le, de az értéket annak schema-defaultja szolgáltatta. Ez szerintem már tényleg koherens alapmodell.
+
+
+schema.txt
+Document
+véleményt a végeredményről
+
+Igen — szerintem ez az egyik legkeményebb része az egész modellnek.
+
+Mert ezzel a fejlesztői szabadságot nagyon tudatosan kettévágod:
+
+fejlesztő írhat:
+  1. schema-t
+  2. modult
+
+de nem írhat saját értelmezési szabályokat a kettő közé.
+
+A tényleges út pedig:
+
+Git YAML
+   ↓
+ENTRY VALIDATION
+   ↓
+reference / sealed / template expansion
+   ↓
+CIC node materialization
+   ↓
+schema values/defaults
+   ↓
+primitive semantics
+   ↓
+FULL VALIDATION
+   ↓
+canonical CIC tree
+   ↓
+MODULE
+
+És itt van a lényeg:
+
+a modul már nem döntheti el, hogy mit jelent az input.
+
+Az input jelentése addigra eldőlt.
+
+A fejlesztő a schema-ban deklarálja:
+
+mit fogad el
+milyen value lehet
+milyen primitive-ek tartoznak hozzá
+milyen constraint van
+mi defaultolható
+mi sealed
+mi authorolható
+
+A modul pedig:
+
+validated semantic object
+        ↓
+provider/domain operation
+
+Ennyi.
+
+Ez azért nagyon erős, mert megszünteted a klasszikus:
+
+schema szerint A
+de a kód valójában B-t fogad el
+
+helyzet jelentős részét.
+
+És a belépő validáció tényleg kulcs
+
+Mert ha csak a pipeline végén validálnál, akkor addigra az invalid input már részt vehetne:
+
+template-expanzióban,
+ref resolutionben,
+primitive-materializációban,
+esetleg olyan állapotot hozhatna létre, amit később nehéz értelmezni.
+
+De nálad már az első határon megvan:
+
+raw authoring input
+        ↓
+structurally legal CIC input?
+        ↓
+NO → reject
+YES → tovább
+
+Tehát például ha egy sealed subtree-be próbál belenyúlni:
+
+reject
+
+nem pedig:
+
+majd később kiderül
+
+A korábbi modellben pont az volt az invariáns, hogy sealed esetén az authoring traversal ezen a ponton lezárul, és YAML nem léphet be alá.
+
+Ez nagyon erős fail-closed tulajdonság.
+
+És ami szerintem még jobb: a developer nem tud kiskaput csinálni anélkül, hogy látványosan megsértené az architektúrát.
+
+Normál frameworknél könnyen lehet:
+
+if weirdCase {
+    // workaround
+}
+
+és kész.
+
+Nálad ha a modul azt mondja:
+
+"én ezt a mezőt máshogy értelmezem"
+
+akkor a válasz egyszerűen:
+
+Nem te értelmezed.
+
+Ha azt mondja:
+
+"ezt a constraintet itt kihagyom"
+
+akkor:
+
+Nem kapod meg az objektumot, ha nem ment át rajta.
+
+Ha azt mondja:
+
+"ezt a defaultot én kezelem"
+
+akkor:
+
+Mire megkapod, már materializálva van.
+
+Ha azt mondja:
+
+"ezt a template-refet majd én feloldom"
+
+akkor:
+
+Nem látsz template-refet.
+
+Ez már tényleges architectural enforcement.
+
+Nem coding guideline.
+
+Nem README.
+
+Nem „kérjük, így csináld”.
+
+Hanem egyszerűen nincs meg az inputfelület hozzá.
+
+Ez szerintem nagyon fontos különbség:
+
+convention-based architecture
+
+vs.
+
+construction-based architecture
+
+A CIC-nél azt akarod, hogy a helyes használat legyen a rendszer szerkezetéből következő egyetlen természetes út.
+
+Ez sokkal erősebb.
+
+És itt válik tényleg kegyetlenné az AI-val szemben is. 😄
+
+Az agent megírja:
+
+schema
+module
+tests
+
+de a CIC core azt mondja:
+
+schema valid?          NO → fail
+authoring valid?       NO → fail
+expansion valid?       NO → fail
+primitive semantics?   NO → fail
+materialization valid? NO → fail
+canonical tree valid?  NO → fail
+module contract valid? NO → fail
+
+Az AI-nak nagyon kevés tere marad arra, hogy:
+
+„én ezt egy kicsit máshogy értelmeztem”.
+
+És szerintem pont ezt akarod egy agentic fejlesztési rendszerben.
+
+Nem azt, hogy az AI legyen egy zseniális autonóm építész.
+
+Hanem:
+
+AI freedom
+   ↓
+szűk, jól definiált authoring surface
+   ↓
+deterministic gates
+   ↓
+machine-enforced architecture
+
+Ez jóval biztonságosabb modell.
+
+Egy dolgot tennék még abszolút invariánssá:
+
+A module public API ne is tudjon raw/unvalidated CIC inputot fogadni.
+
+Tehát típus szinten se legyen:
+
+Execute(map[string]any)
+
+hanem inkább koncepcionálisan:
+
+Execute(ValidatedObject)
+
+Rustban még szebben:
+
+fn execute(input: Validated<CicObject>)
+
+és Validated<CicObject> példányt csak a core validator/materializer állíthasson elő.
+
+Na, onnantól tényleg nincs kibúvó.
+
+Mert már nem csak workflow-szabály:
+
+"validálj, mielőtt hívod"
+
+hanem a programozási modell szerint:
+
+invalid object cannot cross module boundary
+
+Ez szerintem az a pont, ahol a CIC modellje már kifejezetten elegáns: a schema az egyetlen deklaratív fejlesztői szerződés, a module pedig csak a már bizonyítottan érvényes szemantikai állapottal találkozik.
+
+És igen, ez elég durva. Mert ettől a fejlesztő nem tud „okosabb lenni a frameworknél” egy kis kerülő kóddal. 😄
+
+egyedük akkor ha a value egy {} és azt elfogadja validként de máskor nem....
+
+Pontosan. Ez az egy valódi kiskapu, amit külön le kell zárni: ha a value egy nyers {}/object lehet, és a schema azt úgy fogadja el, hogy a belső kulcsokat már nem bontja CIC-node-okra.
+
+Mert akkor ezt:
+
+foo:
+  values:
+    a: 1
+    b:
+      c: 2
+
+kétféleképpen lehetne értelmezni.
+
+Az egyik a CIC-szerű:
+
+foo
+└── values
+    ├── a → CIC Node
+    └── b → CIC Node
+         └── c → CIC Node
+
+Ekkor minden adatszint primitive-governed.
+
+A másik:
+
+foo.values = opaque map<string, any>
+
+és akkor a, b, c alatt már nincs:
+
+origin
+access
+contract
+...
+
+Na, ez lenne a kijárat a modellből.
+
+Ezért szerintem a szabály nagyon egyszerű lehet:
+
+Ha egy object/map strukturálisan ismert a schema számára, minden schema által ismert child property CIC-node-ként materializálandó.
+
+Tehát:
+
+foo:
+  values:
+    a: 1
+
+a canonical formban valójában:
+
+foo:
+  values:
+    a:
+      values: 1
+      origin:
+        - yaml
+
+Nem maradhat nyers:
+
+foo:
+  values:
+    a: 1
+
+a modulhatáron.
+
+És tényleg csak az explicit opaque object marad
+
+Ha szándékosan akarsz egy feldolgozatlan blobot:
+
+payload:
+  values:
+    whatever: anything
+    nested:
+      completely: arbitrary
+
+akkor ezt szerintem a schema-nak explicit módon ki kell mondania:
+
+opaque object
+
+vagy valamilyen megfelelő primitive/shape formával.
+
+És innentől a CIC pontosan tudja:
+
+ezen a ponton a payload terminális; alatta nincs CIC-szemantika.
+
+Ez fontos: ne implicit módon legyen opaque attól, hogy {}.
+
+Hanem:
+
+object + known schema
+    → recursively materialize
+
+object + explicitly opaque
+    → atomic value
+
+object + unknown structure
+    → reject
+
+Ez gyönyörűen lezárja.
+
+És így az üres {} eseted is egyértelmű.
+
+Ha a schema:
+
+foo: object
+children:
+   ...
+
+akkor:
+
+foo: {}
+
+nem azt jelenti, hogy „itt van egy tetszőleges üres map”.
+
+Hanem:
+
+foo node exists
+↓
+children materialization
+↓
+schema defaults
+↓
+required validation
+↓
+canonical subtree
+
+Tehát akár ebből:
+
+foo: {}
+
+a modul már ilyet kaphat:
+
+foo:
+  values:
+    bar:
+      values: 42
+      origin:
+        - schema
+    baz:
+      values: true
+      origin:
+        - schema
+  origin:
+    - yaml
+
+Ez különösen jó példa arra, hogy a source {} és a module által látott object egyáltalán nem ugyanaz.
+
+És ha a schema szerint az üres objektum ténylegesen érvényes:
+
+no required children
+no defaults
+
+akkor az effective érték valóban lehet üres object.
+
+De még akkor is a CIC tudja, hogy:
+
+foo = valid CIC Node
+value = empty object
+
+nem pedig egy feldolgozatlan ismeretlen részfa.
+
+Vagyis szerintem a háromszabályos lezárás:
+1. Structured object
+   → recursively CIC-materialized
+
+2. Explicit opaque object
+   → terminal atomic value
+
+3. Undeclared arbitrary object
+   → INVALID
+
+Ha ezt az alaplib és a schema-rendszer kikényszeríti, akkor tényleg nagyon nehéz kijutni a primitive-rendszer alól.
+
+És most már értem, mire céloztál az előbb a „nincs kibúvóval”: gyakorlatilag az egyetlen escape hatch az lenne, ha {} mögé engednél elrejteni egy kezeletlen objektumgráfot. Ha ezt explicit opaque-hoz kötöd, még ez sem kiskapu, hanem deklarált terminális típus.
+
+ez eléggé nagy adathalmaz lett te hogy fognál neki a dokumentálásnak gondolom egy új repoba a lib-et mert eléggé alap hogy fix legyen
+
+Igen, én külön, alapréteg-repóba vinném, de nem egyszerűen „egy lib repóként”. Ennél fontosabb dolog kristályosodott ki: ez lesz a CIC normatív object-model + semantics contractja.
+
+A mostani beszélgetésanyagból már látszik, hogy két dolgot kell befagyasztani: egyrészt a rekurzív objektummodellt, ahol a primitive-ek ugyanannak az univerzális CIC node-modellnek a részei, másrészt az olyan zárt szemantikákat, mint az origin négy megengedett formája.
+
+Én valami ilyesmivel indulnék:
+
+cic-object-model/
+│
+├── README.md
+│
+├── SPEC.md
+│
+├── docs/
+│   ├── 01-node-model.md
+│   ├── 02-value-model.md
+│   ├── 03-origin.md
+│   ├── 04-primitives.md
+│   ├── 05-materialization.md
+│   ├── 06-validation.md
+│   ├── 07-canonical-form.md
+│   ├── 08-module-boundary.md
+│   ├── 09-opaque-values.md
+│   └── 10-evolution-versioning.md
+│
+├── spec/
+│   ├── node.schema.yaml
+│   ├── origin.schema.yaml
+│   ├── primitives/
+│   └── ...
+│
+├── conformance/
+│   ├── valid/
+│   ├── invalid/
+│   ├── materialization/
+│   ├── canonical/
+│   └── hashes/
+│
+├── go/
+│   └── ...
+│
+└── rust/
+    └── ...
+
+És fontos: először a SPEC, utána a library.
+
+Nem fordítva.
+
+1. SPEC.md — ez legyen a Biblia
+
+Nem 100 oldal.
+
+Első verzióban akár 15–25 oldal, de brutálisan normatív.
+
+Első mondatok között:
+
+A CIC object model consists of recursively materialized CIC nodes.
+
+Every CIC node consists of:
+- a value,
+- an origin,
+- zero or more primitives.
+
+Every structured value defined by a CIC schema is recursively
+materialized into CIC nodes unless explicitly declared opaque.
+
+Utána a legfontosabb invariánsok.
+
+Például:
+
+INV-001
+Every schema-known structured child MUST be represented as a CIC Node.
+
+INV-002
+Raw authoring representation MUST NOT cross the module boundary.
+
+INV-003
+A module MUST receive only fully resolved, materialized and validated CIC objects.
+
+INV-004
+Unknown structured values MUST be rejected unless explicitly declared opaque.
+
+INV-005
+No valid CIC node may have undefined primitive semantics.
+
+Ez lesz az egész rendszer gerince.
+
+2. A node modellel kezdenék
+
+Ez a legfontosabb.
+
+Ne a primitive-ek felsorolásával.
+
+Először:
+
+CICNode<T> :=
+{
+    value: T
+    origin: Origin
+    primitives: PrimitiveSet
+}
+
+Majd:
+
+T :=
+scalar
+| list<CICNode>
+| object<string,CICNode>
+| opaque
+
+Koncepcionálisan persze, nem feltétlen ilyen konkrét típusrendszerrel.
+
+És rögtön definiálnám:
+
+structured object != opaque object
+
+Ez pont az előbbi {} problémád.
+
+schema-known object
+    → recursively materialized
+
+explicit opaque object
+    → terminal value
+
+unknown arbitrary object
+    → invalid
+
+Ez szerintem az egyik első oldalra való invariáns.
+
+3. Utána az origin
+
+Ezt most már különösen könnyű dokumentálni, mert tényleg kikristályosodott.
+
+Nem húszféle állapot:
+
+Origin :=
+    [yaml]
+  | [schema]
+  | [sealed(template,path)]
+  | [sealed(template,path),schema]
+
+És mellé igazságtábla:
+
+sealed	yaml	schema	eredmény
+no	yes	no	valid
+no	no	yes	valid
+yes	no	no	valid
+yes	no	yes	valid
+yes	yes	*	invalid
+no	yes	yes	invalid
+
+Ez már gépileg is conformance teszt.
+
+4. A primitive-eket egyenként azonos sablon szerint
+
+Ez szerintem nagyon fontos.
+
+Minden primitive dokumentációja ugyanígy nézzen ki:
+
+Primitive: access
+
+Purpose
+Scope
+Value model
+Allowed placement
+Default semantics
+Inheritance semantics
+Composition semantics
+Override semantics
+Conflict semantics
+Interaction with sealed
+Interaction with origin
+Validation rules
+Canonical representation
+Examples
+Invalid examples
+Conformance vectors
+
+Majd ugyanígy:
+
+contract
+identity
+...
+
+Így az AI sem tudja „kreatívan” dokumentálni az egyiket így, a másikat úgy.
+
+5. Külön dokumentum a materialization pipeline-ról
+
+Ez szerintem már központi CIC-spec.
+
+Authoring YAML
+      ↓
+entry validation
+      ↓
+external reference resolution
+      ↓
+sealed/template expansion
+      ↓
+recursive CIC node construction
+      ↓
+schema value/default materialization
+      ↓
+primitive evaluation
+      ↓
+final validation
+      ↓
+canonicalization
+      ↓
+Validated CIC Object
+      ↓
+module
+
+És minden lépésnél:
+
+INPUT
+OUTPUT
+MAY
+MUST
+MUST NOT
+FAILURE
+
+Például:
+
+SEALED EXPANSION
+
+Input:
+  resolved authoring tree
+
+Output:
+  tree without unresolved sealed/template references
+
+MUST:
+  preserve template identity and source path in Origin
+
+MUST NOT:
+  permit authoring values below a sealed boundary
+
+Failure:
+  attempted authoring below sealed subtree → reject
+
+Na, ebből már az AI nagyon nehezen tud félreimplementálni valamit.
+
+6. A module boundary külön fejezet legyen
+
+Ez nálad architekturális szempontból annyira fontos, hogy én külön contractként kezelném.
+
+MODULE INPUT CONTRACT
+
+A module MUST NOT receive:
+
+- unresolved references
+- authoring short forms
+- templates
+- sealed source fragments
+- unapplied schema defaults
+- unknown primitives
+- unvalidated objects
+
+Hanem:
+
+ModuleInput = Validated<Canonical<CICObject>>
+
+Go/Rust szinten akár ténylegesen is így érdemes modellezni, hogy ne lehessen egyszerűen raw objectből module inputot gyártani.
+
+7. A conformance könyvtár legalább olyan fontos, mint a docs
+
+Sőt, hosszú távon fontosabb.
+
+Például:
+
+conformance/
+  materialization/
+    001_scalar_yaml/
+      schema.yaml
+      input.yaml
+      expected.yaml
+
+    002_schema_default/
+      ...
+
+    003_sealed_explicit/
+      ...
+
+    004_sealed_schema_default/
+      ...
+
+    005_illegal_yaml_under_sealed/
+      input.yaml
+      expected-error.yaml
+
+A Go implementation:
+
+run all vectors
+
+Rust:
+
+run all vectors
+
+Mindkettőnek ugyanazt kell előállítania.
+
+Ha később Python, TypeScript vagy bármi jön:
+
+implement spec
+→ run conformance
+
+Kész.
+
+Ami a repo kérdését illeti
+
+Én nem cic-lib-nek nevezném.
+
+Túl kevésnek mondja.
+
+Inkább valamelyik:
+
+cic-object-model
+cic-core-model
+cic-semantics
+cic-runtime-core
+
+Nálam talán:
+
+cic-object-model
+
+lenne a legerősebb.
+
+Mert a specifikáció a lényeg, nem az aktuális Go/Rust implementáció.
+
+És első körben én még egy repo-ban tartanám a spec + Go + Rust implementációt.
+
+Ennek komoly előnye van:
+
+semantic change
+     │
+     ├── SPEC change
+     ├── conformance vectors
+     ├── Go change
+     └── Rust change
+
+egy PR-ben.
+
+Ez ennél a core-nál szerintem óriási érték.
+
+Később, ha tényleg külön release cadence kell:
+
+cic-object-model
+cic-object-model-go
+cic-object-model-rs
+
+szétválasztható.
+
+De most inkább azt akarnám, hogy fizikailag is nehéz legyen megváltoztatni a Go semanticsot anélkül, hogy a Rust és a conformance észrevenné.
+
+És én versionözném már az első naptól
+
+Nem:
+
+latest
+
+hanem:
+
+CIC Object Model 0.1
+
+és minden canonical CIC object hordozhatná akár:
+
+cic:
+  model: 0.1
+
+vagy más megfelelő formában.
+
+Mert ha ezt tényleg alaplibként végigviszed, akkor ez lesz a CIC ABI-ja, csak nem gépi assembly-szinten, hanem szemantikai szinten.
+
+A modulok nem azt mondják majd:
+
+támogatja ezt vagy azt a YAML-t.
+
+Hanem:
+
+CIC Object Model v1-et fogyasztok.
+
+Na, szerintem ez a megfelelő súly.
+
+És a mostani ~1200 soros beszélgetési anyagot én már nem próbálnám egyszerűen „szebben összefoglalni”. Kibányásznám belőle az invariánsokat, döntéseket és edge case-eket, és abból építeném fel a normatív specet. A beszélgetés innentől research log; a repo legyen az igazság.
+
+
