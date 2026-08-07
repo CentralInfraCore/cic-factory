@@ -1,0 +1,257 @@
+---
+module: test_tools.test_releaselib.test_vault_service
+description: ''
+tags:
+- test
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: VALID_DIGEST_B64
+  kind: const
+  description: ''
+  references: []
+- name: vault_service
+  kind: function
+  decorators:
+  - pytest.fixture
+  description: Fixture for a live VaultService instance.
+  references:
+  - pytest.fixture
+  - tools.releaselib.vault_service.VaultService
+  calls:
+  - tools.releaselib.vault_service.VaultService
+- name: dry_run_vault_service
+  kind: function
+  decorators:
+  - pytest.fixture
+  description: Fixture for a dry-run VaultService instance.
+  references:
+  - pytest.fixture
+  - tools.releaselib.vault_service.VaultService
+  calls:
+  - tools.releaselib.vault_service.VaultService
+- name: test_init_live_run_missing_credentials
+  kind: function
+  decorators: []
+  description: Test that live run initialization fails without credentials.
+  references:
+  - tools.releaselib.vault_service.VaultService
+  - tools.releaselib.vault_service.VaultServiceError
+  - pytest.raises
+  calls:
+  - pytest.raises
+  - tools.releaselib.vault_service.VaultService
+- name: test_init_live_run_cacert_not_found
+  kind: function
+  decorators:
+  - patch
+  description: Test that live run initialization fails if CA cert is not found.
+  references:
+  - tools.releaselib.vault_service.VaultService
+  - tools.releaselib.vault_service.VaultServiceError
+  - pytest.raises
+  calls:
+  - pytest.raises
+  - tools.releaselib.vault_service.VaultService
+- name: test_init_live_run_with_cacert
+  kind: function
+  decorators:
+  - patch
+  description: Test successful live run initialization with a CA cert.
+  references:
+  - tools.releaselib.vault_service.VaultService
+  calls:
+  - tools.releaselib.vault_service.VaultService
+- name: test_init_dry_run_no_credentials
+  kind: function
+  decorators: []
+  description: Test that dry run initialization succeeds without credentials.
+  references:
+  - pytest.fail
+  - tools.releaselib.vault_service.VaultServiceError
+  - tools.releaselib.vault_service.VaultService
+  calls:
+  - pytest.fail
+  - tools.releaselib.vault_service.VaultService
+- name: test_sign_dry_run
+  kind: function
+  decorators: []
+  description: Test that sign in dry-run mode returns a placeholder.
+  references: []
+  calls:
+  - dry_run_vault_service.sign
+- name: test_sign_invalid_base64
+  kind: function
+  decorators: []
+  description: Test that sign fails with invalid base64.
+  references:
+  - tools.releaselib.vault_service.VaultServiceError
+  - pytest.raises
+  calls:
+  - pytest.raises
+  - vault_service.sign
+- name: test_sign_success
+  kind: function
+  decorators:
+  - patch
+  description: Test a successful signing operation.
+  references: []
+  calls:
+  - mock_post.assert_called_once
+  - vault_service.sign
+- name: test_sign_request_exception
+  kind: function
+  decorators:
+  - patch
+  description: Test that a requests exception is wrapped in VaultServiceError.
+  references:
+  - tools.releaselib.vault_service.VaultServiceError
+  - pytest.raises
+  - requests.exceptions
+  calls:
+  - pytest.raises
+  - vault_service.sign
+- name: test_sign_http_error
+  kind: function
+  decorators:
+  - patch
+  description: Test that an HTTP error from raise_for_status is handled.
+  references:
+  - tools.releaselib.vault_service.VaultServiceError
+  - pytest.raises
+  - requests.exceptions
+  calls:
+  - pytest.raises
+  - vault_service.sign
+- name: test_sign_invalid_json_response
+  kind: function
+  decorators:
+  - patch
+  description: Test handling of a non-JSON response from Vault.
+  references:
+  - tools.releaselib.vault_service.VaultServiceError
+  - pytest.raises
+  calls:
+  - ValueError
+  - pytest.raises
+  - vault_service.sign
+- name: test_sign_missing_signature_in_response
+  kind: function
+  decorators:
+  - patch
+  description: Test handling of a valid JSON response that is missing the signature.
+  references:
+  - tools.releaselib.vault_service.VaultServiceError
+  - pytest.raises
+  calls:
+  - pytest.raises
+  - vault_service.sign
+- name: test_sign_malformed_signature_in_response
+  kind: function
+  decorators:
+  - patch
+  description: Test handling of a malformed signature string.
+  references:
+  - tools.releaselib.vault_service.VaultServiceError
+  - pytest.raises
+  calls:
+  - pytest.raises
+  - vault_service.sign
+- name: test_sign_digest_wrong_length
+  kind: function
+  decorators:
+  - patch
+  description: Test that a warning is logged for a digest of unexpected length.
+  references: []
+  calls:
+  - vault_service.sign
+- name: test_get_certificate_dry_run
+  kind: function
+  decorators: []
+  description: Test that get_certificate in dry-run mode returns a placeholder.
+  references: []
+  calls:
+  - dry_run_vault_service.get_certificate
+- name: test_get_certificate_success
+  kind: function
+  decorators:
+  - patch
+  description: Test a successful certificate retrieval operation.
+  references: []
+  calls:
+  - mock_get.assert_called_once_with
+  - vault_service.get_certificate
+- name: test_get_certificate_request_exception
+  kind: function
+  decorators:
+  - patch
+  description: Test that a requests exception during certificate retrieval is wrapped.
+  references:
+  - tools.releaselib.vault_service.VaultServiceError
+  - pytest.raises
+  - requests.exceptions
+  calls:
+  - pytest.raises
+  - vault_service.get_certificate
+- name: test_get_certificate_http_error
+  kind: function
+  decorators:
+  - patch
+  description: Test that an HTTP error from raise_for_status during certificate retrieval
+    is handled.
+  references:
+  - tools.releaselib.vault_service.VaultServiceError
+  - pytest.raises
+  - requests.exceptions
+  calls:
+  - pytest.raises
+  - vault_service.get_certificate
+- name: test_get_certificate_invalid_json_response
+  kind: function
+  decorators:
+  - patch
+  description: Test handling of a non-JSON response during certificate retrieval.
+  references:
+  - tools.releaselib.vault_service.VaultServiceError
+  - pytest.raises
+  calls:
+  - ValueError
+  - pytest.raises
+  - vault_service.get_certificate
+- name: test_get_certificate_missing_secret_key_in_response
+  kind: function
+  decorators:
+  - patch
+  description: Test handling of a valid JSON response missing the secret key.
+  references:
+  - tools.releaselib.vault_service.VaultServiceError
+  - pytest.raises
+  calls:
+  - pytest.raises
+  - vault_service.get_certificate
+- name: test_get_certificate_secret_key_not_string_in_response
+  kind: function
+  decorators:
+  - patch
+  description: Test handling of a valid JSON response where the secret key's value
+    is not a string.
+  references:
+  - tools.releaselib.vault_service.VaultServiceError
+  - pytest.raises
+  calls:
+  - pytest.raises
+  - vault_service.get_certificate
+- name: test_sign_signature_not_string_in_response
+  kind: function
+  decorators:
+  - patch
+  description: Test handling of a valid JSON response where the signature is not a
+    string.
+  references:
+  - tools.releaselib.vault_service.VaultServiceError
+  - pytest.raises
+  calls:
+  - pytest.raises
+  - vault_service.sign

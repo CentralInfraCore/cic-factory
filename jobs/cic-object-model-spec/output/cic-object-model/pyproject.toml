@@ -1,0 +1,32 @@
+# pyproject.toml
+
+[tool.mypy]
+# Ignore missing stubs for libraries that don't have them
+[[tool.mypy.overrides]]
+module = [
+    "jsonschema.*",
+    "jsonref.*"
+]
+ignore_missing_imports = true
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | p_venv
+)/
+'''
+
+[tool.isort]
+profile = "black"
+skip_glob = ["p_venv/*"]

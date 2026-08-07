@@ -1,0 +1,14 @@
+---
+cic:
+  model: "0.1"
+values:
+  mtu:
+    values: 9000
+    origin: [yaml]
+    description: Maximum transmission unit
+    shape:
+      values:
+        type: scalar
+        scalar_type: integer
+      origin: [schema]
+origin: [yaml]

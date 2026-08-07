@@ -1,0 +1,10 @@
+---
+id: materialization/003_origin_sealed
+title: Value from sealed template content yields origin [sealed(t,p)]
+truth_table_row: 3
+invariants: [INV-013, INV-015, INV-019, INV-020]
+description: >-
+  Truth-table row 3 (sealed=yes, yaml=no, schema=no). The template supplies the
+  node AND its concrete value via `content`, so the value's source is the
+  template itself, not a default. origin carries template identity and source
+  path (INV-015).

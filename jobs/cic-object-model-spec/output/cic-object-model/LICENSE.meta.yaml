@@ -1,0 +1,23 @@
+---
+tags:
+  - license
+  - legal
+  - meta
+  - compliance
+related_nodes:
+  - LICENSE.md
+  - docs/hu/meta/versioning
+  - docs/hu/concept/cic_gondolkodasmod
+category:
+  - meta
+  - legal
+entrypoint: false
+used_in:
+  - validation
+  - distribution
+  - publishing
+description: |
+  This metadata file describes the licensing information for the CIC
+  documentation and codebase. It supports automated compliance verification,
+  distribution control, and version-aware publishing strategies aligned with
+  the CIC philosophy.

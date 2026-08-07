@@ -1,0 +1,28 @@
+---
+cic:
+  model: "0.1"
+values:
+  foo:
+    values:
+      bar:
+        values: 42
+        origin: [schema]
+        shape:
+          values:
+            type: scalar
+            scalar_type: integer
+          origin: [schema]
+      baz:
+        values: true
+        origin: [schema]
+        shape:
+          values:
+            type: scalar
+            scalar_type: boolean
+          origin: [schema]
+    origin: [yaml]
+    shape:
+      values:
+        type: object
+      origin: [schema]
+origin: [yaml]

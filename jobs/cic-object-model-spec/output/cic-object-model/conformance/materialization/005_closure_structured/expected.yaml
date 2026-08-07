@@ -1,0 +1,35 @@
+---
+cic:
+  model: "0.1"
+values:
+  foo:
+    values:
+      a:
+        values: 1
+        origin: [yaml]
+        shape:
+          values:
+            type: scalar
+            scalar_type: integer
+          origin: [schema]
+      b:
+        values:
+          c:
+            values: 2
+            origin: [yaml]
+            shape:
+              values:
+                type: scalar
+                scalar_type: integer
+              origin: [schema]
+        origin: [yaml]
+        shape:
+          values:
+            type: object
+          origin: [schema]
+    origin: [yaml]
+    shape:
+      values:
+        type: object
+      origin: [schema]
+origin: [yaml]

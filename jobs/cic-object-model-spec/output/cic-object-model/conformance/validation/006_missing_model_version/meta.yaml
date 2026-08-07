@@ -1,0 +1,8 @@
+---
+id: validation/006_missing_model_version
+title: A canonical object without a model version is rejected
+invariants: [INV-033, INV-034]
+description: >-
+  The model version is the semantic ABI. An object that does not state which
+  version it conforms to cannot be matched against the version a module
+  declares it consumes, so a host cannot decide whether delivery is safe.

@@ -1,0 +1,9 @@
+---
+mtu:
+  values: 9000
+  access:
+    modify:
+      rules:
+        network-admin:
+          subjects: ["OU=network-admins,O=acme"]
+          effect: allow

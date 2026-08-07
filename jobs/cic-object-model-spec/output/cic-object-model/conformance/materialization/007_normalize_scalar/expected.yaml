@@ -1,0 +1,13 @@
+---
+cic:
+  model: "0.1"
+values:
+  name:
+    values: eth0
+    origin: [yaml]
+    shape:
+      values:
+        type: scalar
+        scalar_type: string
+      origin: [schema]
+origin: [yaml]

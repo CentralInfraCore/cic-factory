@@ -1,0 +1,9 @@
+---
+id: validation/005_default_member
+title: A canonical node carrying a `default` member is rejected
+invariants: [INV-012]
+description: >-
+  `default: true` is superseded by `origin: [schema]`, which says the same
+  thing more precisely — it distinguishes a schema default from a sealed
+  template's schema default, which a boolean cannot. Carrying both would allow
+  them to disagree.

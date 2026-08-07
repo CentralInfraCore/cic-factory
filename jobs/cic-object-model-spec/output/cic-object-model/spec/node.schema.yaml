@@ -1,0 +1,55 @@
+---
+# CICNode — the single structural unit of the CIC object model.
+# Normative source: SPEC.md section 2.
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "node.schema.yaml"
+title: CICNode
+description: >-
+  Every node has the same grammar at every depth: a payload (values), an
+  authoring-authority classification (origin), and zero or more primitives —
+  each of which is itself a CICNode (INV-003). This schema describes the
+  CANONICAL plane. Authoring input is a different shape: it permits short forms
+  and MUST NOT contain origin (INV-007).
+
+type: object
+required: [values, origin]
+
+# INV-021: a node must carry nothing but values, origin, and members of the
+# primitive set. Unknown primitives are rejected.
+additionalProperties: false
+
+properties:
+  values:
+    description: >-
+      The payload. Scalar, List<CICNode>, Map<String,CICNode>, or an opaque
+      terminal value. Below this member no primitive interpretation applies:
+      keys named `values`, `origin` or `access` occurring here are domain data
+      (INV-011).
+    # Deliberately unconstrained: the shape primitive types this position, and
+    # opaque payloads may contain anything at all.
+
+  origin:
+    $ref: "origin.schema.yaml"
+
+  # ---- The eight irreducible atoms (D-003, amended 2026-05-04) ------------
+  # origin is NOT among them: it is an envelope member, not a primitive.
+  # It is never authored (INV-007) and it is terminal (INV-004) — the fixed
+  # point that makes the recursion of INV-003 well-founded. See SPEC 6.2 and
+  # docs/decision-delta.md.
+  shape:      {$ref: "node.schema.yaml"}
+  role:       {$ref: "node.schema.yaml"}
+  behavior:   {$ref: "node.schema.yaml"}
+  contract:   {$ref: "node.schema.yaml"}
+  address:    {$ref: "node.schema.yaml"}
+  identity:   {$ref: "node.schema.yaml"}
+  event:      {$ref: "node.schema.yaml"}
+  access:     {$ref: "node.schema.yaml"}
+
+# INV-006 / INV-012: documentation and `default` are schema-side declarations,
+# not node members. additionalProperties: false already rejects them; these are
+# named so the error is legible rather than a bare "unexpected property".
+not:
+  anyOf:
+    - {required: [default]}
+    - {required: [description]}
+    - {required: [descr]}

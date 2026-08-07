@@ -1,0 +1,17 @@
+---
+model: "0.1"
+root:
+  shape: object
+  children:
+    foo:
+      shape: object
+      children:
+        a:
+          shape: scalar
+          scalar_type: integer
+        b:
+          shape: object
+          children:
+            c:
+              shape: scalar
+              scalar_type: integer

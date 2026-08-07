@@ -1,0 +1,302 @@
+---
+module: test_tools.test_infra
+description: ''
+tags:
+- schema
+- test
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: VALID_PROJECT_YAML
+  kind: const
+  description: ''
+  references: []
+- name: VALID_SOURCE_SCHEMA
+  kind: const
+  description: ''
+  references: []
+- name: VALID_CERT
+  kind: const
+  description: ''
+  references: []
+- name: mock_git_service
+  kind: function
+  decorators:
+  - pytest.fixture
+  description: ''
+  references:
+  - pytest.fixture
+  - tools.releaselib.git_service.GitService
+  calls:
+  - mocker.MagicMock
+- name: mock_vault_service
+  kind: function
+  decorators:
+  - pytest.fixture
+  description: ''
+  references:
+  - pytest.fixture
+  - tools.releaselib.vault_service.VaultService
+  calls:
+  - mocker.MagicMock
+- name: mock_config
+  kind: function
+  decorators:
+  - pytest.fixture
+  description: ''
+  references:
+  - pytest.fixture
+  - yaml.safe_load
+  calls:
+  - yaml.safe_load
+- name: TestHelperFunctions
+  kind: class
+  decorators: []
+  description: ''
+  implements: []
+  references: []
+- name: test_load_yaml_empty_file
+  kind: method
+  receiver: TestHelperFunctions
+  decorators: []
+  description: ''
+  references:
+  - tools.infra.load_yaml
+  calls:
+  - mocker.mock_open
+  - mocker.patch
+  - tools.infra.load_yaml
+- name: test_load_and_resolve_schema_yaml_error
+  kind: method
+  receiver: TestHelperFunctions
+  decorators: []
+  description: ''
+  references:
+  - tools.infra.load_and_resolve_schema
+  - tools.infra.ConfigurationError
+  - pytest.raises
+  calls:
+  - mocker.mock_open
+  - mocker.patch
+  - pytest.raises
+  - tools.infra.load_and_resolve_schema
+- name: test_parse_certificate_info_with_alt_name
+  kind: method
+  receiver: TestHelperFunctions
+  decorators: []
+  description: ''
+  references:
+  - tools.infra._parse_certificate_info
+  calls:
+  - mocker.patch
+  - tools.infra._parse_certificate_info
+- name: test_parse_certificate_info_fallback_email
+  kind: method
+  receiver: TestHelperFunctions
+  decorators: []
+  description: ''
+  references:
+  - tools.infra._parse_certificate_info
+  calls:
+  - mocker.patch
+  - tools.infra._parse_certificate_info
+- name: TestReleaseManager
+  kind: class
+  decorators: []
+  description: ''
+  implements: []
+  references: []
+- name: manager
+  kind: method
+  receiver: TestReleaseManager
+  decorators:
+  - pytest.fixture
+  description: ''
+  references:
+  - pytest.fixture
+  - tools.infra.ReleaseManager
+  calls:
+  - mocker.MagicMock
+  - tools.infra.ReleaseManager
+- name: test_developer_prep_with_non_main_component
+  kind: method
+  receiver: TestReleaseManager
+  decorators: []
+  description: Test branch naming when component_name is not 'main'.
+  references: []
+  calls:
+  - manager.run_release_close
+  - mocker.mock_open
+  - mocker.patch
+- name: test_developer_prep_cleanup_fails
+  kind: method
+  receiver: TestReleaseManager
+  decorators: []
+  description: Test when the cleanup process itself fails.
+  references:
+  - tools.infra.ReleaseError
+  - pytest.raises
+  - tools.infra.GitStateError
+  calls:
+  - ValueError
+  - manager.run_release_close
+  - mocker.patch
+  - pytest.raises
+  - tools.infra.GitStateError
+- name: test_finalization_with_dirty_repo
+  kind: method
+  receiver: TestReleaseManager
+  decorators: []
+  description: Test finalization phase when the repo is dirty (e.g., from build step).
+  references:
+  - yaml.safe_load
+  calls:
+  - manager.run_release_close
+  - mocker.patch
+  - yaml.safe_load
+- name: test_validate_final_yaml_empty_schema
+  kind: method
+  receiver: TestReleaseManager
+  decorators: []
+  description: Test final validation when the schema file is empty.
+  references:
+  - tools.infra.ValidationFailureError
+  - pytest.raises
+  calls:
+  - manager._validate_final_project_yaml
+  - mocker.patch
+  - pytest.raises
+- name: test_validate_final_yaml_empty_instance
+  kind: method
+  receiver: TestReleaseManager
+  decorators: []
+  description: Test final validation when the project.yaml file is empty.
+  references:
+  - tools.infra.ValidationFailureError
+  - pytest.raises
+  calls:
+  - manager._validate_final_project_yaml
+  - mocker.patch
+  - pytest.raises
+- name: test_run_validation_unexpected_error
+  kind: method
+  receiver: TestReleaseManager
+  decorators: []
+  description: Test generic exception handling in run_validation.
+  references:
+  - tools.infra.ReleaseError
+  - pytest.raises
+  calls:
+  - Exception
+  - manager.run_validation
+  - mocker.patch
+  - pytest.raises
+- name: test_dry_run_developer_phase
+  kind: method
+  receiver: TestReleaseManager
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - manager.run_release_close
+  - mock_write_yaml.assert_not_called
+  - mocker.mock_open
+  - mocker.patch
+- name: test_developer_preparation_phase_success
+  kind: method
+  receiver: TestReleaseManager
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - manager.run_release_close
+  - mocker.mock_open
+  - mocker.patch
+- name: test_finalization_phase_success
+  kind: method
+  receiver: TestReleaseManager
+  decorators: []
+  description: ''
+  references:
+  - yaml.safe_load
+  calls:
+  - manager.run_release_close
+  - mocker.patch
+  - yaml.safe_load
+- name: test_invalid_branch_fails
+  kind: method
+  receiver: TestReleaseManager
+  decorators: []
+  description: ''
+  references:
+  - tools.infra.GitStateError
+  - pytest.raises
+  calls:
+  - manager.run_release_close
+  - pytest.raises
+- name: PROJECT_ROOT
+  kind: const
+  description: ''
+  references: []
+- name: VALID_PROJECT_YAML_INSTANCE
+  kind: const
+  description: ''
+  references: []
+- name: INVALID_PROJECT_YAML_INSTANCE
+  kind: const
+  description: ''
+  references: []
+- name: TestValidateFinalProjectYamlRealSchema
+  kind: class
+  decorators: []
+  description: ''
+  implements: []
+  references: []
+- name: real_schema_manager
+  kind: method
+  receiver: TestValidateFinalProjectYamlRealSchema
+  decorators:
+  - pytest.fixture
+  description: ''
+  references:
+  - pytest.fixture
+  - tools.infra.ReleaseManager
+  calls:
+  - mocker.MagicMock
+  - tools.infra.ReleaseManager
+- name: test_real_schema_accepts_valid_project_yaml
+  kind: method
+  receiver: TestValidateFinalProjectYamlRealSchema
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - real_schema_manager._validate_final_project_yaml
+- name: test_real_schema_rejects_project_yaml_missing_required_field
+  kind: method
+  receiver: TestValidateFinalProjectYamlRealSchema
+  decorators: []
+  description: ''
+  references:
+  - tools.infra.ValidationFailureError
+  - pytest.raises
+  calls:
+  - pytest.raises
+  - real_schema_manager._validate_final_project_yaml
+- name: test_real_schema_rejects_empty_build_hash
+  kind: method
+  receiver: TestValidateFinalProjectYamlRealSchema
+  decorators: []
+  description: ''
+  references:
+  - tools.infra.ValidationFailureError
+  - pytest.raises
+  - yaml.dump
+  - yaml.safe_load
+  calls:
+  - pytest.raises
+  - real_schema_manager._validate_final_project_yaml
+  - yaml.dump
+  - yaml.safe_load

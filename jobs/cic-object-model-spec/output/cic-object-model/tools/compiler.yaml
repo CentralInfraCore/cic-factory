@@ -1,0 +1,98 @@
+---
+module: tools.compiler
+description: ''
+tags:
+- builder
+- core
+- loader
+category: []
+used_in: []
+entrypoint: true
+related_nodes: []
+objects:
+- name: LOG_FORMAT
+  kind: const
+  description: ''
+  references: []
+- name: COLOR_CODES
+  kind: const
+  description: ''
+  references: []
+- name: RESET_CODE
+  kind: const
+  description: ''
+  references: []
+- name: ColoredFormatter
+  kind: class
+  decorators: []
+  description: ''
+  implements:
+  - logging.Formatter
+  references: []
+- name: format
+  kind: method
+  receiver: ColoredFormatter
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - COLOR_CODES.get
+- name: setup_logging
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - handler.setLevel
+  - logger.addHandler
+  - logger.setLevel
+- name: logger
+  kind: const
+  description: ''
+  references: []
+- name: load_project_config
+  kind: function
+  decorators: []
+  description: ''
+  references:
+  - yaml.YAMLError
+  - yaml.safe_load
+  calls:
+  - KeyError
+  - logger.critical
+  - yaml.safe_load
+- name: main
+  kind: function
+  decorators: []
+  description: ''
+  references:
+  - .releaselib.exceptions.ReleaseError
+  - .releaselib.exceptions.ManualInterventionRequired
+  - .infra.ReleaseManager
+  - .releaselib.vault_service.VaultService
+  - .releaselib.git_service.GitService
+  calls:
+  - .infra.ReleaseManager
+  - .releaselib.git_service.GitService
+  - .releaselib.vault_service.VaultService
+  - artifact.is_file
+  - artifact.read_bytes
+  - build_hash_parser.add_argument
+  - f.read
+  - full_config.get
+  - hashlib.sha256
+  - logger.critical
+  - logger.info
+  - logger.warning
+  - manager.run_release_close
+  - manager.run_validation
+  - parent_parser.add_argument
+  - parser.add_subparsers
+  - parser.parse_args
+  - pattern.search
+  - pattern.sub
+  - project_yaml_path.read_text
+  - project_yaml_path.write_text
+  - re.compile
+  - release_parser.add_argument
+  - subparsers.add_parser

@@ -1,0 +1,10 @@
+---
+module: test_compiler
+description: ''
+tags:
+- test
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects: []

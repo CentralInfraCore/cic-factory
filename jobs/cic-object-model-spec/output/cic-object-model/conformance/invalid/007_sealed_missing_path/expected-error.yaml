@@ -1,0 +1,8 @@
+---
+error:
+  code: E_SEALED_MISSING_TEMPLATE_OR_PATH
+  invariant: INV-015
+  stage: schema-load
+  path: $.access_policy.sealed_from
+  detail: >-
+    sealed_from declares `template` but not `path`.

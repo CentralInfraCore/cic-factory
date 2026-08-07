@@ -1,0 +1,10 @@
+---
+id: invalid/004_schema_declares_values_child
+title: Schema declaring a child named `values` is rejected
+invariants: [INV-010, INV-009]
+description: >-
+  INV-010 is what makes INV-009 total. If a schema could declare a child named
+  `values` at a structured position, a payload map would be indistinguishable
+  from an envelope. The constraint is on schema declaration, not on payload
+  content — compare vector materialization/012, where `values` as a payload key
+  is perfectly legal.

@@ -1,0 +1,45 @@
+---
+title: Architektúra áttekintés
+description: >
+  How a specification repository is structured: the normative document, the
+  conformance corpus that makes it falsifiable, and two subordinate
+  implementations that check each other.
+
+tags:
+  - schema
+  - core
+  - doc
+category:
+  - architecture
+  - specification
+entrypoint: true
+used_in:
+  - spec-authoring
+  - implementation
+  - review
+related_nodes:
+  - SPEC.md
+  - docs/spec-vector-map.md
+  - docs/decision-delta.md
+  - docs/branch-decision.md
+
+concepts:
+  - name: Specification as the primary artifact
+    summary: >
+      The repository's product is SPEC.md. The implementations are subordinate
+      to it — where an implementation disagrees with the document, the
+      implementation is wrong.
+  - name: Falsifiability through conformance vectors
+    summary: >
+      A normative sentence with no vector behind it is an assertion. The
+      corpus is implementation-independent YAML, so every implementation runs
+      the same tests.
+  - name: Two implementations as a mutual check
+    summary: >
+      Implemented once, an implementation silently becomes the specification.
+      Implemented twice, every disagreement is evidence of ambiguity.
+  - name: Fail-closed gates
+    summary: >
+      check_spec_vectors.py fails when SPEC and the corpus drift apart; make
+      conformance fails rather than passing vacuously with no implementation
+      present.

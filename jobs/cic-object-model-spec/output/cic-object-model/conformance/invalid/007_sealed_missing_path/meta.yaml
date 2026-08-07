@@ -1,0 +1,9 @@
+---
+id: invalid/007_sealed_missing_path
+title: sealed term without `path` is rejected
+invariants: [INV-015, INV-020]
+description: >-
+  Template identity alone is not provenance: one template may be instantiated
+  at many paths. A sealed term must carry both template and path, and must
+  always be a constructor — never the bare token `sealed`, which belongs to the
+  aggregate slot-mode vocabulary (INV-020).

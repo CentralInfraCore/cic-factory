@@ -1,0 +1,8 @@
+---
+id: materialization/011_discriminator_envelope
+title: At a structured position, a mapping containing `values` is an envelope
+invariants: [INV-008, INV-009, INV-010]
+description: >-
+  The author uses the expanded form to attach an instance-level access
+  override. Because the mapping directly contains `values` at a structured
+  position, it is a node envelope (INV-009), not payload.

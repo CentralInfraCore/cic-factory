@@ -1,0 +1,16 @@
+---
+model: "0.1"
+root:
+  shape: object
+  children:
+    foo:
+      shape: object
+      children:
+        bar:
+          shape: scalar
+          scalar_type: integer
+          default: 42
+        baz:
+          shape: scalar
+          scalar_type: boolean
+          default: true

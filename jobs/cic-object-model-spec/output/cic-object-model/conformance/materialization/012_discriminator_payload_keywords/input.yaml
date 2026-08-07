@@ -1,0 +1,6 @@
+---
+checkbox:
+  values: [on, off]
+  default: false
+  origin: user-supplied
+  access: public

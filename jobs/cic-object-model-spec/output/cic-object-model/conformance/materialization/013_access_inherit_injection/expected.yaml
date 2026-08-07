@@ -1,0 +1,32 @@
+---
+cic:
+  model: "0.1"
+values:
+  mtu:
+    values: 9000
+    origin: [yaml]
+    shape:
+      values:
+        type: scalar
+        scalar_type: integer
+      origin: [schema]
+    role:
+      values: config
+      origin: [schema]
+    access:
+      values:
+        read:
+          rules:
+            operator:
+              subjects: ["OU=operators,O=acme"]
+              effect: allow
+          inherit: true
+          default_injection: 0
+        modify:
+          rules:
+            network-admin:
+              subjects: ["OU=network-admins,O=acme"]
+              effect: allow
+          inherit: 0
+      origin: [schema]
+origin: [yaml]

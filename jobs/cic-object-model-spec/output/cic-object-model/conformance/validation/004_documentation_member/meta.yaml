@@ -1,0 +1,8 @@
+---
+id: validation/004_documentation_member
+title: A canonical node carrying a documentation member is rejected
+invariants: [INV-006]
+description: >-
+  Documentation is a property of the schema, not of a value instance. Carrying
+  it on every materialized node would duplicate schema knowledge into every
+  object, and would make two objects with identical values differ.

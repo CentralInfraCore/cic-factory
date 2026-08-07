@@ -1,0 +1,169 @@
+---
+metadata:
+  name: "template-schema"
+  version: "v0.1.dev"
+  description: "This is a template for creating new schemas. The actual schema definition is in the 'spec' block."
+  owner: "Gabor Zoltan Sinko"
+  tags:
+    - template
+    - meta-schema
+  validatedBy:
+    name: "template-schema"
+    version: "v0.1.dev"
+  validity:
+    from: "2025-11-12T00:00:00Z"
+    until: "2026-11-12T00:00:00Z"
+
+spec:
+  # JSON Schema for a SchemaFile, written in YAML
+  type: object
+  required:
+    - metadata
+    - spec
+  properties:
+    metadata:
+      type: object
+      description: |
+        Common metadata block for all versioned components.
+      properties:
+        name:
+          type: string
+          description: "The name of the schema component."
+        version:
+          type: string
+          description: |
+            The version of the schema component (e.g., v1.0.0 or v1.0.dev).
+          pattern: '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*|dev)$'
+        description:
+          type: string
+          description: "A brief description of the schema's purpose."
+        owner:
+          type: string
+          description: "The team or entity responsible for maintaining this schema (e.g., platform-engineering)."
+        tags:
+          type: array
+          description: "A list of tags for categorization and discovery."
+          items:
+            type: string
+        validatedBy:
+          type: object
+          description: |
+            A mandatory receipt proving which meta-schema was used for validation.
+            The 'checksum' field is auto-generated and required for released (non-dev) versions.
+          properties:
+            name:
+              type: string
+              description: "The name of the validating meta-schema."
+            version:
+              type: string
+              description: "The version of the validating meta-schema."
+            checksum:
+              type: string
+              description: "The checksum (SHA256) of the validating meta-schema's 'spec' block."
+          required:
+            - name
+            - version
+          additionalProperties: false
+        createdBy:
+          type: object
+          description: |
+            Identifies the entity responsible for the schema and provides
+            the cryptographic proof of identity. This block is auto-generated
+            during the release process and should not be present in .dev versions.
+          required:
+            - name
+            - email
+            - certificate
+            - issuer_certificate
+          properties:
+            name:
+              type: string
+              description: |
+                Human-readable name of the author (e.g., from the certificate's
+                Common Name).
+            email:
+              type: string
+              format: email
+              description: |
+                Contact email of the author (e.g., from the certificate's Subject
+                Alternative Name).
+            certificate:
+              type: string
+              description: |
+                A data block containing a PEM-encoded entity (e.g., certificate, CRL).
+                The full output of 'openssl x509 -text' is acceptable.
+              pattern: '-----BEGIN [A-Z0-9 ]+-----(.|\n|\r)+-----END [A-Z0-9 ]+-----.?'
+            issuer_certificate:
+              type: string
+              description: |
+                A data block containing the PEM-encoded Issuing Authority (CA)
+                that signed the entity in the 'certificate' field.
+              pattern: '-----BEGIN [A-Z0-9 ]+-----(.|\n|\r)+-----END [A-Z0-9 ]+-----.?'
+          additionalProperties: false
+        build_timestamp:
+          type: string
+          format: date-time
+          description: |
+            The exact timestamp when this version of the schema was
+            built and signed.
+        validity:
+          type: object
+          description: "Defines the support lifecycle for this schema version."
+          required:
+            - from
+            - until
+          properties:
+            from:
+              type: string
+              format: date-time
+              description: |
+                The date from which this schema version is considered valid.
+            until:
+              type: string
+              format: date-time
+              description: |
+                The date until which this schema version is supported.
+                After this date, it should be considered deprecated.
+          additionalProperties: false
+        checksum:
+          type: string
+          description: |
+            A checksum (e.g., SHA256) of the 'spec' block content for
+            integrity checks.
+        sign:
+          type: string
+          description: |
+            A cryptographic signature of the metadata block  \
+            (excluding 'checksum' and 'sign' fields).
+      additionalProperties: false
+      # Base requirements for all versions
+      required:
+        - name
+        - version
+        - description
+        - owner
+        - validatedBy
+      # Conditional requirements for non-dev versions
+      allOf:
+        - if:
+            properties:
+              version:
+                not:
+                  pattern: '\.dev$'
+          then:
+            required:
+              - createdBy
+              - build_timestamp
+              - validity
+              - checksum
+              - sign
+            properties:
+              validatedBy:
+                required:
+                  - checksum
+    spec:
+      type: object
+      description: |
+        The core schema definition itself, which should follow \
+        the JSON Schema specification.
+  additionalProperties: false

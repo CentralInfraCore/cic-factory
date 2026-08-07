@@ -1,0 +1,98 @@
+---
+type: object
+required:
+  - tags
+  - related_nodes
+  - category
+  - entrypoint
+  - used_in
+  - description
+properties:
+  tags:
+    type: array
+    description: "Thematic tags for the module, helping AI integration into context. The following values are allowed:"
+    items:
+      # Allow any string for tags to be more flexible
+      # The enum below is kept for documentation purposes but commented out
+      # to avoid validation failures with new, reasonable tags.
+      type: string
+      enum:
+        - relay         # Related to AI relay modules
+        - compliance    # For compliance or validation logic
+        - workflow      # Handles process or pipeline logic
+        - cictor        # Part of the CICTOR decision system
+        - schema        # Related to schema processing
+        - parser        # Input parsing module
+        - guard         # Access or moral protection logic
+        - core          # Core system logic
+        - doc           # Documentation or explanatory content
+        - interface     # Interface logic with external systems
+        - gateway       # Entry or gateway-related logic
+        - builder       # Responsible for build or generation tasks
+        - test          # Validation, testing or debugging logic
+        - meta          # Meta-structures or internal definitions
+        - orchestrator  # Coordinates control or decision chains
+        - decision      # Contains decision logic
+        - reflector     # Feedback or reflection module
+        - context       # Contextual management module
+        - validator     # Performs data or schema validation
+        - executor      # Executes direct logic operations
+        - hook          # Event-triggered callable logic
+        - template      # Acts as a template component
+        - fallback      # Defines fallback or alternative behavior
+        - session       # Session or state-handling logic
+        - metrics       # For metric collection or monitoring
+        - storage       # Manages storage or persistence
+        - loader        # Loads configs or other modules
+        - renderer      # Generates output (text, code, HTML etc.)
+        - legal         # Legal documents like licenses
+        - license
+        - platform-engineering
+        - ci-cd         # CI/CD related document
+        - ecosystem
+  related_nodes:
+    type: array
+    items:
+      type: string
+    description: References to other concepts or modules (e.g., 'concept/relay_flow').
+  category:
+    type: array
+    description: "The functional role(s) of the document. The following values are allowed:"
+    items:
+      # The enum below is kept for documentation purposes but commented out
+      # to avoid validation failures with new, reasonable roles.
+      type: string
+      enum:
+        - modul         # General module
+        - decision      # Implements decision logic
+        - morális       # Represents moral or rule-based logic
+        - belépési      # Entry point (user or system)
+        - meta          # Internal meta structures or logic
+        - elemző        # Evaluation or analysis logic
+        - legal         # Legal documents like licenses
+        - concept       # High-level concept
+        - architecture  # Architectural blueprint
+        - ci-cd         # CI/CD related document
+  entrypoint:
+    type: boolean
+    description: Indicates whether this document can act as an entry point.
+  used_in:
+    type: array
+    description: "Workflows or processes where this module is used. Choose from the following values:"
+    items:
+      # The enum below is kept for documentation purposes but commented out
+      # to avoid validation failures with new, reasonable workflows.
+      type: string
+      enum:
+        - decision_flow     # Runs decision logic
+        - validation        # Validation process
+        - generation        # Generative or build pipeline
+        - onboarding        # Loading or initializing into system
+        - fallback_process  # Fallback handling path
+        - distribution      # Software distribution process
+        - publishing        # Content or release publishing
+        - development-process    # Part of the core development process
+        - architecture-review    # Architecture review process
+  description:
+    type: string
+    description: Human-readable summary of the document purpose (can be in Hungarian or English).

@@ -1,0 +1,11 @@
+---
+values:
+  mtu:
+    values: 9000
+    origin: [yaml]
+    shape:
+      values:
+        type: scalar
+        scalar_type: integer
+      origin: [schema]
+origin: [yaml]

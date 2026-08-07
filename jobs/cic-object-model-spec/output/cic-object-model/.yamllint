@@ -1,0 +1,24 @@
+---
+# .yamllint configuration
+# See https://yamllint.readthedocs.io/en/stable/configuration.html
+
+extends: default
+
+rules:
+  # Increase the line-length limit to a more reasonable value for modern displays.
+  line-length:
+    max: 140
+    level: warning  # Set to 'warning' instead of 'error' to be less strict.
+
+  # GitHub Actions uses 'on' as a valid key, which is a truthy value.
+  truthy:
+    allowed-values: ['true', 'false', 'on']
+
+# Override rules for specific file paths
+file-rules:
+  .github/workflows/*.yml:
+    document-start:
+      present: false  # GitHub Actions workflows don't require the document start marker.
+
+ignore: |
+  /p_venv/

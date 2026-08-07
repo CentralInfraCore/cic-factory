@@ -1,0 +1,7 @@
+---
+id: materialization/007_normalize_scalar
+title: Short-form scalar normalizes to expanded node
+invariants: [INV-001, INV-002, INV-008]
+description: >-
+  `key: VALUE` at a scalar position is the short form. Normalization is not
+  optional: the module never sees the short form (INV-031b).

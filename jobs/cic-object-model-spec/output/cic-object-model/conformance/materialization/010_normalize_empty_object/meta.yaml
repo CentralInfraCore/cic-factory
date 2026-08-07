@@ -1,0 +1,9 @@
+---
+id: materialization/010_normalize_empty_object
+title: Empty {} is a node assertion, not an arbitrary empty map
+invariants: [INV-027, INV-013]
+description: >-
+  SPEC 7.1. `foo: {}` asserts the node exists; its children materialize from
+  schema defaults. The node's own origin is [yaml] (the author asserted it),
+  the children's are [schema]. The source {} and the object the module sees are
+  not the same thing.

@@ -1,0 +1,26 @@
+---
+cic:
+  model: "0.1"
+values:
+  access_policy:
+    values:
+      enabled:
+        values: false
+        origin:
+          - sealed:
+              template: $network-object
+              path: $.access.read
+        shape:
+          values:
+            type: scalar
+            scalar_type: boolean
+          origin: [schema]
+    origin:
+      - sealed:
+          template: $network-object
+          path: $.access.read
+    shape:
+      values:
+        type: object
+      origin: [schema]
+origin: [yaml]

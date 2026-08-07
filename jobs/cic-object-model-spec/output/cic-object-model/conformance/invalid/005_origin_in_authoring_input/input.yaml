@@ -1,0 +1,4 @@
+---
+mtu:
+  values: 9000
+  origin: [schema]

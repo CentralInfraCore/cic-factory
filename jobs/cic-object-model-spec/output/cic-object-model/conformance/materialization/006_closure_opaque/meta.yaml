@@ -1,0 +1,9 @@
+---
+id: materialization/006_closure_opaque
+title: Closure rule 2 — explicitly opaque object is a terminal value
+closure_rule: 2
+invariants: [INV-028, INV-011]
+description: >-
+  The schema declares shape: opaque. The payload is preserved verbatim and is
+  NOT materialized into nodes — no origin, no shape below the boundary. Keys
+  named like primitives inside the payload stay domain data (INV-011).

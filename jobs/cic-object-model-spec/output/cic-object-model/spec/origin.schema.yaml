@@ -1,0 +1,68 @@
+---
+# Origin — the authoring-authority classification of a CIC node.
+# Normative source: SPEC.md section 5. Exactly four forms are valid (INV-013).
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "origin.schema.yaml"
+title: Origin
+description: >-
+  A closed classification of where a node's value and structure came from, and
+  by what authority. It is NOT a history: lifecycle events such as
+  transformed/migrated/normalized are forbidden (INV-014). Audit history
+  belongs to ProofTrace.
+
+$defs:
+  sealed:
+    type: object
+    additionalProperties: false
+    required: [sealed]
+    properties:
+      sealed:
+        type: object
+        additionalProperties: false
+        # Both are required: template identity alone is not provenance,
+        # because one template may be instantiated at many paths (INV-015).
+        required: [template, path]
+        properties:
+          template:
+            type: string
+            description: >-
+              Template identity. SHOULD be content-addressed
+              ($name@sha256:...) so that origin is reproducible rather than
+              merely descriptive. Not required at model 0.1.
+            pattern: "^\\$.+"
+          path:
+            type: string
+            description: Source path within the template.
+            pattern: "^\\$\\..*"
+
+# The four permitted forms, in the order of SPEC section 5.3's truth table.
+# An empty array is deliberately NOT permitted (INV-018, truth-table row 8).
+oneOf:
+  - title: "[yaml] — row 1: the instance YAML supplied this value explicitly"
+    type: array
+    items: {const: yaml}
+    minItems: 1
+    maxItems: 1
+
+  - title: "[schema] — row 2: materialized from this node's schema default"
+    type: array
+    items: {const: schema}
+    minItems: 1
+    maxItems: 1
+
+  - title: "[sealed(t,p)] — row 3: node and value came from a closed template"
+    type: array
+    minItems: 1
+    maxItems: 1
+    items: {$ref: "#/$defs/sealed"}
+
+  - title: >-
+      [sealed(t,p), schema] — row 4: the template defined and closed the node,
+      but the value came from the template node's own schema default. Two facts
+      on different dimensions; this is the case a flat enum cannot express.
+    type: array
+    minItems: 2
+    maxItems: 2
+    prefixItems:
+      - {$ref: "#/$defs/sealed"}
+      - {const: schema}

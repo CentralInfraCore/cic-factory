@@ -1,0 +1,100 @@
+---
+module: tools.check_spec_vectors
+description: 'check_spec_vectors — keep SPEC.md and the conformance corpus from drifting.
+  This is a *mapping* gate, not a conformance run. It answers one question: is every
+  normative statement in SPEC.md either backed by a vector or explicitly declared
+  unvectorizable? It cannot and does not tell you whether any vector passes — no implementation
+  is required to run it. Checks: C1  Every INV-nnn defined in SPEC.md''s invariant
+  index (section 12) appears in docs/spec-vector-map.md. C2  Every INV-nnn referenced
+  by a vector''s meta.yaml exists in SPEC.md. (Catches a vector pinned to an invariant
+  that was renumbered away.) C3  Every INV-nnn in SPEC.md is either covered by >=1
+  vector or listed in the map''s "unvectorizable" table with a non-empty justification.
+  C4  Every vector directory has the files its category requires. C5  Every truth-table
+  row 1..8 in SPEC.md section 5.3 has a vector. Exit 0 if all pass, 1 otherwise.'
+tags:
+- builder
+category: []
+used_in: []
+entrypoint: true
+related_nodes: []
+objects:
+- name: ROOT
+  kind: const
+  description: ''
+  references: []
+- name: SPEC
+  kind: const
+  description: ''
+  references: []
+- name: MAP
+  kind: const
+  description: ''
+  references: []
+- name: CONFORMANCE
+  kind: const
+  description: ''
+  references: []
+- name: INV_RE
+  kind: const
+  description: ''
+  references: []
+- name: REQUIRED_FILES
+  kind: const
+  description: ''
+  references: []
+- name: spec_invariants
+  kind: function
+  decorators: []
+  description: Invariants defined in SPEC.md's index table (section 12).
+  references: []
+  calls:
+  - INV_RE.findall
+  - SPEC.read_text
+  - text.split
+- name: spec_truth_table_rows
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - SPEC.read_text
+  - body.splitlines
+  - m.group
+  - rows.add
+  - text.split
+- name: vectors
+  kind: function
+  decorators: []
+  description: ''
+  references:
+  - yaml.safe_load
+  calls:
+  - CONFORMANCE.glob
+  - found.append
+  - meta_path.read_text
+  - yaml.safe_load
+- name: map_unvectorizable
+  kind: function
+  decorators: []
+  description: INV -> justification, from the map's unvectorizable table.
+  references: []
+  calls:
+  - INV_RE.fullmatch
+  - MAP.exists
+  - MAP.read_text
+  - c.strip
+  - line.strip
+  - text.split
+- name: main
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - INV_RE.findall
+  - MAP.read_text
+  - REQUIRED_FILES.get
+  - covered.setdefault
+  - failures.append
+  - p.is_file
+  - v.get

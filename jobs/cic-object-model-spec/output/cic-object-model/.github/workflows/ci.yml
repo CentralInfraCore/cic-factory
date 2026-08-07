@@ -1,0 +1,91 @@
+---
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - devel
+      - feature/**
+  pull_request:
+    branches:
+      - main
+      - devel
+
+jobs:
+  lint_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Export host UID/GID for docker compose
+        run: |
+          echo "UID=$(id -u)" >> "$GITHUB_ENV"
+          echo "GID=$(id -g)" >> "$GITHUB_ENV"
+
+      - name: Pre-create bind-mount directories owned by the runner user
+        run: mkdir -p p_venv .pip-cache
+
+      - name: Build Docker images
+        run: make build
+
+      - name: Start builder container
+        run: docker compose up -d builder
+
+      - name: Generate and check requirements.txt for drift
+        run: |
+          make infra.deps
+          git diff --exit-code requirements.txt
+
+      - name: Verify repository manifest
+        run: make manifest-verify
+
+      - name: Check internal documentation links
+        run: make docs.link-check
+
+      - name: Run code quality checks
+        run: make check
+
+      # ---- Spec integrity ----------------------------------------------
+      # SPEC.md's normative sentences and the vector corpus must not drift
+      # apart. This gate fails if an INV-nnn is claimed covered by a vector
+      # directory that does not exist, or if a vector references an unknown
+      # invariant. It runs with no implementation present — it checks the
+      # spec/vector mapping, not conformance results.
+      - name: Verify SPEC <-> vector mapping
+        run: docker compose exec -T builder python tools/check_spec_vectors.py
+
+      # ---- Reference implementations -----------------------------------
+      # Both steps are conditional: neither go/ nor rust/ is populated by
+      # the spec job. They activate when the cic-object-model-go and
+      # cic-object-model-rust sub-jobs land. Guarding on the manifest file
+      # keeps CI honest — a missing implementation is skipped visibly, not
+      # silently passed.
+      - name: Go quality gate (go/)
+        if: hashFiles('go/go.mod') != ''
+        run: make golang.quality
+
+      - name: Go conformance run
+        if: hashFiles('go/go.mod') != ''
+        run: make golang.test
+
+      - name: Rust quality gate (rust/)
+        if: hashFiles('rust/Cargo.toml') != ''
+        run: make rust
+
+      # ---- Cross-implementation agreement ------------------------------
+      # The point of two implementations: they must produce identical
+      # output for every vector. Only meaningful once both exist.
+      - name: Cross-implementation conformance agreement
+        if: hashFiles('go/go.mod') != '' && hashFiles('rust/Cargo.toml') != ''
+        run: make conformance
+
+      - name: Run Python tests and generate coverage report
+        run: make test
+
+      - name: Upload coverage report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-coverage-report
+          path: htmlcov/

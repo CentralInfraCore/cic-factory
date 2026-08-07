@@ -1,0 +1,9 @@
+---
+id: invalid/001_sealed_yaml_conflict
+title: Authoring below a sealed boundary — sealed + yaml
+truth_table_row: 5
+invariants: [INV-016, INV-019]
+description: >-
+  Truth-table row 5 (sealed=yes, yaml=yes, schema=no). Not a bad value — a
+  structurally illegal authoring attempt. MUST be rejected at entry validation
+  (SPEC 8.1), before reference resolution or template expansion.

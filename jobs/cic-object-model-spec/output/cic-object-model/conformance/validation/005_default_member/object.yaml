@@ -1,0 +1,14 @@
+---
+cic:
+  model: "0.1"
+values:
+  mtu:
+    values: 1500
+    default: true
+    origin: [schema]
+    shape:
+      values:
+        type: scalar
+        scalar_type: integer
+      origin: [schema]
+origin: [yaml]

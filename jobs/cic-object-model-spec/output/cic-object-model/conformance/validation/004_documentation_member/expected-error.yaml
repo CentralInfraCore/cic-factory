@@ -1,0 +1,8 @@
+---
+error:
+  code: E_DOCUMENTATION_ON_NODE
+  invariant: INV-006
+  stage: final-validation
+  path: $.mtu.description
+  detail: >-
+    Documentation must be obtained from the schema, not carried on the node.

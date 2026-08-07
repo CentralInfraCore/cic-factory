@@ -1,0 +1,9 @@
+---
+error:
+  code: E_ORIGIN_DECLARED_IN_INPUT
+  invariant: INV-007
+  stage: entry-validation
+  path: $.mtu.origin
+  detail: >-
+    origin is computed by the materializer and must not appear in authoring
+    input.

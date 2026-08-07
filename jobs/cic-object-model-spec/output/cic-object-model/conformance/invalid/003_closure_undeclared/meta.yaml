@@ -1,0 +1,9 @@
+---
+id: invalid/003_closure_undeclared
+title: Closure rule 3 — undeclared arbitrary object is invalid
+closure_rule: 3
+invariants: [INV-029]
+description: >-
+  The object is neither schema-known nor declared opaque. It MUST be rejected,
+  not silently accepted as an opaque blob. This is the escape hatch the three
+  rules exist to close: opacity is declared, never inferred.

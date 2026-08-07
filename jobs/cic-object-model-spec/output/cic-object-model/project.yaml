@@ -1,0 +1,60 @@
+---
+metadata:
+  name: cic-object-model
+  description: >-
+    Normative CIC object model specification, conformance vectors, and the
+    Go + Rust reference implementations. SPEC.md is the authority; the
+    implementations are subordinate to it.
+  version: 0.1.0
+  license: CC-BY-NC-SA-4.0
+  main_branch: main
+  owner: Gabor Zoltan Sinko
+  tags:
+    - specification
+    - object-model
+    - conformance
+    - normative
+  validatedBy:
+    name: TBD
+    version: TBD
+    checksum: TBD
+  # createdBy/issuer_certificate/cicSign/cicSignedCA/checksum/sign below are
+  # template placeholders. A real release replaces them with the author's
+  # Vault-issued certificate, the CIC Root CA issuer certificate, and the
+  # corresponding signatures — produced by `make release` / tools/infra.py
+  # (ReleaseManager._resign_with_build_hash and the Vault signing chain).
+  # The placeholders keep project.yaml schema-valid (project.schema.yaml
+  # treats these as opaque strings) without embedding any real credential.
+  createdBy:
+    name: TBD
+    email: TBD
+    certificate: "TBD — filled by the release process with the author's PEM certificate"
+    issuer_certificate: "TBD — filled by the release process with the CIC Root CA issuer certificate"
+  build_timestamp: 'TBD'
+  validity:
+    from: 'TBD'
+    until: 'TBD'
+  checksum: 'TBD'
+  sign: 'TBD'
+  # buildHash: there is no compiled artifact in this repo — the release
+  # subject is the spec + vector corpus. tools/infra.py
+  # (_resign_with_build_hash) requires a non-empty value, so the release
+  # process must fill it from the canonical source hash
+  # (compiler_settings.canonical_source_file). Left as TBD deliberately:
+  # an inherited placeholder digest here would be a false provenance claim.
+  buildHash: 'TBD'
+  cicSign: 'TBD'
+  cicSignedCA:
+    certificate: "TBD — filled by the release process with the CIC Root CA certificate"
+compiler_settings:
+  repo_type: spec
+  component_name: cic-object-model
+  meta_schemas_dir: ./
+  meta_schema_file: md.meta.schema.yaml
+  canonical_source_file: spec/index.yaml
+  vault_key_name: cic-my-sign-key
+  cic_root_ca_key_name: cic-root-ca-key
+  source_dir: ./
+  vault_cert_mount: cic-my-sign-key
+  vault_cert_secret_name: crt
+  vault_cert_secret_key: bar

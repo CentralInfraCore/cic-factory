@@ -1,0 +1,8 @@
+---
+id: validation/003_origin_not_terminal
+title: An origin carrying its own values/origin is rejected
+invariants: [INV-004, INV-003]
+description: >-
+  origin is the fixed point that makes the recursion of INV-003 well-founded.
+  If origin were itself a node it would need an origin, without end. An object
+  in which origin has been expanded into a node is not canonical.

@@ -1,0 +1,8 @@
+---
+id: materialization/008_normalize_list
+title: Short-form list normalizes; each element is a CIC node
+invariants: [INV-001, INV-002, INV-027]
+description: >-
+  A list payload is List<CICNode>, not List<Scalar> — each element is a node
+  with its own origin. This is what lets an individual element be addressed
+  and governed.
