@@ -45,23 +45,23 @@ workplace:
   branch: "feature/cic-object-model-go"
 
 # Status
-status: "running"
+status: "done"
 error_message: ""
 
 usage:
-  cost_usd: "2.375071"
-  turns: "25"
+  cost_usd: "8.701224"
+  turns: "58"
   max_turns: "180"
-  stop_reason: "stop_sequence"
-  duration_ms: "536449"
-  models: "claude-haiku-4-5-20251001,claude-opus-5"
-  total_input_tokens: "1227644"
-  input_tokens: "4933"
-  cache_read_input_tokens: "1131724"
-  cache_creation_input_tokens: "90987"
-  output_tokens: "35790"
+  stop_reason: "end_turn"
+  duration_ms: "1212212"
+  models: "claude-opus-5"
+  total_input_tokens: "8791087"
+  input_tokens: "89"
+  cache_read_input_tokens: "8572758"
+  cache_creation_input_tokens: "218240"
+  output_tokens: "89280"
 
 timestamps:
   created: "2026-08-07T00:00:00Z"
   started: "2026-08-07T18:22:28Z"
-  completed: ""
+  completed: "2026-08-07T18:42:55Z"
