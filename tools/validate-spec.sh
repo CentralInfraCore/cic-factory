@@ -62,9 +62,22 @@ if ! grep -qE '(Állítás|Claim).*(Bizonyíték|Evidence).*(Verifikáci|Verific
     FAILURES+=("K8: nincs claim-evidence tábla előírva az outputban (kell: Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat)")
 fi
 
+# Forrás-jel: van-e egyáltalán forráskód ebben a jobban?
+# A K7/K9 Go forráskód-auditra való. A trigger-szavak (különösen az "implemented")
+# viszont normatív szövegben is előfordulnak — és a K3 hibaüzenete maga javasolja a
+# "fájl létezése ≠ implemented" mondatot, ami így egy spec-író jobot Go-auditnak
+# minősített (mérve: cic-object-model-spec, 2026-08-07). Egy szöveget termelő jobtól
+# reachability-artifactot kérni értelmetlen: nincs mit elérni.
+# Ezért a K7/K9 csak akkor fut, ha a spec tényleg forráskódra mutat.
+if grep -qE '(\.go\b|\.rs\b|_test\.go|forráskód|source file|package |func |szimbólum)' "$SPEC"; then
+    HAS_SOURCE_SIGNAL=1
+else
+    HAS_SOURCE_SIGNAL=0
+fi
+
 # K7 — Forráskód audit esetén: grep + _test.go kizárás kötelező
 # Csak akkor kötelező, ha a spec forrás-elemzést / call-chain audit-ot kér (nem build/format job)
-if grep -qE '(audit|call.chain|implemented|scaffold|hívódik|olvasd a forrás|statusz.meghatároz)' "$SPEC"; then
+if [[ "$HAS_SOURCE_SIGNAL" -eq 1 ]] && grep -qE '(audit|call.chain|implemented|scaffold|hívódik|olvasd a forrás|statusz.meghatároz)' "$SPEC"; then
     if ! grep -qE 'grep -rn|grep -r ' "$SPEC"; then
         FAILURES+=("K7: Go forráskód audit, de nincs 'grep -rn' előírás a call-chain ellenőrzéshez")
     fi
@@ -75,7 +88,7 @@ fi
 
 # K9 — Reachability artifact kötelező: production call site (file:line) VAGY deadcode output
 # Ha a spec implemented/scaffold státuszt határoz meg forráskódon alapulva
-if grep -qE '(implemented|scaffold|hívódik|production.*call|call.*chain)' "$SPEC"; then
+if [[ "$HAS_SOURCE_SIGNAL" -eq 1 ]] && grep -qE '(implemented|scaffold|hívódik|production.*call|call.*chain)' "$SPEC"; then
     if ! grep -qE '(deadcode|call.?site|call.?path|file:line|hívó.*fájl|hívó.*sor|production.*hívás)' "$SPEC"; then
         FAILURES+=("K9: nincs reachability artifact előírva — kell: production call site (file:line) VAGY 'deadcode ./...' output az agent outputban; 'symbol létezik' ≠ 'production hívja'")
     fi
