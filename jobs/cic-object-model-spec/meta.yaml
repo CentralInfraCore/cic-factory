@@ -48,7 +48,7 @@ workplace:
   branch: "feature/cic-object-model-spec"
 
 # Status
-status: "pending"
+status: "running"
 error_message: ""
 
 usage:
@@ -66,5 +66,5 @@ usage:
 
 timestamps:
   created: "2026-08-07T00:00:00Z"
-  started: ""
+  started: "2026-08-07T08:15:03Z"
   completed: ""
