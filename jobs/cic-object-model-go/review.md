@@ -185,3 +185,74 @@ Az INV-033 a lib szintjén állít valamit, de legalább három dolgot jelenthet
 Ettől függ, hogy a `cic` egyáltalán létezik-e adatként. Amíg ez nincs eldöntve,
 az SD-004 nem javítható — és a Rust implementáció sem indulhat, mert ugyanerre
 a hézagra futna rá.
+
+---
+
+## SD-017 (orchestrátori) — az INV-033 a saját nyelvtanában kielégíthetetlen, és ütközik az INV-034-gyel
+
+Ez a defekt a review során keletkezett, nem az implementáló agenttől. Erősebb
+állítás, mint a fenti „a `cic` definiálatlan": **nem hiányos, hanem
+teljesíthetetlen** — és nem vélemény, hanem a `SPEC.md` §2.1-ből és a D-003-ból
+levezetve.
+
+| | |
+|---|---|
+| **Hol** | `SPEC.md` §11 (INV-033), §2.1 (INV-001…INV-004), §6.1 (INV-021) |
+| **Súlyosság** | **blocking** |
+| **Viszony** | ez az SD-004 gyökéroka; az SD-004 a tünetet írja le |
+
+### A levezetés
+
+A §2.1 a node-nyelvtant **zártként** definiálja:
+
+```
+CICNode := { values, origin, <primitive>: CICNode }
+```
+
+Az INV-021 nem külön szabály, csak ennek újramondása. Ha a `cic` nem lehet
+node-tag, akkor a modellverzió három helyen élhetne az objektumban, és
+mindhárom zárva van:
+
+1. **`values` alatt** — akkor domain adat, nem verzió.
+2. **primitívként** — kilencedik atom kellene. A D-003 nyolcat rögzít, és az
+   `origin` esetében épp strukturális okból utasítottuk el a kilencediket
+   (végtelen regresszió). Ráadásul a verzió nem a payload szemantikáját írja le,
+   ami a §2.1 szerint minden nem-`values` tag dolga.
+3. **negyedik tagfajtaként** — akkor a nyelvtan nem zárt, és elveszik az az
+   érv, amiért bármely útvonalra hash képezhető, ACL örököltethető és evidence
+   hivatkozhat rá.
+
+Marad, hogy **a verzió nem az objektumban van**. Ez nem kompromisszum: a
+modellverzió arról szól, *milyen nyelvtan szerint olvasd az egészet* — fogalmilag
+kívül van a payload szemantikáján.
+
+### Az ütközés az INV-034-gyel
+
+Az INV-034 **már most is** átadási tulajdonságként kezeli a verziót:
+
+> *„A module MUST declare the model version it consumes, and a host MUST NOT
+> hand a module an object of a version the module has not declared."*
+
+Itt a verzió a **hoszt–modul átadás** tulajdonsága. Az INV-033 ugyanezt az
+objektum tulajdonságaként követeli. A két invariáns ugyanarról a tényről két
+különböző helyet jelöl ki.
+
+### Miért nem javítható korpusz-szerkesztéssel
+
+Az SD-004 javaslatai (a `cic` testvérré tétele, vagy az INV-021/022
+hatókör-szűkítése) a tünetet kezelnék. Amíg az INV-033 azt mondja, hogy az
+**objektum** hordozza a verziót, minden implementációnak muszáj lesz valahova
+betennie — és a nyelvtanban nincs hova. A korpusz éppen ezért találta ki a
+`cic` tagot: nem hanyagságból, hanem mert az invariáns ezt követelte tőle.
+
+### Javaslat (döntés, nem levezetés)
+
+Az INV-033 fogalmazódjon át úgy, hogy a verzió a szerializációs/átadási keret
+tulajdonsága, az INV-034-gyel összhangban — vagy törlődjön, és az INV-034
+maradjon az egyetlen verzió-invariáns. Ha marad valamilyen dokumentum-szintű
+verzió-hordozó, azt **külön kell definiálni**, névvel és hellyel, nem
+példakód-blokkban.
+
+**Amíg ez nincs eldöntve, az SD-004 nem javítható**, és a Rust implementáció
+sem indulhat: ugyanerre a hézagra futna rá, és a két implementáció egyformán
+rossz módon lenne „konform".
