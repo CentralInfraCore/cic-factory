@@ -1,0 +1,46 @@
+---
+package: objectmodel
+description: ''
+tags: []
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: evaluatePrimitives
+  kind: func
+  description: 'evaluatePrimitives is SPEC §8.6. INPUT:  node tree with values materialized
+    OUTPUT: node tree with every schema-declared primitive materialized as a node
+    MUST:   materialize every declared primitive (INV-022); resolve `inherit` chains
+    for `access` (INV-025) MUST NOT: admit an unknown primitive (INV-021) The `inherit`
+    chain resolution this stage is told to perform is not implemented, and cannot
+    be in 0.1: INV-025''s tri-state resolves against the PolicySurface, which SPEC
+    §1 puts out of scope. materialization/013 records `inherit` verbatim rather than
+    resolved, so no vector requires resolution either. Recorded as docs/spec-defects.md
+    SD-012 — a normative MUST with no reachable semantics, not an omission this implementation
+    chose.'
+  references: []
+  calls:
+  - Sprintf
+- name: attachPrimitives
+  kind: func
+  description: ''
+  references: []
+  calls: []
+- name: normalizePrimitive
+  kind: func
+  description: 'normalizePrimitive turns a declared primitive payload into its canonical
+    form. Only `access` has a form SPEC fixes (§6.4); everything else is carried through
+    as declared. Note what is NOT done here: the payload is not materialized into
+    CIC nodes. SPEC §2.2 motivates the model with "network.values.mtu.access.read
+    is a first-class, addressable object", and INV-027 says a schema-known structured
+    object must be recursively materialized — but every vector keeps primitive payloads
+    as plain mappings. docs/spec-defects.md SD-003.'
+  references: []
+  calls:
+  - Sprintf
+- name: primitiveSetList
+  kind: func
+  description: ''
+  references: []
+  calls: []

@@ -1,0 +1,23 @@
+---
+package: objectmodel
+description: ''
+tags: []
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: construct
+  kind: func
+  description: 'construct is SPEC §8.4. INPUT:  expanded tree OUTPUT: every schema-known
+    structured child represented as a CIC node MUST:   apply the discriminator of
+    §4 at every position; apply the closure rules of §7 MUST NOT: leave a schema-known
+    child as a raw value (INV-027) Values that are absent here are left kindAbsent
+    for §8.5; primitives are recorded but not evaluated until §8.6. `content` is a
+    template''s explicit value (conformance/README.md), which is what separates truth-table
+    rows 3 and 4. It is threaded separately from the authored value so that a template-supplied
+    value can never be mistaken for a yaml-supplied one — that mistake would produce
+    origin [yaml] where the corpus requires [sealed(t,p)].'
+  references: []
+  calls:
+  - Sprintf

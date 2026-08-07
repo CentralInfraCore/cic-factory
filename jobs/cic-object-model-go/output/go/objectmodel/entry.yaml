@@ -1,0 +1,45 @@
+---
+package: objectmodel
+description: ''
+tags: []
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: entryValidate
+  kind: func
+  description: 'entryValidate is SPEC §8.1. INPUT:  raw authoring tree OUTPUT: structurally
+    legal authoring tree MUST:   reject an `origin` member (INV-007); reject authoring
+    at or below a sealed boundary (INV-019); reject undeclared arbitrary objects (INV-029)
+    MUST NOT: resolve references, expand templates, or apply defaults It deliberately
+    does not reject an unknown envelope member: SPEC §8.6 owns INV-021, and invalid/006_unknown_primitive
+    asserts stage `primitive-evaluation`. Rejecting it here would be the right code
+    at the wrong stage, which conformance/README.md calls a failure.'
+  references: []
+  calls: []
+- name: isEnvelope
+  kind: func
+  description: isEnvelope is the discriminator table of SPEC §4.3. It is called with
+    the schema-declared shape at the position — never with key inspection alone (INV-008).
+  references: []
+  calls: []
+- name: entryWalk
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Sprintf
+- name: entryPayload
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Sprintf
+- name: firstLeafPath
+  kind: func
+  description: firstLeafPath names the deepest authored position of an illegal authoring
+    attempt, which is what invalid/001 and invalid/002 assert ($.access_policy.enabled,
+    not $.access_policy).
+  references: []
+  calls: []

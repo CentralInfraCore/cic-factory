@@ -1,0 +1,39 @@
+---
+package: main
+description: 'Command cic-materialize runs the materialization pipeline of SPEC §8
+  over a schema and an authoring input, or the final validation of SPEC §8.7 over
+  an already-canonical object. cic-materialize -schema schema.yaml -input input.yaml
+  cic-materialize -validate object.yaml It is also what makes `deadcode ./...` meaningful:
+  without a main package every exported symbol is trivially unreachable.'
+tags:
+- core
+- gateway
+category: []
+used_in: []
+entrypoint: true
+related_nodes: []
+objects:
+- name: main
+  kind: func
+  description: ''
+  references:
+  - objectmodel.Error
+  calls:
+  - As
+  - Bool
+  - Exit
+  - Fprintf
+  - Fprintln
+  - Parse
+  - String
+- name: run
+  kind: func
+  description: ''
+  references:
+  - objectmodel.ValidateCanonicalDocument
+  - objectmodel.Materialize
+  - module.Execute
+  calls:
+  - module.Execute
+  - objectmodel.Materialize
+  - objectmodel.ValidateCanonicalDocument

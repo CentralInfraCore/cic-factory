@@ -1,0 +1,31 @@
+---
+package: objectmodel
+description: ''
+tags: []
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: materializeDefaults
+  kind: func
+  description: 'materializeDefaults is SPEC §8.5. INPUT:  node tree with authored
+    values OUTPUT: node tree with every absent defaultable value filled MUST:   set
+    origin [schema] on every node filled from a default, and [sealed(t,p), schema]
+    where the default came from a sealed template''s schema MUST NOT: produce a node
+    whose origin holds both yaml and schema (INV-017) FAILURE: a required value neither
+    authored nor defaultable -> reject A nil return with a nil error means the node
+    does not exist: it was neither authored, nor template-supplied, nor defaultable,
+    nor required. SPEC has no rule for that case and no vector reaches it (docs/spec-defects.md
+    SD-007); omitting is the only option that does not invent a value or violate INV-001.'
+  references: []
+  calls: []
+- name: nodeFromDefault
+  kind: func
+  description: 'nodeFromDefault fills an absent node from its schema default. An object-shaped
+    position takes no default literal: SPEC §7.1 says a structured node materializes
+    from its children''s defaults, not from an object-level default. Declaring one
+    is therefore a schema error rather than a second, competing mechanism.'
+  references: []
+  calls:
+  - Sprintf

@@ -1,0 +1,84 @@
+---
+package: objectmodel
+description: ''
+tags: []
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: orderedMap
+  kind: struct
+  description: orderedMap is a mapping with an explicit key order. SPEC INV-030 requires
+    a byte-identical canonical object for the same schema and input, but SPEC §8.8
+    never defines the canonical key order (or indent, or scalar style). This implementation
+    defines one — node members in the order values, origin, then primitives in SPEC
+    §6.1 declaration order; payload mappings sorted — and records the gap as docs/spec-defects.md
+    SD-010.
+  implements: []
+  references: []
+- name: newOrderedMap
+  kind: func
+  description: ''
+  references: []
+  calls: []
+- name: set
+  kind: method
+  receiver: orderedMap
+  description: ''
+  references: []
+  calls: []
+- name: get
+  kind: method
+  receiver: orderedMap
+  description: ''
+  references: []
+  calls: []
+- name: has
+  kind: method
+  receiver: orderedMap
+  description: ''
+  references: []
+  calls: []
+- name: asMap
+  kind: func
+  description: asMap accepts both shapes gopkg.in/yaml.v3 can produce for a mapping.
+  references: []
+  calls:
+  - Sprint
+- name: sortedKeys
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Strings
+- name: normalize
+  kind: func
+  description: normalize converts a plain decoded YAML value into the orderedMap form
+    the canonicaliser and the final validator both work on. Mapping keys are sorted,
+    which is what makes payload serialization deterministic.
+  references: []
+  calls: []
+- name: toYAMLNode
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Encode
+- name: encodeCanonical
+  kind: func
+  description: encodeCanonical is the serializer half of SPEC §8.8.
+  references: []
+  calls:
+  - Bytes
+  - Close
+  - Encode
+  - NewEncoder
+  - SetIndent
+  - Sprintf
+- name: deepCopy
+  kind: func
+  description: 'deepCopy protects an opaque payload (SPEC INV-028: preserved verbatim)
+    from aliasing the caller''s input tree.'
+  references: []
+  calls: []

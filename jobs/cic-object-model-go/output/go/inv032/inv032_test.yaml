@@ -1,0 +1,47 @@
+---
+package: inv032
+description: 'Package inv032 holds the source-level check for SPEC INV-032. docs/spec-vector-map.md
+  marks INV-032 unvectorizable and assigns it to this implementation by name: "the
+  type''s constructor and fields unexported, verified by a test in a separate package
+  that must fail to compile — plus grep -rn for any exported constructor". Both halves
+  are here.'
+tags:
+- test
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: TestForgedObjectDoesNotCompile
+  kind: func
+  description: TestForgedObjectDoesNotCompile is the compile-fail half. testdata/forge
+    implements every exported method of objectmodel.CanonicalObject and tries to assign
+    it; the build must fail on the unexported marker method.
+  references: []
+  calls:
+  - CombinedOutput
+  - Command
+  - Contains
+  - Errorf
+  - Fatalf
+  - Logf
+  - LookPath
+- name: TestNoExportedConstructor
+  kind: func
+  description: TestNoExportedConstructor is the grep half. An exported New*/Must*
+    returning a CanonicalObject or a *Node would reopen what the unexported marker
+    method closes.
+  references: []
+  calls:
+  - Errorf
+  - Fatalf
+  - HasSuffix
+  - IsDir
+  - Itoa
+  - Join
+  - MatchString
+  - MustCompile
+  - ReadFile
+  - Split
+  - ToSlash
+  - WalkDir

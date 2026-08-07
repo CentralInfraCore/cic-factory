@@ -1,0 +1,87 @@
+---
+package: module_test
+description: ''
+tags:
+- schema
+- test
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: TestINV031Boundary
+  kind: func
+  description: 'TestINV031Boundary is the integration test docs/spec-vector-map.md
+    asks the implementation sub-jobs for by name: "A true boundary test is deferred
+    to the sub-jobs, which must add one integration test per clause." Each subtest
+    drives the pipeline with input that would produce the prohibited condition and
+    asserts that what reaches Execute cannot carry it — either because the pipeline
+    rejected the input, or because the condition is absent from the delivered object.'
+  references:
+  - objectmodel.CodeUndeclaredObject
+  - objectmodel.OriginSealed
+  - objectmodel.CodeAuthoringBelowSealed
+  - objectmodel.OriginSchema
+  - objectmodel.CodeUnknownPrimitive
+  - module.Execute
+  - module.ErrNilObject
+  - objectmodel.ValidateCanonicalDocument
+  calls:
+  - module.Execute
+  - objectmodel.ValidateCanonicalDocument
+- name: TestINV034ModelVersion
+  kind: func
+  description: TestINV034ModelVersion — a host must not hand a module an object of
+    a version the module has not declared.
+  references:
+  - module.Execute
+  - module.ErrModelVersion
+  calls:
+  - module.Execute
+- name: sealedSchema
+  kind: func
+  description: ''
+  references: []
+  calls: []
+- name: mustMaterialize
+  kind: func
+  description: ''
+  references:
+  - objectmodel.CanonicalObject
+  - objectmodel.Materialize
+  calls:
+  - objectmodel.Materialize
+- name: mustDeliver
+  kind: func
+  description: ''
+  references:
+  - objectmodel.CanonicalObject
+  - module.Execute
+  calls:
+  - module.Execute
+- name: mustReject
+  kind: func
+  description: ''
+  references:
+  - objectmodel.Materialize
+  - objectmodel.Error
+  calls:
+  - objectmodel.Materialize
+- name: childOf
+  kind: func
+  description: ''
+  references:
+  - objectmodel.CanonicalObject
+  - objectmodel.Node
+  - objectmodel.CanonicalObject.Root
+  calls:
+  - objectmodel.CanonicalObject.Root
+- name: TestCanonicalYAMLIsACopy
+  kind: func
+  description: TestCanonicalYAMLIsACopy — CanonicalYAML must not hand out the object's
+    own buffer, or a module could mutate what the materializer validated.
+  references: []
+  calls:
+  - CanonicalYAML
+  - Fatalf
+  - Unmarshal
