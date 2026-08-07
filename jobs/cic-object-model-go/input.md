@@ -45,12 +45,27 @@ sor a fő deliverable, nem a szégyenfal.
    **FIGYELEM:** a szülő job megmérte, hogy a live repók D-003-a **8 atomot**
    mond (2026-05-04-én bővítve), miközben `c4255` még 7-et. A KB-snapshot ezen
    a ponton elavult. Ütközésnél a `SPEC.md` az irányadó, nem a KB.
-3. Olvasd el a `cic-object-model` repóban, ebben a sorrendben:
+3. **A `cic-object-model` repót magadnak kell klónoznod** — a `run-job.sh` csak a
+   cic-factory-t adja oda. A workspace gyökerében, a cic-factory klónod *mellé*:
+
+   ```bash
+   git clone git@github.com:CentralInfraCore/cic-object-model.git
+   git -C cic-object-model log --oneline -3   # várt: 9ae04c1 Merge pull request #1
+   ```
+
+   **Privát repo** — SSH kulccsal megy. Ha a klónozás nem sikerül, azt írd le az
+   outputban, és ne találgass a `SPEC.md` tartalmáról.
+
+   Ebben a klónban **fejlesztesz és futtatsz**, de **nem commitolsz**: a kész Go
+   implementáció az `output/go/` alá kerül a cic-factory klónodban (lásd Output).
+   A `cic-object-model` repóba emelés az orchestrátoré.
+
+4. Olvasd el a `cic-object-model` repóban, ebben a sorrendben:
    - `SPEC.md` — **egyben, elejétől a végéig**, mielőtt bármit kódolnál
    - `conformance/README.md` — a vektorformátum és a `templates:` konstrukció
    - `docs/spec-vector-map.md` — melyik invariánst melyik vektor fedi
    - `docs/decision-delta.md` — mit vált fel a modell, és miért
-4. Olvasd végig mind a 27 vektort. A `meta.yaml`-ok `invariants:` mezője köti
+5. Olvasd végig mind a 27 vektort. A `meta.yaml`-ok `invariants:` mezője köti
    őket a specifikációhoz.
 
 **Amíg ez nem történt meg, ne írj Go kódot.**
@@ -105,7 +120,11 @@ konstruálható. Ezért ez a te forrás-szintű feladatod:
 
 ### D) Spec-hibák jelentése
 
-`docs/spec-defects.md` a `cic-object-model` klónodban. Minden találatra:
+**Hova írd:** `output/spec-defects.md` a **cic-factory** klónodban — oda, ahonnan
+commitolsz. (A `cic-object-model` klónba ne írd: oda nem commitolsz, ott elveszne.
+Az orchestrátor emeli majd be `docs/spec-defects.md` néven.)
+
+Minden találatra:
 
 | # | Hely (`SPEC.md` §, INV-nnn) | Mi a probléma | Miért nem tudtam megkerülni | Javaslat |
 
@@ -166,7 +185,7 @@ Konkrét gyanús pontok, ahol a szülő job maga is bizonytalan volt (nézd meg
 | 3 | Minden bukó vektor vagy javított kód, vagy `docs/spec-defects.md` sor | a két lista uniója fedje le a bukásokat |
 | 4 | INV-032 forrás-szinten kikényszerítve | a nem-fordulást bizonyító teszt + `grep -rn` output |
 | 5 | A pipeline szakaszhatárai megtartva | minden `expected-error.yaml` `stage:` mezője egyezik a dobás helyével |
-| 6 | `docs/spec-defects.md` létezik (üresen is, kimondva, hogy nem találtál) | fájl |
+| 6 | `output/spec-defects.md` létezik (üresen is, kimondva, hogy nem találtál) | fájl |
 | 7 | `deadcode ./...` vagy production call site (file:line) minden exportált szimbólumra | az output |
 
 **Amit nem tudsz igazolni, az a claim-evidence táblában „nem igazolt" sorba
