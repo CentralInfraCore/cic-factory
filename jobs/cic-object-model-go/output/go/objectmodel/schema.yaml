@@ -1,0 +1,106 @@
+---
+package: objectmodel
+description: ''
+tags:
+- loader
+- schema
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: sealedRef
+  kind: struct
+  description: ''
+  implements: []
+  references: []
+- name: schemaNode
+  kind: struct
+  description: ''
+  implements: []
+  references: []
+- name: templateEntry
+  kind: struct
+  description: ''
+  implements: []
+  references: []
+- name: Schema
+  kind: struct
+  description: Schema is a loaded, schema-load-validated CIC schema.
+  implements: []
+  references: []
+- name: isPrimitiveName
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Contains
+- name: LoadSchema
+  kind: func
+  description: LoadSchema parses and validates a schema. The checks it runs — INV-010,
+    INV-015 and INV-005 — are the three the corpus places at stage `schema-load`,
+    a stage SPEC §8 does not list (docs/spec-defects.md SD-002).
+  references: []
+  calls:
+  - Sprint
+  - Sprintf
+  - Unmarshal
+- name: parseSchemaNode
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Sprint
+  - Sprintf
+- name: schemaLoadChecks
+  kind: method
+  receiver: Schema
+  description: ''
+  references: []
+  calls: []
+- name: checkSchemaNode
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Sprintf
+- name: checkPrimitiveCycle
+  kind: func
+  description: 'checkPrimitiveCycle enforces INV-005. INV-005 is worded as "a primitive''s
+    own primitives MUST NOT, directly or transitively, re-declare the node they hang
+    from", but the vector schema language is a finite tree with no reference mechanism,
+    so no schema written in it can re-declare a node and no materialization written
+    against it can fail to terminate. invalid/008_cyclic_primitive_declaration therefore
+    tests a different (stronger) property than INV-005 states: acyclicity of the primitive-*name*
+    graph. This implementation enforces the property the vector requires and records
+    the discrepancy as docs/spec-defects.md SD-005.'
+  references: []
+  calls:
+  - Contains
+- name: sortedTemplateNames
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Sort
+- name: sortedTemplatePaths
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Sort
+- name: primitiveSet
+  kind: var
+  description: primitiveSet is the eight irreducible atoms (SPEC §6.1). The order
+    is the order SPEC §6.1 states them in, and it is also the canonical member order
+    of a node (see canonical.go). D-003 was amended on 2026-05-04 to absorb D-011
+    and now says eight, not seven; the KB snapshot chunk c4255 still says seven. SPEC
+    §6.1 is the authority here and it says eight.
+  references: []
+- name: schemaKeywords
+  kind: var
+  description: 'schemaKeywords are the non-primitive keys of the vector schema language.
+    `shape` is both a keyword and a primitive name: it is declared as a keyword (`shape:
+    scalar` plus a sibling `scalar_type:`) and materialized as the `shape` primitive
+    node (see primitives.go).'
+  references: []

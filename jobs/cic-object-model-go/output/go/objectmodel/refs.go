@@ -1,0 +1,18 @@
+package objectmodel
+
+// resolveReferences is SPEC §8.2.
+//
+//	INPUT:  structurally legal authoring tree
+//	OUTPUT: tree with no unresolved external references
+//	MUST:   fully resolve every reference
+//	MUST NOT: leave a reference for a module to resolve (§9)
+//
+// The stage is present and ordered, but it has nothing to do: the vector
+// schema language (conformance/README.md) defines no external-reference
+// syntax, so no authoring tree written against it can carry one, and no
+// vector exercises the stage. This is not an implementation shortcut — there
+// is no reference form in 0.1 to resolve. Recorded as docs/spec-defects.md
+// SD-009, which is also why INV-031(a) has no real upstream coverage.
+func resolveReferences(_ *Schema, input any) (any, error) {
+	return input, nil
+}

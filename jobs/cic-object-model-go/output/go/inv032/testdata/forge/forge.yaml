@@ -1,0 +1,31 @@
+---
+package: forge
+description: 'Package forge MUST NOT COMPILE. It is the negative artifact docs/spec-vector-map.md
+  requires for INV-032: "Unconstructibility is a compile-time property of a type;
+  no data file can demonstrate it, because the failure mode is code that compiles
+  when it should not." A vector cannot fail on code that compiles. This file can.
+  It lives under testdata/ so that `go build ./...` and `go vet ./...` skip it; ../inv032_test.go
+  builds it by explicit path and asserts the failure.'
+tags: []
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: Forged
+  kind: struct
+  description: 'Forged implements every exported method of objectmodel.CanonicalObject
+    and is still not one: the interface carries an unexported marker method that only
+    the materializer''s package can supply.'
+  implements: []
+  references: []
+- name: _
+  kind: var
+  description: 'The concrete node type is equally closed: every field is unexported,
+    so a composite literal from another package cannot populate one.'
+  references: []
+- name: _
+  kind: var
+  description: 'The concrete node type is equally closed: every field is unexported,
+    so a composite literal from another package cannot populate one.'
+  references: []

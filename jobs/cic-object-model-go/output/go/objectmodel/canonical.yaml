@@ -1,0 +1,31 @@
+---
+package: objectmodel
+description: ''
+tags: []
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: project
+  kind: method
+  receiver: Node
+  description: 'project is the projection half of SPEC §8.8: the node tree becomes
+    the document the canonical serializer writes and the final validator reads. Member
+    order is values, origin, then primitives in the order SPEC §6.1 states the atom
+    set. SPEC §8.8 defines no order; see docs/spec-defects.md SD-010.'
+  references: []
+  calls: []
+- name: projectValue
+  kind: method
+  receiver: Node
+  description: ''
+  references: []
+  calls: []
+- name: document
+  kind: method
+  receiver: Node
+  description: document stamps the model version (INV-033) onto the root node's projection.
+    The root carries no primitives; see docs/spec-defects.md SD-004.
+  references: []
+  calls: []

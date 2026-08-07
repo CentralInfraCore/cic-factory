@@ -1,0 +1,41 @@
+---
+package: objectmodel
+description: ''
+tags: []
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: Error
+  kind: struct
+  description: Error is the single error type the materializer raises. Every rejection
+    names the code, the invariant it enforces, the pipeline stage it was raised at
+    and the path it applies to — the four fields every expected-error.yaml asserts
+    on.
+  implements: []
+  references: []
+- name: Stage
+  kind: type
+  description: Stage names a stage of the materialization pipeline (SPEC §8). The
+    four stage names that conformance vectors assert on (schema-load, entry-validation,
+    primitive-evaluation, final-validation) are fixed by conformance/README.md's error
+    table and by the `stage:` field of every expected-error.yaml. The remaining names
+    are this implementation's, because SPEC §8 numbers its stages but does not name
+    them; see docs/spec-defects.md (SD-002).
+  references: []
+- name: Error
+  kind: method
+  receiver: Error
+  description: Error is the single error type the materializer raises. Every rejection
+    names the code, the invariant it enforces, the pipeline stage it was raised at
+    and the path it applies to — the four fields every expected-error.yaml asserts
+    on.
+  references: []
+  calls:
+  - Sprintf
+- name: newError
+  kind: func
+  description: ''
+  references: []
+  calls: []

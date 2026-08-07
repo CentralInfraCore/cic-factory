@@ -1,0 +1,61 @@
+---
+package: objectmodel
+description: ''
+tags:
+- schema
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: OriginTerm
+  kind: struct
+  description: OriginTerm is a single term of an origin. Template and Path are set
+    only for OriginSealed, and INV-015 requires both.
+  implements: []
+  references: []
+- name: sealedCtx
+  kind: struct
+  description: sealedCtx is the (template, path) pair a sealed boundary contributes
+    to every origin below it (INV-015).
+  implements: []
+  references: []
+- name: OriginKind
+  kind: type
+  description: OriginKind is one of the three terms of the origin grammar (SPEC §5.2,
+    INV-013).
+  references: []
+- name: Origin
+  kind: type
+  description: 'Origin classifies authoring authority (SPEC §5). It is a classification,
+    not a history (INV-014): it never accumulates lifecycle events.'
+  references: []
+- name: originYAML
+  kind: func
+  description: ''
+  references: []
+  calls: []
+- name: originSchema
+  kind: func
+  description: ''
+  references: []
+  calls: []
+- name: originSealed
+  kind: func
+  description: ''
+  references: []
+  calls: []
+- name: originSealedSchema
+  kind: func
+  description: 'originSealedSchema is truth-table row 4 (SPEC §5.3): the template
+    defined and closed the node, and the value came from the template node''s own
+    schema default. The two terms describe different dimensions, which is why they
+    combine where yaml and schema do not (INV-017).'
+  references: []
+  calls: []
+- name: project
+  kind: method
+  receiver: Origin
+  description: ''
+  references: []
+  calls: []

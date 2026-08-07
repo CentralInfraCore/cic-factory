@@ -1,0 +1,90 @@
+---
+package: conformance
+description: 'Package conformance runs the corpus in ../../conformance against the
+  Go implementation. The vectors are implementation-independent (YAML in, YAML out)
+  and this runner adds no Go-specific fixture: it reads the same files the Rust implementation
+  will read. Where the two disagree, the disagreement is the spec''s, not the language''s.'
+tags:
+- test
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: expectedError
+  kind: struct
+  description: ''
+  implements: []
+  references: []
+- name: vectors
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Fatalf
+  - Helper
+  - IsDir
+  - Join
+  - Name
+  - ReadDir
+- name: read
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Fatalf
+  - Helper
+  - Join
+  - ReadFile
+- name: TestCorpusSize
+  kind: func
+  description: TestCorpusSize fails if the corpus is not the 27 vectors SPEC §10 and
+    docs/spec-vector-map.md describe.
+  references: []
+  calls:
+  - Fatalf
+  - Logf
+- name: TestMaterialization
+  kind: func
+  description: 'TestMaterialization runs conformance/materialization/*: authoring
+    input to canonical object.'
+  references:
+  - objectmodel.Materialize
+  calls:
+  - objectmodel.Materialize
+- name: TestInvalid
+  kind: func
+  description: 'TestInvalid runs conformance/invalid/*: authoring input that must
+    be rejected, with the right code at the right stage.'
+  references:
+  - objectmodel.Materialize
+  calls:
+  - objectmodel.Materialize
+- name: TestValidation
+  kind: func
+  description: 'TestValidation runs conformance/validation/*: an already-canonical
+    object presented to SPEC §8.7 directly.'
+  references:
+  - objectmodel.ValidateCanonicalDocument
+  calls:
+  - objectmodel.ValidateCanonicalDocument
+- name: assertRejected
+  kind: func
+  description: ''
+  references:
+  - objectmodel.Error
+  calls:
+  - As
+  - Errorf
+  - Fatalf
+  - Helper
+- name: expectedCounts
+  kind: var
+  description: expectedCounts is what "the corpus ran" means. A runner that discovers
+    zero vectors and exits 0 has not run the corpus, so the counts are asserted rather
+    than reported.
+  references: []
+- name: corpus
+  kind: const
+  description: ''
+  references: []

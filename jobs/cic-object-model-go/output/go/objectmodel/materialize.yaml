@@ -1,0 +1,78 @@
+---
+package: objectmodel
+description: ''
+tags:
+- validator
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: validatedCanonical
+  kind: struct
+  description: ''
+  implements: []
+  references: []
+- name: CanonicalObject
+  kind: interface
+  description: 'CanonicalObject is Validated<Canonical<CICObject>> (SPEC INV-032):
+    the type of a module''s input, and the only thing that may cross the module boundary
+    of SPEC §9. The unexported method is the enforcement. No package outside this
+    one can implement the interface, so no package outside this one can produce a
+    value of the type — "an invalid object has no representation that crosses the
+    boundary" rather than "validate before you call". The residual hole is the nil
+    interface value, which Go cannot forbid; a module boundary therefore still rejects
+    nil explicitly (see ../module).'
+  references: []
+  methods:
+  - CanonicalYAML
+  - ModelVersion
+  - Root
+- name: ModelVersion
+  kind: method
+  receiver: validatedCanonical
+  description: ''
+  references: []
+  calls: []
+- name: Root
+  kind: method
+  receiver: validatedCanonical
+  description: ''
+  references: []
+  calls: []
+- name: CanonicalYAML
+  kind: method
+  receiver: validatedCanonical
+  description: ''
+  references: []
+  calls: []
+- name: sealedByMaterializer
+  kind: method
+  receiver: validatedCanonical
+  description: ''
+  references: []
+  calls: []
+- name: Materialize
+  kind: func
+  description: 'Materialize runs the pipeline of SPEC §8 and is the only producer
+    of a CanonicalObject. The stages run in the order SPEC §8 fixes, and each is a
+    separate function over the previous one''s output: a later stage cannot observe
+    input an earlier stage would have rejected, which is what makes the `stage:` field
+    of every expected-error.yaml meaningful.'
+  references: []
+  calls:
+  - LoadSchema
+  - Sprintf
+  - Unmarshal
+- name: ValidateCanonicalDocument
+  kind: func
+  description: 'ValidateCanonicalDocument is SPEC §8.7 applied directly to an already-canonical
+    object. conformance/validation/* needs this entry point: truth-table rows 7 and
+    8 cannot be produced by any authoring input, because origin may not be authored
+    at all (INV-007). They are reachable only as a materializer defect or a hand-forged
+    object, so without a schema-free validation entry point two rows of the table
+    would be unfalsifiable.'
+  references: []
+  calls:
+  - Sprintf
+  - Unmarshal

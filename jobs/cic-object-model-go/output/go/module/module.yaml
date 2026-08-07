@@ -1,0 +1,44 @@
+---
+package: module
+description: 'Package module is the module boundary of SPEC §9. It contains no provisioning
+  logic. It exists so that INV-031 and INV-032 have a boundary to be true of: docs/spec-vector-map.md
+  marks both unvectorizable and assigns them to the implementation as source-level
+  checks, and a boundary that does not exist cannot be checked.'
+tags:
+- executor
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: Execute
+  kind: func
+  description: 'Execute is the module entry point. Its parameter type is the whole
+    of INV-032: it accepts objectmodel.CanonicalObject and nothing else. An Execute(map[string]any)
+    — which SPEC §9 names explicitly as a violation — could not be given an object
+    this package can trust, because the pipeline is the only thing that produces one.'
+  references:
+  - objectmodel.CanonicalObject
+  - objectmodel.CanonicalObject.ModelVersion
+  - objectmodel.CanonicalObject.Root
+  calls:
+  - objectmodel.CanonicalObject.ModelVersion
+  - objectmodel.CanonicalObject.Root
+- name: ErrNilObject
+  kind: var
+  description: 'ErrNilObject is returned for a nil CanonicalObject. INV-032 is enforced
+    by objectmodel.CanonicalObject''s unexported method: no other package can implement
+    it, so no other package can construct one. Go has one residual hole — the nil
+    interface value — which no type system trick closes, so the boundary closes it
+    at runtime.'
+  references: []
+- name: ErrModelVersion
+  kind: var
+  description: ErrModelVersion is returned when the host offers an object of a version
+    this module has not declared (SPEC INV-034).
+  references: []
+- name: ModelVersion
+  kind: const
+  description: ModelVersion is the object model version this module declares it consumes
+    (SPEC INV-034). A host must not hand it an object of any other version.
+  references: []

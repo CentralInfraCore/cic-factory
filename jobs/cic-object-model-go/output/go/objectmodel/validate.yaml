@@ -1,0 +1,47 @@
+---
+package: objectmodel
+description: ''
+tags: []
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: validateDocument
+  kind: func
+  description: 'validateDocument is SPEC §8.7. INPUT:  fully materialized node tree
+    OUTPUT: validated node tree MUST:   enforce the origin grammar and truth table
+    (§5.2, §5.3); confirm INV-001 and INV-002 hold at every node It runs on the projected
+    document rather than on *Node so that the same rules apply to an object the materializer
+    just built and to a hand-forged one presented at the module boundary (conformance/validation/*).
+    That is the only way row 7 and row 8 of the truth table are reachable at all.
+    It has to identify nodes without a schema, by looking for a `values` key — exactly
+    what INV-008 forbids ("MUST NOT decide this by inspecting keys alone"). There
+    is no alternative: validation/* supplies no schema. docs/spec-defects.md SD-013.'
+  references: []
+  calls: []
+- name: validateModelVersion
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Sprint
+- name: validateNode
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Sprintf
+- name: validatePayload
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Sprintf
+- name: validateOrigin
+  kind: func
+  description: validateOrigin enforces SPEC §5.2 (the grammar, INV-013) and §5.3 (the
+    truth table, INV-016 / INV-017 / INV-018), plus INV-004 and INV-020.
+  references: []
+  calls:
+  - Sprintf

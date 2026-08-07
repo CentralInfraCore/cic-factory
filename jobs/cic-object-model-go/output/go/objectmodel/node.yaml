@@ -1,0 +1,58 @@
+---
+package: objectmodel
+description: ''
+tags: []
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: Node
+  kind: struct
+  description: 'Node is a CIC node (SPEC §2.1): exactly one `values` member (INV-001)
+    and, in canonical form, exactly one `origin` member (INV-002), plus one member
+    per primitive its schema declares (INV-022). Every field is unexported and there
+    is no exported constructor, so a Node can only come out of Materialize. That is
+    half of INV-032; CanonicalObject in materialize.go is the other half.'
+  implements: []
+  references: []
+- name: valueKind
+  kind: type
+  description: valueKind is the arity of a node's payload (SPEC §2.1, `Value`).
+  references: []
+- name: Path
+  kind: method
+  receiver: Node
+  description: Path returns the node's address in the object ($.interface.mtu).
+  references: []
+  calls: []
+- name: Origin
+  kind: method
+  receiver: Node
+  description: Origin returns the node's authoring authority (SPEC §5).
+  references: []
+  calls: []
+- name: Child
+  kind: method
+  receiver: Node
+  description: Child returns a child node of a structured payload.
+  references: []
+  calls: []
+- name: Primitive
+  kind: method
+  receiver: Node
+  description: Primitive returns a materialized primitive member of the node.
+  references: []
+  calls: []
+- name: Scalar
+  kind: method
+  receiver: Node
+  description: Scalar returns a scalar payload.
+  references: []
+  calls: []
+- name: setPrimitive
+  kind: method
+  receiver: Node
+  description: ''
+  references: []
+  calls: []

@@ -1,0 +1,39 @@
+---
+package: objectmodel
+description: ''
+tags: []
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: effNode
+  kind: struct
+  description: 'effNode is the effective schema at a position after SPEC §8.3: every
+    sealed_from has been replaced by the template''s own schema, and every node at
+    or below a sealed boundary carries the (template, path) pair its origins need
+    (INV-015).'
+  implements: []
+  references: []
+- name: buildEffective
+  kind: func
+  description: 'buildEffective is SPEC §8.3. INPUT:  resolved authoring tree OUTPUT:
+    tree with no unexpanded template references MUST:   record template identity and
+    source path in the origin of every node produced (INV-015) Note what the vectors
+    require here that SPEC §8.3 does not state: a node declared with `sealed_from`
+    and nothing else has no shape of its own, yet materialization/003 and /004 expect
+    `shape: {values: {type: object}}` on it. The shape — and the children, and their
+    defaults — come from the template node at the referenced path. Recorded as docs/spec-defects.md
+    SD-006.'
+  references: []
+  calls: []
+- name: buildEff
+  kind: func
+  description: ''
+  references: []
+  calls:
+  - Sprintf
+- name: maxTemplateDepth
+  kind: const
+  description: ''
+  references: []

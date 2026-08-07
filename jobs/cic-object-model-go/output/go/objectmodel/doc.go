@@ -1,0 +1,24 @@
+// Package objectmodel is the Go reference implementation of the CIC object
+// model (../../SPEC.md, model 0.1).
+//
+// SPEC.md is the authority: where this package disagrees with it, this
+// package is wrong. Where SPEC.md disagrees with itself or with the
+// conformance corpus, the disagreement is recorded in docs/spec-defects.md
+// rather than resolved silently here. Every place this implementation had to
+// choose between two readings carries an SD-nnn comment pointing at that file.
+//
+// The pipeline of SPEC §8 is implemented one stage per file, in order:
+//
+//	schema.go      schema load  (precedes §8; see docs/spec-defects.md SD-002)
+//	entry.go       §8.1 entry validation
+//	refs.go        §8.2 external reference resolution
+//	template.go    §8.3 sealed / template expansion
+//	construct.go   §8.4 recursive node construction
+//	defaults.go    §8.5 schema value and default materialization
+//	primitives.go  §8.6 primitive evaluation
+//	validate.go    §8.7 final validation
+//	canonical.go   §8.8 canonicalization
+//
+// Materialize in materialize.go is the only driver, and the only producer of
+// a CanonicalObject (SPEC INV-032).
+package objectmodel
