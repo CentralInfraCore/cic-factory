@@ -143,6 +143,19 @@ normatív forrás mellett — és egyben a munka mérete.
 | `golang/main` | vékony: `Makefile`, `docs`, `features`, `scripts`, `tools`, `md.meta.schema.yaml` |
 | `wasm/main` | teljes gépezet: `MANIFEST.sha256`, `project.yaml`, `project.schema.yaml`, `mk/` (`golang.mk`, `infra.mk`, `wasm.mk`), `configs`, pytest, yamllint, Dockerfile, docker-compose, CI workflow |
 
+**A base-repót magadnak kell klónoznod** — a `run-job.sh` csak a cic-factory-t
+adja oda. A workspace gyökerében (a cic-factory klónod *mellé*, nem bele):
+
+```bash
+git clone git@github.com:CentralInfraCore/base-repo.git
+git -C base-repo branch -r          # ellenőrizd, hogy tényleg ezek az ágak vannak
+git -C base-repo ls-tree --name-only origin/golang/main
+git -C base-repo ls-tree --name-only origin/wasm/main
+```
+
+Ha az ágak nem azok, amiket az orchestrátor mért (`golang/main`, `golang/devel`,
+`wasm/main`, és **nincs** `rust/*`), azt írd le — a mérés elavulhatott.
+
 Mérd meg mindkettőt (`git ls-tree`, `git log`), és döntsd el. A szempont nem az,
 melyik a kisebb, hanem melyikből **kevesebb munka** eljutni oda, hogy a repóban
 Go és Rust quality gate is fut, manifest-integritás van, és a commitok Vault-aláírtak.
