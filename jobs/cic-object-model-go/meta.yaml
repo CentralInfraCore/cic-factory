@@ -35,7 +35,7 @@ agent:
   config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
   model: "claude-opus-5"
   max_turns: "180"
-  session_id: ""
+  session_id: "e07acbec-aa58-429f-a4d5-e805cb06ba79"
 
 # Workplace
 workplace:
@@ -45,23 +45,23 @@ workplace:
   branch: "feature/cic-object-model-go"
 
 # Status
-status: "running"
+status: "error"
 error_message: ""
 
 usage:
-  cost_usd: ""
-  turns: ""
-  max_turns: ""
-  stop_reason: ""
-  duration_ms: ""
-  models: ""
-  total_input_tokens: ""
-  input_tokens: ""
-  cache_read_input_tokens: ""
-  cache_creation_input_tokens: ""
-  output_tokens: ""
+  cost_usd: "2.375071"
+  turns: "25"
+  max_turns: "180"
+  stop_reason: "stop_sequence"
+  duration_ms: "536449"
+  models: "claude-haiku-4-5-20251001,claude-opus-5"
+  total_input_tokens: "1227644"
+  input_tokens: "4933"
+  cache_read_input_tokens: "1131724"
+  cache_creation_input_tokens: "90987"
+  output_tokens: "35790"
 
 timestamps:
   created: "2026-08-07T00:00:00Z"
   started: "2026-08-07T13:44:51Z"
-  completed: ""
+  completed: "2026-08-07T13:54:05Z"
