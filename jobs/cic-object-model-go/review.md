@@ -120,3 +120,68 @@ is őszinte.
 
 **A merge nem jelenti a spec elfogadását.** A következő lépés nem a Rust
 implementáció, hanem a hat korpusz–szöveg ütközés eldöntése.
+
+---
+
+## Utóirat — az SD-004 diagnózisa hiányos, és a `cic` definiálatlan
+
+A review után az orchestrátor és a felhasználó átnézte az SD-004-et. Két
+korrekció, amit az implementáló agent nem talált meg:
+
+### 1. A `cic` sehol nincs definiálva
+
+A `SPEC.md` **egyetlen** helyen említi (`:688`), egy példakód-blokkban az
+INV-033 alatt:
+
+```yaml
+cic:
+  model: "0.1"
+```
+
+Az invariáns szövege csak ennyi: *„Every canonical CIC object MUST carry the
+model version it conforms to."* Sehol nincs kimondva, hogy a `cic` **mi** (tag,
+boríték, keret), **hol** ül (node-on belül, mellette, felette), hogy a név
+kötelező-e, és hogy a „carry" tartalmazást jelent-e vagy csak kiolvashatóságot.
+
+**Ezért az SD-004 rosszul van diagnosztizálva.** Nem két invariáns
+ellentmondása: egy **hiányzó definíció**, amit a korpusz kitalálva töltött be —
+a `cic`-et a root node tagjává tette —, és ez a találgatás ütközik az
+INV-021-gyel. A defekt gyökere az INV-033, nem az INV-021/022.
+
+A felhasználó értékelése: a példa maga rossz — úgy néz ki, mintha a séma adatai
+ülnének a metaadatok között. A szándékot egyikünk sem tudja rekonstruálni, és
+nem is találgatjuk tovább.
+
+### 2. A `metadata:`/`spec:` konvenció itt NEM alkalmazható
+
+Az orchestrátor először azt javasolta, hogy a `cic` a `metadata:` alá kerüljön,
+a `metadata:`/`spec:` keretre hivatkozva, amit mind a nyolc atomic primitív, a
+`schemas/index.yaml` és az új repo saját `spec/index.yaml`-je is használ.
+
+**Ez tévedés volt.** Az a keret **séma-artifactok** konvenciója — kézzel írt,
+leíró dokumentumoké. A conformance `expected.yaml` viszont **materializált
+példány**, amit a library *előállít*. Más kategória; a séma-artifact keretét
+ráhúzni ugyanaz a hibaosztály, mint konvenciót átvinni oda, ahol nem az van.
+
+Ez a repo az **alapobjektum-libet** építi, nem az alapobjektumok által leírt
+szabályrendszert — a kettő keretezése nem cserélhető fel.
+
+### Ami a keret kérdésétől függetlenül áll
+
+1. A `cic` nem lehet a node tagja — nem az INV-021 miatt, hanem mert **nem az
+   objektumról szól**.
+2. A rootnak hordoznia kell a deklarált `shape`-jét, ha egyszer közönséges node.
+
+Mindkettő korpusz-hiba.
+
+### Nyitott döntés — a lib alapkérdése, nem korpusz-részlet
+
+Az INV-033 a lib szintjén állít valamit, de legalább három dolgot jelenthet:
+
+- a **példány** hordozza a modellverziót (a korpusz kimondatlanul ezt választotta)
+- a **típus** hordozza (a lib tudja, nem az adat)
+- a **szerializáció** hordozza (csak wire/fájl szinten létezik)
+
+Ettől függ, hogy a `cic` egyáltalán létezik-e adatként. Amíg ez nincs eldöntve,
+az SD-004 nem javítható — és a Rust implementáció sem indulhat, mert ugyanerre
+a hézagra futna rá.
