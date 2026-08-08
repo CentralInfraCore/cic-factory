@@ -288,6 +288,21 @@ mkdir -p "$FACTORY_CLONE/jobs/$JOB_ID/output"
 export CIC_JOB_ID="$JOB_ID"
 export CIC_WORKDIR="$WORKDIR"
 
+# Docker Compose derives its project name from the directory basename, and a
+# workspace clone has the SAME basename as the orchestrator's live checkout of
+# the same repo. Whichever container starts first owns the name, and every
+# later `docker compose exec` from the other tree silently attaches to it.
+#
+# Measured 2026-08-07 (cic-module-oracle-cloud, then twice on cic-object-model):
+# `make manifest-verify` passed against a broken manifest, `make manifest-update`
+# reported "updated" and changed nothing, and `docs.link-check` went green on a
+# file that did not exist in the tree being checked — all because /app was bound
+# to a different clone. `docker compose run` is unaffected; only `exec` is.
+#
+# Giving each job its own project name removes the collision at the source. The
+# orchestrator's live checkouts keep the default basename-derived name.
+export COMPOSE_PROJECT_NAME="cicjob-$(echo "$JOB_ID" | tr '[:upper:]_' '[:lower:]-')"
+
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUTPUT_FILE="$FACTORY_CLONE/jobs/$JOB_ID/output/agent-output.md"
 [[ "$RESUME" -eq 1 ]] && OUTPUT_FILE="$FACTORY_CLONE/jobs/$JOB_ID/output/agent-output-resume-$STAMP.md"
@@ -427,12 +442,12 @@ echo "[$([ "$NEW_STATUS" = "done" ] && echo "✓" || echo "!")] $JOB_ID — $NEW
 # --- running → done/error + usage (live meta) ---
 python3 - "$META" "$NEW_STATUS" "$END" "$SESSION_ID" \
          "$RUN_COST" "$RUN_TURNS" "$RUN_IN_TOKENS" "$RUN_OUT_TOKENS" "$RUN_DURATION_MS" "$MAX_TURNS" \
-         "$RUN_CACHE_READ" "$RUN_CACHE_CREATE" "$RUN_TOTAL_IN" "$RUN_MODELS" "$RUN_STOP_REASON" <<'PYEOF'
+         "$RUN_CACHE_READ" "$RUN_CACHE_CREATE" "$RUN_TOTAL_IN" "$RUN_MODELS" "$RUN_STOP_REASON" "$RESUME" <<'PYEOF'
 import sys, re
 
 (meta_path, status, end, session_id,
  cost, turns, in_tok, out_tok, duration_ms, max_turns,
- cache_read, cache_create, total_in, models, stop_reason) = sys.argv[1:16]
+ cache_read, cache_create, total_in, models, stop_reason, resume) = sys.argv[1:17]
 
 with open(meta_path) as f:
     content = f.read()
@@ -446,12 +461,52 @@ if session_id:
     else:
         content = re.sub(r'^(\s+model:.*)$', rf'\1\n  session_id: "{session_id}"', content, flags=re.MULTILINE, count=1)
 
-# usage block — cost visibility per job (P3). Rewritten in full on every run.
+# usage block — cost visibility per job (P3).
 # Token fields are aggregated across ALL models the run used (main + auxiliary),
 # from `modelUsage`. Read total_input_tokens, not input_tokens: the latter is
 # only the UNCACHED share and is near-zero on a cached run.
+#
+# On --resume the block is SUMMED into, not overwritten. A resumed job is one
+# job that ran in several pieces, and the cost of the job is the cost of all of
+# them. Overwriting lost the first run entirely: measured 2026-08-07 on
+# cic-object-model-spec, where a 12-turn $4.95 resume erased the 107-turn $12.06
+# run that preceded it, and jobs/index.yaml then under-reported the job by 71%.
+#
+# Latest-wins fields (they describe the final run, not the total): stop_reason,
+# max_turns. Models are unioned. `runs` makes the aggregate visible as such.
+def prev(field, default="0"):
+    m = re.search(rf'^\s+{field}:\s*"([^"]*)"\s*$', content, flags=re.MULTILINE)
+    return m.group(1) if m and m.group(1) != "" else default
+
+def add_int(field, run_value):
+    try:
+        return str(int(prev(field)) + int(run_value or 0))
+    except ValueError:
+        return str(run_value or 0)
+
+def add_float(field, run_value):
+    try:
+        return repr(float(prev(field)) + float(run_value or 0))
+    except ValueError:
+        return str(run_value or 0)
+
+if resume == "1":
+    runs        = add_int("runs", 1) if re.search(r'^\s+runs:', content, flags=re.MULTILINE) else "2"
+    cost        = add_float("cost_usd", cost)
+    turns       = add_int("turns", turns)
+    duration_ms = add_int("duration_ms", duration_ms)
+    in_tok      = add_int("input_tokens", in_tok)
+    out_tok     = add_int("output_tokens", out_tok)
+    cache_read  = add_int("cache_read_input_tokens", cache_read)
+    cache_create= add_int("cache_creation_input_tokens", cache_create)
+    total_in    = add_int("total_input_tokens", total_in)
+    models      = ",".join(sorted(set(filter(None, prev("models", "").split(",") + models.split(",")))))
+else:
+    runs = "1"
+
 usage_block = (
     "usage:\n"
+    f'  runs: "{runs}"\n'
     f'  cost_usd: "{cost}"\n'
     f'  turns: "{turns}"\n'
     f'  max_turns: "{max_turns}"\n'

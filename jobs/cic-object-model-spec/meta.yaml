@@ -52,17 +52,18 @@ status: "done"
 error_message: ""
 
 usage:
-  cost_usd: "4.950915499999999"
-  turns: "12"
+  runs: "2"   # két futás összege (session-limit + --resume); visszamenőleg javítva 2026-08-08
+  cost_usd: "17.0097015"
+  turns: "119"
   max_turns: "150"
   stop_reason: "end_turn"
-  duration_ms: "438984"
-  models: "claude-opus-5"
-  total_input_tokens: "3359121"
-  input_tokens: "24"
-  cache_read_input_tokens: "3075671"
-  cache_creation_input_tokens: "283426"
-  output_tokens: "23148"
+  duration_ms: "2527044"
+  models: "claude-haiku-4-5-20251001,claude-opus-5"
+  total_input_tokens: "15999557"
+  input_tokens: "5321"
+  cache_read_input_tokens: "14874859"
+  cache_creation_input_tokens: "442082"
+  output_tokens: "158298"
 
 timestamps:
   created: "2026-08-07T00:00:00Z"
