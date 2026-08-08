@@ -256,3 +256,67 @@ példakód-blokkban.
 **Amíg ez nincs eldöntve, az SD-004 nem javítható**, és a Rust implementáció
 sem indulhat: ugyanerre a hézagra futna rá, és a két implementáció egyformán
 rossz módon lenne „konform".
+
+---
+
+## SD-018 és a döntés (2026-08-08)
+
+### SD-018 — a §11 folyamatszabálya bootstrap közben holtpontot csinál
+
+`SPEC.md` §11: *„Within 0.x, any change to a normative statement in this
+document is a version increment and MUST arrive in a single change together
+with its conformance vectors and **both implementations**."*
+
+A 17 defekt javítása normatív szövegváltozás → a szabály szerint mindkét
+implementációval kell érkeznie. Rust implementáció nincs. Tehát **a spec saját
+folyamatszabálya tiltja meg a spec javítását.**
+
+A szabály nyilvánvalóan steady state-re készült — az indoklása is ezt mondja:
+„hogy fizikailag kényelmetlen legyen az egyik implementáció szemantikáját a
+másik és a korpusz tudta nélkül változtatni". Bootstrap közben, egy
+implementációval, nem alkalmazható.
+
+### Döntés — B változat
+
+**A §11 kap bootstrap-kivételt:** a „both implementations" követelmény a 0.2-től
+él, amikor ténylegesen létezik kettő. A 0.2 revízió Go-val érkezik; a Rust
+utána jön, valódi második implementációként, egy már konzisztens spec ellen.
+
+Az elvetett alternatíva (A): Rust először, a hibás 0.1 ellen, hogy a szabály
+formálisan teljesüljön. Ez egy teljes implementációt költene ismert defektek
+újrafelfedezésére, és a Rust értéke akkor a legnagyobb, ha konzisztens specet
+ellenőriz.
+
+### Döntés — a modellverzió helye
+
+**A modellverzió a szerializációs/átadási keretben él, nem az objektumban.**
+
+Ebből következik:
+
+- az **INV-033** átfogalmazandó: a verzió a kereté, az INV-034-gyel összhangban
+  (ami már ma is az átadás tulajdonságaként kezeli)
+- a **`cic` tag megszűnik** a node-on — a node-nyelvtan zárt marad, az INV-021
+  és az INV-022 **változatlan és totális**
+- az **SD-004 feloldódik**: a `cic` kikerül a 13 `expected.yaml` rootjából, és a
+  root hordozza a deklarált `shape`-jét, mint bármely más node
+- ha marad dokumentum-szintű verzió-hordozó, azt **külön kell definiálni** —
+  névvel és hellyel, nem példakód-blokkban
+
+Ez az egyetlen feloldás a felmerültek közül, ami **egyetlen invariánst sem
+gyengít**.
+
+### A 0.2 revízió tartalma (egy változásban, a §11 szerint)
+
+| Defekt | Mit |
+|---|---|
+| SD-017 / SD-004 | INV-033 átfogalmazás; `cic` kivezetése; root `shape`; 13 vektor + Go |
+| SD-003 | a §2.2 motiváló példa cseréje (a primitív-belső szerkezet adat, nem node) |
+| SD-005 | INV-005 újrafogalmazása arra, amit az `invalid/008` ténylegesen mér |
+| SD-009 | §8.2 kivétele a 0.1 hatóköréből; INV-031(a) leképezés javítása; a §8 FAILURE-klauzulák számozása |
+| SD-013 | INV-008 hatókörének szűkítése a materializációra |
+| SD-014 | INV-010 kiterjesztése az `origin`-ra |
+| SD-018 | §11 bootstrap-kivétel |
+
+A maradék defektek (underspecified/editorial) ugyanebben a körben mérlegelendők.
+
+**Agent nem indul rá** — a felhasználó döntése. A revízió orchestrátori munka.
