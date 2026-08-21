@@ -12,10 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The repository is shell, YAML and Python. This gate proves those parse
-      # and that the shell passes shellcheck. It does not prove behaviour --
-      # the extracted tooling has no behavioural test suite here yet, and
-      # claiming otherwise would make the gate a decoration.
+      # The repository is shell, YAML and Python. These first steps prove those
+      # parse and that the shell passes shellcheck. Behaviour is covered further
+      # down by two suites -- see the comment above them for what each one can
+      # and cannot see. Nothing here runs a job end to end.
       - name: shell syntax
         run: |
           set -euo pipefail
