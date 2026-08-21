@@ -12,6 +12,10 @@ tools/validate-spec.sh <job-id>
 ```
 Ha exit 1 → stop. Nem folytatható.
 
+A `run-job.sh` ezt magától is lefuttatja és NO-GO-n megáll, tehát a szabály már
+nem csak ezen az úton él. Itt azért futtatod külön, hogy **lásd** az eredményt,
+mielőtt agentet indítasz.
+
 **0b. Evidence-alapú ellenőrzés:**
 Futtasd le: `/job-validate <job-id>`
 
