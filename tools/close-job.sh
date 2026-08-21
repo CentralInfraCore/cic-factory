@@ -14,6 +14,7 @@
 #   C2  its status is exactly awaiting_review
 #   C3  validate-output.sh <job-id> exits GO
 #   C4  jobs/<job-id>/review.md exists, is non-empty, and carries no placeholder
+#   C5  if the run bypassed the spec gate, review.md acknowledges it
 #
 # C4 exists because validate-output.sh deliberately excludes review.md from its
 # own scan (see its O1 find filter) -- so nothing checked the review artifact at
@@ -79,6 +80,41 @@ if [[ -n "$PLACEHOLDERS" ]]; then
     echo "$PLACEHOLDERS" >&2
     refuse "C4 — a review.md befejezetlen (placeholder a fenti sorokban)"
 fi
+
+# --- C5 ---
+# run-job.sh records spec_gate on every run. Until now nothing read it, so a job
+# that never got a machine GO on its spec could walk all the way to done and the
+# only evidence was a field no one opened. A trace nobody reads is not a control.
+#
+# An empty field means an old meta, from before run-job.sh wrote it -- refusing
+# on that would make every pre-existing job uncloseable (51 of them in
+# cic-factory at the time of writing), so it warns instead and says plainly that
+# it cannot be verified.
+# Tolerant of both spec_gate: "skipped" and spec_gate: skipped. The quoted form
+# is what run-job.sh writes, but an awk -F'"' parser reads the unquoted one as
+# empty -- which falls into the "old meta, warn only" branch below. Removing two
+# quote characters would have switched the enforcement off silently.
+SPEC_GATE=$(grep '^spec_gate:' "$META" | head -1 | sed 's/^spec_gate:[[:space:]]*//; s/^"//; s/"$//; s/[[:space:]]*$//' || true)
+case "$SPEC_GATE" in
+    skipped)
+        if ! grep -qE 'spec_gate:[[:space:]]*skipped' "$REVIEW"; then
+            echo "" >&2
+            echo "Ez a futás --skip-spec-gate-tel indult: a specre nem volt gépi GO." >&2
+            echo "A review-nak ezt ki kell mondania. Tedd bele a review.md-be:" >&2
+            echo "" >&2
+            echo "    spec_gate: skipped — <mit ellenőriztél helyette, és mit nem tudsz igazolni>" >&2
+            echo "" >&2
+            refuse "C5 — a futás megkerülte a spec-kaput, és a review.md ezt nem ismeri el"
+        fi
+        echo "[!] spec_gate: skipped — a review elismerte. Ez a job gépi spec-GO nélkül futott."
+        ;;
+    passed)
+        : ;;
+    *)
+        echo "[WARN] a meta.yaml-ben nincs spec_gate érték — ez a job a mező bevezetése"
+        echo "       előttről való. Nem igazolható, hogy a spec-kapu lefutott-e."
+        ;;
+esac
 
 if [[ "$DRY_RUN" -eq 1 ]]; then
     echo "DRY-RUN: mind a négy feltétel teljesül, a job lezárható."

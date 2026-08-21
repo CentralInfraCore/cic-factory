@@ -19,6 +19,12 @@ check() {
 
 # The refusal messages carry a path, so the assertion is on the reason, not on
 # the whole line.
+check_log() {
+    local desc="$1" want="$2" log="$3"
+    if grep -qF -- "$want" "$log"; then echo "  PASS  $desc"; ((pass++))
+    else echo "  FAIL  $desc — nem található: '$want'"; ((fail++)); fi
+}
+
 check_reason() {
     local desc="$1" want="$2" log="$3"
     if grep -qF "$want" "$log"; then echo "  PASS  $desc"; ((pass++))
@@ -29,7 +35,7 @@ check_reason() {
 # claim-evidence table and no placeholder, and a spec that does not ask for a
 # status determination (or O4 would demand a reachability artifact too).
 mkjob() {
-    local root="$1" status="$2"
+    local root="$1" status="$2" spec_gate="${3-}"
     mkdir -p "$root/tools" "$root/jobs/t/output"
     cp "$SRC/close-job.sh" "$SRC/validate-output.sh" "$SRC/update-index.sh" "$root/tools/"
     cat > "$root/jobs/t/input.md" <<'EOF'
@@ -47,6 +53,7 @@ EOF
 schema_version: "1.0"
 job_id: "t"
 status: "$status"
+${spec_gate:+spec_gate: \"$spec_gate\"}
 timestamps:
   created: "2026-01-01T00:00:00Z"
   started: "2026-01-01T00:00:00Z"
@@ -107,6 +114,44 @@ check "placeholderes review.md → elutasít" "1" "$(run_close "$T")"
 check_reason "  és a befejezetlenségre hivatkozik" "C4 — a review.md befejezetlen" "$T/out.log"
 
 check "  a státusz mindvégig érintetlen" "awaiting_review" "$(status_of "$T")"
+rm -rf "$T"
+
+echo
+echo "C5 — a megkerült spec-kaput a review-nak el kell ismernie"
+T=$(mktemp -d); mkjob "$T" awaiting_review skipped
+printf '# Review\n## Amit ellenőriztem\n- a kapu zöld\n' > "$T/jobs/t/review.md"
+check "elismerés nélkül elutasít" "1" "$(run_close "$T")"
+check_reason "  a C5-öt nevezi meg" "C5 — a futás megkerülte a spec-kaput" "$T/out.log"
+check_log "  megmondja mit kell beírni" "spec_gate: skipped —" "$T/out.log"
+check "  a státusz érintetlen" "awaiting_review" "$(status_of "$T")"
+
+printf '# Review\n\nspec_gate: skipped — kézzel néztem át a specet, a K9 nem igazolható.\n' \
+    > "$T/jobs/t/review.md"
+check "elismeréssel lezárható" "0" "$(run_close "$T")"
+check "  a státusz done" "done" "$(status_of "$T")"
+rm -rf "$T"
+
+# Az idézőjel nélküli alak: korábban üresnek olvasódott, és a kikényszerítés
+# némán kimaradt. Két karakter eltávolítása nem kapcsolhatja ki a C5-öt.
+T=$(mktemp -d); mkjob "$T" awaiting_review skipped
+sed -i 's/^spec_gate: .*/spec_gate: skipped/' "$T/jobs/t/meta.yaml"
+printf '# Review\n## Amit ellenőriztem\n- a kapu zöld\n' > "$T/jobs/t/review.md"
+check "idézőjel nélküli 'skipped' is elutasít" "1" "$(run_close "$T")"
+check_reason "  a C5-öt nevezi meg" "C5 — a futás megkerülte a spec-kaput" "$T/out.log"
+rm -rf "$T"
+
+T=$(mktemp -d); mkjob "$T" awaiting_review passed
+printf '# Review\n## Amit ellenőriztem\n- a kapu zöld\n' > "$T/jobs/t/review.md"
+check "spec_gate: passed → nem kér elismerést" "0" "$(run_close "$T")"
+rm -rf "$T"
+
+# Régi meta: a mező hiányzik. Elutasítani annyi lenne, mint a mező bevezetése
+# előtti összes jobot lezárhatatlanná tenni (51 db a cic-factory-ban), ezért
+# figyelmeztet — de kimondja, hogy nem igazolható.
+T=$(mktemp -d); mkjob "$T" awaiting_review
+printf '# Review\n## Amit ellenőriztem\n- a kapu zöld\n' > "$T/jobs/t/review.md"
+check "hiányzó spec_gate → lezárható" "0" "$(run_close "$T")"
+check_log "  de figyelmeztet, hogy nem igazolható" "nincs spec_gate érték" "$T/out.log"
 rm -rf "$T"
 
 echo

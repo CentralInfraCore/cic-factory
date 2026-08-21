@@ -107,7 +107,7 @@ and it runs two behavioural suites:
 |---|---|
 | `tools/test-run-job-finalizer.sh` | the finalizer trap: SIGPIPE, SIGTERM, closed stdout, and never leaving `meta.yaml` claiming `running` when nothing runs (15 checks) |
 | `tools/test-lifecycle-transitions.sh` | the state transition `run-job.sh` performs, and the invariant that it can never write `done` (6 checks) |
-| `tools/test-close-job.sh` | every refusal in `close-job.sh` — wrong status, failing output gate, missing/empty/unfinished review — each against a fixture that violates it (26 checks) |
+| `tools/test-close-job.sh` | every refusal in `close-job.sh` — wrong status, failing output gate, missing/empty/unfinished review, an unacknowledged spec-gate bypass — each against a fixture that violates it (37 checks) |
 | `tools/test-run-job-spec-gate.sh` | that `run-job.sh` refuses a NO-GO spec, that `--skip-spec-gate` still starts, and that the bypass is recorded in `meta.yaml` (15 checks) |
 
 Every step was measured against a deliberately broken copy before it landed,
