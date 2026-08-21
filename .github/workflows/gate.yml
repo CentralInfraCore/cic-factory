@@ -56,6 +56,16 @@ jobs:
             echo "compiled: ${#py[@]} files"
           fi
 
+      # Behaviour, not just syntax. The finalizer suite covers the SIGPIPE/SIGTERM
+      # incident; the lifecycle suite covers the transition run-job.sh performs,
+      # which the finalizer suite is structurally blind to -- it only extracts the
+      # prelude, and the status decision lives below it.
+      - name: finalizer behaviour
+        run: bash tools/test-run-job-finalizer.sh
+
+      - name: lifecycle transitions
+        run: bash tools/test-lifecycle-transitions.sh
+
       - name: licence present and unmodified
         run: |
           set -euo pipefail

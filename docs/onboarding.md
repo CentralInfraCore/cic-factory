@@ -102,12 +102,22 @@ git push origin main
 ./tools/run-job.sh pelda-job agent-01
 ```
 
+A `run-job.sh` sikeres futás után `awaiting_review` állapotot hagy, nem `done`-t.
+Az agent exit 0-ja azt jelenti, hogy az agent befejezte — nem azt, hogy a kimenet
+elfogadható. A `done`-hoz output-kapu és review artifact kell.
+
 ### 4. Review és merge
 
 ```bash
 gh pr list --repo CentralInfraCore/cic-factory
 # Review a feature branch output/ mappájában
 # Merge GitHubon
+```
+
+### 5. Lezárás
+
+```bash
+/job-close pelda-job     # output-kapu + review.md + awaiting_review → done
 ```
 
 ---

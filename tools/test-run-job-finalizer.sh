@@ -64,9 +64,11 @@ check "status változatlan" "running" "$(echo "$out" | head -1 | cut -d'|' -f2)"
 
 echo
 echo "3. Normál út: FINALIZED=1 → a trap nem ír felül"
-out=$(run_case 'WE_SET_RUNNING=1; FINALIZED=1; exit 0' "done")
+# awaiting_review, not done: this is the state run-job.sh actually leaves behind.
+# Exit 0 says the agent finished; only /job-close may say the job is acceptable.
+out=$(run_case 'WE_SET_RUNNING=1; FINALIZED=1; exit 0' "awaiting_review")
 check "exit 0 megőrizve" "0" "${out%%|*}"
-check "status változatlan" "done" "$(echo "$out" | head -1 | cut -d'|' -f2)"
+check "status változatlan" "awaiting_review" "$(echo "$out" | head -1 | cut -d'|' -f2)"
 
 echo
 echo '4. Lezárt stdout ("... | head"): a script véget ér, DE a finalizer lefut'
