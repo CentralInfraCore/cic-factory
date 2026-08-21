@@ -66,6 +66,9 @@ jobs:
       - name: lifecycle transitions
         run: bash tools/test-lifecycle-transitions.sh
 
+      - name: close-job refusals
+        run: bash tools/test-close-job.sh
+
       - name: licence present and unmodified
         run: |
           set -euo pipefail

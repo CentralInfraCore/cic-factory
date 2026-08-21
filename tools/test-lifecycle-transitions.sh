@@ -52,10 +52,18 @@ case "$ENUM" in
 esac
 
 echo
-echo "4. A done-átmenet a /job-close-ban él"
-grep -q 'awaiting_review → done' "$CLOSE" \
-    && { echo "  PASS  a job-close deklarálja az awaiting_review → done átmenetet"; ((pass++)); } \
-    || { echo "  FAIL  a job-close nem deklarálja az átmenetet"; ((fail++)); }
+echo "4. A done-átmenet végrehajtható, és a /job-close azt hívja"
+# Korábban ez a lépés a job-close.md szövegét grepelte. Az a konvenció meglétét
+# bizonyította, nem az átmenet biztonságát: bárki beírhatta kézzel a done-t.
+# A feltételek kikényszerítését a tools/test-close-job.sh méri (26 check);
+# itt csak az köt, hogy a végrehajtható út létezik és a parancs azt használja.
+CLOSER="$(cd "$(dirname "$0")" && pwd)/close-job.sh"
+[[ -x "$CLOSER" ]] \
+    && { echo "  PASS  tools/close-job.sh létezik és futtatható"; ((pass++)); } \
+    || { echo "  FAIL  nincs végrehajtható tools/close-job.sh"; ((fail++)); }
+grep -q 'close-job.sh' "$CLOSE" \
+    && { echo "  PASS  a /job-close a scriptet hívja, nem leírja"; ((pass++)); } \
+    || { echo "  FAIL  a /job-close nem hívja a close-job.sh-t"; ((fail++)); }
 
 echo
 echo "==== $pass PASS / $fail FAIL ===="
