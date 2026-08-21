@@ -76,5 +76,7 @@ signature still holds.
 
 ## Licence
 
-Intended: **AGPL-3.0-or-later**, with attribution — the common core stays open.
-Not yet applied; no `LICENSE` file has been committed.
+**AGPL-3.0-or-later**, with an attribution term under section 7(b) — the common
+core stays open, including for network use, while products built against its
+contract boundary stay free. See [`LICENSE.md`](LICENSE.md) for why this differs
+from the CC BY-NC-SA 4.0 licence most CIC repositories inherit.
