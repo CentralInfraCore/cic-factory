@@ -1,0 +1,63 @@
+name: gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The repository is shell, YAML and Python. This gate proves those parse
+      # and that the shell passes shellcheck. It does not prove behaviour --
+      # the extracted tooling has no behavioural test suite here yet, and
+      # claiming otherwise would make the gate a decoration.
+      - name: shell syntax
+        run: |
+          set -euo pipefail
+          n=0
+          while IFS= read -r f; do
+            bash -n "$f"
+            n=$((n+1))
+          done < <(git ls-files '*.sh')
+          echo "bash -n: $n scripts"
+          test "$n" -gt 0
+
+      - name: shellcheck
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          git ls-files '*.sh' | xargs shellcheck --severity=error
+
+      - name: yaml and json parse
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, subprocess, sys, yaml
+          files = subprocess.check_output(
+              ["git", "ls-files", "*.yaml", "*.yml", "*.json"], text=True).split()
+          for f in files:
+              with open(f, encoding="utf-8") as fh:
+                  (json.load if f.endswith(".json") else yaml.safe_load)(fh)
+          print(f"parsed: {len(files)} files")
+          sys.exit(0 if files else 1)
+          PY
+
+      - name: python compile
+        run: |
+          set -euo pipefail
+          mapfile -t py < <(git ls-files '*.py')
+          if [ "${#py[@]}" -gt 0 ]; then
+            python3 -m py_compile "${py[@]}"
+            echo "compiled: ${#py[@]} files"
+          fi
+
+      - name: licence present and unmodified
+        run: |
+          set -euo pipefail
+          echo "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0  LICENSE" \
+            | sha256sum -c -
