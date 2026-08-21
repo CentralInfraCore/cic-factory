@@ -95,14 +95,23 @@ MERGE / VISSZAKÜLDVE — indoklás egy mondatban.
 hogy a következő session (vagy a felhasználó) meg tudja nézni, mit ellenőriztél
 ténylegesen, és mit vettél át az agent summaryjából.
 
-### 5. running → done (live meta.yaml)
+### 5. awaiting_review → done (live meta.yaml)
+
+Ez az **egyetlen** átmenet, ami `done`-t ír, és csak akkor legális, ha a 3. pont
+output-kapuja GO-t adott és a 4. pont `review.md`-je létezik. A job ide
+`awaiting_review` állapotban érkezik — a `run-job.sh` és a `/job-run` is oda
+állítja, mert az agent exit 0-ja azt jelenti, hogy az agent befejezte, nem azt,
+hogy a kimenet elfogadható.
 
 ```python
 status: "done"
 timestamps.completed: "<ISO 8601 now>"
 ```
 
-A `usage:` blokkot (költség, turns, tokenek) a `run-job.sh` már kitöltötte — ne írd át kézzel.
+A `usage:` blokk attól függ, melyik úton futott a job:
+
+- **`run-job.sh`** — már kitöltötte a `claude --output-format json`-ból, ne írd át kézzel
+- **`/job-run` (Agent tool)** — a `/job-run` 5. pontja tölti ki; ha üres, ott maradt ki
 
 ### 6. Commit és push
 

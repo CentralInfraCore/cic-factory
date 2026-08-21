@@ -29,11 +29,18 @@ A szülő (`CIC/CLAUDE.md`) tartalmazza az ökoszisztéma-szintű kontextust (bo
 ### Job lifecycle
 
 ```
-orchestrátor: input.md + meta.yaml → commit main → push
+orchestrátor: input.md + meta.yaml → commit main → push          [pending]
 run-job.sh:   pending → running commit → workspace klón → feature branch
 agent:        olvas jobs/<job-id>/ → ír output/ → commitol + pushol feature/<job-id>
-orchestrátor: review GitHubon → merge main
+run-job.sh:   agent exit 0 → awaiting_review                     [NEM done]
+orchestrátor: validate-output.sh + review.md → done → merge main
 ```
+
+**`agent_done` ≠ `done`.** Az agent exit 0-ja egy állítás az agentről: befejezte.
+A `done` egy állítás a jobról: a kimenete elfogadható. A kettő különböző dolog,
+és külön állapot tartozik hozzájuk. Az `awaiting_review`-ból `done`-ba kizárólag
+a `/job-close` visz, mert csak az futtat output-kaput és csak az termel review
+artifactot — a `run-job.sh` egyiket sem teszi, tehát nincs mire alapoznia.
 
 ### Git a bizalom forrása
 
@@ -91,7 +98,7 @@ agent:
 workplace:
   repos: []                   # pl. ["CIC-Relay"] — workspace/<repo>/ alá klónozva
   branch: ""                  # feature/<job-id>
-status: "pending"             # pending | running | done | error
+status: "pending"             # pending | running | awaiting_review | done | error
 error_message: ""
 timestamps:
   created: ""
@@ -105,7 +112,7 @@ timestamps:
 
 | Parancs | Mit csinál |
 |---|---|
-| `./tools/run-job.sh <job-id> [agent-id]` | Teljes lifecycle: klón, running→done, commit, push. Injektálja a `kb_focus`-t, `--max-turns` guardot ad, és JSON-ból kiírja a költséget a `meta.yaml`-ba |
+| `./tools/run-job.sh <job-id> [agent-id]` | Végrehajtás: klón, running→awaiting_review, commit, push. **Nem zár le** — a `done` a `/job-close` dolga. Injektálja a `kb_focus`-t, `--max-turns` guardot ad, és JSON-ból kiírja a költséget a `meta.yaml`-ba |
 | `./tools/validate-spec.sh <job-id>` | **Gépi kapu indítás előtt** (K1–K11). NO-GO → ne indítsd az agentet |
 | `./tools/validate-output.sh <job-id>` | **Gépi kapu merge előtt** (O1–O5). NO-GO → ne zárd le a jobot |
 | `./tools/update-index.sh` | `jobs/index.yaml` újragenerálása (modell, költség, turns, `totals:`) |

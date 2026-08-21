@@ -177,6 +177,9 @@ else
     if [[ "$STATUS" == "running" ]]; then
         echo "[WARN] Job már fut. Folytatod? (y/N)"; read -r ans; [[ "$ans" == "y" ]] || exit 1
     fi
+    if [[ "$STATUS" == "awaiting_review" ]]; then
+        echo "[WARN] Job lefutott, review-ra vár. Újrafuttatod? (y/N)"; read -r ans; [[ "$ans" == "y" ]] || exit 1
+    fi
     if [[ "$STATUS" == "done" ]]; then
         echo "[WARN] Job már kész. Újrafuttatod? (y/N)"; read -r ans; [[ "$ans" == "y" ]] || exit 1
     fi
@@ -436,10 +439,19 @@ else
 fi
 
 END=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-NEW_STATUS=$([[ $EXIT_CODE -eq 0 ]] && echo "done" || echo "error")
-echo "[$([ "$NEW_STATUS" = "done" ] && echo "✓" || echo "!")] $JOB_ID — $NEW_STATUS ($END)"
+# Exit 0 means the agent finished, not that its output is acceptable. This script
+# runs no output gate and produces no review artifact, so it has no basis for
+# claiming "done" -- that transition belongs to the orchestrator, after
+# validate-output.sh passes and review.md exists. See /job-close.
+NEW_STATUS=$([[ $EXIT_CODE -eq 0 ]] && echo "awaiting_review" || echo "error")
+echo "[$([ "$NEW_STATUS" = "awaiting_review" ] && echo "✓" || echo "!")] $JOB_ID — $NEW_STATUS ($END)"
+# `[[ ... ]] && echo` would return 1 under `set -e` whenever the condition is
+# false -- i.e. it would kill the script on exactly the error path.
+if [[ "$NEW_STATUS" == "awaiting_review" ]]; then
+    echo "[*] Következő lépés: /job-close $JOB_ID — output-kapu + review.md, az zárja done-ra"
+fi
 
-# --- running → done/error + usage (live meta) ---
+# --- running → awaiting_review/error + usage (live meta) ---
 python3 - "$META" "$NEW_STATUS" "$END" "$SESSION_ID" \
          "$RUN_COST" "$RUN_TURNS" "$RUN_IN_TOKENS" "$RUN_OUT_TOKENS" "$RUN_DURATION_MS" "$MAX_TURNS" \
          "$RUN_CACHE_READ" "$RUN_CACHE_CREATE" "$RUN_TOTAL_IN" "$RUN_MODELS" "$RUN_STOP_REASON" "$RESUME" <<'PYEOF'

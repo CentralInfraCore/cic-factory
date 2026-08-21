@@ -100,12 +100,22 @@ should know.
 ## What the gate proves, and what it does not
 
 `.github/workflows/gate.yml` checks that the shell, YAML, JSON and Python parse,
-that shellcheck finds no error-severity defects, and that `LICENSE` is
-unmodified. Every step was measured against a deliberately broken copy before
-it landed, because a gate that cannot go red is decoration.
+that shellcheck finds no error-severity defects, that `LICENSE` is unmodified,
+and it runs two behavioural suites:
 
-It does **not** prove behaviour. The extracted tooling has no behavioural test
-suite in this repository yet, and claiming otherwise would make the gate a lie.
+| suite | what it covers |
+|---|---|
+| `tools/test-run-job-finalizer.sh` | the finalizer trap: SIGPIPE, SIGTERM, closed stdout, and never leaving `meta.yaml` claiming `running` when nothing runs (15 checks) |
+| `tools/test-lifecycle-transitions.sh` | the state transition `run-job.sh` performs, and the invariant that it can never write `done` (5 checks) |
+
+Every step was measured against a deliberately broken copy before it landed,
+because a gate that cannot go red is decoration. That measurement is not a
+formality: the finalizer suite passed 15/15 against a `run-job.sh` sabotaged to
+close jobs as `done`, because it only extracts the prelude and the status
+decision lives below it. The lifecycle suite exists to cover that blind spot.
+
+The gate still does **not** prove that the tooling works end to end. There is no
+test that runs a job. What it proves is bounded, and the bounds are written above.
 
 ## A note on the commit signatures
 

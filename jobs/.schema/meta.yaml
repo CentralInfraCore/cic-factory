@@ -36,7 +36,18 @@ workplace:
   branch: ""                # feature branch neve, pl. "feature/kb-repos"
 
 # Status
-status: "pending"           # pending | running | done | error
+#
+#   pending -> running -> awaiting_review -> done
+#                      \-> error
+#
+# Who may set what:
+#   run-job.sh          pending -> running, and running -> awaiting_review | error
+#   the orchestrator    awaiting_review -> done, and only after validate-output.sh
+#                       passed and jobs/<job-id>/review.md exists
+#
+# An agent exiting 0 means the agent finished, not that the job is acceptable.
+# Those are different claims and they get different states.
+status: "pending"           # pending | running | awaiting_review | done | error
 error_message: ""           # only when status: error
 
 # Usage — written by run-job.sh from `claude --output-format json`.
