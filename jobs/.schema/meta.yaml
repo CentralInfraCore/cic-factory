@@ -52,6 +52,8 @@ spec_gate: ""               # written by run-job.sh: "passed" | "skipped"
                             # "skipped" means it was started with --skip-spec-gate,
                             # i.e. no machine GO -- the review has to know that.
                             # Empty means the job predates this field.
+                            # "skipped" blocks close-job.sh unless review.md
+                            # acknowledges it -- see /job-close C5.
 error_message: ""           # only when status: error
 
 # Usage — written by run-job.sh from `claude --output-format json`.

@@ -111,12 +111,25 @@ megnevezi, melyik:
 | C2 | a státusz pontosan `awaiting_review` |
 | C3 | a `validate-output.sh` GO-t ad |
 | C4 | a `review.md` létezik, nem üres, és nincs benne placeholder |
+| C5 | ha a futás `--skip-spec-gate`-tel indult, a `review.md` ezt elismeri |
 
 A C3 újrafuttatja a 3. pont kapuját. Ez szándékos: a 3. pont azért van, hogy te
 **lásd** az eredményt, mielőtt a review-t írod; a C3 azért, hogy a lezárás ne
 azon múljon, hogy tényleg lefuttattad-e.
 
 `--dry-run` megnézi a feltételeket anélkül, hogy lezárna.
+
+**A C5-ről.** Ha a `meta.yaml`-ben `spec_gate: "skipped"` áll, ez a job gépi
+spec-GO nélkül futott. A menekülőút legális, de a lezárás nem mehet úgy, hogy ez
+csak egy mezőben van, amibe senki nem néz. Írd a `review.md`-be:
+
+```
+spec_gate: skipped — <mit ellenőriztél helyette, és mit nem tudsz igazolni>
+```
+
+Ha a mező üres, a job a mező bevezetése előttről való: a script figyelmeztet, de
+átenged. Ilyenkor nem igazolható, hogy a spec-kapu lefutott-e — ezt a
+„nem igazolt" sorba írd.
 
 A `usage:` blokk attól függ, melyik úton futott a job:
 
