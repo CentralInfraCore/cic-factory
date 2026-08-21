@@ -32,9 +32,14 @@ check_not_log() {
 # A spec that passes validate-spec.sh: concrete source path (K1), an explicit
 # forbidden shortcut (K3), a named output file (K4), and a required
 # claim-evidence table (K8). No Go audit, so K7/K9 stay out of it.
+# run-job.sh derives the agent config dir as $HOME/.claude-personal/agents/<id>
+# and refuses if it is missing -- before the spec gate. Each case therefore gets
+# its own HOME, so the suite does not silently depend on the developer's machine
+# having an agent installed. It did, and CI caught it: locally green, on a clean
+# runner every case died before reaching the gate.
 mkjob() {
     local root="$1" good="$2"
-    mkdir -p "$root/tools" "$root/jobs/t"
+    mkdir -p "$root/tools" "$root/jobs/t" "$root/home/.claude-personal/agents/agent-01"
     cp "$SRC/run-job.sh" "$SRC/validate-spec.sh" "$SRC/update-index.sh" "$root/tools/"
     if [[ "$good" == "good" ]]; then
         cat > "$root/jobs/t/input.md" <<'EOF'
@@ -73,7 +78,7 @@ EOF
 
 run_job() {
     local root="$1"; shift
-    ( cd "$root" && bash tools/run-job.sh t "$@" ) >"$root/out.log" 2>&1
+    ( cd "$root" && HOME="$root/home" bash tools/run-job.sh t "$@" ) >"$root/out.log" 2>&1
     echo $?
 }
 field() { grep "^$2:" "$1/jobs/t/meta.yaml" | head -1 | awk -F'"' '{print $2}'; }
