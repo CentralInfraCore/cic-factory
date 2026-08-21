@@ -95,18 +95,28 @@ MERGE / VISSZAKÜLDVE — indoklás egy mondatban.
 hogy a következő session (vagy a felhasználó) meg tudja nézni, mit ellenőriztél
 ténylegesen, és mit vettél át az agent summaryjából.
 
-### 5. awaiting_review → done (live meta.yaml)
+### 5. awaiting_review → done
 
-Ez az **egyetlen** átmenet, ami `done`-t ír, és csak akkor legális, ha a 3. pont
-output-kapuja GO-t adott és a 4. pont `review.md`-je létezik. A job ide
-`awaiting_review` állapotban érkezik — a `run-job.sh` és a `/job-run` is oda
-állítja, mert az agent exit 0-ja azt jelenti, hogy az agent befejezte, nem azt,
-hogy a kimenet elfogadható.
-
-```python
-status: "done"
-timestamps.completed: "<ISO 8601 now>"
+```bash
+bash tools/close-job.sh $JOB_ID
 ```
+
+Ne kézzel írd át a `meta.yaml`-t. Ez az **egyetlen** átmenet, ami `done`-t ír, és
+a script kikényszeríti a feltételeit — ha bármelyik nem teljesül, elutasít és
+megnevezi, melyik:
+
+| | feltétel |
+|---|---|
+| C1 | van `meta.yaml` |
+| C2 | a státusz pontosan `awaiting_review` |
+| C3 | a `validate-output.sh` GO-t ad |
+| C4 | a `review.md` létezik, nem üres, és nincs benne placeholder |
+
+A C3 újrafuttatja a 3. pont kapuját. Ez szándékos: a 3. pont azért van, hogy te
+**lásd** az eredményt, mielőtt a review-t írod; a C3 azért, hogy a lezárás ne
+azon múljon, hogy tényleg lefuttattad-e.
+
+`--dry-run` megnézi a feltételeket anélkül, hogy lezárna.
 
 A `usage:` blokk attól függ, melyik úton futott a job:
 

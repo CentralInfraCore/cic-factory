@@ -106,7 +106,8 @@ and it runs two behavioural suites:
 | suite | what it covers |
 |---|---|
 | `tools/test-run-job-finalizer.sh` | the finalizer trap: SIGPIPE, SIGTERM, closed stdout, and never leaving `meta.yaml` claiming `running` when nothing runs (15 checks) |
-| `tools/test-lifecycle-transitions.sh` | the state transition `run-job.sh` performs, and the invariant that it can never write `done` (5 checks) |
+| `tools/test-lifecycle-transitions.sh` | the state transition `run-job.sh` performs, and the invariant that it can never write `done` (6 checks) |
+| `tools/test-close-job.sh` | every refusal in `close-job.sh` — wrong status, failing output gate, missing/empty/unfinished review — each against a fixture that violates it (26 checks) |
 
 Every step was measured against a deliberately broken copy before it landed,
 because a gate that cannot go red is decoration. That measurement is not a
