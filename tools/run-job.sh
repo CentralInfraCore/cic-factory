@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 # Job lifecycle wrapper
-# Használat: ./tools/run-job.sh <job-id> [agent-id] [--resume]
+# Használat: ./tools/run-job.sh <job-id> [agent-id] [--resume] [--skip-spec-gate]
+#
+#   --skip-spec-gate
+#              Kihagyja a kötelező validate-spec.sh kaput. Csak akkor, ha
+#              tudatosan iterálsz egy specen és tudod, hogy még NO-GO.
+#              Nyomot hagy: a meta.yaml spec_gate mezőjébe "skipped" kerül,
+#              hogy a review lássa, ez a futás kapu nélkül indult.
 #
 #   --resume   Session-limit/error miatt megszakadt futás folytatása
 #              UGYANABBAN a Claude Code session-ben (claude --resume <session_id>).
@@ -97,9 +103,11 @@ shift
 
 AGENT_ID="agent-01"
 RESUME=0
+SKIP_SPEC_GATE=0
 for arg in "$@"; do
     case "$arg" in
         --resume) RESUME=1 ;;
+        --skip-spec-gate) SKIP_SPEC_GATE=1 ;;
         *) AGENT_ID="$arg" ;;
     esac
 done
@@ -185,18 +193,48 @@ else
     fi
 fi
 
+# --- spec gate ---
+# /job-run makes this mandatory and forbids starting an agent on NO-GO. The
+# script used to skip it entirely, so the rule only held on the path nobody
+# takes. It runs before pending → running, so a refusal leaves the job untouched.
+#
+# validate-spec.sh resolves jobs/<id>/ relative to the current directory, hence
+# the subshell cd.
+if [[ "$SKIP_SPEC_GATE" -eq 1 ]]; then
+    echo "[WARN] --skip-spec-gate — a gépi spec-kapu KIHAGYVA. Ez a futás nem igazolt."
+else
+    if ! ( cd "$WORKDIR" && bash tools/validate-spec.sh "$JOB_ID" ); then
+        echo "" >&2
+        echo "[ERROR] A spec-kapu NO-GO-t adott — az agent nem indul." >&2
+        echo "        Javítsd az input.md-t / meta.yaml-t, vagy ha tudatosan" >&2
+        echo "        iterálsz egy még hiányos specen: --skip-spec-gate." >&2
+        exit 1
+    fi
+fi
+
 NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # --- pending → running ---
 echo "[*] $JOB_ID — running ($NOW)"
-python3 - "$META" "$NOW" <<'PYEOF'
+python3 - "$META" "$NOW" "$SKIP_SPEC_GATE" <<'PYEOF'
 import sys, re
-meta_path, now = sys.argv[1], sys.argv[2]
+meta_path, now, skip_spec_gate = sys.argv[1], sys.argv[2], sys.argv[3]
 with open(meta_path) as f:
     content = f.read()
 content = re.sub(r'^status:.*$', 'status: "running"', content, flags=re.MULTILINE)
 content = re.sub(r'^\s+started:.*$', f'  started: "{now}"', content, flags=re.MULTILINE)
 content = re.sub(r'^\s+completed:.*$', '  completed: ""', content, flags=re.MULTILINE)
+
+# A bypass has to leave a trace, or it is a hole in the same evidence chain this
+# repository is built on. Written whether skipped or not, so an absent field
+# means an old meta rather than a clean run.
+gate = "skipped" if skip_spec_gate == "1" else "passed"
+if re.search(r'^spec_gate:', content, flags=re.MULTILINE):
+    content = re.sub(r'^spec_gate:.*$', f'spec_gate: "{gate}"', content, flags=re.MULTILINE)
+else:
+    content = re.sub(r'^(status:.*)$', rf'\1\nspec_gate: "{gate}"', content,
+                     count=1, flags=re.MULTILINE)
+
 with open(meta_path, "w") as f:
     f.write(content)
 PYEOF

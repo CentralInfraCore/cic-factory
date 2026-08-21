@@ -69,6 +69,9 @@ jobs:
       - name: close-job refusals
         run: bash tools/test-close-job.sh
 
+      - name: run-job spec gate
+        run: bash tools/test-run-job-spec-gate.sh
+
       - name: licence present and unmodified
         run: |
           set -euo pipefail
