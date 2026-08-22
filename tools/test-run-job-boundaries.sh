@@ -126,11 +126,16 @@ R=$(mkfactory)
 printf '# T\nÚt: $MY_DEPLOY_PATH és séma: {"$ref": "x"}\n## Output\n`output/report.md`\n' > "$R/repo/jobs/t/input.md"
 commit_spec "$R"
 run_job "$R" MY_DEPLOY_PATH=/opt/valami >/dev/null
-check "figyelmeztet"              "1" "$(grep -c 'nem' "$R/run.log" | head -1 >/dev/null; grep -c 'MY_DEPLOY_PATH' "$R/run.log")"
+# MAGÁRA A FIGYELMEZTETŐ SORRA mérünk, nem az egész naplóra: az tartalmazza a
+# git push kimenetét is, benne a `refs/heads/...`-szal. Az első változat a
+# csupasz `ref` részstringre grepelt az egész logban, lokálisan átment, CI-ban
+# elbukott -- a napló ott bővebb.
+WARNLINE=$(grep 'szó szerint maradnak' "$R/run.log" || true)
+check "figyelmeztet"                   "1" "$(printf '%s' "$WARNLINE" | grep -c 'MY_DEPLOY_PATH')"
 check "  megmondja hova kell felvenni" "1" "$(grep -c 'FACTORY_PROMPT_VARS' "$R/run.log")"
 # A $ref nincs beállítva a környezetben, tehát nem szól rá -- különben minden
 # kódrészletet tartalmazó spec zajt termelne.
-check "  a \$ref-re NEM szól"     "0" "$(grep -c 'ref' "$R/run.log")"
+check "  a \$ref-et NEM sorolja fel"  "0" "$(printf '%s' "$WARNLINE" | grep -cw 'ref')"
 rm -rf "$R"
 
 echo
@@ -139,7 +144,7 @@ R=$(mkfactory)
 printf '# T\nÚt: $MY_DEPLOY_PATH\n## Output\n`output/report.md`\n' > "$R/repo/jobs/t/input.md"
 commit_spec "$R"
 run_job "$R" MY_DEPLOY_PATH=/opt/valami FACTORY_PROMPT_VARS="MY_DEPLOY_PATH" >/dev/null
-check "nincs figyelmeztetés" "0" "$(grep -c 'nem engedélyezettek' "$R/run.log")"
+check "nincs figyelmeztetés" "0" "$(grep -c 'szó szerint maradnak' "$R/run.log")"
 check "  és be is helyettesült" "1" "$(prompt_of "$R" | grep -c '/opt/valami')"
 rm -rf "$R"
 
