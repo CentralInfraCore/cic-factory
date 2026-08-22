@@ -119,6 +119,36 @@ check "nem helyettesült be" "0" "$(prompt_of "$R" | grep -c 'SHOULD-NOT-APPEAR'
 rm -rf "$R"
 
 echo
+echo "  A beállított, de nem engedélyezett változóra figyelmeztet"
+# Ez a néma degradáció ellen van: a `${CIC_RELAY_PATH}` szó szerint maradna az
+# agent promptjában, és semmi nem szólna róla.
+R=$(mkfactory)
+printf '# T\nÚt: $MY_DEPLOY_PATH és séma: {"$ref": "x"}\n## Output\n`output/report.md`\n' > "$R/repo/jobs/t/input.md"
+commit_spec "$R"
+run_job "$R" MY_DEPLOY_PATH=/opt/valami >/dev/null
+# MAGÁRA A FIGYELMEZTETŐ SORRA mérünk, nem az egész naplóra: az tartalmazza a
+# git push kimenetét is, benne a `refs/heads/...`-szal. Az első változat a
+# csupasz `ref` részstringre grepelt az egész logban, lokálisan átment, CI-ban
+# elbukott -- a napló ott bővebb.
+WARNLINE=$(grep 'szó szerint maradnak' "$R/run.log" || true)
+check "figyelmeztet"                   "1" "$(printf '%s' "$WARNLINE" | grep -c 'MY_DEPLOY_PATH')"
+check "  megmondja hova kell felvenni" "1" "$(grep -c 'FACTORY_PROMPT_VARS' "$R/run.log")"
+# A $ref nincs beállítva a környezetben, tehát nem szól rá -- különben minden
+# kódrészletet tartalmazó spec zajt termelne.
+check "  a \$ref-et NEM sorolja fel"  "0" "$(printf '%s' "$WARNLINE" | grep -cw 'ref')"
+rm -rf "$R"
+
+echo
+echo "  Az engedélyezett változóra nem figyelmeztet"
+R=$(mkfactory)
+printf '# T\nÚt: $MY_DEPLOY_PATH\n## Output\n`output/report.md`\n' > "$R/repo/jobs/t/input.md"
+commit_spec "$R"
+run_job "$R" MY_DEPLOY_PATH=/opt/valami FACTORY_PROMPT_VARS="MY_DEPLOY_PATH" >/dev/null
+check "nincs figyelmeztetés" "0" "$(grep -c 'szó szerint maradnak' "$R/run.log")"
+check "  és be is helyettesült" "1" "$(prompt_of "$R" | grep -c '/opt/valami')"
+rm -rf "$R"
+
+echo
 echo "  Hibás vagy titoknak látszó név a listában"
 R=$(mkfactory)
 printf '# T\n## Output\n`output/report.md`\n' > "$R/repo/jobs/t/input.md"
