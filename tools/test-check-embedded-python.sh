@@ -116,6 +116,24 @@ check_log "  megmondja miért baj" "E1 nem látja" "$R/out.log"
 rm -rf "$R"
 
 echo
+echo "A 'python3' szó a sorban nem jelent python3 parancsot"
+# A `cat > "$dir/python3" <<FAKE` tartalmazza a szót, de nem python3-at hív.
+# A checker első változata emiatt egy shell-heredocot Python-blokknak nézett,
+# és a saját suite-ját buktatta el.
+R=$(mkroot)
+cat > "$R/tools/wrapper.sh" <<'FIX'
+#!/usr/bin/env bash
+D=$(mktemp -d)
+cat > "$D/python3" <<FAKE
+#!/usr/bin/env bash
+this is not python at all
+FAKE
+FIX
+commit "$R"
+check "exit 0" "0" "$(run "$R")"
+rm -rf "$R"
+
+echo
 echo "Nem-Python heredoc nem esik a szabály alá"
 R=$(mkroot)
 cat > "$R/tools/shell.sh" <<'FIX'

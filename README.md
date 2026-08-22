@@ -103,6 +103,14 @@ should know.
 
 ## What the gate proves, and what it does not
 
+## What this needs from the machine
+
+Linux with the GNU userland. The scripts use `date -d`, `tar --sort`,
+`find -printf` and `stat -c`; on a BSD or macOS toolchain those flags mean
+something else or do not exist. `tools/check-dependencies.sh` lists the full set
+(`--list`) and verifies it, and the gate runs it — so this is checked, not
+assumed.
+
 `.github/workflows/gate.yml` checks that the shell, YAML, JSON and Python parse,
 that shellcheck finds no error-severity defects, that `LICENSE` is unmodified,
 and it runs two behavioural suites:
@@ -116,10 +124,11 @@ and it runs two behavioural suites:
 | `tools/test-install-claude-hooks.sh` | that the hook installer converges — running it five times leaves the same file — and does not touch hooks it does not own (10 checks) |
 | `tools/test-stale-jobs.sh` | that a job stuck in `running` past its lease is detected, against fixtures that are stuck on purpose, including a status hidden behind a trailing comment (18 checks) |
 | `tools/test-check-docs.sh` | that the docs checker itself can fail — broken links, schema duplication, and files not yet added to git — against fixtures that violate each (12 checks) |
+| `tools/test-check-dependencies.sh` | that the dependency checker can fail — each required command hidden from `PATH` in turn, a missing Python module, and a `date` without GNU `-d` (27 checks) |
 | `tools/test-run-job-e2e.sh` | **a whole job, `pending` → `awaiting_review` → `done`**, driven by the `echo` runner — no agent, no network, no cost (17 checks) |
 | `tools/test-validate-meta.sh` | that the meta schema rejects what it should — a typo'd field name, an invalid `status`, an empty model, a missing block, a bad `job_id`, a schema that is itself malformed (17 checks) |
 | `tools/test-verify-signatures.sh` | that the signature verifier can fail — tampered tree, missing metadata, forged signature, a merge smuggling content, a tag on a merge commit, an empty range (18 checks) |
-| `tools/test-check-embedded-python.sh` | that the embedded-Python checker can fail — the `core/@v0.1.1` indentation error put back, an error behind a backslash-continued command, and a Python heredoc hidden behind a non-`PY` delimiter (15 checks) |
+| `tools/test-check-embedded-python.sh` | that the embedded-Python checker can fail — the `core/@v0.1.1` indentation error put back, an error behind a backslash-continued command, a Python heredoc hidden behind a non-`PY` delimiter, and a line that merely mentions `python3` without calling it (16 checks) |
 | `tools/test-context-monitor.sh` | that the context-monitor hook cannot be made to execute a command — a counter, an evacuation timestamp and a debug log line each carrying a command substitution, plus a symlinked state file and a state directory that is private and not in `/tmp` (18 checks) |
 | `tools/test-meta-get.sh` | that one document reads the same whichever way it is written — quoted, bare, single-quoted, with a trailing comment — and that a duplicate key, malformed YAML or a non-scalar field fails closed rather than looking absent (19 checks) |
 | `tools/test-commit-msg-signer.sh` | that the signer refuses rather than downgrading — no CA, a non-https endpoint, no token, an unreachable Vault — and that the token reaches curl through a 0600 config file, never the process list (25 checks) |

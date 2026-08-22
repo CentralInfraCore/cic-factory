@@ -6,11 +6,21 @@ on:
   pull_request:
     branches: [main]
 
+# A kapu olvas és tesztel. Írási jogot semmihez nem használ, tehát nem is kap:
+# a repository default engedélye enélkül write-ot adna a GITHUB_TOKEN-nek.
+permissions:
+  contents: read
+
 jobs:
   gate:
     runs-on: ubuntu-latest
+    # Egy beragadt lépés eddig a runner saját limitjéig futott. A teljes szett
+    # ~40 másodperc; a 15 perc bőven fér, és egy végtelen ciklust megfog.
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      # SHA-ra pinelve: a mozgó tag beszállítási út abba a lépésbe, ami az
+      # ellenőrizendő kódot behozza.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # verify-signatures.sh needs the commits a PR introduces, and the merge
           # base to find them. The default shallow clone has neither.
@@ -31,14 +41,27 @@ jobs:
           echo "bash -n: $n scripts"
           test "$n" -gt 0
 
+      # Egy helyen, a futás elején: eddig a shellcheck a saját lépésében
+      # apt-update-elt, a gettext-base pedig hetven sorral lejjebb települt.
+      - name: system dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck gettext-base
+
+      - name: python dependencies
+        run: pip install -q 'jsonschema==4.26.0' 'PyYAML==6.0.3'
+
+      - name: declared dependencies are present
+        run: bash tools/check-dependencies.sh
+
+      - name: dependency checker can fail
+        run: bash tools/test-check-dependencies.sh
+
       - name: shellcheck
         run: |
           set -euo pipefail
-          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
           git ls-files '*.sh' | xargs shellcheck --severity=error
-
-      - name: python deps
-        run: pip install -q jsonschema pyyaml
 
       - name: meta schema matches its template
         run: bash tools/validate-meta.sh --template
@@ -101,9 +124,7 @@ jobs:
       # A prompt és a path határa: mi kerülhet be az input.md-ből a modellhez,
       # és milyen alakú azonosítóból épülhet törölhető útvonal.
       - name: prompt and path boundaries
-        run: |
-          sudo apt-get install -y -qq gettext-base
-          bash tools/test-run-job-boundaries.sh
+        run: bash tools/test-run-job-boundaries.sh
 
       # Behaviour, not just syntax. The finalizer suite covers the SIGPIPE/SIGTERM
       # incident; the lifecycle suite covers the transition run-job.sh performs,
