@@ -203,8 +203,12 @@ jobs:
           done < <(git ls-files '*.sh' '*.py')
           test "$missing" -eq 0
 
-      - name: licence present and unmodified
-        run: |
-          set -euo pipefail
-          echo "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0  LICENSE" \
-            | sha256sum -c -
+      # A teljes LICENSE hashelése kizárta a §7 szerinti függeléket is, amit
+      # maga a licenc enged. A checker a függelék ELŐTTI részt hasheli: az
+      # AGPL-szöveg ugyanúgy sérthetetlen, a kikötés viszont ott áll, ahol
+      # irányadó.
+      - name: licence files agree
+        run: bash tools/check-licence.sh
+
+      - name: licence checker can fail
+        run: bash tools/test-check-licence.sh
