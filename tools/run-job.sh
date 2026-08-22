@@ -142,16 +142,6 @@ META="$JOB_DIR/meta.yaml"
 INPUT="$JOB_DIR/input.md"
 WORKSPACE="$JOB_DIR/workspace"
 FACTORY_CLONE="$WORKSPACE/cic-factory"
-# Az agent azt a repót klónozza, amelyikben a job él — nem egy beégetett címet.
-# Korábban itt a CIC factory GitHub-URL-je állt: a mag ismerte egy konkrét
-# telepítés nevét, és a végigfuttatás hálózatot meg SSH-kulcsot igényelt, ami a
-# tesztelést is ellehetetlenítette.
-FACTORY_REMOTE="${CIC_FACTORY_REMOTE:-$(git -C "$WORKDIR" remote get-url origin 2>/dev/null || true)}"
-if [[ -z "$FACTORY_REMOTE" ]]; then
-    echo "[ERROR] Nem állapítható meg, honnan klónozzon az agent." >&2
-    echo "        A workdir-nek legyen 'origin' távolija, vagy add meg: CIC_FACTORY_REMOTE" >&2
-    exit 1
-fi
 FEATURE_BRANCH="feature/$JOB_ID"
 AGENT_CONFIG="$HOME/.claude-personal/agents/$AGENT_ID"
 # Claude Code slugs a project path by replacing BOTH separators and underscores
@@ -325,6 +315,19 @@ else
     echo "[*] Workspace: $FACTORY_CLONE"
     rm -rf "$WORKSPACE"
     mkdir -p "$WORKSPACE"
+    # Az agent azt a repót klónozza, amelyikben a job él — nem egy beégetett
+    # címet. Korábban itt a CIC factory GitHub-URL-je állt: a mag ismerte egy
+    # konkrét telepítés nevét, és a futtatás hálózatot meg SSH-kulcsot igényelt.
+    #
+    # A feloldás itt történik és nem feljebb, mert eddig a pontig nincs rá
+    # szükség: a spec-kapunak nem kell távoli, és nem is kérünk olyat, amit még
+    # nem használunk.
+    FACTORY_REMOTE="${CIC_FACTORY_REMOTE:-$(git -C "$WORKDIR" remote get-url origin 2>/dev/null || true)}"
+    if [[ -z "$FACTORY_REMOTE" ]]; then
+        echo "[ERROR] Nem állapítható meg, honnan klónozzon az agent." >&2
+        echo "        A workdir-nek legyen 'origin' távolija, vagy add meg: CIC_FACTORY_REMOTE" >&2
+        exit 1
+    fi
     git clone "$FACTORY_REMOTE" "$FACTORY_CLONE"
     git -C "$FACTORY_CLONE" checkout -b "$FEATURE_BRANCH"
     echo "[*] Feature branch: $FEATURE_BRANCH"
