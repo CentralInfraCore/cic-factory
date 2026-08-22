@@ -42,19 +42,35 @@ with open(hooks_path) as f:
 if "hooks" not in settings:
     settings["hooks"] = {}
 
-added = 0
+def commands(entry):
+    return [h.get("command", "") for h in entry.get("hooks", [])]
+
+
+# Everything this installer owns, by every spelling it has ever used. The
+# original predicate looked only for the "[CIC]" marker, which the four
+# script-invoking entries never carried -- they run tools/hooks/*.sh and
+# log-event.py and have no message to mark. Those four were re-appended on every
+# run, which is the whole of the 13 -> 17 growth.
+#
+# Matching the exact commands we are about to install is not enough on its own:
+# it would leave behind entries from an older version of cic-hooks.json whose
+# command text has since changed.
+OURS = {c for hook_list in cic_hooks.values() for e in hook_list for c in commands(e)}
+
+
+def is_ours(entry):
+    for c in commands(entry):
+        if "[CIC]" in c or "/tools/hooks/" in c or c in OURS:
+            return True
+    return False
+
+
+added = removed = 0
 for event, hook_list in cic_hooks.items():
-    if event not in settings["hooks"]:
-        settings["hooks"][event] = []
-    # Remove existing CIC hooks (idempotent re-run)
-    settings["hooks"][event] = [
-        entry for entry in settings["hooks"][event]
-        if not any(
-            "[CIC]" in hook.get("command", "")
-            for hook in entry.get("hooks", [])
-        )
-    ]
-    settings["hooks"][event].extend(hook_list)
+    existing = settings["hooks"].get(event, [])
+    kept = [e for e in existing if not is_ours(e)]
+    removed += len(existing) - len(kept)
+    settings["hooks"][event] = kept + hook_list
     added += len(hook_list)
 
 with open(settings_path, "w") as f:
@@ -62,7 +78,8 @@ with open(settings_path, "w") as f:
     f.write("\n")
 
 total = sum(len(v) for v in settings["hooks"].values())
-print(f"[OK] {added} CIC hooks installed ({total} total hooks in settings.json)")
+print(f"[OK] {added} CIC hooks installed, {removed} previous ones replaced "
+      f"({total} total hooks in settings.json)")
 END_PYTHON
 
 echo ""

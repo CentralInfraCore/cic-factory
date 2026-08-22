@@ -72,6 +72,9 @@ jobs:
       - name: run-job spec gate
         run: bash tools/test-run-job-spec-gate.sh
 
+      - name: hook installer idempotency
+        run: bash tools/test-install-claude-hooks.sh
+
       # MIT-derived files arrived here once with nothing but a "(MIT)" in a
       # comment. This makes the next one impossible to add silently.
       - name: every source file declares its licence
