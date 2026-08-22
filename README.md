@@ -201,6 +201,16 @@ signature still holds.
 Commits made in this repository are signed normally and verify against their
 own tree.
 
+## Releases
+
+| tag | jegyzet |
+|---|---|
+| `core/@v0.2.0` | [docs/RELEASE-0.2.0.md](docs/RELEASE-0.2.0.md) — an audit carried through; M0 complete. **Adopting it needs a `tools/env.sh` change** |
+| `core/@v0.1.0` | [docs/RELEASE-0.1.0.md](docs/RELEASE-0.1.0.md) — the first release |
+
+Each note carries a "what it does not guarantee" section. That half is the one
+worth reading before building on it.
+
 ## Licence
 
 **AGPL-3.0-or-later**, with an attribution term under section 7(b) — the common
