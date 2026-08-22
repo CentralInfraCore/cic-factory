@@ -95,12 +95,18 @@ jobs/
 
 ### meta.yaml
 
-**A mezők forrása [`jobs/.schema/meta.yaml`](jobs/.schema/meta.yaml).**
+**A mezők forrása [`jobs/.schema/meta.schema.json`](jobs/.schema/meta.schema.json)**
+— gépi séma, nem próza. A [`jobs/.schema/meta.yaml`](jobs/.schema/meta.yaml) a
+kommentelt példa, és a kapu ellenőrzi, hogy a kulcsai egyeznek a sémáéval.
 
 Ez a dokumentum szándékosan nem sorolja fel őket. Amikor felsorolta, elcsúszott:
 a `lease_expires`, a `spec_gate` és a `usage` bekerült a sémába, és a másolat
 hallgatott róluk. Egy séma, amit két helyen írunk le, egy helyen elavul — a
 kapu ezért ellenőrzi, hogy egyetlen dokumentum se definiálja újra.
+
+A séma **elutasítja** az elgépelt mezőnevet, az érvénytelen `status`- vagy
+`spec_gate`-értéket, az üres `agent.model`-t és a hiányzó kötelező blokkot. Egy
+job metája a `validate-spec.sh` K10-én keresztül esik át rajta.
 
 ### Sub-job lifecycle
 
@@ -149,6 +155,31 @@ létezik, de semmi nem futtatja magától. A `meta.yaml` sémája ma template, n
 mögötte validátor.
 
 Amit egy kapu nem bizonyít, azt ne állítsd róla.
+
+---
+
+## Runnerek — mit futtat a gyár
+
+A factory **nem tudja, milyen agentet futtat**. Egy runner az a csere-darab, ami
+tudja: `tools/runners/<név>.sh`, választás a `CIC_AGENT_RUNNER`-rel
+(alapértelmezés: `claude`).
+
+A runner környezeti változókból kap mindent, és egy normalizált JSON-t ír —
+szerződés: [`docs/RUNNER-CONTRACT.md`](docs/RUNNER-CONTRACT.md), séma:
+[`jobs/.schema/runner-result.schema.json`](jobs/.schema/runner-result.schema.json).
+
+| runner | mit futtat |
+|---|---|
+| `claude` | Claude Code. Minden Claude-specifikus ismeret itt él: CLI-flagek, `CLAUDE_CONFIG_DIR`, a JSON alakja |
+| `echo` | semmit — a promptot adja vissza |
+
+Az `echo` nem játék. Két dolgot bizonyít: hogy a szerződés valódi (egy második
+implementáció az egyetlen különbség absztrakció és átnevezés között), és hogy a
+lifecycle **végigfuttatható** agent, hálózat és költség nélkül. A
+`test-run-job-e2e.sh` ezen áll.
+
+**Amit egy runner nem tud megmondani, azt hagyja ki.** A hiányzó mező üresen
+marad a `meta.yaml`-ben. Nullát írni oda mérésnek látszana.
 
 ---
 
