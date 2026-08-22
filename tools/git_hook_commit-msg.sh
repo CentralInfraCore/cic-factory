@@ -39,7 +39,17 @@ fi
 tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
 
-# Kibontjuk, majd determinisztikus tar streamet készítünk
+# Kibontjuk, majd determinisztikus tar streamet készítünk.
+#
+# The umask is pinned because `tar -x` applies it to the extracted modes, so the
+# digest depended on whoever happened to be committing: the same tree signed
+# under umask 002 and under 022 produced different digests, and verification
+# then failed anywhere the umask differed. Found when the CI runner (022) could
+# not verify a commit signed on a workstation (002).
+#
+# 022 is chosen because it is the common default; changing it again would
+# invalidate verification of everything signed before the change.
+umask 022
 git archive --format=tar "$TREE_ID" | tar -xf - -C "$tmpdir"
 DIGEST_B64=$(tar --sort=name --mtime='UTC 1970-01-01' \
   --owner=0 --group=0 --numeric-owner -cf - -C "$tmpdir" . \

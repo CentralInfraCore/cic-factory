@@ -144,6 +144,21 @@ check "nem létező ref → elutasít" "1" "$(run "$R" --range nincsilyen..HEAD)
 rm -rf "$R"
 
 echo
+echo "5c. Eltérő umask mellett aláírt commit is verifikál"
+# A digest a fából ÉS az aláíró umaskjából áll elő, mert a `tar -x` alkalmazza a
+# umaskot. Ez CI-ban derült ki: a runner (022) nem tudta verifikálni azt, amit a
+# munkaállomás (002) írt alá. A hook azóta rögzíti a 022-t, de a korábbi
+# aláírásoknak továbbra is verifikálniuk kell.
+for m in 002 077; do
+    R=$(mkrepo); BASE=$(git -C "$R" rev-parse HEAD)
+    printf 'x\n' > "$R/u.txt"; git -C "$R" add -A
+    git -C "$R" commit -q -m "signed under umask $m" --no-verify
+    ( umask "$m"; sign_head "$R" )
+    check "umask $m alatt aláírva → átmegy" "0" "$(run "$R" --range "$BASE..HEAD")"
+    rm -rf "$R"
+done
+
+echo
 echo "6. Tag aláírt commiton / merge commiton"
 R=$(mkrepo)
 git -C "$R" checkout -q -b side3; add_signed "$R" side3

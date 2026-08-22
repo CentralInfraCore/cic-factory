@@ -53,13 +53,36 @@ done
 fail=0
 ok=0
 
+# `tar -x` applies the umask to the extracted modes, so the digest is a function
+# of the tree AND of the umask the signer happened to have. The hook now pins
+# 022, but commits signed before that pin carry a digest computed under whatever
+# their author had -- 002 on a workstation, 022 on a runner.
+#
+# So the digest is computed under each plausible umask and any match is accepted.
+# This does not weaken the binding: the umask only varies mode bits inside the
+# archive, and finding different content that collides is still a SHA-256
+# preimage problem. What it does mean is that a match proves the tree, not the
+# umask.
+UMASKS=(022 002 077 000)
+
 tree_digest() {
-    local tree="$1" tmp
+    local tree="$1" mask="$2" tmp out
     tmp=$(mktemp -d) || return 1
-    git archive --format=tar "$tree" | tar -xf - -C "$tmp"
-    tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner \
-        -cf - -C "$tmp" . | openssl dgst -sha256 -binary | openssl base64 -A
+    out=$( umask "$mask"
+           git archive --format=tar "$tree" | tar -xf - -C "$tmp"
+           tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner \
+               -cf - -C "$tmp" . | openssl dgst -sha256 -binary | openssl base64 -A )
     rm -rf "$tmp"
+    printf '%s' "$out"
+}
+
+# Returns the umask that reproduces $2, or empty.
+matching_umask() {
+    local tree="$1" want="$2" m
+    for m in "${UMASKS[@]}"; do
+        [[ "$(tree_digest "$tree" "$m")" == "$want" ]] && { printf '%s' "$m"; return 0; }
+    done
+    return 1
 }
 
 # Recomputes the digest and verifies the signature against the embedded
@@ -75,12 +98,15 @@ verify_commit() {
         return 1
     fi
 
-    calc=$(tree_digest "$c^{tree}")
-    if [[ "$rec" != "$calc" ]]; then
-        echo "    a digest NEM a saját fájára illik"
-        echo "      rögzített: ${rec:0:32}…"
-        echo "      újraszámolt: ${calc:0:32}…"
+    local mask
+    if ! mask=$(matching_umask "$c^{tree}" "$rec"); then
+        echo "    a digest NEM a saját fájára illik (egyik umask mellett sem)"
+        echo "      rögzített:   ${rec:0:32}…"
+        echo "      újraszámolt: $(tree_digest "$c^{tree}" 022 | cut -c1-32)… (umask 022)"
         return 1
+    fi
+    if [[ "$mask" != "022" ]]; then
+        echo "    (a digest umask $mask mellett jön ki — a hook 022-t rögzít azóta)"
     fi
 
     tmp=$(mktemp -d) || return 1
