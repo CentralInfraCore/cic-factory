@@ -119,6 +119,12 @@ jobs:
       - name: meta field writes
         run: bash tools/test-meta-set.sh
 
+      # A származtatott index korábban saját regexes olvasót hozott, és nem
+      # volt saját tesztje: közvetve lefutott mindenhol, tartalmi assertion
+      # nélkül.
+      - name: generated index matches the metas
+        run: bash tools/test-update-index.sh
+
       # A signer az a pont, ahol a provenance keletkezik. CA hiányában eddig
       # figyelmeztetett, `curl -k`-ra váltott, és a Vault tokent így küldte el.
       - name: commit-msg signer trust boundary
