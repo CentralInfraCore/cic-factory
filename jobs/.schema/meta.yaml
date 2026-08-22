@@ -14,7 +14,6 @@ target:
 kb_focus: []                # chunk-ids (c…) or node-ids (n…), e.g. ["c781", "c912"].
                             # run-job.sh injects these into the prompt as a mandatory
                             # first-read list — not a hint. Inline or block list both parse.
-promptmap_ref: ""           # key in ai/PROMPTMAP.yaml; "" if not applicable
 
 # Agent
 agent:

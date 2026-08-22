@@ -78,6 +78,12 @@ jobs:
       - name: stale job detection
         run: bash tools/test-stale-jobs.sh
 
+      - name: docs consistency
+        run: bash tools/check-docs.sh
+
+      - name: docs checker itself
+        run: bash tools/test-check-docs.sh
+
       # MIT-derived files arrived here once with nothing but a "(MIT)" in a
       # comment. This makes the next one impossible to add silently.
       - name: every source file declares its licence

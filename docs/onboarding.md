@@ -61,34 +61,28 @@ cp tools/env.sh.example tools/env.sh
 
 ### 2. Job spec létrehozása
 
+A `meta.yaml` a sémából induljon, ne kézzel írt másolatból — így nem maradhat le
+róla mező, amit később vezettek be:
+
 ```bash
 mkdir -p jobs/pelda-job
+cp jobs/.schema/meta.yaml jobs/pelda-job/meta.yaml
 ```
 
-`jobs/pelda-job/meta.yaml`:
-```yaml
-schema_version: "1.0"
-job_id: "pelda-job"
-parent_job_id: ""
-level: "repo"
-target:
-  repo: "CIC-Relay"
-  path: ""
-kb_focus: []
-promptmap_ref: ""
-agent:
-  config_dir: "~/.claude-personal/agents/agent-01"
-  model: "claude-sonnet-4-6"
-workplace:
-  repos: []
-  branch: "feature/pelda-job"
-status: "pending"
-error_message: ""
-timestamps:
-  created: "2026-06-08T00:00:00Z"
-  started: ""
-  completed: ""
-```
+Ezután töltsd ki benne:
+
+| mező | mit |
+|---|---|
+| `job_id` | `"pelda-job"` |
+| `level` | `orchestrator` \| `repo` \| `domain` |
+| `target.repo` | melyik repót érinti |
+| `agent.config_dir` | az izolált agent config könyvtára |
+| `agent.model` | **kötelező** — enélkül a spec-kapu K10-en bukik |
+| `workplace.branch` | `feature/pelda-job` |
+| `timestamps.created` | ISO 8601 |
+
+A `status` maradjon `pending`; onnantól a lifecycle írja. A `spec_gate`, a
+`lease_expires` és a `usage` szintén gépi mezők — ne töltsd őket kézzel.
 
 `jobs/pelda-job/input.md`: az agent promptja magyarul.
 
@@ -129,7 +123,7 @@ A rendszer megértéséhez ajánlott a teljes `workdir/` könyvtárat egy AI-val
 ### Mit adj a AI-nak induló kontextusként
 
 1. **`CLAUDE.md`** — a működési modell, szerepek, kötelező boot sequence
-2. **`docs/ecosystem-map.md`** — az összes CIC repo helye és szerepe
+2. **`SPEC.md`** — a lifecycle, a kapuk és a job-struktúra
 3. **`jobs/index.yaml`** — az összes eddigi job állapota
 4. Egy konkrét kész job mappája (pl. `jobs/cic-schemas-audit/`) — lifecycle példa
 
@@ -171,6 +165,10 @@ Ha Claude Code-dal dolgozol ezen a rendszeren, a session elején kötelező:
 ## Tovább olvasnivaló
 
 - [`CLAUDE.md`](../CLAUDE.md) — orchestrátor-szintű kontextus
-- [`docs/ecosystem-map.md`](ecosystem-map.md) — teljes ökoszisztéma térkép
-- [`jobs/index.yaml`](../jobs/index.yaml) — összes job állapottérképe
-- [`CIC/CLAUDE.md`](../../CLAUDE.md) — ökoszisztéma-szintű kontextus (szülő)
+- [`SPEC.md`](../SPEC.md) — a factory működési modellje: lifecycle, kapuk, job-struktúra
+- [`jobs/.schema/meta.yaml`](../jobs/.schema/meta.yaml) — a `meta.yaml` mezői
+- [`CLAUDE.md`](../CLAUDE.md) — hogyan dolgozz ezen a repón
+
+A CIC-specifikus kontextus — ökoszisztéma-térkép, repo path-ok, MCP szerver — a
+[`cic-factory`](https://github.com/CentralInfraCore/cic-factory) repóban él, nem
+itt.
