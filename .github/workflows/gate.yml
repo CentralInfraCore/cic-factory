@@ -163,6 +163,15 @@ jobs:
       - name: docs checker itself
         run: bash tools/test-check-docs.sh
 
+      # A SPEC.md use-case szerződése nem állíthat többet a megvalósításnál:
+      # minden UC hordozza mind az öt részt, a nem teljes státusz megnevezi a
+      # nyitott issue-t, és nincs dokumentált done-út kapu és review nélkül.
+      - name: sequence contract matches the implementation
+        run: bash tools/check-sequences.sh
+
+      - name: sequence checker can fail
+        run: bash tools/test-check-sequences.sh
+
       # A README-ben deklarált check-számok egyeznek-e a valósággal. Külön
       # script, mert lefuttatja az összes suite-ot -- a check-docs.sh maga is
       # fut egy suite-ban, tehát egymást hívva rekurzióba mennének.
