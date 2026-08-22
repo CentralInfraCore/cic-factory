@@ -114,6 +114,7 @@ timestamps:
 |---|---|
 | `./tools/run-job.sh <job-id> [agent-id]` | **Előbb a `validate-spec.sh` kaput futtatja** — NO-GO esetén nem indul. `--skip-spec-gate` megkerüli, de a `meta.yaml` `spec_gate` mezőjébe `skipped` kerül. Végrehajtás: klón, running→awaiting_review, commit, push. **Nem zár le** — a `done` a `/job-close` dolga. Injektálja a `kb_focus`-t, `--max-turns` guardot ad, és JSON-ból kiírja a költséget a `meta.yaml`-ba |
 | `./tools/validate-spec.sh <job-id>` | **Gépi kapu indítás előtt** (K1–K11). NO-GO → ne indítsd az agentet |
+| `./tools/check-stale-jobs.sh` | Kilistázza a `running`-ot állító jobokat, amelyek lease-e lejárt — a wrapper meghalt anélkül, hogy javította volna. A repóból eldönthető, a halott folyamat közreműködése nélkül |
 | `./tools/close-job.sh <job-id>` | **Az egyetlen `awaiting_review → done` átmenet.** Elutasít, ha a státusz nem `awaiting_review`, ha az output-kapu NO-GO, ha a `review.md` hiányzik/üres/befejezetlen, vagy ha a futás megkerülte a spec-kaput és a review ezt nem ismeri el. `--dry-run` csak ellenőriz |
 | `./tools/validate-output.sh <job-id>` | **Gépi kapu merge előtt** (O1–O5). NO-GO → ne zárd le a jobot |
 | `./tools/update-index.sh` | `jobs/index.yaml` újragenerálása (modell, költség, turns, `totals:`) |

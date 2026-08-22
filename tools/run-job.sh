@@ -77,6 +77,9 @@ c = re.sub(r'^(\s+)completed:.*$', rf'\1completed: "{end}"', c, flags=re.MULTILI
 c = re.sub(r'^error_message:.*$',
            'error_message: "wrapper exited before finalizing — see the job log; the agent may have kept running"',
            c, flags=re.MULTILINE)
+# The lease has served its purpose once the status is corrected; leaving it would
+# make an already-resolved job look stuck to check-stale-jobs.sh.
+c = re.sub(r'^lease_expires:.*$', 'lease_expires: ""', c, flags=re.MULTILINE)
 with open(meta, "w") as f: f.write(c)
 PYFIN
         {
@@ -88,6 +91,26 @@ PYFIN
         [[ -n "$RUN_LOG" ]] && {
             echo "wrapper exited early rc=$rc at $end; agent pid=${AGENT_PID:-none}"
         } >>"$RUN_LOG" 2>/dev/null || true
+
+        # Best effort: the running state was pushed, so leaving the correction
+        # local means the remote keeps claiming a job is running that is not.
+        # This can legitimately fail -- no network, Vault down so the commit-msg
+        # hook cannot sign, a protected branch -- and none of that may stop the
+        # finalizer. It is loud instead, because a silent failure here is
+        # precisely the stuck state it exists to prevent.
+        #
+        # The lease is the fallback: if this does not land, the deadline already
+        # on the remote still makes the job detectably stuck.
+        if timeout 60 git -C "$WORKDIR" add "$META" jobs/index.yaml 2>/dev/null \
+           && timeout 60 git -C "$WORKDIR" commit -q -m "job: ${JOB_ID:-?} — error (wrapper exited early)" 2>/dev/null \
+           && timeout 60 git -C "$WORKDIR" push -q 2>/dev/null; then
+            echo "[*] Az error állapot kipusholva — a remote nem mutat futó jobot." >&2
+        else
+            echo "[!] Az error állapotot NEM sikerült kipusholni. A remote még" >&2
+            echo "    'running'-ot mutat — ezt kézzel kell rendezni:" >&2
+            echo "      git -C $WORKDIR add ${META} jobs/index.yaml && git commit && git push" >&2
+            echo "    A lease addig is lejár, tehát a tools/check-stale-jobs.sh látja." >&2
+        fi
     fi
     [[ $rc -eq 0 ]] && rc=1
     exit $rc
@@ -216,11 +239,18 @@ fi
 
 NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+# A lease is a deadline, not a heartbeat. A heartbeat has to keep being written
+# by a process that may already be gone; a deadline is written once, travels out
+# with the running commit, and lets anyone reading the repo decide whether a job
+# still claiming "running" is stuck -- without the dead process cooperating.
+LEASE_HOURS="${CIC_JOB_LEASE_HOURS:-6}"
+LEASE_EXPIRES=$(date -u -d "+${LEASE_HOURS} hours" +"%Y-%m-%dT%H:%M:%SZ")
+
 # --- pending → running ---
 echo "[*] $JOB_ID — running ($NOW)"
-python3 - "$META" "$NOW" "$SKIP_SPEC_GATE" <<'PYEOF'
+python3 - "$META" "$NOW" "$SKIP_SPEC_GATE" "$LEASE_EXPIRES" <<'PYEOF'
 import sys, re
-meta_path, now, skip_spec_gate = sys.argv[1], sys.argv[2], sys.argv[3]
+meta_path, now, skip_spec_gate, lease = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 with open(meta_path) as f:
     content = f.read()
 content = re.sub(r'^status:.*$', 'status: "running"', content, flags=re.MULTILINE)
@@ -230,6 +260,13 @@ content = re.sub(r'^\s+completed:.*$', '  completed: ""', content, flags=re.MULT
 # A bypass has to leave a trace, or it is a hole in the same evidence chain this
 # repository is built on. Written whether skipped or not, so an absent field
 # means an old meta rather than a clean run.
+if re.search(r'^lease_expires:', content, flags=re.MULTILINE):
+    content = re.sub(r'^lease_expires:.*$', f'lease_expires: "{lease}"', content,
+                     flags=re.MULTILINE)
+else:
+    content = re.sub(r'^(status:.*)$', rf'\1\nlease_expires: "{lease}"', content,
+                     count=1, flags=re.MULTILINE)
+
 gate = "skipped" if skip_spec_gate == "1" else "passed"
 if re.search(r'^spec_gate:', content, flags=re.MULTILINE):
     content = re.sub(r'^spec_gate:.*$', f'spec_gate: "{gate}"', content, flags=re.MULTILINE)
@@ -505,6 +542,9 @@ with open(meta_path) as f:
     content = f.read()
 
 content = re.sub(r'^status:.*$', f'status: "{status}"', content, flags=re.MULTILINE)
+    # The run is over, so the lease is meaningless -- and a leftover deadline
+    # would make a finished job look stuck.
+    content = re.sub(r'^lease_expires:.*$', 'lease_expires: ""', content, flags=re.MULTILINE)
 content = re.sub(r'^\s+completed:.*$', f'  completed: "{end}"', content, flags=re.MULTILINE)
 
 if session_id:
