@@ -22,7 +22,7 @@ SETTINGS="$AGENT_DIR/settings.json"
 echo "[*] installing CIC hooks for: $AGENT_ID"
 echo "[*] target: $SETTINGS"
 
-python3 - "$SETTINGS" "$HOOKS_FILE" << 'END_PYTHON'
+python3 - "$SETTINGS" "$HOOKS_FILE" << 'PYEOF'
 import json, sys, os
 
 settings_path = sys.argv[1]
@@ -80,7 +80,7 @@ with open(settings_path, "w") as f:
 total = sum(len(v) for v in settings["hooks"].values())
 print(f"[OK] {added} CIC hooks installed, {removed} previous ones replaced "
       f"({total} total hooks in settings.json)")
-END_PYTHON
+PYEOF
 
 echo ""
 echo "[OK] done: $AGENT_DIR"

@@ -7,7 +7,7 @@ set -euo pipefail
 WORKDIR="$(cd "$(dirname "$0")/.." && pwd)"
 INDEX="$WORKDIR/jobs/index.yaml"
 
-python3 - "$WORKDIR" <<'EOF'
+python3 - "$WORKDIR" <<'PYEOF'
 import os, sys
 import re
 from datetime import datetime, timezone
@@ -87,4 +87,4 @@ index_path = os.path.join(jobs_dir, "index.yaml")
 with open(index_path, "w") as f:
     f.write("\n".join(lines) + "\n")
 print(f"Index updated: {len(jobs)} job(s), {priced} with cost data, total ${total:.4f}")
-EOF
+PYEOF

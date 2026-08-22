@@ -69,6 +69,17 @@ jobs:
             echo "compiled: ${#py[@]} files"
           fi
 
+      # A lépés fölött csak a követett .py fájlok fordultak -- egyetlen fájl. A
+      # shell heredocokba ágyazott Python (a run-job.sh-ban öt blokk, együtt
+      # nagyjából 250 sor, benne minden állapotírás) soha nem került parserhez.
+      # A core/@v0.1.1 pont így szállított IndentationError-t a finalizerben,
+      # zöld kapu mellett.
+      - name: embedded python syntax
+        run: bash tools/check-embedded-python.sh
+
+      - name: embedded python checker can fail
+        run: bash tools/test-check-embedded-python.sh
+
       # Behaviour, not just syntax. The finalizer suite covers the SIGPIPE/SIGTERM
       # incident; the lifecycle suite covers the transition run-job.sh performs,
       # which the finalizer suite is structurally blind to -- it only extracts the
