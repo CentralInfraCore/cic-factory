@@ -123,6 +123,7 @@ and it runs two behavioural suites:
 | `tools/test-context-monitor.sh` | that the context-monitor hook cannot be made to execute a command — a counter, an evacuation timestamp and a debug log line each carrying a command substitution, plus a symlinked state file and a state directory that is private and not in `/tmp` (18 checks) |
 | `tools/test-meta-get.sh` | that one document reads the same whichever way it is written — quoted, bare, single-quoted, with a trailing comment — and that a duplicate key, malformed YAML or a non-scalar field fails closed rather than looking absent (19 checks) |
 | `tools/test-commit-msg-signer.sh` | that the signer refuses rather than downgrading — no CA, a non-https endpoint, no token, an unreachable Vault — and that the token reaches curl through a 0600 config file, never the process list (25 checks) |
+| `tools/test-run-job-boundaries.sh` | that an exported secret named in `input.md` never reaches the prompt, that `$ref`/`$schema` in a spec are left alone instead of being blanked, and that an identifier which would build a path outside `jobs/` is refused before anything is deleted (38 checks) |
 
 Every step was measured against a deliberately broken copy before it landed,
 because a gate that cannot go red is decoration. That measurement is not a
