@@ -54,6 +54,12 @@ spec_gate: ""               # written by run-job.sh: "passed" | "skipped"
                             # Empty means the job predates this field.
                             # "skipped" blocks close-job.sh unless review.md
                             # acknowledges it -- see /job-close C5.
+lease_expires: ""           # written by run-job.sh with the running commit, so it
+                            # reaches the remote. A job still claiming "running"
+                            # past this instant is stuck: the wrapper died without
+                            # correcting it. Detectable from the repo alone --
+                            # tools/check-stale-jobs.sh -- with no cooperation
+                            # from the dead process. Cleared when the run ends.
 error_message: ""           # only when status: error
 
 # Usage — written by run-job.sh from `claude --output-format json`.
