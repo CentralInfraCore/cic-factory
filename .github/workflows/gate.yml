@@ -98,6 +98,13 @@ jobs:
       - name: commit-msg signer trust boundary
         run: bash tools/test-commit-msg-signer.sh
 
+      # A prompt és a path határa: mi kerülhet be az input.md-ből a modellhez,
+      # és milyen alakú azonosítóból épülhet törölhető útvonal.
+      - name: prompt and path boundaries
+        run: |
+          sudo apt-get install -y -qq gettext-base
+          bash tools/test-run-job-boundaries.sh
+
       # Behaviour, not just syntax. The finalizer suite covers the SIGPIPE/SIGTERM
       # incident; the lifecycle suite covers the transition run-job.sh performs,
       # which the finalizer suite is structurally blind to -- it only extracts the

@@ -137,6 +137,27 @@ for arg in "$@"; do
     esac
 done
 
+# Az azonosítókból path épül, és a path egyik vége egy `rm -rf`. Eddig semmi
+# nem nézte meg az alakjukat: `../../evil` a workspace-gyökéren kívülre oldódott
+# fel. A spec-kapu véletlenül útban volt (nem talált input.md-t), de az `--skip-
+# spec-gate` elveszi, és egy validáló kapunak amúgy sem a fájlrendszer
+# határainak őrzése a dolga. Ez itt fut, argumentum-feldolgozáskor, minden
+# kapcsolótól függetlenül.
+valid_id() {
+    case "$2" in
+        '') echo "[!] Üres $1." >&2; return 1 ;;
+        -*) echo "[!] A $1 nem kezdődhet kötőjellel: '$2'" >&2; return 1 ;;
+        .*) echo "[!] A $1 nem kezdődhet ponttal: '$2'" >&2; return 1 ;;
+        *[!a-zA-Z0-9._-]*)
+            echo "[!] A $1 csak [a-zA-Z0-9._-] karaktereket tartalmazhat: '$2'" >&2
+            echo "    Ebből path épül, aminek a végén törlés van." >&2
+            return 1 ;;
+    esac
+    return 0
+}
+valid_id "job-id" "$JOB_ID"     || exit 1
+valid_id "agent-id" "$AGENT_ID" || exit 1
+
 JOB_DIR="$WORKDIR/jobs/$JOB_ID"
 META="$JOB_DIR/meta.yaml"
 INPUT="$JOB_DIR/input.md"
@@ -306,6 +327,44 @@ git -C "$WORKDIR" add "$META" jobs/index.yaml
 git -C "$WORKDIR" commit -m "job: $JOB_ID — running"
 git -C "$WORKDIR" push
 
+# Az input.md-t eddig egy csupasz `envsubst` futtatta, ami a wrapper TELJES
+# környezetét behelyettesíti. Két külön baj:
+#
+#   szivárgás   amit az orchestrátor exportál, az nevesíthető input.md-ből és
+#               bekerül a promptba, a transcriptbe és a logba. A cic-factory
+#               relay-full-build job specje tartalmaz $VAULT_TOKEN-t.
+#
+#   rongálás    ami NINCS beállítva, azt üresre cseréli. A specekben szereplő
+#               `{"$ref": ...}`, `$schema`, `${encoded}` így üres stringként
+#               ért az agenthez -- egy JSON Schema kérdés szó szerint
+#               "Van-e `` referencia?" alakban.
+#
+# Az envsubst SHELL-FORMAT argumentuma pontosan ezt oldja meg: csak a felsorolt
+# neveket cseréli, minden mást szó szerint hagy. A helyettesítés ráadásul
+# letakarított környezetben fut, tehát nem a formátumon múlik, mi maradhat ki.
+#
+# A mag a saját neveit ismeri. A telepítés a sajátjait a tools/env.sh-ban adja
+# hozzá: FACTORY_PROMPT_VARS="CIC_RELAY_PATH CIC_SCHEMAS_PATH ..."
+PROMPT_VARS_BASE="JOB_ID AGENT_ID WORKDIR FACTORY_CLONE FEATURE_BRANCH CIC_JOB_ID CIC_WORKDIR"
+
+render_prompt() {
+    local input="$1" v fmt="" ; local -a envargs=()
+    for v in $PROMPT_VARS_BASE ${FACTORY_PROMPT_VARS:-}; do
+        case "$v" in
+            *[!A-Za-z0-9_]*|[0-9]*)
+                echo "[WARN] FACTORY_PROMPT_VARS: '$v' nem érvényes változónév, kihagyva" >&2
+                continue ;;
+        esac
+        case "$v" in
+            *TOKEN*|*SECRET*|*PASSWORD*|*PASSWD*)
+                echo "[WARN] FACTORY_PROMPT_VARS: '$v' titoknak látszik, és a promptba fog kerülni." >&2 ;;
+        esac
+        fmt="$fmt \$$v"
+        envargs+=("$v=${!v-}")
+    done
+    env -i PATH="$PATH" "${envargs[@]}" envsubst "$fmt" < "$input"
+}
+
 # --- Workspace előkészítése ---
 if [[ "$RESUME" -eq 1 ]]; then
     echo "[*] Resume — meglévő workspace újrahasználva: $FACTORY_CLONE"
@@ -313,7 +372,27 @@ if [[ "$RESUME" -eq 1 ]]; then
     [[ "$CURRENT_BRANCH" == "$FEATURE_BRANCH" ]] || echo "[WARN] Workspace branch ($CURRENT_BRANCH) != $FEATURE_BRANCH"
 else
     echo "[*] Workspace: $FACTORY_CLONE"
-    rm -rf "$WORKSPACE"
+    # Második öv az azonosító-ellenőrzés mellé: a törlendő utat feloldjuk, és
+    # megnézzük, tényleg a jobs/ alatt van-e. Symlinket sem követünk.
+    #
+    # A containment-ágnak nincs megkülönböztető tesztje: valid_id mellett nem
+    # állítható elő olyan bemenet, ami idáig eljut ÉS kivezet a fából. Backstop
+    # arra az esetre, ha valid_id valaha meggyengül -- a symlink-ellenőrzést
+    # viszont a test-run-job-boundaries.sh méri.
+    JOBS_ROOT=$(cd "$WORKDIR/jobs" && pwd -P)
+    WS_PARENT=$(cd "$(dirname "$WORKSPACE")" && pwd -P) || {
+        echo "[!] A workspace szülőkönyvtára nem oldható fel: $WORKSPACE" >&2; exit 1; }
+    WS_RESOLVED="$WS_PARENT/$(basename "$WORKSPACE")"
+    case "$WS_RESOLVED" in
+        "$JOBS_ROOT"/*) ;;
+        *) echo "[!] A workspace a jobs/ gyökéren kívülre esik, nem törlöm:" >&2
+           echo "    $WS_RESOLVED" >&2; exit 1 ;;
+    esac
+    if [[ -L "$WORKSPACE" ]]; then
+        echo "[!] A workspace symlink, nem könyvtár. Nem törlöm rajta keresztül." >&2
+        exit 1
+    fi
+    rm -rf "$WS_RESOLVED"
     mkdir -p "$WORKSPACE"
     # Az agent azt a repót klónozza, amelyikben a job él — nem egy beégetett
     # címet. Korábban itt a CIC factory GitHub-URL-je állt: a mag ismerte egy
@@ -368,7 +447,7 @@ mi van már kész és mi maradt hátra, majd fejezd be a hátralévő munkát.
 
 Push csak \`$FEATURE_BRANCH\` branch-re. Main-re NEM."
 else
-    PROMPT="$(envsubst < "$INPUT")
+    PROMPT="$(render_prompt "$INPUT")
 $KB_FOCUS_BLOCK
 ---
 ## Munkakörnyezet
