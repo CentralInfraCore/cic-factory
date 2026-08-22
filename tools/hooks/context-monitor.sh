@@ -1,4 +1,8 @@
 #!/bin/bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 yurukusa
+# Modifications: 2025-2026 Sinkó Gábor Zoltán / CentralInfraCore
+# Full licence text: LICENSES/MIT-yurukusa.txt
 # context-monitor.sh — Context window capacity monitor for CIC agents.
 # Source: https://github.com/yurukusa/claude-code-hooks/blob/main/hooks/context-monitor.sh (MIT)
 # Adapted for CIC: job-specific state files, output path → jobs/<job-id>/output/context-state.md,

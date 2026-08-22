@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025-2026 Sinkó Gábor Zoltán / CentralInfraCore
 #
 # Every refusal in close-job.sh, measured against a fixture that actually
 # violates it. A gate is only worth having if it can go red, and the way to know

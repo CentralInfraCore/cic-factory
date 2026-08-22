@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025-2026 Sinkó Gábor Zoltán / CentralInfraCore
 #
 # Exercises the state transition run-job.sh actually performs -- the real
 # decision line, extracted from the script, not a copy of it.

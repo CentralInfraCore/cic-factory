@@ -39,6 +39,25 @@ would prohibit precisely the ecosystem it exists to enable. AGPL keeps the
 common core open, including for anyone who offers it as a network service,
 while leaving commercial products built against its contract boundary free.
 
+## Third-party components
+
+Two files are derived from
+[`yurukusa/claude-code-hooks`](https://github.com/yurukusa/claude-code-hooks)
+and remain under **MIT**, not AGPL:
+
+| file | |
+|---|---|
+| `tools/hooks/context-monitor.sh` | 43% of its substantive lines are verbatim upstream |
+| `tools/hooks/no-ask-human.sh` | 50% |
+
+Both were adapted for CIC and say so in their headers. The upstream copyright and
+the full MIT text are in [`LICENSES/MIT-yurukusa.txt`](LICENSES/MIT-yurukusa.txt),
+as MIT requires — a bare mention of the licence name would not satisfy it.
+
+Every source file in this repository carries an `SPDX-License-Identifier`, so
+which licence governs which file is answerable per file rather than by reading
+this section. The gate checks that no source file arrives without one.
+
 ## Copyright
 
 © 2025–2026 Sinkó Gábor Zoltán / OpenIntentSign / CentralInfraCore
