@@ -6,9 +6,18 @@
 # with a fixture meta.yaml.
 set -uo pipefail
 
-SRC="$(cd "$(dirname "$0")" && pwd)/run-job.sh"
+TOOLS="$(cd "$(dirname "$0")" && pwd)"
+SRC="$TOOLS/run-job.sh"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+
+# A case-scriptek a tools/ alá kerülnek, mert a finalizer a WORKDIR-ből
+# ($0/..) keresi a testvér-eszközeit. A korábbi fixture /tmp-be tette őket,
+# tehát a WORKDIR /tmp lett, és a finalizer soha nem látta a tools/-t --
+# pontosan ezért volt strukturálisan vak arra, hogy az indexet nem
+# regenerálja (#34).
+mkdir -p "$TMP/tools" "$TMP/jobs"
+cp "$TOOLS/meta-get.sh" "$TOOLS/update-index.sh" "$TMP/tools/"
 
 # The prelude: everything up to and including the `trap finalize EXIT INT TERM`.
 PRELUDE_END=$(grep -n '^trap finalize EXIT INT TERM$' "$SRC" | head -1 | cut -d: -f1)
@@ -34,14 +43,15 @@ check() { # name expected actual
 
 run_case() { # script-body meta-status  -> prints "rc|status|stderr"
     local body="$1" st="$2"
-    mkmeta "$TMP/meta.yaml" "$st"
-    cat > "$TMP/case.sh" <<EOF
+    # __keep__: a hívó már megírta a metát (pl. sorvégi kommenttel)
+    [[ "$st" == "__keep__" ]] || mkmeta "$TMP/meta.yaml" "$st"
+    cat > "$TMP/tools/case.sh" <<EOF
 $(cat "$TMP/prelude.sh")
 META="$TMP/meta.yaml"
 $body
 EOF
     local err rc
-    err=$(bash "$TMP/case.sh" 2>&1 >/dev/null); rc=$?
+    err=$(bash "$TMP/tools/case.sh" 2>&1 >/dev/null); rc=$?
     echo "$rc|$(grep '^status:' "$TMP/meta.yaml" | awk -F'"' '{print $2}')|$err"
 }
 
@@ -76,7 +86,7 @@ echo
 echo '4. Lezárt stdout ("... | head"): a script véget ér, DE a finalizer lefut'
 echo "   (ez az eredeti incidens: régen a SIGPIPE megkerülte az EXIT trapet)"
 mkmeta "$TMP/meta.yaml" "running"
-cat > "$TMP/pipe.sh" <<EOF
+cat > "$TMP/tools/pipe.sh" <<EOF
 $(cat "$TMP/prelude.sh")
 META="$TMP/meta.yaml"
 RUN_LOG="$TMP/pipe.log"
@@ -84,7 +94,7 @@ WE_SET_RUNNING=1
 for i in \$(seq 1 5000); do echo "sor \$i"; done
 FINALIZED=1   # ide már nem jut el
 EOF
-bash "$TMP/pipe.sh" 2>"$TMP/pipe.err" | head -3 >/dev/null
+bash "$TMP/tools/pipe.sh" 2>"$TMP/pipe.err" | head -3 >/dev/null
 sleep 0.2
 check "status → error (nem ragad running-ban)" "error" \
     "$(grep '^status:' "$TMP/meta.yaml" | awk -F'"' '{print $2}')"
@@ -96,7 +106,7 @@ grep -q 'error_message: "wrapper exited' "$TMP/meta.yaml" && { echo "  PASS  err
 echo
 echo "5. SIGTERM futás közben → meta error, agent PID jelentve"
 mkmeta "$TMP/meta.yaml" "running"
-cat > "$TMP/term.sh" <<EOF
+cat > "$TMP/tools/term.sh" <<EOF
 $(cat "$TMP/prelude.sh")
 META="$TMP/meta.yaml"
 RUN_LOG="$TMP/term.log"
@@ -106,7 +116,7 @@ AGENT_PID=\$!
 echo \$AGENT_PID > "$TMP/agent.pid"
 wait \$AGENT_PID
 EOF
-bash "$TMP/term.sh" 2>"$TMP/term.err" &
+bash "$TMP/tools/term.sh" 2>"$TMP/term.err" &
 WRAPPER=$!
 sleep 1
 kill -TERM "$WRAPPER" 2>/dev/null
@@ -119,6 +129,66 @@ AP=$(cat "$TMP/agent.pid" 2>/dev/null || echo "")
 [[ -n "$AP" ]] && kill -0 "$AP" 2>/dev/null && { echo "  PASS  a háttérgyerek túlélte a wrapper TERM-jét"; ((pass++)); } \
     || { echo "  FAIL  a gyerek nem élte túl — nem lenne mit jelenteni"; ((fail++)); }
 [[ -n "$AP" ]] && kill -TERM "$AP" 2>/dev/null
+
+echo
+echo "6. Git-es fixture: a kipusholt index sem mutathat futó jobot (#34)"
+# Az 1-5. esetek önálló meta-fájlon futnak, git és index nélkül -- ezért nem
+# láthatták, hogy a finalizer a javított meta MELLÉ a futás előtti indexet
+# commitolja. Ez az eset teljes fát épít, távolival együtt.
+G="$TMP/git"; mkdir -p "$G/tools" "$G/jobs/t" "$G/hooks"
+cp "$TOOLS/meta-get.sh" "$TOOLS/update-index.sh" "$G/tools/"
+mkmeta "$G/jobs/t/meta.yaml" "running"
+python3 - "$G/jobs/t/meta.yaml" <<'PYX'
+import sys
+p = sys.argv[1]; c = open(p).read()
+open(p, "w").write('job_id: "t"\nlevel: "repo"\n' + c)
+PYX
+git init -q --bare "$TMP/remote.git"
+git -C "$G" init -q
+git -C "$G" config user.email t@t
+git -C "$G" config user.name t
+git -C "$G" config commit.gpgsign false
+git -C "$G" config core.hooksPath "$G/hooks"   # a valódi aláíró hook ne fusson
+git -C "$G" remote add origin "$TMP/remote.git"
+bash "$G/tools/update-index.sh" >/dev/null 2>&1
+git -C "$G" add -A >/dev/null 2>&1
+git -C "$G" commit -qm init >/dev/null 2>&1
+git -C "$G" branch -M main >/dev/null 2>&1
+git -C "$G" push -q -u origin main >/dev/null 2>&1
+
+check "kiindulás: az index running-ot mond" "1" \
+    "$(grep -c 'running' "$G/jobs/index.yaml")"
+
+cat > "$G/tools/case.sh" <<EOF
+$(cat "$TMP/prelude.sh")
+META="$G/jobs/t/meta.yaml"
+RUN_LOG="$G/run.log"
+JOB_ID="t"
+WE_SET_RUNNING=1
+exit 7
+EOF
+bash "$G/tools/case.sh" >/dev/null 2>"$G/case.err"
+
+check "a meta error lett" "error" \
+    "$(bash "$TOOLS/meta-get.sh" "$G/jobs/t/meta.yaml" status)"
+check "  az index NEM mond running-ot" "0" "$(grep -c 'running' "$G/jobs/index.yaml")"
+check "  az index error-t mond" "1" "$(grep -c 'error' "$G/jobs/index.yaml")"
+
+# És ugyanez a távolin, mert a job-boot azt olvassa.
+REMOTE_IDX=$(git -C "$G" show origin/main:jobs/index.yaml 2>/dev/null || echo "")
+check "  a távoli index sem mond running-ot" "0" "$(printf '%s' "$REMOTE_IDX" | grep -c 'running')"
+check "  a távoli index error-t mond" "1" "$(printf '%s' "$REMOTE_IDX" | grep -c 'error')"
+
+echo
+echo "7. Idézőjel nélküli status: a finalizer akkor is javít"
+# Az `awk -F'"'` olvasó erre ÜRES stringet adott, tehát a finalizer némán nem
+# vette vissza a jobot -- a meta 'running'-ban ragadt. YAML szerint ez ugyanaz
+# a dokumentum, mint az idézőjeles alak. Ugyanaz az osztály, mint #29/#30,
+# csak itt a mulasztás a hiba.
+mkmeta "$TMP/meta.yaml" "running"
+sed -i 's/^status: "running"$/status: running # agent-01/' "$TMP/meta.yaml"
+out=$(run_case 'WE_SET_RUNNING=1; RUN_LOG="'"$TMP"'/c.log"; exit 7' "__keep__")
+check "status → error" "error" "$(bash "$TOOLS/meta-get.sh" "$TMP/meta.yaml" status)"
 
 echo
 echo "==== $pass PASS / $fail FAIL ===="

@@ -62,8 +62,12 @@ finalize() {
     # starts (a previous stuck run). Declining the "Job már fut. Folytatod?"
     # prompt must not rewrite someone else's job to error — only a run that put
     # the status there is allowed to take it back.
+    # A státusz itt jogosultsági döntés: eldönti, szabad-e visszavennünk a
+    # jobot error-ba. Eddig `awk -F'"'` olvasta, ami egy sorvégi kommentnél
+    # `running" # x`-et ad -- a finalizer ilyenkor némán nem javított. Ugyanaz
+    # az osztály, mint #29/#30, csak itt a mulasztás a hiba.
     local st
-    st=$(grep '^status:' "${META:-/dev/null}" 2>/dev/null | awk -F'"' '{print $2}' || true)
+    st=$(bash "$WORKDIR/tools/meta-get.sh" "${META:-/dev/null}" status 2>/dev/null) || st=""
     if [[ "$WE_SET_RUNNING" -eq 1 && "$st" == "running" ]]; then
         local end; end=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
         python3 - "$META" "$end" <<'PYFIN' || true
@@ -101,6 +105,14 @@ PYFIN
         #
         # The lease is the fallback: if this does not land, the deadline already
         # on the remote still makes the job detectably stuck.
+        # Az index a normál úton a 304. és 663. sorban regenerálódik; a
+        # finalizer egyiket sem járja be. Enélkül a javított meta MELLÉ a
+        # futás előtti index kerül kipusholásra: meta=error, index=running.
+        # A jobs/index.yaml az, amit a /job-boot és az ember tényleg olvas,
+        # tehát a finalizer épp ott hagyta futónak a jobot, ahol számít.
+        timeout 60 bash "$WORKDIR/tools/update-index.sh" >/dev/null 2>&1 \
+            || echo "[!] Az index regenerálása nem sikerült — a commit a régi indexet viszi." >&2
+
         if timeout 60 git -C "$WORKDIR" add "$META" jobs/index.yaml 2>/dev/null \
            && timeout 60 git -C "$WORKDIR" commit -q -m "job: ${JOB_ID:-?} — error (wrapper exited early)" 2>/dev/null \
            && timeout 60 git -C "$WORKDIR" push -q 2>/dev/null; then
