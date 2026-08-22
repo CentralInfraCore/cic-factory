@@ -142,7 +142,16 @@ META="$JOB_DIR/meta.yaml"
 INPUT="$JOB_DIR/input.md"
 WORKSPACE="$JOB_DIR/workspace"
 FACTORY_CLONE="$WORKSPACE/cic-factory"
-FACTORY_REMOTE="git@github.com:CentralInfraCore/cic-factory.git"
+# Az agent azt a repót klónozza, amelyikben a job él — nem egy beégetett címet.
+# Korábban itt a CIC factory GitHub-URL-je állt: a mag ismerte egy konkrét
+# telepítés nevét, és a végigfuttatás hálózatot meg SSH-kulcsot igényelt, ami a
+# tesztelést is ellehetetlenítette.
+FACTORY_REMOTE="${CIC_FACTORY_REMOTE:-$(git -C "$WORKDIR" remote get-url origin 2>/dev/null || true)}"
+if [[ -z "$FACTORY_REMOTE" ]]; then
+    echo "[ERROR] Nem állapítható meg, honnan klónozzon az agent." >&2
+    echo "        A workdir-nek legyen 'origin' távolija, vagy add meg: CIC_FACTORY_REMOTE" >&2
+    exit 1
+fi
 FEATURE_BRANCH="feature/$JOB_ID"
 AGENT_CONFIG="$HOME/.claude-personal/agents/$AGENT_ID"
 # Claude Code slugs a project path by replacing BOTH separators and underscores

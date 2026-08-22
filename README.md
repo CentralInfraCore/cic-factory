@@ -89,7 +89,7 @@ coupling rather than carry it:
 
 | coupling | where |
 |---|---|
-| `cic-factory` repo name | `CLAUDE.md`, `docs/onboarding.md`, 3 slash commands, `tools/run-job.sh`, `tools/hooks/context-monitor.sh`, `tools/env.sh.example`, `jobs/.schema/meta.yaml` |
+| `cic-factory` repo name | `docs/onboarding.md`, 3 slash commands, `tools/hooks/context-monitor.sh`, `tools/env.sh.example`. **No longer in `tools/run-job.sh`** — the clone source is derived from the repository's own `origin`. |
 | `kb_focus` (KB node ids) | `CLAUDE.md`, `docs/onboarding.md`, 2 slash commands, both gates, `tools/run-job.sh`, `jobs/.schema/meta.yaml` |
 | `~/.claude-personal` agent layout | `CLAUDE.md`, `docs/onboarding.md`, `.claude/commands/job-run.md`, `tools/run-job.sh`, `tools/install-claude-hooks.sh`, `jobs/.schema/meta.yaml` |
 | `CIC-Relay`, `$CIC_RELAY_PATH` | `CLAUDE.md`, `docs/onboarding.md`, `.claude/commands/job-boot.md`, both gates, `tools/env.sh.example`, `jobs/.schema/meta.yaml` |
