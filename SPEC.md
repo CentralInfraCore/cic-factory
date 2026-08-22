@@ -158,6 +158,31 @@ Amit egy kapu nem bizonyít, azt ne állítsd róla.
 
 ---
 
+## Runnerek — mit futtat a gyár
+
+A factory **nem tudja, milyen agentet futtat**. Egy runner az a csere-darab, ami
+tudja: `tools/runners/<név>.sh`, választás a `CIC_AGENT_RUNNER`-rel
+(alapértelmezés: `claude`).
+
+A runner környezeti változókból kap mindent, és egy normalizált JSON-t ír —
+szerződés: [`docs/RUNNER-CONTRACT.md`](docs/RUNNER-CONTRACT.md), séma:
+[`jobs/.schema/runner-result.schema.json`](jobs/.schema/runner-result.schema.json).
+
+| runner | mit futtat |
+|---|---|
+| `claude` | Claude Code. Minden Claude-specifikus ismeret itt él: CLI-flagek, `CLAUDE_CONFIG_DIR`, a JSON alakja |
+| `echo` | semmit — a promptot adja vissza |
+
+Az `echo` nem játék. Két dolgot bizonyít: hogy a szerződés valódi (egy második
+implementáció az egyetlen különbség absztrakció és átnevezés között), és hogy a
+lifecycle **végigfuttatható** agent, hálózat és költség nélkül. A
+`test-run-job-e2e.sh` ezen áll.
+
+**Amit egy runner nem tud megmondani, azt hagyja ki.** A hiányzó mező üresen
+marad a `meta.yaml`-ben. Nullát írni oda mérésnek látszana.
+
+---
+
 ## Agent auth
 
 ```

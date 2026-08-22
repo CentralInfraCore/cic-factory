@@ -47,8 +47,11 @@ mkjob() {
     # nem azért bukik, amit a teszt vizsgál.
     cp "$SRC/run-job.sh" "$SRC/validate-spec.sh" "$SRC/update-index.sh" \
        "$SRC/validate-meta.sh" "$root/tools/"
-    mkdir -p "$root/jobs/.schema"
+    mkdir -p "$root/jobs/.schema" "$root/tools/runners"
     cp "$SRC/../jobs/.schema/meta.schema.json" "$SRC/../jobs/.schema/meta.yaml" "$root/jobs/.schema/"
+    # A run-job.sh a spec-kapu ELŐTT ellenőrzi a runnert, tehát a fixture-nek
+    # azt is hoznia kell — különben nem a kaput mérnénk.
+    cp "$SRC/runners/echo.sh" "$root/tools/runners/"
     if [[ "$good" == "good" ]]; then
         cat > "$root/jobs/t/input.md" <<'EOF'
 # Teszt job
@@ -96,7 +99,8 @@ EOF
 
 run_job() {
     local root="$1"; shift
-    ( cd "$root" && HOME="$root/home" bash tools/run-job.sh t "$@" ) >"$root/out.log" 2>&1
+    ( cd "$root" && HOME="$root/home" CIC_AGENT_RUNNER=echo \
+        bash tools/run-job.sh t "$@" ) >"$root/out.log" 2>&1
     echo $?
 }
 field() { grep "^$2:" "$1/jobs/t/meta.yaml" | head -1 | awk -F'"' '{print $2}'; }

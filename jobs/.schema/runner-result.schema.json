@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CentralInfraCore/cic-factory-core/jobs/.schema/runner-result.schema.json",
+  "title": "agent runner result",
+  "description": "What a runner writes to $CIC_RESULT_JSON. Only `result` is required: a runner omits what its agent cannot report, and the factory leaves the corresponding meta.yaml field empty. Writing a zero where there is no measurement is forbidden -- a false zero looks like data, a missing field does not.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["result"],
+  "properties": {
+    "result": {
+      "type": "string",
+      "description": "The agent's textual output. Raw text if the agent produced nothing parseable."
+    },
+    "session_id": { "type": "string" },
+    "cost_usd": { "type": ["number", "null"] },
+    "turns": { "type": ["integer", "null"], "minimum": 0 },
+    "stop_reason": { "type": "string" },
+    "duration_ms": { "type": ["integer", "null"], "minimum": 0 },
+    "models": {
+      "type": "string",
+      "description": "Comma-separated, every model the run touched."
+    },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "input": { "type": "integer", "minimum": 0 },
+        "output": { "type": "integer", "minimum": 0 },
+        "cache_read": { "type": "integer", "minimum": 0 },
+        "cache_creation": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
