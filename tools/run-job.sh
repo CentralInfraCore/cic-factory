@@ -70,22 +70,18 @@ finalize() {
     st=$(bash "$WORKDIR/tools/meta-get.sh" "${META:-/dev/null}" status 2>/dev/null) || st=""
     if [[ "$WE_SET_RUNNING" -eq 1 && "$st" == "running" ]]; then
         local end; end=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-        python3 - "$META" "$end" <<'PYFIN' || true
-import re, sys
-meta, end = sys.argv[1], sys.argv[2]
-with open(meta) as f: c = f.read()
-c = re.sub(r'^status:.*$', 'status: "error"', c, flags=re.MULTILINE)
-c = re.sub(r'^(\s+)completed:.*$', rf'\1completed: "{end}"', c, flags=re.MULTILINE)
-# error_message is a top-level key (jobs/.schema/meta.yaml) — matching it with a
-# leading-whitespace group never fires, and the field stayed empty on every error.
-c = re.sub(r'^error_message:.*$',
-           'error_message: "wrapper exited before finalizing — see the job log; the agent may have kept running"',
-           c, flags=re.MULTILINE)
-# The lease has served its purpose once the status is corrected; leaving it would
-# make an already-resolved job look stuck to check-stale-jobs.sh.
-c = re.sub(r'^lease_expires:.*$', 'lease_expires: ""', c, flags=re.MULTILINE)
-with open(meta, "w") as f: f.write(c)
-PYFIN
+        # A lease a státusz javításával elveszti az értelmét; ott hagyva egy
+        # már rendezett job elakadtnak látszana a check-stale-jobs.sh-nak.
+        #
+        # A `^(\s+)completed:` minta korábban MINDEN behúzott completed: sort
+        # átírta, nem csak a timestamps alattit; az error_message-et pedig
+        # behúzás-csoporttal kereste, holott top-level kulcs -- így a mező
+        # minden hibánál üres maradt.
+        bash "$WORKDIR/tools/meta-set.sh" "$META" \
+            'status=error' \
+            "timestamps.completed=$end" \
+            'error_message=wrapper exited before finalizing — see the job log; the agent may have kept running' \
+            'lease_expires=' || true
         {
             echo "[!] A wrapper idő előtt kilépett (rc=$rc). meta.yaml → error."
             [[ -n "$AGENT_PID" ]] && kill -0 "$AGENT_PID" 2>/dev/null && \
@@ -208,23 +204,28 @@ LEVEL=$(grep '^level:' "$META" | awk -F'"' '{print $2}' || true)
 # kb_focus is injected into the prompt as a mandatory first-read list (weak models
 # are poor at discovery, good at execution — hand them the context).
 # max_turns is a hard runaway guard; without it an agent can burn unbounded tokens.
+# Az utolsó regexes meta-olvasó volt. A kb_focus mintája csak a dupla
+# idézőjeles inline listát ismerte: a `[c781, n9]` és a `['c781']` alak üresen
+# jött vissza, a blokk-lista elemeibe pedig a sorvégi komment is beleragadt --
+# `c781 # fontos` került a promptba. A max_turns mintája nem volt szekcióhoz
+# kötve, tehát a usage.max_turns-öt is felszedhette, ha az állt előrébb.
 eval "$(python3 - "$META" <<'PYEOF'
-import sys, re, shlex
+import shlex
+import sys
 
-meta = open(sys.argv[1]).read()
+import yaml
 
-# kb_focus: inline list (kb_focus: ["a", "b"]) or block list (kb_focus:\n  - "a")
-focus = []
-m = re.search(r'^kb_focus:\s*\[(.*?)\]\s*$', meta, re.MULTILINE)
-if m:
-    focus = re.findall(r'"([^"]+)"', m.group(1))
-else:
-    m = re.search(r'^kb_focus:\s*\n((?:[ \t]+-[ \t]+.*\n)+)', meta, re.MULTILINE)
-    if m:
-        focus = [x.strip().strip('"') for x in re.findall(r'-[ \t]+(.*?)[ \t]*$', m.group(1), re.MULTILINE)]
+doc = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
 
-m = re.search(r'^\s+max_turns:\s*"?(\d+)"?', meta, re.MULTILINE)
-turns = m.group(1) if m else ""
+focus = doc.get("kb_focus") or []
+if isinstance(focus, str):
+    focus = [focus]
+focus = [str(x).strip() for x in focus if str(x).strip()]
+
+turns = ((doc.get("agent") or {}).get("max_turns"))
+turns = "" if turns is None else str(turns).strip()
+if not turns.isdigit():
+    turns = ""
 
 print(f"KB_FOCUS={shlex.quote(' '.join(focus))}")
 print(f"META_MAX_TURNS={shlex.quote(turns)}")
@@ -303,35 +304,21 @@ LEASE_EXPIRES=$(date -u -d "+${LEASE_HOURS} hours" +"%Y-%m-%dT%H:%M:%SZ")
 
 # --- pending → running ---
 echo "[*] $JOB_ID — running ($NOW)"
-python3 - "$META" "$NOW" "$SKIP_SPEC_GATE" "$LEASE_EXPIRES" <<'PYEOF'
-import sys, re
-meta_path, now, skip_spec_gate, lease = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-with open(meta_path) as f:
-    content = f.read()
-content = re.sub(r'^status:.*$', 'status: "running"', content, flags=re.MULTILINE)
-content = re.sub(r'^\s+started:.*$', f'  started: "{now}"', content, flags=re.MULTILINE)
-content = re.sub(r'^\s+completed:.*$', '  completed: ""', content, flags=re.MULTILINE)
-
-# A bypass has to leave a trace, or it is a hole in the same evidence chain this
-# repository is built on. Written whether skipped or not, so an absent field
-# means an old meta rather than a clean run.
-if re.search(r'^lease_expires:', content, flags=re.MULTILINE):
-    content = re.sub(r'^lease_expires:.*$', f'lease_expires: "{lease}"', content,
-                     flags=re.MULTILINE)
-else:
-    content = re.sub(r'^(status:.*)$', rf'\1\nlease_expires: "{lease}"', content,
-                     count=1, flags=re.MULTILINE)
-
-gate = "skipped" if skip_spec_gate == "1" else "passed"
-if re.search(r'^spec_gate:', content, flags=re.MULTILINE):
-    content = re.sub(r'^spec_gate:.*$', f'spec_gate: "{gate}"', content, flags=re.MULTILINE)
-else:
-    content = re.sub(r'^(status:.*)$', rf'\1\nspec_gate: "{gate}"', content,
-                     count=1, flags=re.MULTILINE)
-
-with open(meta_path, "w") as f:
-    f.write(content)
-PYEOF
+# A `^\s+started:` és `^\s+completed:` minták nem voltak szekcióhoz kötve:
+# minden azonos nevű behúzott mezőt átírtak, bárhol álltak. A lease és a
+# spec_gate beszúrása pedig a status: sorra támaszkodott -- ha az hiányzott,
+# egyik sem került be.
+#
+# A bypass nyomot kell hagyjon, különben lyuk ugyanabban a bizonyítéki láncban,
+# amire ez a repó épül. Akkor is íródik, ha nem volt kihagyva: a mező hiánya
+# így régi metát jelent, nem tiszta futást.
+SPEC_GATE_VALUE=$([[ "$SKIP_SPEC_GATE" -eq 1 ]] && echo skipped || echo passed)
+bash "$WORKDIR/tools/meta-set.sh" "$META" \
+    'status=running' \
+    "timestamps.started=$NOW" \
+    'timestamps.completed=' \
+    "lease_expires=$LEASE_EXPIRES" \
+    "spec_gate=$SPEC_GATE_VALUE"
 WE_SET_RUNNING=1   # from here on, an early exit is ours to clean up
 
 bash "$WORKDIR/tools/update-index.sh"
@@ -656,29 +643,26 @@ if [[ "$NEW_STATUS" == "awaiting_review" ]]; then
 fi
 
 # --- running → awaiting_review/error + usage (live meta) ---
-python3 - "$META" "$NEW_STATUS" "$END" "$SESSION_ID" \
+# Ez a blokk SZÁMOL, nem ír: a mezőket kulcs=érték párokként adja tovább, a
+# fájlt a meta-set.sh szerkeszti. A korábbi verzió maga írt, és a mintái nem
+# voltak szekcióhoz kötve: a `^\s+completed:` minden behúzott completed: sort
+# átírta, a session_id az első `model:` alá került akárhol volt, a prev()
+# pedig bármelyik szekció azonos nevű mezőjét felszedte. A usage-blokk cseréje
+# az első üres sorig tartott, tehát a mögötte maradt régi mezők duplikált
+# YAML-kulcsként éltek tovább.
+mapfile -t META_ASSIGNMENTS < <(python3 - "$META" "$NEW_STATUS" "$END" "$SESSION_ID" \
          "$RUN_COST" "$RUN_TURNS" "$RUN_IN_TOKENS" "$RUN_OUT_TOKENS" "$RUN_DURATION_MS" "$MAX_TURNS" \
          "$RUN_CACHE_READ" "$RUN_CACHE_CREATE" "$RUN_TOTAL_IN" "$RUN_MODELS" "$RUN_STOP_REASON" "$RESUME" <<'PYEOF'
-import sys, re
+import sys
+
+import yaml
 
 (meta_path, status, end, session_id,
  cost, turns, in_tok, out_tok, duration_ms, max_turns,
  cache_read, cache_create, total_in, models, stop_reason, resume) = sys.argv[1:17]
 
-with open(meta_path) as f:
-    content = f.read()
-
-content = re.sub(r'^status:.*$', f'status: "{status}"', content, flags=re.MULTILINE)
-# The run is over, so the lease is meaningless -- and a leftover deadline would
-# make a finished job look stuck.
-content = re.sub(r'^lease_expires:.*$', 'lease_expires: ""', content, flags=re.MULTILINE)
-content = re.sub(r'^\s+completed:.*$', f'  completed: "{end}"', content, flags=re.MULTILINE)
-
-if session_id:
-    if re.search(r'^\s+session_id:', content, flags=re.MULTILINE):
-        content = re.sub(r'^(\s+)session_id:.*$', rf'\1session_id: "{session_id}"', content, flags=re.MULTILINE)
-    else:
-        content = re.sub(r'^(\s+model:.*)$', rf'\1\n  session_id: "{session_id}"', content, flags=re.MULTILINE, count=1)
+doc = yaml.safe_load(open(meta_path, encoding="utf-8")) or {}
+usage = doc.get("usage") or {}
 
 # usage block — cost visibility per job (P3).
 # Token fields are aggregated across ALL models the run used (main + auxiliary),
@@ -694,8 +678,13 @@ if session_id:
 # Latest-wins fields (they describe the final run, not the total): stop_reason,
 # max_turns. Models are unioned. `runs` makes the aggregate visible as such.
 def prev(field, default="0"):
-    m = re.search(rf'^\s+{field}:\s*"([^"]*)"\s*$', content, flags=re.MULTILINE)
-    return m.group(1) if m and m.group(1) != "" else default
+    """A KORÁBBI usage-érték, a usage szekcióból. A régi regex bármelyik
+    szekció azonos nevű mezőjét felszedte."""
+    value = usage.get(field)
+    if value is None or str(value).strip() == "":
+        return default
+    return str(value)
+
 
 def add_int(field, run_value):
     try:
@@ -703,53 +692,54 @@ def add_int(field, run_value):
     except ValueError:
         return str(run_value or 0)
 
+
 def add_float(field, run_value):
     try:
         return repr(float(prev(field)) + float(run_value or 0))
     except ValueError:
         return str(run_value or 0)
 
+
 if resume == "1":
-    runs        = add_int("runs", 1) if re.search(r'^\s+runs:', content, flags=re.MULTILINE) else "2"
-    cost        = add_float("cost_usd", cost)
-    turns       = add_int("turns", turns)
-    duration_ms = add_int("duration_ms", duration_ms)
-    in_tok      = add_int("input_tokens", in_tok)
-    out_tok     = add_int("output_tokens", out_tok)
-    cache_read  = add_int("cache_read_input_tokens", cache_read)
-    cache_create= add_int("cache_creation_input_tokens", cache_create)
-    total_in    = add_int("total_input_tokens", total_in)
-    models      = ",".join(sorted(set(filter(None, prev("models", "").split(",") + models.split(",")))))
+    runs         = add_int("runs", 1) if "runs" in usage else "2"
+    cost         = add_float("cost_usd", cost)
+    turns        = add_int("turns", turns)
+    duration_ms  = add_int("duration_ms", duration_ms)
+    in_tok       = add_int("input_tokens", in_tok)
+    out_tok      = add_int("output_tokens", out_tok)
+    cache_read   = add_int("cache_read_input_tokens", cache_read)
+    cache_create = add_int("cache_creation_input_tokens", cache_create)
+    total_in     = add_int("total_input_tokens", total_in)
+    models = ",".join(sorted(set(filter(
+        None, prev("models", "").split(",") + models.split(",")))))
 else:
     runs = "1"
 
-usage_block = (
-    "usage:\n"
-    f'  runs: "{runs}"\n'
-    f'  cost_usd: "{cost}"\n'
-    f'  turns: "{turns}"\n'
-    f'  max_turns: "{max_turns}"\n'
-    f'  stop_reason: "{stop_reason}"\n'
-    f'  duration_ms: "{duration_ms}"\n'
-    f'  models: "{models}"\n'
-    f'  total_input_tokens: "{total_in}"\n'
-    f'  input_tokens: "{in_tok}"\n'
-    f'  cache_read_input_tokens: "{cache_read}"\n'
-    f'  cache_creation_input_tokens: "{cache_create}"\n'
-    f'  output_tokens: "{out_tok}"\n'
-)
-if re.search(r'^usage:\s*$', content, flags=re.MULTILINE):
-    content = re.sub(r'^usage:\s*\n(?:[ \t]+\S.*\n)*', usage_block, content, flags=re.MULTILINE, count=1)
-else:
-    # insert before timestamps: so the file keeps a stable field order
-    if re.search(r'^timestamps:\s*$', content, flags=re.MULTILINE):
-        content = re.sub(r'^timestamps:\s*$', usage_block + "timestamps:", content, flags=re.MULTILINE, count=1)
-    else:
-        content = content.rstrip("\n") + "\n" + usage_block
+# A lease a futás végén értelmét veszti; ott hagyva egy befejezett job
+# elakadtnak látszana.
+out = [("status", status),
+       ("lease_expires", ""),
+       ("timestamps.completed", end)]
+if session_id:
+    out.append(("agent.session_id", session_id))
+out += [("usage.runs", runs),
+        ("usage.cost_usd", cost),
+        ("usage.turns", turns),
+        ("usage.max_turns", max_turns),
+        ("usage.stop_reason", stop_reason),
+        ("usage.duration_ms", duration_ms),
+        ("usage.models", models),
+        ("usage.total_input_tokens", total_in),
+        ("usage.input_tokens", in_tok),
+        ("usage.cache_read_input_tokens", cache_read),
+        ("usage.cache_creation_input_tokens", cache_create),
+        ("usage.output_tokens", out_tok)]
 
-with open(meta_path, "w") as f:
-    f.write(content)
+for key, value in out:
+    print(f"{key}={value}")
 PYEOF
+)
+bash "$WORKDIR/tools/meta-set.sh" "$META" "${META_ASSIGNMENTS[@]}"
 
 bash "$WORKDIR/tools/update-index.sh"
 git -C "$WORKDIR" add "$META" jobs/index.yaml

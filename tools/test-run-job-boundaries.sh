@@ -129,6 +129,31 @@ check "  a titoknak látszót is jelzi" "1" "$(grep -c 'titoknak látszik' "$R/r
 rm -rf "$R"
 
 echo
+echo "kb_focus és max_turns — a régi regex melyiken bukott (#40)"
+# A minta csak a dupla idézőjeles inline listát ismerte, a blokk-lista elemeibe
+# pedig a sorvégi komment is beleragadt. A max_turns nem volt szekcióhoz kötve.
+R=$(mkfactory)
+printf '# T\nA fókusz szerepeljen a promptban.\n## Output\n`output/report.md`\n' > "$R/repo/jobs/t/input.md"
+# A sablonban MÁR van usage: szekció; egy másodikat hozzáfűzve duplikált
+# kulcs keletkezne, és a fail-closed olvasó megállítaná a futást. (Az első
+# változat pontosan ezt csinálta -- a saját őr fogta meg.)
+python3 - "$R/repo/jobs/t/meta.yaml" <<'PYX2'
+import sys
+p = sys.argv[1]
+c = open(p, encoding="utf-8").read()
+c = c.replace('kb_focus: []', "kb_focus: [c781, 'n9']")
+open(p, "w", encoding="utf-8").write(c)
+PYX2
+bash "$SRC/meta-set.sh" "$R/repo/jobs/t/meta.yaml" 'usage.max_turns=999' 
+commit_spec "$R"
+run_job "$R" >/dev/null
+P=$(prompt_of "$R")
+check "az idézőjel nélküli ID bekerült"  "1" "$(printf '%s' "$P" | grep -c 'c781')"
+check "  az aposztrófos is"              "1" "$(printf '%s' "$P" | grep -c 'n9')"
+check "  a usage.max_turns NEM lett a limit" "0" "$(grep -c 'max-turns 999' "$R/run.log")"
+rm -rf "$R"
+
+echo
 echo "A path határa (#32)"
 # Az exit code itt NEM mér semmit: ellenőrzés nélkül is 1-gyel áll le, csak
 # később és más okból ("Nem létezik: .../jobs/../../X/meta.yaml"). Az első
