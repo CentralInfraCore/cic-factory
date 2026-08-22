@@ -95,12 +95,18 @@ jobs/
 
 ### meta.yaml
 
-**A mezők forrása [`jobs/.schema/meta.yaml`](jobs/.schema/meta.yaml).**
+**A mezők forrása [`jobs/.schema/meta.schema.json`](jobs/.schema/meta.schema.json)**
+— gépi séma, nem próza. A [`jobs/.schema/meta.yaml`](jobs/.schema/meta.yaml) a
+kommentelt példa, és a kapu ellenőrzi, hogy a kulcsai egyeznek a sémáéval.
 
 Ez a dokumentum szándékosan nem sorolja fel őket. Amikor felsorolta, elcsúszott:
 a `lease_expires`, a `spec_gate` és a `usage` bekerült a sémába, és a másolat
 hallgatott róluk. Egy séma, amit két helyen írunk le, egy helyen elavul — a
 kapu ezért ellenőrzi, hogy egyetlen dokumentum se definiálja újra.
+
+A séma **elutasítja** az elgépelt mezőnevet, az érvénytelen `status`- vagy
+`spec_gate`-értéket, az üres `agent.model`-t és a hiányzó kötelező blokkot. Egy
+job metája a `validate-spec.sh` K10-én keresztül esik át rajta.
 
 ### Sub-job lifecycle
 

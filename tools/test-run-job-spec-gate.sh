@@ -42,7 +42,13 @@ check_not_log() {
 mkjob() {
     local root="$1" good="$2"
     mkdir -p "$root/tools" "$root/jobs/t" "$root/home/.claude-personal/agents/agent-01"
-    cp "$SRC/run-job.sh" "$SRC/validate-spec.sh" "$SRC/update-index.sh" "$root/tools/"
+    # validate-spec.sh K10 hívja a validate-meta.sh-t, az pedig a sémát olvassa.
+    # A fixture-nek a teljes hívási láncot át kell hoznia, különben a "good" spec
+    # nem azért bukik, amit a teszt vizsgál.
+    cp "$SRC/run-job.sh" "$SRC/validate-spec.sh" "$SRC/update-index.sh" \
+       "$SRC/validate-meta.sh" "$root/tools/"
+    mkdir -p "$root/jobs/.schema"
+    cp "$SRC/../jobs/.schema/meta.schema.json" "$SRC/../jobs/.schema/meta.yaml" "$root/jobs/.schema/"
     if [[ "$good" == "good" ]]; then
         cat > "$root/jobs/t/input.md" <<'EOF'
 # Teszt job
@@ -66,11 +72,21 @@ EOF
     cat > "$root/jobs/t/meta.yaml" <<'EOF'
 schema_version: "1.0"
 job_id: "t"
-status: "pending"
-spec_gate: ""
+parent_job_id: ""
+level: "repo"
+target:
+  repo: ""
+  path: ""
+kb_focus: []
 agent:
   config_dir: ""
   model: "claude-sonnet-5"
+workplace:
+  repos: []
+  branch: "feature/t"
+status: "pending"
+spec_gate: ""
+error_message: ""
 timestamps:
   created: "2026-01-01T00:00:00Z"
   started: ""
