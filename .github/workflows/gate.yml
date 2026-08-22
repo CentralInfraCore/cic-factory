@@ -154,6 +154,15 @@ jobs:
       - name: docs checker itself
         run: bash tools/test-check-docs.sh
 
+      # A README-ben deklarált check-számok egyeznek-e a valósággal. Külön
+      # script, mert lefuttatja az összes suite-ot -- a check-docs.sh maga is
+      # fut egy suite-ban, tehát egymást hívva rekurzióba mennének.
+      - name: declared suite counts match
+        run: bash tools/check-suite-counts.sh
+
+      - name: count checker can fail
+        run: bash tools/test-check-suite-counts.sh
+
       # The first test that runs a whole job. It needs a git identity because
       # run-job.sh commits the status transitions.
       - name: end to end, with the echo runner

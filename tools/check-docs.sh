@@ -14,6 +14,14 @@
 #       (lease_expires, spec_gate, usage) és a másolat hallgatott róluk. Egy
 #       séma, amit két helyen írunk le, egy helyen elavul.
 #
+#   D3  a README suite-táblázata a valódi fájlokat sorolja
+#       A táblázat és a tools/ két külön, kézzel karbantartott lista volt.
+#
+#   D4  a dokumentált K/O/C szabályok léteznek
+#       Három dokumentum ígért "K1–K11"-et. Kilenc volt belőle: a K2, K5 és K6
+#       sehol nem létezett. Egy tartomány olyan állítás, amit senki nem
+#       ellenőrzött — ezt nézi ez a szabály.
+#
 # Exit 0 = rendben, exit 1 = van hiba.
 
 set -uo pipefail
@@ -101,6 +109,112 @@ if [[ -n "$DUPES" ]]; then
     FAILED=1
 else
     echo "  OK — egyetlen dokumentum sem definiálja újra"
+fi
+
+echo
+echo "D3 — a README suite-táblázata a valódi fájlokat sorolja"
+DRIFT=$(python3 - <<'PYD3'
+import re, subprocess
+files = set(subprocess.check_output(
+    ["git", "ls-files", "--cached", "--others", "--exclude-standard", "tools/test-*.sh"],
+    text=True).split())
+rows = set("tools/" + m for m in re.findall(
+    r'^\| `tools/(test-[A-Za-z0-9._-]+\.sh)`',
+    open("README.md", encoding="utf-8").read(), re.M))
+out = [f"  {f} — van fájl, nincs README-sor" for f in sorted(files - rows)]
+out += [f"  {r} — van README-sor, nincs fájl" for r in sorted(rows - files)]
+print("\n".join(out))
+PYD3
+)
+if [[ -n "$DRIFT" ]]; then
+    echo "$DRIFT"
+    echo "  FAIL — a táblázat és a tools/ nem ugyanazt mondja"
+    FAILED=1
+else
+    echo "  OK — minden suite pontosan egyszer szerepel"
+fi
+
+echo
+echo "D4 — a dokumentált kapuszabályok léteznek"
+MISSING=$(python3 - <<'PYD4'
+import re, subprocess
+
+SOURCES = {"K": "tools/validate-spec.sh",
+           "O": "tools/validate-output.sh",
+           "C": "tools/close-job.sh"}
+impl = {}
+for letter, path in SOURCES.items():
+    try:
+        body = open(path, encoding="utf-8").read()
+    except OSError:
+        body = ""
+    impl[letter] = set(re.findall(r"\b(" + letter + r"\d+b?)\b", body))
+
+# A /job-validate kezi listaja tobb, mint amit a gepi kapu ellenoriz: K2, K5 es
+# K6 megitelesi kerdes, azokat nem dont el grep. Ezek deklaralva vannak, hogy a
+# hivatkozasuk ne latszodjon driftnek -- de a deklaracio maga is ellenorzott.
+MANUAL_DECL = ".claude/commands/job-validate.md"
+manual = set()
+try:
+    m = re.search(r"<!--\s*manual-rules:\s*([^>]*?)-->",
+                  open(MANUAL_DECL, encoding="utf-8").read())
+    if m:
+        manual = set(m.group(1).split())
+except OSError:
+    pass
+
+stale = [i for i in sorted(manual) if i and i[0] in impl and i in impl[i[0]]]
+
+docs = subprocess.check_output(
+    ["git", "ls-files", "--cached", "--others", "--exclude-standard", "*.md"],
+    text=True).split()
+
+
+def is_job_artifact(path):
+    parts = path.split("/")
+    return len(parts) > 2 and parts[0] == "jobs" and parts[1] != ".schema"
+
+
+out = []
+for doc in sorted(d for d in docs if not is_job_artifact(d)):
+    for i, line in enumerate(open(doc, encoding="utf-8").read().split("\n"), 1):
+        # Tartomány (K1–K11): minden köztes azonosítót ígér.
+        for letter, lo, hi in re.findall(r"\b([KOC])(\d+)\s*[–-]\s*[KOC]?(\d+)\b", line):
+            for n in range(int(lo), int(hi) + 1):
+                ident = letter + str(n)
+                # A kézi szabály CSAK a saját listájában elfogadható. Máshol --
+                # például a README "machine gate (K1–K11)" mondatában -- épp az
+                # a hiba, hogy gépinek állít valamit, ami megítélési kérdés.
+                allowed = ident in impl[letter] or (ident in manual and doc == MANUAL_DECL)
+                if not allowed:
+                    out.append(f"  {doc}:{i} — a {letter}{lo}–{letter}{hi} tartomány "
+                               f"{ident}-et ígér, de az nincs a {SOURCES[letter]}-ben")
+        # Egyedi hivatkozás.
+        for ident in re.findall(r"(?<![A-Za-z0-9])([KOC]\d+b?)(?![A-Za-z0-9])", line):
+            if ident in impl[ident[0]]:
+                continue
+            if ident in manual and doc == MANUAL_DECL:
+                continue
+            if ident in manual:
+                out.append(f"  {doc}:{i} — {ident} kézi szabály, csak a "
+                           f"{MANUAL_DECL} listájában hivatkozható")
+            else:
+                out.append(f"  {doc}:{i} — {ident} nincs a {SOURCES[ident[0]]}-ben, "
+                           f"és nincs kéziként deklarálva ({MANUAL_DECL})")
+
+# Elavult deklaráció: ami kéziként szerepel, de közben implementálva lett.
+for ident in stale:
+    out.append(f"  {MANUAL_DECL} — {ident} kéziként van deklarálva, "
+               f"de már implementálva van a {SOURCES[ident[0]]}-ben")
+print("\n".join(sorted(set(out))))
+PYD4
+)
+if [[ -n "$MISSING" ]]; then
+    echo "$MISSING"
+    echo "  FAIL — a dokumentáció olyan szabályra hivatkozik, ami nincs implementálva"
+    FAILED=1
+else
+    echo "  OK — minden hivatkozott K/O/C szabály létezik"
 fi
 
 echo
