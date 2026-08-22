@@ -28,13 +28,17 @@ fi
 FAILURES=()
 WARNINGS=()
 
-# K10 — agent.model kitöltve (kritikus)
-# Üres model esetén a run-job.sh nem ad --model flaget, és a job csendben a
-# (drága) default modellen fut. Néma hiba: sehol nem látszik, hogy megtörtént.
-# Szándékosan NEM ellenőrzünk konkrét modellnév-listát — az elavulna.
-MODEL_VALUE=$(grep -E '^\s+model:' "$META" | head -1 | sed -E 's/^\s+model:\s*"?([^"]*)"?\s*$/\1/' || true)
-if [[ -z "$MODEL_VALUE" ]]; then
-    FAILURES+=("K10: meta.yaml agent.model üres — a job a default modellen futna, mérhetetlenül. Tölts ki egyet: claude-opus-5 | claude-sonnet-5 | claude-haiku-4-5 (alias is jó: opus | sonnet | haiku)")
+# K10 — a meta.yaml megfelel a sémának
+# Korábban ez egyetlen kézi grep volt az agent.model mezőre. A séma most gépi
+# (jobs/.schema/meta.schema.json), és többet fog meg, mint amit itt fel lehetne
+# sorolni: elgépelt mezőnevet, érvénytelen status-értéket, hiányzó kötelező
+# blokkot. Az agent.model ürességét is az fogja meg (minLength).
+#
+# Miért számít az üres model: a run-job.sh ilyenkor nem ad --model flaget, és a
+# job csendben a default modellen fut. Néma hiba — sehol nem látszik.
+SCHEMA_OUT=$(bash "$(dirname "$0")/validate-meta.sh" --file "$META" 2>&1)
+if [[ $? -ne 0 ]]; then
+    FAILURES+=("K10: a meta.yaml nem felel meg a sémának:"$'\n'"$SCHEMA_OUT")
 fi
 
 # K11 — kb_focus kitöltve (figyelmeztetés, nem blokkoló)

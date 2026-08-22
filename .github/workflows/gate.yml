@@ -37,6 +37,15 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
           git ls-files '*.sh' | xargs shellcheck --severity=error
 
+      - name: python deps
+        run: pip install -q jsonschema pyyaml
+
+      - name: meta schema matches its template
+        run: bash tools/validate-meta.sh --template
+
+      - name: schema validator itself
+        run: bash tools/test-validate-meta.sh
+
       - name: yaml and json parse
         run: |
           set -euo pipefail
