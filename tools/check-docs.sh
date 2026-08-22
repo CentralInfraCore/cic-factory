@@ -28,6 +28,15 @@ BROKEN=$(python3 - <<'PY'
 import os, re, subprocess
 
 
+def is_job_artifact(path):
+    # jobs/<id>/... is an archive: specs, agent output, reviews, produced under
+    # whatever rules applied at the time. Retroactively editing it to satisfy a
+    # rule invented later would damage the evidence it exists to preserve.
+    # jobs/.schema/ is not an artifact -- it is the contract.
+    parts = path.split("/")
+    return len(parts) > 2 and parts[0] == "jobs" and parts[1] != ".schema"
+
+
 def tracked_md():
     # --others --exclude-standard so a new file is checked before it is added.
     # Without it the checker returns GO on a document whose links are broken and
@@ -35,7 +44,7 @@ def tracked_md():
     out = subprocess.check_output(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard", "*.md"],
         text=True).split()
-    return sorted(set(out))
+    return sorted({f for f in out if not is_job_artifact(f)})
 
 
 out = []
@@ -68,10 +77,15 @@ import re, subprocess
 # top-level kulcs. Prózában idézett egyetlen mezőnév nem duplikáció.
 pat = re.compile(r'```ya?ml\n(.*?)```', re.S)
 out = []
+def is_job_artifact(path):
+    parts = path.split("/")
+    return len(parts) > 2 and parts[0] == "jobs" and parts[1] != ".schema"
+
+
 files = subprocess.check_output(
     ["git", "ls-files", "--cached", "--others", "--exclude-standard", "*.md"],
     text=True).split()
-for f in sorted(set(files)):
+for f in sorted({x for x in files if not is_job_artifact(x)}):
     body = open(f, encoding="utf-8").read()
     for block in pat.findall(body):
         has_job = re.search(r'^job_id:', block, re.M)

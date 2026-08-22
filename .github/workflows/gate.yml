@@ -91,6 +91,10 @@ jobs:
           set -euo pipefail
           missing=0
           while IFS= read -r f; do
+            # jobs/<id>/ is an evidence archive, not source: agent output and
+            # reviews produced under the rules of their time. A header demanded
+            # retroactively there would mean editing the evidence.
+            case "$f" in jobs/.schema/*) ;; jobs/*/*) continue ;; esac
             if ! head -8 "$f" | grep -q 'SPDX-License-Identifier'; then
               echo "no SPDX header: $f"
               missing=1
