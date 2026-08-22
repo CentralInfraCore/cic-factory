@@ -80,6 +80,13 @@ jobs:
       - name: embedded python checker can fail
         run: bash tools/test-check-embedded-python.sh
 
+      # A context-monitor hook három helyen adott fájlból olvasott értéket
+      # $(( ))-nek. A bash az aritmetikai kifejezésben talált command
+      # substitutiont végrehajtja, tehát mindhárom parancsvégrehajtás volt --
+      # az állapotfájlok pedig /tmp-ben, kiszámítható néven éltek.
+      - name: context-monitor hook security
+        run: bash tools/test-context-monitor.sh
+
       # Behaviour, not just syntax. The finalizer suite covers the SIGPIPE/SIGTERM
       # incident; the lifecycle suite covers the transition run-job.sh performs,
       # which the finalizer suite is structurally blind to -- it only extracts the
