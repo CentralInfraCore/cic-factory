@@ -93,6 +93,11 @@ jobs:
       - name: meta field reads
         run: bash tools/test-meta-get.sh
 
+      # A signer az a pont, ahol a provenance keletkezik. CA hiányában eddig
+      # figyelmeztetett, `curl -k`-ra váltott, és a Vault tokent így küldte el.
+      - name: commit-msg signer trust boundary
+        run: bash tools/test-commit-msg-signer.sh
+
       # Behaviour, not just syntax. The finalizer suite covers the SIGPIPE/SIGTERM
       # incident; the lifecycle suite covers the transition run-job.sh performs,
       # which the finalizer suite is structurally blind to -- it only extracts the
