@@ -9,8 +9,8 @@ schema_version: "1.0"
 dependencies:
   - name: cic-factory-core
     repo: https://github.com/CentralInfraCore/cic-factory-core
-    tag: "core/@v0.1.1"
-    commit: "0473793"
+    tag: "core/@v0.1.2"
+    commit: "705d8b6"
     pinned: true
     mode: merge
     adopted: "2026-08-22"
@@ -22,12 +22,16 @@ dependencies:
       - jobs/.schema/
       - SPEC.md
       - .github/workflows/gate.yml
+      # The core ships these three under docs/; the rest of docs/ is local.
+      - docs/onboarding.md
+      - docs/RELEASE-0.1.0.md
+      - docs/RUNNER-CONTRACT.md
     # Owned here; the core never overwrites them.
     local_paths:
       - CLAUDE.md
       - README.md
       - jobs/
-      - docs/
+      - docs/  # except the three core-owned files listed above
     exceptions:
       - path: tools/relay-build-test.sh
         reason: "factory-only — drives a CIC-Relay build, deliberately not in the core"

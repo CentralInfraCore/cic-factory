@@ -73,6 +73,7 @@ error_message: ""           # only when status: error
 # cache-read + 8634 cache-write). Reporting input_tokens alone understates a run
 # by an order of magnitude.
 usage:
+  runs: ""                          # how many times the job ran; --resume increments
   cost_usd: ""                    # authoritative aggregate
   turns: ""
   max_turns: ""

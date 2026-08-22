@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CentralInfraCore/cic-factory-core/jobs/.schema/meta.schema.json",
+  "title": "job meta.yaml",
+  "description": "The single machine-readable definition of a job's meta.yaml. jobs/.schema/meta.yaml is the commented example and is validated against this file in CI, so the two cannot drift.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "job_id",
+    "level",
+    "target",
+    "agent",
+    "workplace",
+    "status",
+    "timestamps"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "job_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "description": "Also a directory name under jobs/, so it is restricted to what is safe as a path segment."
+    },
+    "parent_job_id": {
+      "type": "string"
+    },
+    "level": {
+      "enum": [
+        "",
+        "orchestrator",
+        "repo",
+        "domain"
+      ]
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "path"
+      ],
+      "properties": {
+        "repo": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "kb_focus": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "config_dir",
+        "model"
+      ],
+      "properties": {
+        "config_dir": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string",
+          "description": "Deliberately not an enum of model names -- that list would go stale. Emptiness is what validate-spec.sh K10 rejects, because an empty value makes the job run on the default model with no record of it.",
+          "minLength": 1
+        },
+        "max_turns": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "session_id": {
+          "type": "string"
+        }
+      }
+    },
+    "workplace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repos",
+        "branch"
+      ],
+      "properties": {
+        "repos": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "branch": {
+          "type": "string"
+        }
+      }
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "running",
+        "awaiting_review",
+        "done",
+        "error"
+      ],
+      "description": "pending -> running -> awaiting_review -> done, or -> error. Only close-job.sh may write done."
+    },
+    "spec_gate": {
+      "enum": [
+        "",
+        "passed",
+        "skipped"
+      ],
+      "description": "Written by run-job.sh on every run. Empty means the meta predates the field. skipped blocks close-job.sh unless review.md acknowledges it."
+    },
+    "lease_expires": {
+      "type": "string"
+    },
+    "error_message": {
+      "type": "string"
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cost_usd": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "turns": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "max_turns": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "stop_reason": {
+          "type": "string"
+        },
+        "duration_ms": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "models": {
+          "type": "string"
+        },
+        "total_input_tokens": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "input_tokens": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "cache_read_input_tokens": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "cache_creation_input_tokens": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "output_tokens": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "runs": {
+          "type": [
+            "string",
+            "integer"
+          ],
+          "description": "How many times the job was run; --resume increments it. Written by run-job.sh."
+        }
+      }
+    },
+    "timestamps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "created",
+        "started",
+        "completed"
+      ],
+      "properties": {
+        "created": {
+          "type": "string"
+        },
+        "started": {
+          "type": "string"
+        },
+        "completed": {
+          "type": "string"
+        }
+      }
+    },
+    "promptmap_ref": {
+      "type": "string",
+      "deprecated": true,
+      "description": "Removed from the template: it pointed at ai/PROMPTMAP.yaml, which does not exist here. Tolerated so metas written before the removal still validate."
+    }
+  }
+}
