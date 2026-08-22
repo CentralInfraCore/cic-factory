@@ -26,8 +26,20 @@ FAILED=0
 echo "D1 — relatív markdown-linkek"
 BROKEN=$(python3 - <<'PY'
 import os, re, subprocess
+
+
+def tracked_md():
+    # --others --exclude-standard so a new file is checked before it is added.
+    # Without it the checker returns GO on a document whose links are broken and
+    # only notices after `git add`, which is a trap it walked into itself.
+    out = subprocess.check_output(
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "*.md"],
+        text=True).split()
+    return sorted(set(out))
+
+
 out = []
-for f in subprocess.check_output(["git", "ls-files", "*.md"], text=True).split():
+for f in tracked_md():
     base = os.path.dirname(f)
     with open(f, encoding="utf-8") as fh:
         for i, line in enumerate(fh, 1):
@@ -56,7 +68,10 @@ import re, subprocess
 # top-level kulcs. Prózában idézett egyetlen mezőnév nem duplikáció.
 pat = re.compile(r'```ya?ml\n(.*?)```', re.S)
 out = []
-for f in subprocess.check_output(["git", "ls-files", "*.md"], text=True).split():
+files = subprocess.check_output(
+    ["git", "ls-files", "--cached", "--others", "--exclude-standard", "*.md"],
+    text=True).split()
+for f in sorted(set(files)):
     body = open(f, encoding="utf-8").read()
     for block in pat.findall(body):
         has_job = re.search(r'^job_id:', block, re.M)

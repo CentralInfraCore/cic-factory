@@ -72,6 +72,24 @@ check "exit 0" "0" "$(run "$R")"
 rm -rf "$R"
 
 echo
+echo "Követetlen fájl is számít"
+# A checker maga sétált bele: git add előtt GO-t adott egy törött linkes új
+# fájlra. Egy ellenőrzés, ami csak a már commitolt hibát látja, épp akkor
+# hallgat, amikor a legolcsóbb lenne javítani.
+R=$(mkroot); printf '# Doc\n' > "$R/a.md"; commit "$R"
+printf '# Uj\n\n[nincs](hianyzik.md)\n' > "$R/uj.md"   # szándékosan nem commitolva
+check "exit 1" "1" "$(run "$R")"
+check_log "  megnevezi a követetlen fájlt" "uj.md:3" "$R/out.log"
+rm -rf "$R"
+
+echo
+echo "Ignorált fájlt viszont nem néz"
+R=$(mkroot); printf '# Doc\n' > "$R/a.md"; printf 'skip/\n' > "$R/.gitignore"; commit "$R"
+mkdir -p "$R/skip"; printf '# Skip\n\n[nincs](hianyzik.md)\n' > "$R/skip/b.md"
+check "exit 0" "0" "$(run "$R")"
+rm -rf "$R"
+
+echo
 echo "D2 — a séma maga nem sérti a saját szabályát"
 R=$(mkroot); printf '# Doc\n' > "$R/a.md"; commit "$R"
 check "exit 0" "0" "$(run "$R")"
