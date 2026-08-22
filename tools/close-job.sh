@@ -56,7 +56,17 @@ refuse() { echo "REFUSED: $1" >&2; exit 1; }
 [[ -f "$META" ]] || refuse "C1 — nincs meta.yaml: $META"
 
 # --- C2 ---
-STATUS=$(grep '^status:' "$META" | head -1 | awk -F'"' '{print $2}')
+# Every meta read goes through meta-get.sh, which uses a real YAML parser. Two
+# controls used to be bypassable with nothing but a trailing comment, because
+# each reader brought its own regex and they disagreed about what the same
+# document said (#29, #30).
+META_GET="$WORKDIR/tools/meta-get.sh"
+rc=0; STATUS=$(bash "$META_GET" "$META" status) || rc=$?
+case "$rc" in
+    0) ;;
+    2) refuse "C2 — a meta.yaml-ben nincs status mező. Enélkül nem eldönthető, hogy a job lezárható-e." ;;
+    *) refuse "C2 — a status mező nem olvasható (lásd fent). Amíg a meta nem értelmezhető, a job nem zárható." ;;
+esac
 if [[ "$STATUS" != "awaiting_review" ]]; then
     refuse "C2 — a job státusza '$STATUS', nem 'awaiting_review'. A done csak innen érhető el."
 fi
@@ -92,11 +102,20 @@ fi
 # on that would make every pre-existing job uncloseable (51 of them in
 # cic-factory at the time of writing), so it warns instead and says plainly that
 # it cannot be verified.
-# Tolerant of both spec_gate: "skipped" and spec_gate: skipped. The quoted form
-# is what run-job.sh writes, but an awk -F'"' parser reads the unquoted one as
-# empty -- which falls into the "old meta, warn only" branch below. Removing two
-# quote characters would have switched the enforcement off silently.
-SPEC_GATE=$(grep '^spec_gate:' "$META" | head -1 | sed 's/^spec_gate:[[:space:]]*//; s/^"//; s/"$//; s/[[:space:]]*$//' || true)
+# The lenient branch is for metas written before the field existed. Anything
+# that merely LOOKED unreadable used to land there too and inherit that
+# leniency: `spec_gate: skipped # ok` parsed as `skipped # ok`, matched no arm,
+# and closed a bypassed job with nothing said (#30).
+#
+# Three outcomes now, not one: absent is forgiven, unreadable is refused, and an
+# unknown VALUE is refused as well. That last one is the arm this control never
+# had -- `*)` used to mean both "old meta" and "something I do not understand".
+rc=0; SPEC_GATE=$(bash "$META_GET" "$META" spec_gate) || rc=$?
+case "$rc" in
+    0) ;;
+    2) SPEC_GATE="__absent__" ;;
+    *) refuse "C5 — a spec_gate mező nem olvasható (lásd fent). Nem igazolható, hogy a futás átment-e a spec-kapun." ;;
+esac
 case "$SPEC_GATE" in
     skipped)
         if ! grep -qE 'spec_gate:[[:space:]]*skipped' "$REVIEW"; then
@@ -112,9 +131,12 @@ case "$SPEC_GATE" in
         ;;
     passed)
         : ;;
-    *)
+    __absent__)
         echo "[WARN] a meta.yaml-ben nincs spec_gate érték — ez a job a mező bevezetése"
         echo "       előttről való. Nem igazolható, hogy a spec-kapu lefutott-e."
+        ;;
+    *)
+        refuse "C5 — a spec_gate értéke '$SPEC_GATE', ami se passed, se skipped. Ismeretlen értéket nem lehet átmenetnek venni."
         ;;
 esac
 
