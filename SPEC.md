@@ -63,6 +63,253 @@ ami már halott lehet.
 
 ---
 
+## A nyolc use case — a core külső szerződése
+
+A fenti állapotgép azt mondja meg, milyen állapotok vannak. Ez a szakasz azt,
+hogy **mit ígér a core annak, aki kívülről hívja** — egy adapter fejlesztőjének,
+egy orchestrátornak, egy verifikálónak.
+
+Minden use case négy dolgot rögzít, és egy ötödiket, ami nélkül a többi
+félrevezető lenne:
+
+| | |
+|---|---|
+| **Precondition** | mi igaz, mielőtt a lépés elkezdődik |
+| **Transition** | melyik állapotátmenet történik, és mi végzi |
+| **Postcondition** | mi igaz utána — beleértve, hogy mi NEM |
+| **Evidence** | melyik artifact bizonyítja, hogy megtörtént |
+| **Státusz** | `garantált`, `részleges` vagy `még nem` |
+
+A státusz nem díszítés. A `még nem` azt jelenti, hogy a sequence a szándékot
+írja le, nem a viselkedést, és megnevezi azt az issue-t, ami lezárná. Egy
+szerződés, ami többet állít a megvalósításnál, rosszabb, mint ha nem lenne —
+a `tools/check-sequences.sh` ezért gépileg ellenőrzi, hogy minden use case
+mind az öt részt hordozza.
+
+Kanonikus végrehajtási út: **`tools/run-job.sh`**. A `/job-run` slash-command
+ugyanezt hívja; nincs második út, ami megkerülné a kapukat.
+
+---
+
+### UC-01 — Spec létrehozása
+
+**Státusz:** `garantált`
+
+**Precondition:** a külső réteg már formalizálta az igényt. A core nem értelmez
+issue-t, nem old fel környezetet — ezt kapja készen.
+
+**Transition:** nincs. A job `pending`-ként jön létre.
+
+```
+orchestrátor → jobs/<id>/input.md + meta.yaml
+             → validate-meta.sh   (séma)
+             → validate-spec.sh   (K1, K3, K4, K7, K7b, K8, K9, K10, K11)
+             → commit main + push
+```
+
+**Postcondition:** csak validált, azonosítható spec válik futtathatóvá. A
+`meta.yaml` megfelel a `jobs/.schema/meta.schema.json`-nak, a `job_id` egyezik a
+könyvtárnévvel.
+
+**Evidence:** a `pending` commit, és a spec-kapu kimenete.
+
+---
+
+### UC-02 — Sikeres végrehajtás
+
+**Státusz:** `garantált`
+
+**Precondition:** a job `pending`, a spec-kapu GO-t adott (vagy a futás
+`--skip-spec-gate`-tel indult, és ez rögzítve van).
+
+**Transition:** `pending → running`, majd `running → awaiting_review`. Mindkettőt
+a `run-job.sh` végzi.
+
+```
+run-job.sh → meta-set: status=running, lease_expires, spec_gate
+           → commit + push          (a running állapot a remoten van, mielőtt
+                                     bármi elindul)
+           → workspace klón, feature/<job-id>
+           → runner (RUNNER-CONTRACT.md)
+           → meta-set: status=awaiting_review, usage
+           → commit + push
+```
+
+**Postcondition:** az executor sikere **nem** ír `done` állapotot. A
+`run-job.sh` egyetlen úton sem tud `done`-t írni: nincs birtokában sem
+output-kapu-eredmény, sem review.
+
+**Evidence:** az `awaiting_review` commit, a `usage` blokk, a feature branch a
+remoten.
+
+---
+
+### UC-03 — Hiba, resume és retry
+
+**Státusz:** `részleges` — a késői eredmény elutasítása hiányzik (#41)
+
+**Precondition:** a job `running`, és a futás megszakad.
+
+**Transition:** `running → error`. A finalizer végzi, de **csak** ha ugyanez a
+folyamat állította `running`-ra (`WE_SET_RUNNING`).
+
+```
+wrapper meghal → finalizer → meta-set: status=error, error_message, lease_expires=""
+                           → update-index.sh
+                           → commit + push
+```
+
+**Postcondition:** a remote nem mutat futó jobot. Az `error` állapot mellett az
+index is `error`-t mond.
+
+**Amit még nem garantál:** a `--resume` nem köti magát futásazonosítóhoz, mert
+olyan még nincs. Egy leváltott futás késői eredményét semmi nem utasítja el. Az
+`error` státusz jelentheti azt is, hogy az agent még dolgozik: a finalizer
+szándékosan nem öli meg, és ezt a `test-run-job-finalizer.sh` méri is. **#41.**
+
+**Evidence:** az `error` commit, az `error_message`, a job-napló.
+
+---
+
+### UC-04 — Review és close
+
+**Státusz:** `részleges` — a review nincs eredményhez kötve (#43)
+
+**Precondition:** a job `awaiting_review`, van `review.md` és van `output/`.
+
+**Transition:** `awaiting_review → done`. **Kizárólag** a `close-job.sh` végzi.
+
+```
+close-job.sh → C1  van meta.yaml
+             → C2  a státusz awaiting_review           (meta-get, fail closed)
+             → C3  validate-output.sh GO               (O1–O5)
+             → C4  review.md létezik és nem üres
+             → C5  ha spec_gate=skipped, a review elismeri
+             → meta-set: status=done
+```
+
+**Postcondition:** minden `done` úton lefutott az output-kapu, és van review
+artifact. Nincs olyan dokumentált út, ahol a `done` ezek nélkül elérhető.
+
+**Amit még nem garantál:** a review és az output nincs immutable result
+ref-hez kötve. Egy új attempt lezárható a korábbi review-jával, mert a
+`close-job.sh` a fájlok meglétét nézi, nem azt, hogy melyik futáshoz
+tartoznak. **#43.**
+
+**Evidence:** a `done` commit, a `review.md`, az output-kapu kimenete.
+
+---
+
+### UC-05 — Különböző jobok párhuzamosan
+
+**Státusz:** `még nem` — #41
+
+**Precondition:** két job, két külön `job_id`.
+
+**Transition:** kettő, egymástól függetlenül.
+
+**Amit a core ma tud:** semmit, ami ezt biztonságossá tenné. Mindkét futás
+ugyanazt a live checkoutot, ugyanazt a Git indexet és ugyanazt a
+`jobs/index.yaml`-t írja. Nincs lock, nincs külön worktree, és a lifecycle
+commit nem pathspecifikus.
+
+**Postcondition:** *(amit a lezárása jelentene)* nincs cross-job fájl, stage,
+session vagy ref. Ma ez nem áll fenn, és nincs is mérve.
+
+**Evidence:** *(amit bizonyítania kellene)* determinisztikus, barrieres
+konkurencia-teszt. Időzítésre épülő `sleep` nem elég.
+
+**Ez nem mérve van, hanem az auditból származik.** A #41 törzse ezt
+kimondja: a konkurencia-állítások nem lettek újramérve ebben a repóban.
+
+Amíg ez nem zárul le, a szerződés annyi: **egy orchestrátor, egy checkout,
+egyszerre egy job.**
+
+---
+
+### UC-06 — Ugyanaz a job versengő indítása
+
+**Státusz:** `még nem` — #41
+
+**Precondition:** két folyamat ugyanarra a `job_id`-ra.
+
+**Amit a core ma tud:** a `run-job.sh` egyszer beolvassa a státuszt, majd
+feltétel nélkül átírja. Nincs `run_id`, tulajdonos, generáció, lock vagy
+compare-and-swap. A `WE_SET_RUNNING` lokális boolean: azt jelzi, hogy MI
+állítottuk `running`-ra, nem azt, hogy még mindig mi birtokoljuk a jobot.
+
+A nem-resume ág `rm -rf`-fel törli a workspace-t és újraklónoz — két futás
+egymás alól törölheti. A törlés útja ellenőrzött (#32), a versenyhelyzet nem.
+
+**Transition:** *(amit a lezárása jelentene)* `pending → running`, de compare-and-
+swap-pel: várt állapot, várt revízió és futás-identitás ellenőrzésével.
+
+**Postcondition:** *(amit a lezárása jelentene)* pontosan egy futás kap workspace-t
+és publikálási jogosultságot; a vesztes nem kap egyiket sem.
+
+**Evidence:** *(amit bizonyítania kellene)* két egyidejű claim ugyanarra a jobra,
+barrierrel szinkronizálva, pontosan egy nyertessel.
+
+**Ez sincs mérve.** #41.
+
+---
+
+### UC-07 — Executorfüggetlen végrehajtás
+
+**Státusz:** `garantált`
+
+**Precondition:** a runner megfelel a `docs/RUNNER-CONTRACT.md`-nek.
+
+**Transition:** nincs saját; a UC-02 belsejében történik.
+
+```
+run-job.sh → CIC_PROMPT_FILE, CIC_RESULT_JSON, CIC_RUN_LOG
+           → tools/runners/<név>.sh
+           → runner-result.schema.json szerinti JSON
+```
+
+**Postcondition:** a core lifecycle-szemantikája nem függ attól, melyik runner
+futott. A `tools/runners/echo.sh` ugyanazon a szerződésen fut, mint a
+`claude.sh`, és a `test-run-job-e2e.sh` a teljes `pending → done` utat vele
+viszi végig — agent, hálózat és költség nélkül. A `done` ott sem rövidít: a
+lezárás ugyanúgy a `close-job.sh`-n megy át, tehát a `validate-output.sh`
+output-kapuján és a `review.md` meglétén is. Egy runner nem tud olyan utat
+nyitni, ami ezeket megkerüli.
+
+**Amit még nem garantál:** a session-folytatás nem köti magát futás-identitáshoz
+(#42), és a Claude-specifikus mezők még a `meta.yaml`-ben élnek.
+
+**Evidence:** a runner JSON-ja, az `agent-output-*.md`, a `usage` blokk.
+
+---
+
+### UC-08 — Proof és offline verifikáció
+
+**Státusz:** `részleges` — a bizonyíték nem köti a commit identitását (#38, #44)
+
+**Precondition:** a commitok Vault-aláírással készültek.
+
+**Transition:** nincs; ez a lezárt állapot ellenőrzése.
+
+```
+verify-signatures.sh → a commit üzenetéből a signing blokk
+                     → a tree digest újraszámítása
+                     → ECDSA-ellenőrzés a beágyazott certtel
+```
+
+**Postcondition:** a repository snapshotjának digestje reprodukálható, és az
+aláírás érvényes a beágyazott tanúsítvány kulcsával.
+
+**Amit NEM állít:** az aláírt payload a `git archive` szerinti fát tartalmazza —
+nem a commit OID-t, a szülőket, a branchet, a taget, sem a lifecycle-jelentést.
+A submodule commitok teljesen kimaradnak belőle, ami mérve is van: két különböző
+fa azonos aláírást adott (#38). A teljes proof-profil és az önálló verifier a
+**#44**.
+
+**Evidence:** a `verify-signatures.sh` kimenete, reason code-okkal.
+
+---
+
 ## Git a bizalom forrása
 
 Az aláírt commit maga az igazolás (`commit-msg` hook). Az agent a klónból

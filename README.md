@@ -34,6 +34,7 @@ the lifecycle convention. All three are here.
 
 ```
 tools/run-job.sh                job lifecycle driver
+tools/check-sequences.sh        the SPEC use-case contract matches the code
 tools/validate-spec.sh          pre-run machine gate (K1, K3, K4, K7, K7b, K8, K9, K10, K11)
 tools/validate-output.sh        pre-merge machine gate (O1–O5)
 tools/update-index.sh           job state map regeneration
@@ -133,6 +134,7 @@ drifts:
 | `tools/test-install-claude-hooks.sh` | that the hook installer converges — running it five times leaves the same file — and does not touch hooks it does not own (10 checks) |
 | `tools/test-stale-jobs.sh` | that a job stuck in `running` past its lease is detected, against fixtures that are stuck on purpose, including a status hidden behind a trailing comment (18 checks) |
 | `tools/test-check-docs.sh` | that the docs checker itself can fail — broken links, schema duplication, and files not yet added to git — against fixtures that violate each, plus the two drift rules: a suite with no README row, a README row with no file, and a documented gate rule that does not exist (28 checks) |
+| `tools/test-check-sequences.sh` | that the sequence-contract checker can fail — a use case missing any of its five parts, a `még nem` status with no issue to return to, and a documented `done` path that names no output gate or no review artifact (28 checks) |
 | `tools/test-check-suite-counts.sh` | that the count checker can fail — a suite reporting more checks than the table declares, a row naming a file that is gone, and a README with no declared counts at all (8 checks) |
 | `tools/test-check-licence.sh` | that the licence checker can fail — a modified line inside the AGPL text, a removed section 7 separator, a term present in one file and not the other — while an addition *after* the separator is allowed, which is the point (12 checks) |
 | `tools/test-check-dependencies.sh` | that the dependency checker can fail — each required command hidden from `PATH` in turn, a missing Python module, and a `date` without GNU `-d` (27 checks) |
