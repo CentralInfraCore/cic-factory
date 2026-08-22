@@ -361,6 +361,23 @@ render_prompt() {
         fmt="$fmt \$$v"
         envargs+=("$v=${!v-}")
     done
+    # Ami a specben szerepel, be VAN állítva a környezetben, de nincs az
+    # allowlistán: majdnem biztosan elfelejtett FACTORY_PROMPT_VARS-bejegyzés.
+    # A `$ref` és `$schema` a kódrészletekből nincs beállítva, tehát nem szól.
+    local named missing=""
+    named=$(grep -oE '\$\{?[A-Za-z_][A-Za-z0-9_]*\}?' "$input" 2>/dev/null \
+            | tr -d '${}' | sort -u || true)
+    for v in $named; do
+        case " $PROMPT_VARS_BASE ${FACTORY_PROMPT_VARS:-} " in *" $v "*) continue ;; esac
+        [[ -n "${!v-}" ]] && missing+=" $v"
+    done
+    if [[ -n "$missing" ]]; then
+        echo "[WARN] az input.md hivatkozik rájuk, be is vannak állítva, de nem" >&2
+        echo "       engedélyezettek, tehát szó szerint maradnak:$missing" >&2
+        echo "       Ha behelyettesítendők, vedd fel őket a FACTORY_PROMPT_VARS-ba" >&2
+        echo "       (tools/env.sh) — lásd tools/env.sh.example." >&2
+    fi
+
     env -i PATH="$PATH" "${envargs[@]}" envsubst "$fmt" < "$input"
 }
 
