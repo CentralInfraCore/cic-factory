@@ -90,6 +90,23 @@ check "exit 0" "0" "$(run "$R")"
 rm -rf "$R"
 
 echo
+echo "A job-instance-ok archívum, nem forrás"
+# A jobs/<id>/ alatt agent által termelt artifact van, a maga korának szabályai
+# szerint. Utólag rájuk kényszeríteni egy később kitalált szabályt annyi lenne,
+# mint átírni a bizonyítékot.
+R=$(mkroot)
+mkdir -p "$R/jobs/valami/output"
+printf '# Output\n\n[nincs](hianyzik.md)\n\n```yaml\njob_id: "x"\nstatus: "done"\n```\n' \
+    > "$R/jobs/valami/output/report.md"
+printf '# Doc\n' > "$R/a.md"; commit "$R"
+check "a job-artifact hibáit nem jelenti" "0" "$(run "$R")"
+
+# A séma viszont NEM artifact — az a kontraktus, arra érvényes a szabály.
+printf '# Doc\n\n[nincs](hianyzik.md)\n' > "$R/jobs/.schema/README.md"; commit "$R"
+check "  a jobs/.schema/ viszont számít" "1" "$(run "$R")"
+rm -rf "$R"
+
+echo
 echo "D2 — a séma maga nem sérti a saját szabályát"
 R=$(mkroot); printf '# Doc\n' > "$R/a.md"; commit "$R"
 check "exit 0" "0" "$(run "$R")"
