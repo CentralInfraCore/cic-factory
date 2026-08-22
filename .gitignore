@@ -22,3 +22,7 @@ jobs/*/output/context-state.md
 # IDE / tooling scratch
 .idea/
 .playwright-mcp/
+
+# py_compile leaves these behind when the gate compiles tracked .py files
+__pycache__/
+*.pyc

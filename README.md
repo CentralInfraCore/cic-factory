@@ -119,6 +119,7 @@ and it runs two behavioural suites:
 | `tools/test-run-job-e2e.sh` | **a whole job, `pending` → `awaiting_review` → `done`**, driven by the `echo` runner — no agent, no network, no cost (17 checks) |
 | `tools/test-validate-meta.sh` | that the meta schema rejects what it should — a typo'd field name, an invalid `status`, an empty model, a missing block, a bad `job_id`, a schema that is itself malformed (17 checks) |
 | `tools/test-verify-signatures.sh` | that the signature verifier can fail — tampered tree, missing metadata, forged signature, a merge smuggling content, a tag on a merge commit, an empty range (18 checks) |
+| `tools/test-check-embedded-python.sh` | that the embedded-Python checker can fail — the `core/@v0.1.1` indentation error put back, an error behind a backslash-continued command, and a Python heredoc hidden behind a non-`PY` delimiter (15 checks) |
 
 Every step was measured against a deliberately broken copy before it landed,
 because a gate that cannot go red is decoration. That measurement is not a
