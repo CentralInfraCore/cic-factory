@@ -17,7 +17,7 @@ trap 'rm -rf "$TMP"' EXIT
 # pontosan ezért volt strukturálisan vak arra, hogy az indexet nem
 # regenerálja (#34).
 mkdir -p "$TMP/tools" "$TMP/jobs"
-cp "$TOOLS/meta-get.sh" "$TOOLS/update-index.sh" "$TMP/tools/"
+cp "$TOOLS/meta-get.sh" "$TOOLS/meta-set.sh" "$TOOLS/update-index.sh" "$TMP/tools/"
 
 # The prelude: everything up to and including the `trap finalize EXIT INT TERM`.
 PRELUDE_END=$(grep -n '^trap finalize EXIT INT TERM$' "$SRC" | head -1 | cut -d: -f1)
@@ -136,7 +136,7 @@ echo "6. Git-es fixture: a kipusholt index sem mutathat futó jobot (#34)"
 # láthatták, hogy a finalizer a javított meta MELLÉ a futás előtti indexet
 # commitolja. Ez az eset teljes fát épít, távolival együtt.
 G="$TMP/git"; mkdir -p "$G/tools" "$G/jobs/t" "$G/hooks"
-cp "$TOOLS/meta-get.sh" "$TOOLS/update-index.sh" "$G/tools/"
+cp "$TOOLS/meta-get.sh" "$TOOLS/meta-set.sh" "$TOOLS/update-index.sh" "$G/tools/"
 mkmeta "$G/jobs/t/meta.yaml" "running"
 python3 - "$G/jobs/t/meta.yaml" <<'PYX'
 import sys

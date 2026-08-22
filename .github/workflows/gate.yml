@@ -116,6 +116,9 @@ jobs:
       - name: meta field reads
         run: bash tools/test-meta-get.sh
 
+      - name: meta field writes
+        run: bash tools/test-meta-set.sh
+
       # A signer az a pont, ahol a provenance keletkezik. CA hiányában eddig
       # figyelmeztetett, `curl -k`-ra váltott, és a Vault tokent így küldte el.
       - name: commit-msg signer trust boundary
