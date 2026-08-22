@@ -60,19 +60,23 @@ tools/env.sh.example            environment template
 **Specification** — the lifecycle convention the tooling implements
 
 ```
-CLAUDE.md                       roles, job lifecycle, job structure,
-                                meta.yaml required fields, the two machine
-                                gates, "git is the source of trust"
+SPEC.md                         roles, job lifecycle, the state machine,
+                                the lease, "git is the source of trust",
+                                the three machine gates
+CLAUDE.md                       how to work on this repository
 docs/onboarding.md              how the model is used in practice
-jobs/.schema/meta.yaml          job spec schema
+jobs/.schema/meta.yaml          job spec schema — the single definition
 .gitignore
 ```
 
-`CLAUDE.md` came over whole rather than split. Roughly its first two thirds are
-the lifecycle convention; the rest — ecosystem map, repo paths, MCP server,
-reviewed AI threads — is CIC workflow. Splitting it is round-two work, and
-splitting it during a history-preserving extraction would have made the result
-undiffable against the source.
+`CLAUDE.md` arrived whole from `cic-factory` and has since been split: `SPEC.md`
+carries the model, the CIC-specific half (ecosystem map, repo paths, MCP server,
+reviewed threads) stayed behind in `cic-factory`, and what remains here is how to
+develop this repository.
+
+The schema is defined in exactly one place. It used to be restated in prose, and
+the restatement fell three fields behind — `lease_expires`, `spec_gate`, `usage`.
+The gate now refuses any document that redefines it.
 
 `tools/relay-build-test.sh` was **not** extracted: it drives a CIC-Relay build
 and is workflow, not core.
@@ -111,6 +115,7 @@ and it runs two behavioural suites:
 | `tools/test-run-job-spec-gate.sh` | that `run-job.sh` refuses a NO-GO spec, that `--skip-spec-gate` still starts, and that the bypass is recorded in `meta.yaml` (15 checks) |
 | `tools/test-install-claude-hooks.sh` | that the hook installer converges — running it five times leaves the same file — and does not touch hooks it does not own (10 checks) |
 | `tools/test-stale-jobs.sh` | that a job stuck in `running` past its lease is detected, against fixtures that are stuck on purpose (12 checks) |
+| `tools/test-check-docs.sh` | that the docs checker itself can fail — broken links and schema duplication, against fixtures that violate each (9 checks) |
 
 Every step was measured against a deliberately broken copy before it landed,
 because a gate that cannot go red is decoration. That measurement is not a
