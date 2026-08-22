@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025-2026 Sinkó Gábor Zoltán / CentralInfraCore
 #
 # Initializes the repository by setting up the necessary Git hooks.
 # This script is intended to be run once after cloning the template.

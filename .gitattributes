@@ -1,0 +1,12 @@
+# CLAUDE.md exists in both this repository and cic-factory-core, deliberately
+# with different content: there it says how to develop the core, here it says how
+# CIC operates the factory. Without this, every release merge conflicts on it.
+#
+# Requires a one-time local setup, because git has no built-in "ours" file
+# driver:
+#
+#   git config merge.ours.driver true
+#
+# Without that config git falls back to a normal merge and the conflict returns —
+# so if a release merge ever conflicts on CLAUDE.md, that config is missing.
+CLAUDE.md merge=ours

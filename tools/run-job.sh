@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025-2026 Sinkó Gábor Zoltán / CentralInfraCore
 # Job lifecycle wrapper
-# Használat: ./tools/run-job.sh <job-id> [agent-id] [--resume]
+# Használat: ./tools/run-job.sh <job-id> [agent-id] [--resume] [--skip-spec-gate]
+#
+#   --skip-spec-gate
+#              Kihagyja a kötelező validate-spec.sh kaput. Csak akkor, ha
+#              tudatosan iterálsz egy specen és tudod, hogy még NO-GO.
+#              Nyomot hagy: a meta.yaml spec_gate mezőjébe "skipped" kerül,
+#              hogy a review lássa, ez a futás kapu nélkül indult.
 #
 #   --resume   Session-limit/error miatt megszakadt futás folytatása
 #              UGYANABBAN a Claude Code session-ben (claude --resume <session_id>).
@@ -69,6 +77,9 @@ c = re.sub(r'^(\s+)completed:.*$', rf'\1completed: "{end}"', c, flags=re.MULTILI
 c = re.sub(r'^error_message:.*$',
            'error_message: "wrapper exited before finalizing — see the job log; the agent may have kept running"',
            c, flags=re.MULTILINE)
+# The lease has served its purpose once the status is corrected; leaving it would
+# make an already-resolved job look stuck to check-stale-jobs.sh.
+c = re.sub(r'^lease_expires:.*$', 'lease_expires: ""', c, flags=re.MULTILINE)
 with open(meta, "w") as f: f.write(c)
 PYFIN
         {
@@ -80,6 +91,26 @@ PYFIN
         [[ -n "$RUN_LOG" ]] && {
             echo "wrapper exited early rc=$rc at $end; agent pid=${AGENT_PID:-none}"
         } >>"$RUN_LOG" 2>/dev/null || true
+
+        # Best effort: the running state was pushed, so leaving the correction
+        # local means the remote keeps claiming a job is running that is not.
+        # This can legitimately fail -- no network, Vault down so the commit-msg
+        # hook cannot sign, a protected branch -- and none of that may stop the
+        # finalizer. It is loud instead, because a silent failure here is
+        # precisely the stuck state it exists to prevent.
+        #
+        # The lease is the fallback: if this does not land, the deadline already
+        # on the remote still makes the job detectably stuck.
+        if timeout 60 git -C "$WORKDIR" add "$META" jobs/index.yaml 2>/dev/null \
+           && timeout 60 git -C "$WORKDIR" commit -q -m "job: ${JOB_ID:-?} — error (wrapper exited early)" 2>/dev/null \
+           && timeout 60 git -C "$WORKDIR" push -q 2>/dev/null; then
+            echo "[*] Az error állapot kipusholva — a remote nem mutat futó jobot." >&2
+        else
+            echo "[!] Az error állapotot NEM sikerült kipusholni. A remote még" >&2
+            echo "    'running'-ot mutat — ezt kézzel kell rendezni:" >&2
+            echo "      git -C $WORKDIR add ${META} jobs/index.yaml && git commit && git push" >&2
+            echo "    A lease addig is lejár, tehát a tools/check-stale-jobs.sh látja." >&2
+        fi
     fi
     [[ $rc -eq 0 ]] && rc=1
     exit $rc
@@ -97,9 +128,11 @@ shift
 
 AGENT_ID="agent-01"
 RESUME=0
+SKIP_SPEC_GATE=0
 for arg in "$@"; do
     case "$arg" in
         --resume) RESUME=1 ;;
+        --skip-spec-gate) SKIP_SPEC_GATE=1 ;;
         *) AGENT_ID="$arg" ;;
     esac
 done
@@ -177,23 +210,70 @@ else
     if [[ "$STATUS" == "running" ]]; then
         echo "[WARN] Job már fut. Folytatod? (y/N)"; read -r ans; [[ "$ans" == "y" ]] || exit 1
     fi
+    if [[ "$STATUS" == "awaiting_review" ]]; then
+        echo "[WARN] Job lefutott, review-ra vár. Újrafuttatod? (y/N)"; read -r ans; [[ "$ans" == "y" ]] || exit 1
+    fi
     if [[ "$STATUS" == "done" ]]; then
         echo "[WARN] Job már kész. Újrafuttatod? (y/N)"; read -r ans; [[ "$ans" == "y" ]] || exit 1
     fi
 fi
 
+# --- spec gate ---
+# /job-run makes this mandatory and forbids starting an agent on NO-GO. The
+# script used to skip it entirely, so the rule only held on the path nobody
+# takes. It runs before pending → running, so a refusal leaves the job untouched.
+#
+# validate-spec.sh resolves jobs/<id>/ relative to the current directory, hence
+# the subshell cd.
+if [[ "$SKIP_SPEC_GATE" -eq 1 ]]; then
+    echo "[WARN] --skip-spec-gate — a gépi spec-kapu KIHAGYVA. Ez a futás nem igazolt."
+else
+    if ! ( cd "$WORKDIR" && bash tools/validate-spec.sh "$JOB_ID" ); then
+        echo "" >&2
+        echo "[ERROR] A spec-kapu NO-GO-t adott — az agent nem indul." >&2
+        echo "        Javítsd az input.md-t / meta.yaml-t, vagy ha tudatosan" >&2
+        echo "        iterálsz egy még hiányos specen: --skip-spec-gate." >&2
+        exit 1
+    fi
+fi
+
 NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# A lease is a deadline, not a heartbeat. A heartbeat has to keep being written
+# by a process that may already be gone; a deadline is written once, travels out
+# with the running commit, and lets anyone reading the repo decide whether a job
+# still claiming "running" is stuck -- without the dead process cooperating.
+LEASE_HOURS="${CIC_JOB_LEASE_HOURS:-6}"
+LEASE_EXPIRES=$(date -u -d "+${LEASE_HOURS} hours" +"%Y-%m-%dT%H:%M:%SZ")
 
 # --- pending → running ---
 echo "[*] $JOB_ID — running ($NOW)"
-python3 - "$META" "$NOW" <<'PYEOF'
+python3 - "$META" "$NOW" "$SKIP_SPEC_GATE" "$LEASE_EXPIRES" <<'PYEOF'
 import sys, re
-meta_path, now = sys.argv[1], sys.argv[2]
+meta_path, now, skip_spec_gate, lease = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 with open(meta_path) as f:
     content = f.read()
 content = re.sub(r'^status:.*$', 'status: "running"', content, flags=re.MULTILINE)
 content = re.sub(r'^\s+started:.*$', f'  started: "{now}"', content, flags=re.MULTILINE)
 content = re.sub(r'^\s+completed:.*$', '  completed: ""', content, flags=re.MULTILINE)
+
+# A bypass has to leave a trace, or it is a hole in the same evidence chain this
+# repository is built on. Written whether skipped or not, so an absent field
+# means an old meta rather than a clean run.
+if re.search(r'^lease_expires:', content, flags=re.MULTILINE):
+    content = re.sub(r'^lease_expires:.*$', f'lease_expires: "{lease}"', content,
+                     flags=re.MULTILINE)
+else:
+    content = re.sub(r'^(status:.*)$', rf'\1\nlease_expires: "{lease}"', content,
+                     count=1, flags=re.MULTILINE)
+
+gate = "skipped" if skip_spec_gate == "1" else "passed"
+if re.search(r'^spec_gate:', content, flags=re.MULTILINE):
+    content = re.sub(r'^spec_gate:.*$', f'spec_gate: "{gate}"', content, flags=re.MULTILINE)
+else:
+    content = re.sub(r'^(status:.*)$', rf'\1\nspec_gate: "{gate}"', content,
+                     count=1, flags=re.MULTILINE)
+
 with open(meta_path, "w") as f:
     f.write(content)
 PYEOF
@@ -436,10 +516,19 @@ else
 fi
 
 END=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-NEW_STATUS=$([[ $EXIT_CODE -eq 0 ]] && echo "done" || echo "error")
-echo "[$([ "$NEW_STATUS" = "done" ] && echo "✓" || echo "!")] $JOB_ID — $NEW_STATUS ($END)"
+# Exit 0 means the agent finished, not that its output is acceptable. This script
+# runs no output gate and produces no review artifact, so it has no basis for
+# claiming "done" -- that transition belongs to the orchestrator, after
+# validate-output.sh passes and review.md exists. See /job-close.
+NEW_STATUS=$([[ $EXIT_CODE -eq 0 ]] && echo "awaiting_review" || echo "error")
+echo "[$([ "$NEW_STATUS" = "awaiting_review" ] && echo "✓" || echo "!")] $JOB_ID — $NEW_STATUS ($END)"
+# `[[ ... ]] && echo` would return 1 under `set -e` whenever the condition is
+# false -- i.e. it would kill the script on exactly the error path.
+if [[ "$NEW_STATUS" == "awaiting_review" ]]; then
+    echo "[*] Következő lépés: /job-close $JOB_ID — output-kapu + review.md, az zárja done-ra"
+fi
 
-# --- running → done/error + usage (live meta) ---
+# --- running → awaiting_review/error + usage (live meta) ---
 python3 - "$META" "$NEW_STATUS" "$END" "$SESSION_ID" \
          "$RUN_COST" "$RUN_TURNS" "$RUN_IN_TOKENS" "$RUN_OUT_TOKENS" "$RUN_DURATION_MS" "$MAX_TURNS" \
          "$RUN_CACHE_READ" "$RUN_CACHE_CREATE" "$RUN_TOTAL_IN" "$RUN_MODELS" "$RUN_STOP_REASON" "$RESUME" <<'PYEOF'
@@ -453,6 +542,9 @@ with open(meta_path) as f:
     content = f.read()
 
 content = re.sub(r'^status:.*$', f'status: "{status}"', content, flags=re.MULTILINE)
+    # The run is over, so the lease is meaningless -- and a leftover deadline
+    # would make a finished job look stuck.
+    content = re.sub(r'^lease_expires:.*$', 'lease_expires: ""', content, flags=re.MULTILINE)
 content = re.sub(r'^\s+completed:.*$', f'  completed: "{end}"', content, flags=re.MULTILINE)
 
 if session_id:

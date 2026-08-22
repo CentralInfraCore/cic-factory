@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025-2026 Sinkó Gábor Zoltán / CentralInfraCore
 # validate-output.sh <job-id>
 # Mechanikus output validátor — merge előtti gépi kapu.
 # Párja: validate-spec.sh (a spec oldalt fedi). Ez az output oldalt fedi.

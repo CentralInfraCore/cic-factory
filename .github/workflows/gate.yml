@@ -1,0 +1,109 @@
+name: gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The repository is shell, YAML and Python. These first steps prove those
+      # parse and that the shell passes shellcheck. Behaviour is covered further
+      # down by two suites -- see the comment above them for what each one can
+      # and cannot see. Nothing here runs a job end to end.
+      - name: shell syntax
+        run: |
+          set -euo pipefail
+          n=0
+          while IFS= read -r f; do
+            bash -n "$f"
+            n=$((n+1))
+          done < <(git ls-files '*.sh')
+          echo "bash -n: $n scripts"
+          test "$n" -gt 0
+
+      - name: shellcheck
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          git ls-files '*.sh' | xargs shellcheck --severity=error
+
+      - name: yaml and json parse
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, subprocess, sys, yaml
+          files = subprocess.check_output(
+              ["git", "ls-files", "*.yaml", "*.yml", "*.json"], text=True).split()
+          for f in files:
+              with open(f, encoding="utf-8") as fh:
+                  (json.load if f.endswith(".json") else yaml.safe_load)(fh)
+          print(f"parsed: {len(files)} files")
+          sys.exit(0 if files else 1)
+          PY
+
+      - name: python compile
+        run: |
+          set -euo pipefail
+          mapfile -t py < <(git ls-files '*.py')
+          if [ "${#py[@]}" -gt 0 ]; then
+            python3 -m py_compile "${py[@]}"
+            echo "compiled: ${#py[@]} files"
+          fi
+
+      # Behaviour, not just syntax. The finalizer suite covers the SIGPIPE/SIGTERM
+      # incident; the lifecycle suite covers the transition run-job.sh performs,
+      # which the finalizer suite is structurally blind to -- it only extracts the
+      # prelude, and the status decision lives below it.
+      - name: finalizer behaviour
+        run: bash tools/test-run-job-finalizer.sh
+
+      - name: lifecycle transitions
+        run: bash tools/test-lifecycle-transitions.sh
+
+      - name: close-job refusals
+        run: bash tools/test-close-job.sh
+
+      - name: run-job spec gate
+        run: bash tools/test-run-job-spec-gate.sh
+
+      - name: hook installer idempotency
+        run: bash tools/test-install-claude-hooks.sh
+
+      - name: stale job detection
+        run: bash tools/test-stale-jobs.sh
+
+      - name: docs consistency
+        run: bash tools/check-docs.sh
+
+      - name: docs checker itself
+        run: bash tools/test-check-docs.sh
+
+      # MIT-derived files arrived here once with nothing but a "(MIT)" in a
+      # comment. This makes the next one impossible to add silently.
+      - name: every source file declares its licence
+        run: |
+          set -euo pipefail
+          missing=0
+          while IFS= read -r f; do
+            # jobs/<id>/ is an evidence archive, not source: agent output and
+            # reviews produced under the rules of their time. A header demanded
+            # retroactively there would mean editing the evidence.
+            case "$f" in jobs/.schema/*) ;; jobs/*/*) continue ;; esac
+            if ! head -8 "$f" | grep -q 'SPDX-License-Identifier'; then
+              echo "no SPDX header: $f"
+              missing=1
+            fi
+          done < <(git ls-files '*.sh' '*.py')
+          test "$missing" -eq 0
+
+      - name: licence present and unmodified
+        run: |
+          set -euo pipefail
+          echo "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0  LICENSE" \
+            | sha256sum -c -

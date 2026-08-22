@@ -1,4 +1,8 @@
 #!/bin/bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 yurukusa
+# Modifications: 2025-2026 Sinkó Gábor Zoltán / CentralInfraCore
+# Full licence text: LICENSES/MIT-yurukusa.txt
 # no-ask-human.sh — Autonomous decision enforcement for CIC agents.
 # Source: https://github.com/yurukusa/claude-code-hooks/blob/main/hooks/no-ask-human.sh (MIT)
 # Adapted for CIC: decision framework references input.md, output/, feature branch workflow.

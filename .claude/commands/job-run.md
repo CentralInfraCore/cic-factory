@@ -12,6 +12,10 @@ tools/validate-spec.sh <job-id>
 ```
 Ha exit 1 → stop. Nem folytatható.
 
+A `run-job.sh` ezt magától is lefuttatja és NO-GO-n megáll, tehát a szabály már
+nem csak ezen az úton él. Itt azért futtatod külön, hogy **lásd** az eredményt,
+mielőtt agentet indítasz.
+
 **0b. Evidence-alapú ellenőrzés:**
 Futtasd le: `/job-validate <job-id>`
 
@@ -35,7 +39,11 @@ git commit -m "job: $JOB_ID — running"
 git push
 ```
 
-**Ez a commit jön ELŐBB — az agent indítása UTÁN.**
+**Ez a commit jön ELŐBB — az agent indítása ELŐTT.**
+
+A `running` állapotnak akkor kell látszania a mainen, amikor az agent már
+dolgozhat: ha az agent előbb indul, a repó egy `pending` jobot mutat, ami
+valójában fut. A `run-job.sh` is ezt a sorrendet követi.
 
 ### 2. Workspace klón
 
@@ -66,9 +74,26 @@ Az agent a `jobs/$JOB_ID/input.md`-t olvassa a klónból.
 
 Az agent háttérben fut. Értesítés érkezik befejezéskor — ne pollozd.
 
+### 5. running → awaiting_review
+
+Az agent befejezése **nem** jelenti azt, hogy a job kész. Írd a live meta.yaml-be:
+
+```python
+status: "awaiting_review"
+timestamps.completed: "<ISO 8601 now>"
+```
+
+A `done` kizárólag a `/job-close` után következhet — az futtatja az output-kaput és
+az termeli a `review.md`-t. Amíg az nincs meg, nincs mire alapozni a `done`-t.
+
+**A `usage:` blokkot ezen az úton neked kell kitöltened.** A `run-job.sh` a
+`claude --output-format json`-ból írja ki a költséget és a turn-számot, de ez az út
+nem azt használja — az Agent tool által jelentett értékeket vezesd át. Ha nincs
+adatod, hagyd üresen; a hamis nulla rosszabb, mint a hiányzó mező.
+
 ## Hibák amiket el kell kerülni
 
-- ❌ running commit UTÁN indítani az agentet (fordított sorrend)
+- ❌ az agentet a running commit ELŐTT indítani (fordított sorrend)
 - ❌ run-job.sh használata Agent tool helyett (nincs MCP)
 - ❌ `~/.claude-personal/agents/.../workspace/` path — a workspace `jobs/$JOB_ID/workspace/`
 - ❌ Az agent promptban nem adod meg a klón path-ját
