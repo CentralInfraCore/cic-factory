@@ -97,6 +97,14 @@ jobs:
       - name: docs checker itself
         run: bash tools/test-check-docs.sh
 
+      # The first test that runs a whole job. It needs a git identity because
+      # run-job.sh commits the status transitions.
+      - name: end to end, with the echo runner
+        run: |
+          git config --global user.email "gate@example.invalid"
+          git config --global user.name "gate"
+          bash tools/test-run-job-e2e.sh
+
       - name: signature verifier itself
         run: bash tools/test-verify-signatures.sh
 

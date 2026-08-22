@@ -158,7 +158,16 @@ SESSION_DIR="$AGENT_CONFIG/projects/$PROJECT_SLUG"
 [[ -f "$INPUT" ]] || { echo "[ERROR] Nem létezik: $INPUT"; exit 1; }
 [[ -d "$AGENT_CONFIG" ]] || { echo "[ERROR] Agent nem létezik: $AGENT_CONFIG"; exit 1; }
 
-STATUS=$(grep '^status:' "$META" | awk -F'"' '{print $2}')
+# `set -o pipefail` mellett egy nem illeszkedő grep miatt ez a sor korábban
+# ÜZENET NÉLKÜL megölte a scriptet: a finalizer lefutott, de nem szólt, mert még
+# nem mi állítottuk running-ra. Egy hiányzó vagy szokatlan alakú status-sor így
+# néma exit 1 volt.
+STATUS=$(grep '^status:' "$META" | head -1 | sed 's/^status:[[:space:]]*//; s/^"//; s/"$//' || true)
+if [[ -z "$STATUS" ]]; then
+    echo "[ERROR] Nem olvasható ki a status a $META-ból." >&2
+    echo "        Várt alak a sor elején: status: \"pending\"" >&2
+    exit 1
+fi
 MODEL=$(grep '^  model:' "$META" | awk -F'"' '{print $2}' || true)
 SESSION_ID=$(grep '^\s*session_id:' "$META" | awk -F'"' '{print $2}' || true)
 LEVEL=$(grep '^level:' "$META" | awk -F'"' '{print $2}' || true)
@@ -216,6 +225,20 @@ else
     if [[ "$STATUS" == "done" ]]; then
         echo "[WARN] Job már kész. Újrafuttatod? (y/N)"; read -r ans; [[ "$ans" == "y" ]] || exit 1
     fi
+fi
+
+# --- runner kiválasztás ---
+# Which agent runs the job is a runner's business, not this script's.
+# Contract: docs/RUNNER-CONTRACT.md
+#
+# Ez a spec-kapuval együtt a pending → running ELŐTT fut: egy elgépelt runner-név
+# ne fogyassza el a jobot és ne hagyjon running állapotot maga után.
+AGENT_RUNNER="${CIC_AGENT_RUNNER:-claude}"
+RUNNER_SCRIPT="$WORKDIR/tools/runners/$AGENT_RUNNER.sh"
+if [[ ! -x "$RUNNER_SCRIPT" ]]; then
+    echo "[ERROR] nincs ilyen runner: $RUNNER_SCRIPT" >&2
+    echo "        elérhető: $(ls "$WORKDIR/tools/runners/" 2>/dev/null | sed 's/\.sh$//' | tr '\n' ' ')" >&2
+    exit 1
 fi
 
 # --- spec gate ---
@@ -360,10 +383,7 @@ fi
 echo "[*] Agent indítása: $AGENT_ID"
 echo "[*] Model: ${MODEL:-default}  |  max-turns: $MAX_TURNS"
 [[ -n "$KB_FOCUS" ]] && echo "[*] kb_focus injektálva: $KB_FOCUS"
-MODEL_FLAG=()
-[[ -n "$MODEL" ]] && MODEL_FLAG=(--model "$MODEL")
-RESUME_FLAG=()
-[[ "$RESUME" -eq 1 ]] && RESUME_FLAG=(--resume "$SESSION_ID")
+[[ "$AGENT_RUNNER" != "claude" ]] && echo "[*] Runner: $AGENT_RUNNER"
 mkdir -p "$FACTORY_CLONE/jobs/$JOB_ID/output"
 export CIC_JOB_ID="$JOB_ID"
 export CIC_WORKDIR="$WORKDIR"
@@ -400,41 +420,54 @@ sleep 1  # mtime-felbontás miatt biztosan a marker UTÁN íródjon az új jsonl
 # still yields the agent's exit status, so the normal path is unchanged.
 # stdin is closed — a background job reading the terminal would take SIGTTIN.
 set +e
-CLAUDE_CONFIG_DIR="$AGENT_CONFIG" claude --print "$PROMPT" \
-    --mcp-config "$CIC_MCP_CONFIG" \
-    --output-format json \
-    --max-turns "$MAX_TURNS" \
-    "${MODEL_FLAG[@]}" \
-    "${RESUME_FLAG[@]}" \
-    < /dev/null > "$RAW_JSON" 2>"$RUN_LOG" &
+# The prompt goes through a file: as an argument its length runs into a
+# platform limit, and the prompt carries the whole job spec.
+PROMPT_FILE="$(mktemp)"
+printf '%s' "$PROMPT" > "$PROMPT_FILE"
+
+CIC_PROMPT_FILE="$PROMPT_FILE" \
+CIC_RESULT_JSON="$RAW_JSON" \
+CIC_RUN_LOG="$RUN_LOG" \
+CIC_AGENT_CONFIG="$AGENT_CONFIG" \
+CIC_MODEL="$MODEL" \
+CIC_MAX_TURNS="$MAX_TURNS" \
+CIC_RESUME_SESSION="$([[ "$RESUME" -eq 1 ]] && echo "$SESSION_ID" || echo "")" \
+CIC_MCP_CONFIG="$CIC_MCP_CONFIG" \
+    bash "$RUNNER_SCRIPT" < /dev/null &
 AGENT_PID=$!
 wait "$AGENT_PID"
 EXIT_CODE=$?
 AGENT_PID=""   # reaped — nothing to warn about from here on
+rm -f "$PROMPT_FILE"
 set -e
 
-# --- JSON kibontás: result → agent-output.md, usage → shell változók ---
+# --- A runner normalizált eredményének kibontása ---
+# Ami itt marad, az agent-független: a runner szerződése szerint minden runner
+# ugyanezt a JSON-t írja (jobs/.schema/runner-result.schema.json). A Claude
+# JSON-jának alakja a tools/runners/claude.sh dolga, nem ezé.
 RUN_SESSION_ID=""; RUN_COST=""; RUN_TURNS=""; RUN_STOP_REASON=""
 RUN_IN_TOKENS=""; RUN_OUT_TOKENS=""; RUN_CACHE_READ=""; RUN_CACHE_CREATE=""
 RUN_TOTAL_IN=""; RUN_MODELS=""; RUN_DURATION_MS=""; RUN_JSON_OK="0"
 eval "$(python3 - "$RAW_JSON" "$OUTPUT_FILE" <<'PYEOF'
-import sys, json, shlex
+import json, shlex, sys
 
 raw_path, out_path = sys.argv[1], sys.argv[2]
 raw = open(raw_path, encoding="utf-8", errors="replace").read()
+
 
 def emit(**kw):
     for k, v in kw.items():
         print(f"{k}={shlex.quote('' if v is None else str(v))}")
 
+
 try:
     data = json.loads(raw)
-    if isinstance(data, list):          # stream-json safety net
-        data = data[-1]
-    if not isinstance(data, dict):
-        raise ValueError("unexpected shape")
+    if not isinstance(data, dict) or "result" not in data:
+        raise ValueError("nem a runner-szerződés szerinti alak")
 except Exception:
-    # Not JSON: crash, auth prompt, or session-limit banner. Keep raw text for the human.
+    # A runner megszegte a szerződést: nem érvényes eredményt írt. A nyers
+    # tartalom megmarad az embernek, a job nem bukik el emiatt -- de a usage
+    # blokk üres marad, mert nincs mire alapozni.
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(raw)
     emit(RUN_JSON_OK="0")
@@ -443,42 +476,33 @@ except Exception:
 with open(out_path, "w", encoding="utf-8") as f:
     f.write(str(data.get("result", "")))
 
-# Token accounting.
-#
-# `usage` covers the MAIN model only, and its `input_tokens` is the UNCACHED
-# input — on a cached run that is a tiny number (measured: 2, while the real
-# input was 15912 cache_read + 8634 cache_creation). Reporting it alone is
-# misleading, which is exactly the bug this block fixes.
-#
-# `modelUsage` is the per-model breakdown and includes auxiliary models the run
-# spun up. Verified on a probe run: sum(modelUsage[*].costUSD) == total_cost_usd
-# exactly, so it is the correct aggregate. Fall back to `usage` if absent.
-model_usage = data.get("modelUsage") or {}
-if model_usage:
-    def s(field):
-        return sum(int(m.get(field) or 0) for m in model_usage.values())
-    in_tok, out_tok = s("inputTokens"), s("outputTokens")
-    cache_read, cache_create = s("cacheReadInputTokens"), s("cacheCreationInputTokens")
-    models = ",".join(sorted(model_usage))
-else:
-    usage = data.get("usage") or {}
-    in_tok = int(usage.get("input_tokens") or 0)
-    out_tok = int(usage.get("output_tokens") or 0)
-    cache_read = int(usage.get("cache_read_input_tokens") or 0)
-    cache_create = int(usage.get("cache_creation_input_tokens") or 0)
-    models = data.get("model") or ""
+t = data.get("tokens") or {}
 
+
+def tok(name):
+    v = t.get(name)
+    return None if v is None else int(v)
+
+
+in_tok, out_tok = tok("input"), tok("output")
+cache_read, cache_create = tok("cache_read"), tok("cache_creation")
+total_in = None
+if None not in (in_tok, cache_read, cache_create):
+    total_in = in_tok + cache_read + cache_create
+
+# Egy runner, ami nem mér költséget, üresen hagyja a mezőt. Nullát írni oda
+# mérésnek látszana.
 emit(
     RUN_SESSION_ID=data.get("session_id"),
-    RUN_COST=data.get("total_cost_usd"),
-    RUN_TURNS=data.get("num_turns"),
-    RUN_STOP_REASON=data.get("stop_reason") or data.get("terminal_reason"),
+    RUN_COST=data.get("cost_usd"),
+    RUN_TURNS=data.get("turns"),
+    RUN_STOP_REASON=data.get("stop_reason"),
     RUN_IN_TOKENS=in_tok,
     RUN_OUT_TOKENS=out_tok,
     RUN_CACHE_READ=cache_read,
     RUN_CACHE_CREATE=cache_create,
-    RUN_TOTAL_IN=in_tok + cache_read + cache_create,
-    RUN_MODELS=models,
+    RUN_TOTAL_IN=total_in,
+    RUN_MODELS=data.get("models"),
     RUN_DURATION_MS=data.get("duration_ms"),
     RUN_JSON_OK="1",
 )
@@ -542,9 +566,9 @@ with open(meta_path) as f:
     content = f.read()
 
 content = re.sub(r'^status:.*$', f'status: "{status}"', content, flags=re.MULTILINE)
-    # The run is over, so the lease is meaningless -- and a leftover deadline
-    # would make a finished job look stuck.
-    content = re.sub(r'^lease_expires:.*$', 'lease_expires: ""', content, flags=re.MULTILINE)
+# The run is over, so the lease is meaningless -- and a leftover deadline would
+# make a finished job look stuck.
+content = re.sub(r'^lease_expires:.*$', 'lease_expires: ""', content, flags=re.MULTILINE)
 content = re.sub(r'^\s+completed:.*$', f'  completed: "{end}"', content, flags=re.MULTILINE)
 
 if session_id:
