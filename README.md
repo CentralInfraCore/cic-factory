@@ -111,16 +111,17 @@ and it runs two behavioural suites:
 |---|---|
 | `tools/test-run-job-finalizer.sh` | the finalizer trap: SIGPIPE, SIGTERM, closed stdout, and never leaving `meta.yaml` claiming `running` when nothing runs (15 checks) |
 | `tools/test-lifecycle-transitions.sh` | the state transition `run-job.sh` performs, and the invariant that it can never write `done` (6 checks) |
-| `tools/test-close-job.sh` | every refusal in `close-job.sh` — wrong status, failing output gate, missing/empty/unfinished review, an unacknowledged spec-gate bypass — each against a fixture that violates it (37 checks) |
+| `tools/test-close-job.sh` | every refusal in `close-job.sh` — wrong status, failing output gate, missing/empty/unfinished review, an unacknowledged spec-gate bypass, a bypass hidden behind a YAML comment, an unknown gate value, malformed and duplicate-keyed metas — each against a fixture that violates it (48 checks) |
 | `tools/test-run-job-spec-gate.sh` | that `run-job.sh` refuses a NO-GO spec, that `--skip-spec-gate` still starts, and that the bypass is recorded in `meta.yaml` (15 checks) |
 | `tools/test-install-claude-hooks.sh` | that the hook installer converges — running it five times leaves the same file — and does not touch hooks it does not own (10 checks) |
-| `tools/test-stale-jobs.sh` | that a job stuck in `running` past its lease is detected, against fixtures that are stuck on purpose (12 checks) |
+| `tools/test-stale-jobs.sh` | that a job stuck in `running` past its lease is detected, against fixtures that are stuck on purpose, including a status hidden behind a trailing comment (18 checks) |
 | `tools/test-check-docs.sh` | that the docs checker itself can fail — broken links, schema duplication, and files not yet added to git — against fixtures that violate each (12 checks) |
 | `tools/test-run-job-e2e.sh` | **a whole job, `pending` → `awaiting_review` → `done`**, driven by the `echo` runner — no agent, no network, no cost (17 checks) |
 | `tools/test-validate-meta.sh` | that the meta schema rejects what it should — a typo'd field name, an invalid `status`, an empty model, a missing block, a bad `job_id`, a schema that is itself malformed (17 checks) |
 | `tools/test-verify-signatures.sh` | that the signature verifier can fail — tampered tree, missing metadata, forged signature, a merge smuggling content, a tag on a merge commit, an empty range (18 checks) |
 | `tools/test-check-embedded-python.sh` | that the embedded-Python checker can fail — the `core/@v0.1.1` indentation error put back, an error behind a backslash-continued command, and a Python heredoc hidden behind a non-`PY` delimiter (15 checks) |
 | `tools/test-context-monitor.sh` | that the context-monitor hook cannot be made to execute a command — a counter, an evacuation timestamp and a debug log line each carrying a command substitution, plus a symlinked state file and a state directory that is private and not in `/tmp` (18 checks) |
+| `tools/test-meta-get.sh` | that one document reads the same whichever way it is written — quoted, bare, single-quoted, with a trailing comment — and that a duplicate key, malformed YAML or a non-scalar field fails closed rather than looking absent (19 checks) |
 
 Every step was measured against a deliberately broken copy before it landed,
 because a gate that cannot go red is decoration. That measurement is not a

@@ -87,6 +87,12 @@ jobs:
       - name: context-monitor hook security
         run: bash tools/test-context-monitor.sh
 
+      # Minden meta.yaml mezőolvasás egy helyen, valódi YAML-parserrel. Két
+      # kontroll korábban sorvégi kommenttel megkerülhető volt, mert minden
+      # olvasó saját regexet hozott (#29, #30).
+      - name: meta field reads
+        run: bash tools/test-meta-get.sh
+
       # Behaviour, not just syntax. The finalizer suite covers the SIGPIPE/SIGTERM
       # incident; the lifecycle suite covers the transition run-job.sh performs,
       # which the finalizer suite is structurally blind to -- it only extracts the
