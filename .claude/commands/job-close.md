@@ -95,14 +95,46 @@ MERGE / VISSZAKÜLDVE — indoklás egy mondatban.
 hogy a következő session (vagy a felhasználó) meg tudja nézni, mit ellenőriztél
 ténylegesen, és mit vettél át az agent summaryjából.
 
-### 5. running → done (live meta.yaml)
+### 5. awaiting_review → done
 
-```python
-status: "done"
-timestamps.completed: "<ISO 8601 now>"
+```bash
+bash tools/close-job.sh $JOB_ID
 ```
 
-A `usage:` blokkot (költség, turns, tokenek) a `run-job.sh` már kitöltötte — ne írd át kézzel.
+Ne kézzel írd át a `meta.yaml`-t. Ez az **egyetlen** átmenet, ami `done`-t ír, és
+a script kikényszeríti a feltételeit — ha bármelyik nem teljesül, elutasít és
+megnevezi, melyik:
+
+| | feltétel |
+|---|---|
+| C1 | van `meta.yaml` |
+| C2 | a státusz pontosan `awaiting_review` |
+| C3 | a `validate-output.sh` GO-t ad |
+| C4 | a `review.md` létezik, nem üres, és nincs benne placeholder |
+| C5 | ha a futás `--skip-spec-gate`-tel indult, a `review.md` ezt elismeri |
+
+A C3 újrafuttatja a 3. pont kapuját. Ez szándékos: a 3. pont azért van, hogy te
+**lásd** az eredményt, mielőtt a review-t írod; a C3 azért, hogy a lezárás ne
+azon múljon, hogy tényleg lefuttattad-e.
+
+`--dry-run` megnézi a feltételeket anélkül, hogy lezárna.
+
+**A C5-ről.** Ha a `meta.yaml`-ben `spec_gate: "skipped"` áll, ez a job gépi
+spec-GO nélkül futott. A menekülőút legális, de a lezárás nem mehet úgy, hogy ez
+csak egy mezőben van, amibe senki nem néz. Írd a `review.md`-be:
+
+```
+spec_gate: skipped — <mit ellenőriztél helyette, és mit nem tudsz igazolni>
+```
+
+Ha a mező üres, a job a mező bevezetése előttről való: a script figyelmeztet, de
+átenged. Ilyenkor nem igazolható, hogy a spec-kapu lefutott-e — ezt a
+„nem igazolt" sorba írd.
+
+A `usage:` blokk attól függ, melyik úton futott a job:
+
+- **`run-job.sh`** — már kitöltötte a `claude --output-format json`-ból, ne írd át kézzel
+- **`/job-run` (Agent tool)** — a `/job-run` 5. pontja tölti ki; ha üres, ott maradt ki
 
 ### 6. Commit és push
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025-2026 Sinkó Gábor Zoltán / CentralInfraCore
 # relay-build-test.sh — end-to-end test harness for relay-driven build + build_hash
 #
 # Exercises the running relay over HTTP only. Does NOT modify CIC-Relay

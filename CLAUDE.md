@@ -1,12 +1,16 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Ez a fájl a `cic-factory` **CIC-specifikus** kontextusát tartalmazza: hogyan
+használja a CIC a gyárat.
 
-## Mi ez a könyvtár
+**A működési modell nem itt van.** A job lifecycle, az állapotgép, a job-struktúra
+és a gépi kapuk a [`SPEC.md`](SPEC.md)-ben élnek — az a
+[`cic-factory-core`](https://github.com/CentralInfraCore/cic-factory-core)-ból
+átvett specifikáció. Azt olvasd el először; ez a fájl csak azt teszi hozzá, ami
+CIC.
 
-A `cic-factory` a CIC ökoszisztéma hierarchikus agent factory-ja. Git-követett job-ok, domain-specializált kontextus, izolált agent workspace-ek.
-
-A szülő (`CIC/CLAUDE.md`) tartalmazza az ökoszisztéma-szintű kontextust (boot sequence, reasoning módok, háromszintű státusz). Azt olvasd el először.
+A szülő (`CIC/CLAUDE.md`) az ökoszisztéma-szintű kontextus: boot sequence,
+reasoning módok, háromszintű státusz.
 
 ---
 
@@ -17,122 +21,18 @@ A szülő (`CIC/CLAUDE.md`) tartalmazza az ökoszisztéma-szintű kontextust (bo
 
 ---
 
-## Működési modell
+## Honnan jön a tooling
 
-### Szerepek
+A `tools/`, a `.claude/commands/`, a `jobs/.schema/` és a `SPEC.md` **nem itt
+készül**. A `cic-factory-core` adja ki release tagen, és ez a repo merge-eli.
 
-| Szereplő | Hol él | Mit csinál |
-|---|---|---|
-| Orchestrátor (te + Claude) | live `workdir/` | job spec létrehozás, review, merge döntés |
-| Agent | `jobs/<job-id>/workspace/cic-factory/` (klón) | klónban dolgozik, feature branch-re commitol és pushol |
+A jelenlegi verziót a [`dependency.yaml`](dependency.yaml) rögzíti.
 
-### Job lifecycle
+**Amit ezekben itt módosítasz, azt a következő átvétel felülírja.** Ha a magban
+van a hiba, ott javítsd — a `cic-factory-core` issue-i között.
 
-```
-orchestrátor: input.md + meta.yaml → commit main → push
-run-job.sh:   pending → running commit → workspace klón → feature branch
-agent:        olvas jobs/<job-id>/ → ír output/ → commitol + pushol feature/<job-id>
-orchestrátor: review GitHubon → merge main
-```
-
-### Git a bizalom forrása
-
-A Vault-aláírt commit maga az igazolás (`commit-msg` hook, `cic-my-sign-key`).
-Az agent a klónból commitol és pushol a feature branch-re — review artifact, nem véglegesítés.
-Push `main`-re kizárólag az orchestrátor joga.
-
-**Az orchestrátori review is bizonyítékot termel.** Minden réteg artifactot hagy
-(aláírt commit, claim-evidence tábla, `deadcode` output, headSha) — kivéve régen a
-review-t, ami egy chat-üzenet volt: aláíratlan, nem reprodukálható, a session végén
-elveszett. Ezért kötelező a `jobs/<job-id>/review.md` (sablon: `/job-close` 4. pont).
-Amihez nem tudsz verifikációs módszert írni, az a „nem igazolt" sorba megy.
-
----
-
-## Job struktúra
-
-```
-jobs/
-  index.yaml                  ← auto-generált állapottérkép (tools/update-index.sh)
-  .schema/meta.yaml           ← kötelező mezők sémája
-  <job-id>/
-    input.md                  ← agent prompt (magyarul, git-tracked)
-    meta.yaml                 ← lifecycle + usage (költség/turns/tokenek, git-tracked)
-    review.md                 ← orchestrátori review artifact (kötelező merge előtt)
-    ref/                      ← referencia anyagok (opcionális, git-tracked)
-    workspace/                ← gitignored; agent klónjai élnek itt
-      cic-factory/            ← git clone + feature/<job-id> branch
-      <egyéb repo>/           ← ha a job más repót is igényel
-```
-
-### Sub-job lifecycle
-
-Az agent a cic-factory klónjában (`workspace/cic-factory/`) hozza létre a sub-job speceket:
-```
-workspace/cic-factory/jobs/<sub-job-id>/input.md + meta.yaml
-```
-Ezek a feature branch-re kerülnek. Merge után az orchestrátor a live workdir `jobs/<sub-job-id>/`-ban látja — és `run-job.sh <sub-job-id>`-val futtathatja.
-
-### meta.yaml kötelező mezők
-
-```yaml
-schema_version: "1.0"
-job_id: ""
-parent_job_id: ""             # "" ha gyökér
-level: ""                     # orchestrator | repo | domain
-target:
-  repo: ""
-  path: ""                    # domain szinten kötelező
-kb_focus: []                  # cic-graph focus_pack node-id-k
-promptmap_ref: ""
-agent:
-  config_dir: ""              # ~/.claude-personal/agents/<id>
-  model: ""
-workplace:
-  repos: []                   # pl. ["CIC-Relay"] — workspace/<repo>/ alá klónozva
-  branch: ""                  # feature/<job-id>
-status: "pending"             # pending | running | done | error
-error_message: ""
-timestamps:
-  created: ""
-  started: ""
-  completed: ""
-```
-
----
-
-## Eszközök
-
-| Parancs | Mit csinál |
-|---|---|
-| `./tools/run-job.sh <job-id> [agent-id]` | Teljes lifecycle: klón, running→done, commit, push. Injektálja a `kb_focus`-t, `--max-turns` guardot ad, és JSON-ból kiírja a költséget a `meta.yaml`-ba |
-| `./tools/validate-spec.sh <job-id>` | **Gépi kapu indítás előtt** (K1–K11). NO-GO → ne indítsd az agentet |
-| `./tools/validate-output.sh <job-id>` | **Gépi kapu merge előtt** (O1–O5). NO-GO → ne zárd le a jobot |
-| `./tools/update-index.sh` | `jobs/index.yaml` újragenerálása (modell, költség, turns, `totals:`) |
-| `~/.claude-personal/agents/new-agent.sh <név>` | Új izolált agent config létrehozása |
-
-### A két gépi kapu
-
-```
-spec  →  validate-spec.sh   →  agent fut  →  validate-output.sh  →  emberi review  →  merge
-         (K1–K11)                             (O1–O5)                (review.md)
-```
-
-Az elv: **amit gép el tud dönteni, azt döntse el a gép.** A drága figyelem (te / erős
-modell) a tartalomra menjen, ne a formára. A `validate-output.sh` első éles futása pont
-egy olyan hibát talált, amit emberi review és merge átengedett.
-
----
-
-## Agent auth
-
-```
-~/.claude-personal/agents/<id>/
-  .credentials.json       ← symlink → ~/.claude-personal/.credentials.json
-  settings.json           ← izolált config, auto mode
-```
-
-Indítás: `CLAUDE_CONFIG_DIR=~/.claude-personal/agents/<id> claude --print "..." --mcp-config CIC/.mcp.json`
+Kivétel: `tools/relay-build-test.sh` — CIC-Relay buildet hajt, szándékosan nem
+került a magba.
 
 ---
 
@@ -140,11 +40,16 @@ Indítás: `CLAUDE_CONFIG_DIR=~/.claude-personal/agents/<id> claude --print "...
 
 **Olvasd el session elején:** [`docs/ecosystem-map.md`](docs/ecosystem-map.md)
 
-Tartalmaz: összes repo path + szerep, adatfolyam, relay architektúra, demo fázisok (CIC szerepe 8.1–8.4), MCP lefedettség, Vault signing lánc. Ne kelljen job-onként újra feltérképezni.
+Tartalmaz: összes repo path + szerep, adatfolyam, relay architektúra, demo
+fázisok (CIC szerepe 8.1–8.4), MCP lefedettség, Vault signing lánc. Ne kelljen
+job-onként újra feltérképezni.
+
+---
 
 ## Repo helyek (CIC ökoszisztéma)
 
-A path-ok gép-specifikusak. Add meg `tools/env.sh`-ban (sablon: `tools/env.sh.example`).
+A path-ok gép-specifikusak. Add meg `tools/env.sh`-ban (sablon:
+`tools/env.sh.example`).
 
 | Alrendszer | Env var |
 |---|---|
@@ -159,8 +64,24 @@ A path-ok gép-specifikusak. Add meg `tools/env.sh`-ban (sablon: `tools/env.sh.e
 ## MCP szerver
 
 A `cic-graph` MCP szerver konfigja: `CIC/.mcp.json` (stdio mód).
-`run-job.sh` automatikusan átadja: `--mcp-config $CIC_MCP_CONFIG` (derive-olva vagy explicit).
-Boot sequence: `kb_status` → `search_nodes` → státusz ellenőrzés.
+A `run-job.sh` automatikusan átadja: `--mcp-config $CIC_MCP_CONFIG` (derive-olva
+vagy explicit). Boot sequence: `kb_status` → `search_nodes` → státusz ellenőrzés.
+
+A `meta.yaml` `kb_focus` mezője `cic-graph` `focus_pack` node-id-ket vár.
+
+---
+
+## Agent auth
+
+```
+~/.claude-personal/agents/<id>/
+  .credentials.json       ← symlink → ~/.claude-personal/.credentials.json
+  settings.json           ← izolált config, auto mode
+```
+
+Indítás: `CLAUDE_CONFIG_DIR=~/.claude-personal/agents/<id> claude --print "..." --mcp-config CIC/.mcp.json`
+
+Új agent: `~/.claude-personal/agents/new-agent.sh <név>`
 
 ---
 
@@ -173,3 +94,11 @@ Boot sequence: `kb_status` → `search_nodes` → státusz ellenőrzés.
 | `CIC/teads/relay-trust-todo.md` | Háromrétegű relay trust modell (L0–L7) |
 
 Ezek döntési alapok — a `rejected` részeket ne tervezd újra.
+
+---
+
+## Licenc
+
+Ez a repo **vegyes**: a saját tartalma CC BY-NC-SA 4.0, az átvett tooling
+AGPL-3.0-or-later, két hook MIT. Minden forrásfájl SPDX-fejlécet hordoz — lásd
+[`LICENSE.md`](LICENSE.md).

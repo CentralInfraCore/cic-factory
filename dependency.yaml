@@ -1,0 +1,33 @@
+# Which cic-factory-core release this factory runs.
+#
+# The adoption is a merge from a release tag, not a continuous sync: the core
+# cuts a release, this repository takes it. After the first
+# --allow-unrelated-histories merge the two share ancestry, so every later
+# adoption is an ordinary merge.
+schema_version: "1.0"
+
+dependencies:
+  - name: cic-factory-core
+    repo: https://github.com/CentralInfraCore/cic-factory-core
+    tag: "core/@v0.1.1"
+    commit: "0473793"
+    pinned: true
+    mode: merge
+    adopted: "2026-08-22"
+    # Paths owned by the core. Local edits here are overwritten by the next
+    # adoption -- change them upstream instead.
+    imported_paths:
+      - tools/
+      - .claude/commands/
+      - jobs/.schema/
+      - SPEC.md
+      - .github/workflows/gate.yml
+    # Owned here; the core never overwrites them.
+    local_paths:
+      - CLAUDE.md
+      - README.md
+      - jobs/
+      - docs/
+    exceptions:
+      - path: tools/relay-build-test.sh
+        reason: "factory-only — drives a CIC-Relay build, deliberately not in the core"
