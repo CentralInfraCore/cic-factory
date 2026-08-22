@@ -6,14 +6,21 @@ with one additional term under section 7(b) of that licence.
 
 SPDX identifier: `AGPL-3.0-or-later`
 
-The full, verbatim legal text is in [`LICENSE`](LICENSE). Where this summary and
-that text disagree, the text in `LICENSE` governs.
+The full legal text is in [`LICENSE`](LICENSE): the verbatim AGPL-3.0, followed
+by the section 7 additional term below under a marked separator. Where this
+summary and that file disagree, `LICENSE` governs — and the additional term is
+part of it, so the two no longer point in opposite directions.
+
+Until 2026-08-22 the term lived only in this file, while this same paragraph said
+`LICENSE` wins. The document carrying the term declared that the file without it
+governed. `tools/check-licence.sh` now refuses that state.
 
 ## Additional term under AGPL-3.0 section 7(b) — attribution
 
 Section 7(b) of the AGPL permits supplementing the licence with terms
 "requiring preservation of specified reasonable legal notices or author
-attributions". The following such term applies:
+attributions". The following such term applies, and is reproduced in
+[`LICENSE`](LICENSE) itself, after the `--- ADDITIONAL TERMS ---` separator:
 
 > Any conveyed copy or modified version of this work, and any work that
 > conveys it or offers it to users over a network, must preserve the
@@ -24,7 +31,13 @@ attributions". The following such term applies:
 This is an attribution requirement only. It grants no additional permission and
 removes none: it does not restrict commercial use, and it does not restrict
 building proprietary products that communicate with this core across a defined
-contract boundary.
+contract boundary. As section 7 provides, a recipient may remove it from any copy
+they convey.
+
+The SPDX identifier stays `AGPL-3.0-or-later` rather than an `AGPL-3.0-or-later
+WITH …` expression. `WITH` takes a registered SPDX exception identifier, and this
+term is not one — writing it there would produce an expression that SPDX tooling
+rejects. The term's authority comes from `LICENSE`, which every header points to.
 
 ## Why AGPL and not the CIC documentation licence
 
