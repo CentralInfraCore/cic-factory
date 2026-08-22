@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025-2026 Sinkó Gábor Zoltán / CentralInfraCore
 # validate-spec.sh <job-id>
 # Mechanikus spec validátor — gépi kényszer, nem Claude-döntés.
 # Exit 0 = GO, Exit 1 = NO-GO

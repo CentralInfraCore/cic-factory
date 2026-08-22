@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025-2026 Sinkó Gábor Zoltán / CentralInfraCore
 #
 # The spec gate in run-job.sh: /job-run has always made validate-spec.sh
 # mandatory and forbidden starting an agent on NO-GO, but the script itself

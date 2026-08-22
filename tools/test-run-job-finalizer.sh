@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025-2026 Sinkó Gábor Zoltán / CentralInfraCore
 # Exercises run-job.sh's finalizer prelude — the real text, extracted from the
 # shipped script, not a hand-copied clone. Each case runs in its own process
 # with a fixture meta.yaml.
