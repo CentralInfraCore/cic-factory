@@ -77,7 +77,13 @@ for path in sorted(set(files)):
         while j > 0 and lines[j - 1].rstrip().endswith("\\"):
             j -= 1
             cmd = lines[j] + " " + cmd
-        is_python = re.search(r"\bpython3?\b", cmd) is not None
+        # A python3-at PARANCSNÉVKÉNT keressük, nem akárhol a sorban. A
+        # `cat > "$dir/python3" <<FAKE` szintén tartalmazza a szót, és a
+        # checker első változata emiatt egy shell-heredocot Python-blokknak
+        # nézett. Parancsnév a sor elején, vagy |, &&, ||, ;, ( vagy $( után áll.
+        is_python = re.search(
+            r"(?:^|[|&;(]|\$\()\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*python3?(?:\s|$)",
+            cmd) is not None
 
         body, i = [], i + 1
         closed = False
