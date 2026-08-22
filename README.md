@@ -116,6 +116,7 @@ and it runs two behavioural suites:
 | `tools/test-install-claude-hooks.sh` | that the hook installer converges — running it five times leaves the same file — and does not touch hooks it does not own (10 checks) |
 | `tools/test-stale-jobs.sh` | that a job stuck in `running` past its lease is detected, against fixtures that are stuck on purpose (12 checks) |
 | `tools/test-check-docs.sh` | that the docs checker itself can fail — broken links, schema duplication, and files not yet added to git — against fixtures that violate each (12 checks) |
+| `tools/test-verify-signatures.sh` | that the signature verifier can fail — tampered tree, missing metadata, forged signature, a merge smuggling content, a tag on a merge commit, an empty range (18 checks) |
 
 Every step was measured against a deliberately broken copy before it landed,
 because a gate that cannot go red is decoration. That measurement is not a
@@ -125,6 +126,27 @@ decision lives below it. The lifecycle suite exists to cover that blind spot.
 
 The gate still does **not** prove that the tooling works end to end. There is no
 test that runs a job. What it proves is bounded, and the bounds are written above.
+
+## Signatures are verified, not just written
+
+The `commit-msg` hook signs every commit against a deterministic digest of its
+tree. Until `tools/verify-signatures.sh` existed, **nothing read those signatures
+back** — they were a claim, not evidence.
+
+The gate now verifies every commit a PR introduces: the recorded digest must
+equal a fresh digest of the tree, and the ECDSA signature must verify against the
+certificate embedded in the same message. Verification is offline; the
+certificate travels with the commit, and the signing token could not verify
+anyway — its policy grants `transit/sign` but not `transit/verify`.
+
+Merge commits are made server-side by GitHub, where no hook runs, so they cannot
+be signed. They are held to a different rule instead: **a merge must introduce
+nothing** — its tree has to equal one of its parents'. That preserves the actual
+invariant, that every byte is covered by some signed commit, without pretending
+the merge itself is signed. A merge that does introduce content must be signed
+like anything else.
+
+A release tag must point at a signed commit, never at a merge commit.
 
 ## A note on the commit signatures
 
