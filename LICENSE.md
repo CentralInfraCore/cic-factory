@@ -54,9 +54,14 @@ Both were adapted for CIC and say so in their headers. The upstream copyright an
 the full MIT text are in [`LICENSES/MIT-yurukusa.txt`](LICENSES/MIT-yurukusa.txt),
 as MIT requires — a bare mention of the licence name would not satisfy it.
 
-Every source file in this repository carries an `SPDX-License-Identifier`, so
-which licence governs which file is answerable per file rather than by reading
-this section. The gate checks that no source file arrives without one.
+Every shell and Python file in this repository carries an
+`SPDX-License-Identifier`, and the gate refuses one that arrives without it — so
+for those, which licence governs which file is answerable per file rather than
+by reading this section.
+
+Markdown, YAML and JSON files do not carry one. JSON has no comment syntax at
+all, so for `jobs/.schema/*.json` it is not achievable; for the rest it is a
+choice not yet made. Until it is, those files are governed by this document.
 
 ## Copyright
 

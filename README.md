@@ -34,7 +34,7 @@ the lifecycle convention. All three are here.
 
 ```
 tools/run-job.sh                job lifecycle driver
-tools/validate-spec.sh          pre-run machine gate (K1–K11)
+tools/validate-spec.sh          pre-run machine gate (K1, K3, K4, K7, K7b, K8, K9, K10, K11)
 tools/validate-output.sh        pre-merge machine gate (O1–O5)
 tools/update-index.sh           job state map regeneration
 tools/test-run-job-finalizer.sh finalizer test
@@ -45,6 +45,13 @@ tools/cic-hooks.json            agent hook configuration
 tools/hooks/                    context monitor, event log, no-ask-human guard
 tools/env.sh.example            environment template
 ```
+
+`validate-spec.sh` implements the machine-checkable part of the spec checklist.
+Three of the reviewer's criteria are judgement calls that no grep decides, so
+they have no gate rule and stay in `/job-validate`, marked `kézi`. The docs used
+to describe the gate as covering the whole range; `check-docs.sh` now refuses
+that claim.
+
 
 **Interface** — the operator's entry point to the lifecycle
 
@@ -113,7 +120,9 @@ assumed.
 
 `.github/workflows/gate.yml` checks that the shell, YAML, JSON and Python parse,
 that shellcheck finds no error-severity defects, that `LICENSE` is unmodified,
-and it runs two behavioural suites:
+and it runs the behavioural suites below. Their numbers are checked against
+this table by `tools/check-suite-counts.sh`, because a count nobody verifies
+drifts:
 
 | suite | what it covers |
 |---|---|
@@ -123,11 +132,12 @@ and it runs two behavioural suites:
 | `tools/test-run-job-spec-gate.sh` | that `run-job.sh` refuses a NO-GO spec, that `--skip-spec-gate` still starts, and that the bypass is recorded in `meta.yaml` (15 checks) |
 | `tools/test-install-claude-hooks.sh` | that the hook installer converges — running it five times leaves the same file — and does not touch hooks it does not own (10 checks) |
 | `tools/test-stale-jobs.sh` | that a job stuck in `running` past its lease is detected, against fixtures that are stuck on purpose, including a status hidden behind a trailing comment (18 checks) |
-| `tools/test-check-docs.sh` | that the docs checker itself can fail — broken links, schema duplication, and files not yet added to git — against fixtures that violate each (12 checks) |
+| `tools/test-check-docs.sh` | that the docs checker itself can fail — broken links, schema duplication, and files not yet added to git — against fixtures that violate each, plus the two drift rules: a suite with no README row, a README row with no file, and a documented gate rule that does not exist (28 checks) |
+| `tools/test-check-suite-counts.sh` | that the count checker can fail — a suite reporting more checks than the table declares, a row naming a file that is gone, and a README with no declared counts at all (8 checks) |
 | `tools/test-check-dependencies.sh` | that the dependency checker can fail — each required command hidden from `PATH` in turn, a missing Python module, and a `date` without GNU `-d` (27 checks) |
 | `tools/test-run-job-e2e.sh` | **a whole job, `pending` → `awaiting_review` → `done`**, driven by the `echo` runner — no agent, no network, no cost (17 checks) |
 | `tools/test-validate-meta.sh` | that the meta schema rejects what it should — a typo'd field name, an invalid `status`, an empty model, a missing block, a bad `job_id`, a schema that is itself malformed (17 checks) |
-| `tools/test-verify-signatures.sh` | that the signature verifier can fail — tampered tree, missing metadata, forged signature, a merge smuggling content, a tag on a merge commit, an empty range (18 checks) |
+| `tools/test-verify-signatures.sh` | that the signature verifier can fail — tampered tree, missing metadata, forged signature, a merge smuggling content, a tag on a merge commit, an empty range (20 checks) |
 | `tools/test-check-embedded-python.sh` | that the embedded-Python checker can fail — the `core/@v0.1.1` indentation error put back, an error behind a backslash-continued command, a Python heredoc hidden behind a non-`PY` delimiter, and a line that merely mentions `python3` without calling it (16 checks) |
 | `tools/test-context-monitor.sh` | that the context-monitor hook cannot be made to execute a command — a counter, an evacuation timestamp and a debug log line each carrying a command substitution, plus a symlinked state file and a state directory that is private and not in `/tmp` (18 checks) |
 | `tools/test-meta-get.sh` | that one document reads the same whichever way it is written — quoted, bare, single-quoted, with a trailing comment — and that a duplicate key, malformed YAML or a non-scalar field fails closed rather than looking absent (19 checks) |

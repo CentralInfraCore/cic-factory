@@ -126,7 +126,8 @@ Ezek a feature branch-re kerülnek. Merge után az orchestrátor a live
 | Parancs | Mit csinál |
 |---|---|
 | `tools/run-job.sh <job-id> [agent-id]` | **Előbb a spec-kaput futtatja** — NO-GO esetén nem indul. `--skip-spec-gate` megkerüli, de a `meta.yaml` `spec_gate` mezőjébe `skipped` kerül. Klón, `running → awaiting_review`, commit, push. **Nem zár le.** |
-| `tools/validate-spec.sh <job-id>` | Gépi kapu indítás előtt (K1–K11). NO-GO → az agent nem indulhat |
+| `tools/validate-spec.sh <job-id>` | Gépi kapu indítás előtt (K1, K3, K4, K7, K7b, K8, K9, K10, K11). NO-GO → az agent nem indulhat |
+<!-- A /job-validate kézi listája ennél hosszabb: megítélési kérdéseket is tartalmaz, amiket nem dönt el grep. Azok ott vannak felsorolva, kéziként jelölve. -->
 | `tools/validate-output.sh <job-id>` | Gépi kapu lezárás előtt (O1–O5) |
 | `tools/close-job.sh <job-id>` | **Az egyetlen `awaiting_review → done` átmenet** (C1–C5). `--dry-run` csak ellenőriz |
 | `tools/check-stale-jobs.sh` | Kilistázza a `running`-ot állító jobokat, amelyek lease-e lejárt |
@@ -138,7 +139,8 @@ Ezek a feature branch-re kerülnek. Merge után az orchestrátor a live
 
 ```
 spec → validate-spec.sh → agent fut → validate-output.sh → review.md → close-job.sh → done
-       (K1–K11)                        (O1–O5)                          (C1–C5)
+     (K1,K3,K4,K7,K7b,               (O1–O5)                          (C1–C5)
+      K8,K9,K10,K11)
 ```
 
 Az elv: **amit gép el tud dönteni, azt döntse el a gép.** A drága figyelem a
