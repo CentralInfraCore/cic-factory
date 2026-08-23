@@ -9,8 +9,8 @@ schema_version: "1.0"
 dependencies:
   - name: cic-factory-core
     repo: https://github.com/CentralInfraCore/cic-factory-core
-    tag: "core/@v0.2.1"
-    commit: "1a00ceb"
+    tag: "core/@v0.3.0"
+    commit: "bee6ba8"
     pinned: true
     mode: merge
     adopted: "2026-08-23"
@@ -27,6 +27,7 @@ dependencies:
       - docs/RELEASE-0.1.0.md
       - docs/RELEASE-0.2.0.md
       - docs/RELEASE-0.2.1.md
+      - docs/RELEASE-0.3.0.md
       - docs/RUNNER-CONTRACT.md
     # Owned here; the core never overwrites them.
     local_paths:

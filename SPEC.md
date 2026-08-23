@@ -165,7 +165,21 @@ index is `error`-t mond.
 **Amit még nem garantál:** a `--resume` nem köti magát futásazonosítóhoz, mert
 olyan még nincs. Egy leváltott futás késői eredményét semmi nem utasítja el. Az
 `error` státusz jelentheti azt is, hogy az agent még dolgozik: a finalizer
-szándékosan nem öli meg, és ezt a `test-run-job-finalizer.sh` méri is. **#41.**
+szándékosan nem öli meg, és ezt a `test-run-job-finalizer.sh` méri is.
+
+Célzottan megmérve (#65, `tools/measure-concurrency.sh` 6. és 7. eset):
+
+**Ami NEM reprodukálódik:** a megszüntetett futás runner-gyereke nem tud írni a
+metába. Csak a `CIC_RESULT_JSON`-t írja, amit a halott wrapper már nem olvas
+el. Egy korábbi „megfigyelés" az ellenkezőjét állította — az mérési hiba volt:
+a `$!` az alhéj pid-je, nem a wrapperé, tehát a `kill` árván hagyta a wrappert,
+ami befejezte a munkát. A rossz folyamatot öltem meg.
+
+**Ami reprodukálódik:** az A futás finalizere `error`-ra írja azt az állapotot,
+amit egy újabb B attempt állított be. A finalizer őre (`WE_SET_RUNNING` és
+`status == running`) nem tudja megkülönböztetni B `running`-ját a sajátjától —
+nincs mihez kötnie. Ez a legerősebb közvetlen bizonyíték arra, hogy futás-
+identitás kell. **#41.**
 
 **Evidence:** az `error` commit, az `error_message`, a job-napló.
 
@@ -173,7 +187,7 @@ szándékosan nem öli meg, és ezt a `test-run-job-finalizer.sh` méri is. **#4
 
 ### UC-04 — Review és close
 
-**Státusz:** `részleges` — a review nincs eredményhez kötve (#43)
+**Státusz:** `részleges` — a kötés a run_id-n áll, nem result ref-en (#44)
 
 **Precondition:** a job `awaiting_review`, van `review.md` és van `output/`.
 
@@ -185,16 +199,24 @@ close-job.sh → C1  van meta.yaml
              → C3  validate-output.sh GO               (O1–O5)
              → C4  review.md létezik és nem üres
              → C5  ha spec_gate=skipped, a review elismeri
+             → C6  a review megnevezi a futást, amit nézett (run_id)
              → meta-set: status=done
 ```
 
 **Postcondition:** minden `done` úton lefutott az output-kapu, és van review
 artifact. Nincs olyan dokumentált út, ahol a `done` ezek nélkül elérhető.
 
-**Amit még nem garantál:** a review és az output nincs immutable result
-ref-hez kötve. Egy új attempt lezárható a korábbi review-jával, mert a
-`close-job.sh` a fájlok meglétét nézi, nem azt, hogy melyik futáshoz
-tartoznak. **#43.**
+**Mérve és lezárva (#43):** a review-nak meg kell neveznie a `run_id`-t, amit
+nézett (C6), a close rögzíti a `reviewed_run_id`-t és a validált tartalom
+`result_digest`-jét, és **azt commitolja, amit validált** — a validáció és a
+commit között eddig kicserélhető volt az output, és a `done` commit olyan
+tartalmat vitt, amit a kapu soha nem látott.
+
+**Amit még nem garantál:** a kötés a `run_id`-n áll, nem immutable result
+ref-en. A feature branch SHA-ja nincs rögzítve, tehát a `done` commitból az
+látszik, MELYIK futás eredményét zárták le, az nem, hogy az az eredmény melyik
+commitban él. **#43** lezárva, a teljesebb kötés a **#44** proof-profiljával
+jön.
 
 **Evidence:** a `done` commit, a `review.md`, az output-kapu kimenete.
 
@@ -208,19 +230,38 @@ tartoznak. **#43.**
 
 **Transition:** kettő, egymástól függetlenül.
 
-**Amit a core ma tud:** semmit, ami ezt biztonságossá tenné. Mindkét futás
-ugyanazt a live checkoutot, ugyanazt a Git indexet és ugyanazt a
-`jobs/index.yaml`-t írja. Nincs lock, nincs külön worktree, és a lifecycle
-commit nem pathspecifikus.
+**Amit a core ma tud:** mindkét futás ugyanazt a live checkoutot, ugyanazt a
+Git indexet és ugyanazt a `jobs/index.yaml`-t írja. Nincs lock, nincs külön
+worktree, és a lifecycle commit nem pathspecifikus.
 
 **Postcondition:** *(amit a lezárása jelentene)* nincs cross-job fájl, stage,
-session vagy ref. Ma ez nem áll fenn, és nincs is mérve.
+session vagy ref.
 
-**Evidence:** *(amit bizonyítania kellene)* determinisztikus, barrieres
-konkurencia-teszt. Időzítésre épülő `sleep` nem elég.
+**Evidence:** barrier-alapú konkurencia-mérés (2026-08-23, a #41 kommentjében).
+Két job párhuzamosan, determinisztikus szinkronizációval — nem `sleep`-pel.
 
-**Ez nem mérve van, hanem az auditból származik.** A #41 törzse ezt
-kimondja: a konkurencia-állítások nem lettek újramérve ebben a repóban.
+**Amit a mérés mutatott — reprodukálódott:**
+
+Mindkét job befejeződött (`awaiting_review`, exit 0), tehát nem vesznek el
+egymás munkájában. A lifecycle-commitok viszont keresztbe visznek:
+
+```
+job: beta — running  →  jobs/alpha/input.md
+job: beta — running  →  jobs/alpha/meta.yaml
+job: beta — running  →  jobs/index.yaml
+```
+
+A következmény nem adatvesztés, hanem **bizonyíték-szennyezés**: a beta `done`
+commitja már nem izolálja, mit csinált a beta.
+
+Ez a rész nem igényel futás-identitást — a lifecycle-commit pathspec-hez
+kötése önmagában megoldja, és önállóan szállítható. #41.
+
+**Amit a mérés NEM mutatott:** a push-verseny viszont igen — két külön
+checkoutból a második push non-fast-forward hibával elutasításra kerül, a job
+`error` lesz, és a helyi `main` olyan lifecycle-állapottal marad előrébb,
+amiről a remote nem tud. Nincs fetch/rebase/retry. Ez az, ami ma ténylegesen
+veszít állapotot.
 
 Amíg ez nem zárul le, a szerződés annyi: **egy orchestrátor, egy checkout,
 egyszerre egy job.**
@@ -229,17 +270,32 @@ egyszerre egy job.**
 
 ### UC-06 — Ugyanaz a job versengő indítása
 
-**Státusz:** `még nem` — #41
+**Státusz:** `részleges` — #41
 
 **Precondition:** két folyamat ugyanarra a `job_id`-ra.
 
-**Amit a core ma tud:** a `run-job.sh` egyszer beolvassa a státuszt, majd
-feltétel nélkül átírja. Nincs `run_id`, tulajdonos, generáció, lock vagy
-compare-and-swap. A `WE_SET_RUNNING` lokális boolean: azt jelzi, hogy MI
-állítottuk `running`-ra, nem azt, hogy még mindig mi birtokoljuk a jobot.
+**Amit a core ma tud:** többet, mint amennyit az audit alapján gondoltunk. A
+`run-job.sh` beolvassa a státuszt, és ha az már `running`, megáll:
 
-A nem-resume ág `rm -rf`-fel törli a workspace-t és újraklónoz — két futás
-egymás alól törölheti. A törlés útja ellenőrzött (#32), a versenyhelyzet nem.
+```
+[WARN] Job már fut. Folytatod? (y/N)
+```
+
+Nem-interaktívan (lezárt stdin) elutasít, exit 1.
+
+**Amit a mérés mutatott — NEM reprodukálódott:**
+
+0,3 másodperces késleltetéssel **és** öt teljesen egyidejű indítással: 5/5-ben
+a második megállt. Mivel a workspace-lépésig el sem jut, az `rm -rf` sem
+történik meg — a workspace-be tett canary minden futásban túlélte.
+
+**Ez nem compare-and-swap.** Valós olvasás-írás ablak van, lock nélkül, és a
+`WE_SET_RUNNING` lokális boolean: azt jelzi, hogy MI állítottuk `running`-ra,
+nem azt, hogy még mindig mi birtokoljuk a jobot. De a naiv „mindkettő átmegy"
+egyetlen mért futásban sem következett be.
+
+A különbség számít a tervezésnél: ezt **keményíteni** kell, nem nulláról
+megépíteni. #41.
 
 **Transition:** *(amit a lezárása jelentene)* `pending → running`, de compare-and-
 swap-pel: várt állapot, várt revízió és futás-identitás ellenőrzésével.
@@ -376,7 +432,7 @@ Ezek a feature branch-re kerülnek. Merge után az orchestrátor a live
 | `tools/validate-spec.sh <job-id>` | Gépi kapu indítás előtt (K1, K3, K4, K7, K7b, K8, K9, K10, K11). NO-GO → az agent nem indulhat |
 <!-- A /job-validate kézi listája ennél hosszabb: megítélési kérdéseket is tartalmaz, amiket nem dönt el grep. Azok ott vannak felsorolva, kéziként jelölve. -->
 | `tools/validate-output.sh <job-id>` | Gépi kapu lezárás előtt (O1–O5) |
-| `tools/close-job.sh <job-id>` | **Az egyetlen `awaiting_review → done` átmenet** (C1–C5). `--dry-run` csak ellenőriz |
+| `tools/close-job.sh <job-id>` | **Az egyetlen `awaiting_review → done` átmenet** (C1–C6). `--dry-run` csak ellenőriz |
 | `tools/check-stale-jobs.sh` | Kilistázza a `running`-ot állító jobokat, amelyek lease-e lejárt |
 | `tools/update-index.sh` | `jobs/index.yaml` újragenerálása |
 | `tools/install-claude-hooks.sh [agent-id]` | Agent hookok telepítése; idempotens |
@@ -386,7 +442,7 @@ Ezek a feature branch-re kerülnek. Merge után az orchestrátor a live
 
 ```
 spec → validate-spec.sh → agent fut → validate-output.sh → review.md → close-job.sh → done
-     (K1,K3,K4,K7,K7b,               (O1–O5)                          (C1–C5)
+     (K1,K3,K4,K7,K7b,               (O1–O5)                          (C1–C6)
       K8,K9,K10,K11)
 ```
 

@@ -24,9 +24,15 @@ PRELUDE_END=$(grep -n '^trap finalize EXIT INT TERM$' "$SRC" | head -1 | cut -d:
 sed -n "1,${PRELUDE_END}p" "$SRC" > "$TMP/prelude.sh"
 echo "prelude: 1..$PRELUDE_END sor"
 
+# A #41 óta a finalizer a meta run_id-jéhez köti az írási jogosultságát: csak
+# az a futás veheti vissza a jobot, amelyik a running állapotot odaírta.
+# A fixture metája ezért hordoz egy azonosítót, és az eseteknek ugyanezt kell
+# RUN_ID-ként beállítaniuk.
+FIXTURE_RUN_ID="fixture-run-0001"
 mkmeta() {
     cat > "$1" <<EOF
 status: "$2"
+run_id: "${3-$FIXTURE_RUN_ID}"
 error_message: ""
 timestamps:
   created: "2026-01-01T00:00:00Z"
@@ -57,7 +63,7 @@ EOF
 
 echo
 echo "1. Korai kilépés MIUTÁN mi állítottuk running-ra → meta error lesz"
-out=$(run_case 'WE_SET_RUNNING=1; RUN_LOG="'"$TMP"'/run.log"; exit 7' "running")
+out=$(run_case 'RUN_ID="fixture-run-0001"; RUN_LOG="'"$TMP"'/run.log"; exit 7' "running")
 check "exit kód megőrizve" "7" "${out%%|*}"
 check "status → error" "error" "$(echo "$out" | head -1 | cut -d'|' -f2)"
 grep -q 'idő előtt kilépett' <<<"$out" && { echo "  PASS  figyelmeztetés stderr-en"; ((pass++)); } \
@@ -78,7 +84,7 @@ echo
 echo "3. Normál út: FINALIZED=1 → a trap nem ír felül"
 # awaiting_review, not done: this is the state run-job.sh actually leaves behind.
 # Exit 0 says the agent finished; only /job-close may say the job is acceptable.
-out=$(run_case 'WE_SET_RUNNING=1; FINALIZED=1; exit 0' "awaiting_review")
+out=$(run_case 'RUN_ID="fixture-run-0001"; FINALIZED=1; exit 0' "awaiting_review")
 check "exit 0 megőrizve" "0" "${out%%|*}"
 check "status változatlan" "awaiting_review" "$(echo "$out" | head -1 | cut -d'|' -f2)"
 
@@ -90,7 +96,7 @@ cat > "$TMP/tools/pipe.sh" <<EOF
 $(cat "$TMP/prelude.sh")
 META="$TMP/meta.yaml"
 RUN_LOG="$TMP/pipe.log"
-WE_SET_RUNNING=1
+RUN_ID="fixture-run-0001"
 for i in \$(seq 1 5000); do echo "sor \$i"; done
 FINALIZED=1   # ide már nem jut el
 EOF
@@ -110,7 +116,7 @@ cat > "$TMP/tools/term.sh" <<EOF
 $(cat "$TMP/prelude.sh")
 META="$TMP/meta.yaml"
 RUN_LOG="$TMP/term.log"
-WE_SET_RUNNING=1
+RUN_ID="fixture-run-0001"
 sleep 300 &
 AGENT_PID=\$!
 echo \$AGENT_PID > "$TMP/agent.pid"
@@ -164,7 +170,7 @@ $(cat "$TMP/prelude.sh")
 META="$G/jobs/t/meta.yaml"
 RUN_LOG="$G/run.log"
 JOB_ID="t"
-WE_SET_RUNNING=1
+RUN_ID="fixture-run-0001"
 exit 7
 EOF
 bash "$G/tools/case.sh" >/dev/null 2>"$G/case.err"
@@ -179,6 +185,23 @@ REMOTE_IDX=$(git -C "$G" show origin/main:jobs/index.yaml 2>/dev/null || echo ""
 check "  a távoli index sem mond running-ot" "0" "$(printf '%s' "$REMOTE_IDX" | grep -c 'running')"
 check "  a távoli index error-t mond" "1" "$(printf '%s' "$REMOTE_IDX" | grep -c 'error')"
 
+# A finalizer commitja is csak a saját path-jait viheti (#63). Idegen fájlt
+# stage-elünk, mielőtt a finalizer commitol.
+echo "idegen munka" > "$G/IDEGEN.txt"
+git -C "$G" add IDEGEN.txt
+mkmeta "$G/jobs/t/meta.yaml" "running"
+python3 - "$G/jobs/t/meta.yaml" <<'PYZ'
+import sys
+p = sys.argv[1]; c = open(p).read()
+open(p, "w").write('job_id: "t"\nlevel: "repo"\n' + c)
+PYZ
+bash "$G/tools/case.sh" >/dev/null 2>&1
+ERRC=$(git -C "$G" log --format='%H %s' | awk '/— error \(wrapper/{print $1; exit}')
+check "  a finalizer commitja nem visz idegen fájlt" "0" \
+    "$(git -C "$G" show --name-only --format='' "$ERRC" 2>/dev/null | grep -c '^IDEGEN.txt$')"
+check "  az idegen fájl stage-elve maradt" "1" \
+    "$(git -C "$G" diff --cached --name-only | grep -c '^IDEGEN.txt$')"
+
 echo
 echo "7. Idézőjel nélküli status: a finalizer akkor is javít"
 # Az `awk -F'"'` olvasó erre ÜRES stringet adott, tehát a finalizer némán nem
@@ -187,7 +210,7 @@ echo "7. Idézőjel nélküli status: a finalizer akkor is javít"
 # csak itt a mulasztás a hiba.
 mkmeta "$TMP/meta.yaml" "running"
 sed -i 's/^status: "running"$/status: running # agent-01/' "$TMP/meta.yaml"
-out=$(run_case 'WE_SET_RUNNING=1; RUN_LOG="'"$TMP"'/c.log"; exit 7' "__keep__")
+out=$(run_case 'RUN_ID="fixture-run-0001"; RUN_LOG="'"$TMP"'/c.log"; exit 7' "__keep__")
 check "status → error" "error" "$(bash "$TOOLS/meta-get.sh" "$TMP/meta.yaml" status)"
 
 echo
