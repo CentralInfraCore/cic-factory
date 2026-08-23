@@ -46,6 +46,7 @@ mkjob() {
     # A fixture-nek a teljes hívási láncot át kell hoznia, különben a "good" spec
     # nem azért bukik, amit a teszt vizsgál.
     cp "$SRC/run-job.sh" "$SRC/validate-spec.sh" "$SRC/update-index.sh" \
+       "$SRC/meta-get.sh" "$SRC/meta-set.sh" \
        "$SRC/validate-meta.sh" "$root/tools/"
     mkdir -p "$root/jobs/.schema" "$root/tools/runners"
     cp "$SRC/../jobs/.schema/meta.schema.json" "$SRC/../jobs/.schema/meta.yaml" "$root/jobs/.schema/"

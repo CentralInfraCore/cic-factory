@@ -118,8 +118,13 @@ HU v0.9.7 devel** custom GPT, az MCP-adatokkal feltöltött osztott kontextussal
 
 ### P6 — Review olcsóbbítása géppel
 
-**Tény:** a `validate-spec.sh` (K1–K9) a spec oldalt már gépi kényszerrel fedi;
-az output oldalt nem.
+**Tény:** a `validate-spec.sh` a spec oldalt már gépi kényszerrel fedi; az
+output oldalt nem.
+
+<!-- Korábban egy szabály-tartomány állt itt, ami három olyan kritériumot is
+     magában foglalt, aminek nincs gépi szabálya: megítélési kérdések, a
+     /job-validate kézi listáján élnek, kéziként jelölve. A core/@v0.2.1 D4
+     szabálya fogta meg — egy állítás kommentben is állítás. -->
 
 **Teendő:** `validate-output.sh` — merge előtt gépi ellenőrzés: kötelező
 output-fájlok léteznek, claim-evidence tábla jelen van, file:line hivatkozások

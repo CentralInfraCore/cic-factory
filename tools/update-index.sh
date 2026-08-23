@@ -1,57 +1,137 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # SPDX-FileCopyrightText: 2025-2026 Sinkó Gábor Zoltán / CentralInfraCore
-# Generates jobs/index.yaml from all jobs/*/meta.yaml files
+#
+# update-index.sh — a jobs/index.yaml a jobs/*/meta.yaml-ekből áll elő.
+#
+# Ez volt az utolsó hely, ahol saját regexes meta-olvasó élt. Két hibája:
+#
+#   read_field   `^status:\s*"?([^"\n]+)"?` — a sorvégi komment beleragadt.
+#                A `status: running # agent-01` az indexben
+#                `running # agent-01`-ként jelent meg. Ugyanaz, mint #29/#30,
+#                csak itt a megjelenítést rontotta.
+#
+#   read_nested  `^\s+{field}:` — nem volt szekcióhoz kötve, az ELSŐ azonos
+#                nevű behúzott mezőt vitte, bárhol állt. Két szekció azonos
+#                nevű mezőjénél a sorrend döntött, nem a jelentés.
+#
+# Az index az, amit a /job-boot és az ember tényleg olvas. Egy származtatott
+# nézet, ami mást mond, mint a forrás, rosszabb, mintha nem lenne.
+#
+# Emellett megjelöli az elakadt jobokat: a `running` státusz lejárt lease-szel
+# `stale`-t kap. A check-stale-jobs.sh eddig csak akkor mondta ezt meg, ha
+# valaki begépelte (#19).
 set -euo pipefail
 
 WORKDIR="$(cd "$(dirname "$0")/.." && pwd)"
-INDEX="$WORKDIR/jobs/index.yaml"
 
-python3 - "$WORKDIR" <<'EOF'
-import os, sys
-import re
+python3 - "$WORKDIR" <<'PYEOF'
+import os
+import sys
 from datetime import datetime, timezone
+
+import yaml
 
 workdir = sys.argv[1]
 jobs_dir = os.path.join(workdir, "jobs")
 
-def read_field(content, field, default=""):
-    m = re.search(rf'^{field}:\s*"?([^"\n]+)"?', content, re.MULTILINE)
-    return m.group(1).strip() if m else default
 
-def read_nested(content, field, default=""):
-    m = re.search(rf'^\s+{field}:\s*"?([^"\n]+)"?', content, re.MULTILINE)
-    return m.group(1).strip() if m else default
+class StrictLoader(yaml.SafeLoader):
+    """Duplikált kulcsra hibát ad. A PyYAML alapból az utolsót veszi, csendben;
+    a regexes olvasó az elsőt vitte -- két olvasó, két igazság."""
+
+
+def no_duplicates(loader, node, deep=False):
+    seen = set()
+    for key_node, _ in node.value:
+        k = loader.construct_object(key_node, deep=deep)
+        if k in seen:
+            raise yaml.constructor.ConstructorError(
+                None, None, f"duplikált kulcs: {k!r}", key_node.start_mark)
+        seen.add(k)
+    return yaml.SafeLoader.construct_mapping(loader, node, deep)
+
+
+StrictLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, no_duplicates)
+
+
+def field(doc, path, default=""):
+    """Pontozott út. A régi read_nested a mező NEVÉT kereste, a helyét nem."""
+    node = doc
+    for part in path.split("."):
+        if not isinstance(node, dict) or part not in node:
+            return default
+        node = node[part]
+    if node is None or isinstance(node, (dict, list)):
+        return default
+    return str(node).strip()
+
+
+now_dt = datetime.now(timezone.utc)
+now = now_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def lease_state(status, lease):
+    """A jobs/index.yaml jelöli, elakadt-e egy job, hogy ne csak akkor
+    derüljön ki, ha valaki futtatja a checkert (#19)."""
+    if status != "running":
+        return ""
+    if not lease:
+        return "no-lease"
+    try:
+        deadline = datetime.strptime(lease, "%Y-%m-%dT%H:%M:%SZ").replace(
+            tzinfo=timezone.utc)
+    except ValueError:
+        # Egy lease, amit senki nem tud elolvasni, ugyanaz, mint a hiánya --
+        # és a kihagyása elrejtené a jobot. A check-stale-jobs.sh ugyanígy dönt.
+        return "unreadable-lease"
+    return "stale" if now_dt > deadline else "ok"
+
 
 jobs = []
+broken = []
 for entry in sorted(os.listdir(jobs_dir)):
     if entry.startswith("."):
         continue
     meta_path = os.path.join(jobs_dir, entry, "meta.yaml")
     if not os.path.isfile(meta_path):
         continue
-    with open(meta_path) as f:
-        content = f.read()
+    try:
+        with open(meta_path, encoding="utf-8") as fh:
+            doc = yaml.load(fh, Loader=StrictLoader)
+    except Exception as exc:
+        # Fail closed: egy olvashatatlan meta nem tűnhet el az indexből, mert
+        # akkor a job láthatatlanná válik. Bekerül, megjelölve.
+        broken.append((entry, str(exc).split("\n")[0]))
+        continue
+    if not isinstance(doc, dict):
+        broken.append((entry, "a meta.yaml nem mapping"))
+        continue
+
+    status = field(doc, "status")
     jobs.append({
-        "id":        read_field(content, "job_id"),
-        "level":     read_field(content, "level"),
-        "status":    read_field(content, "status"),
-        "parent":    read_field(content, "parent_job_id"),
-        "created":   read_nested(content, "created"),
-        "started":   read_nested(content, "started"),
-        "completed": read_nested(content, "completed"),
-        "repo":      read_nested(content, "repo"),
-        "model":     read_nested(content, "model"),
-        "cost_usd":  read_nested(content, "cost_usd"),
-        "turns":     read_nested(content, "turns"),
+        "id":        field(doc, "job_id") or entry,
+        "level":     field(doc, "level"),
+        "status":    status,
+        "parent":    field(doc, "parent_job_id"),
+        "created":   field(doc, "timestamps.created"),
+        "started":   field(doc, "timestamps.started"),
+        "completed": field(doc, "timestamps.completed"),
+        "repo":      field(doc, "target.repo"),
+        "model":     field(doc, "agent.model"),
+        "cost_usd":  field(doc, "usage.cost_usd"),
+        "turns":     field(doc, "usage.turns"),
+        "lease":     lease_state(status, field(doc, "lease_expires")),
     })
 
-now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 lines = [f"# Auto-generated by tools/update-index.sh — {now}", "jobs:"]
 for j in jobs:
     lines.append(f"  - id: \"{j['id']}\"")
     lines.append(f"    level: \"{j['level']}\"")
     lines.append(f"    status: \"{j['status']}\"")
+    if j["lease"] in ("stale", "unreadable-lease", "no-lease"):
+        lines.append(f"    stale: \"{j['lease']}\"")
     if j["parent"]:
         lines.append(f"    parent: \"{j['parent']}\"")
     if j["repo"]:
@@ -68,6 +148,14 @@ for j in jobs:
     if j["turns"]:
         lines.append(f"    turns: \"{j['turns']}\"")
 
+for entry, reason in broken:
+    lines.append(f"  - id: \"{entry}\"")
+    lines.append("    status: \"unreadable\"")
+    # Egy sorba, idézőjelek nélkül: a safe_dump egy skalárra dokumentum-záró
+    # `...`-ot tesz, ami eltörné a generált indexet.
+    clean = " ".join(reason.replace('"', "'").split())
+    lines.append(f"    error: \"{clean}\"")
+
 # Cost roll-up — makes the model-layering effect measurable rather than assumed
 total = 0.0
 priced = 0
@@ -77,14 +165,26 @@ for j in jobs:
         priced += 1
     except (TypeError, ValueError):
         pass
+
+stale_count = sum(1 for j in jobs if j["lease"] in ("stale", "unreadable-lease"))
+
 lines.append("")
 lines.append("totals:")
-lines.append(f"  jobs: {len(jobs)}")
+lines.append(f"  jobs: {len(jobs) + len(broken)}")
 lines.append(f"  priced_jobs: {priced}")
 lines.append(f"  cost_usd: \"{total:.4f}\"")
+lines.append(f"  stale_jobs: {stale_count}")
+if broken:
+    lines.append(f"  unreadable_metas: {len(broken)}")
 
-index_path = os.path.join(jobs_dir, "index.yaml")
-with open(index_path, "w") as f:
+with open(os.path.join(jobs_dir, "index.yaml"), "w", encoding="utf-8") as f:
     f.write("\n".join(lines) + "\n")
-print(f"Index updated: {len(jobs)} job(s), {priced} with cost data, total ${total:.4f}")
-EOF
+
+msg = (f"Index updated: {len(jobs)} job(s), {priced} with cost data, "
+       f"total ${total:.4f}")
+if stale_count:
+    msg += f", {stale_count} STALE"
+if broken:
+    msg += f", {len(broken)} unreadable"
+print(msg)
+PYEOF

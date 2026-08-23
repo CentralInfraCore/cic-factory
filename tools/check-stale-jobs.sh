@@ -30,11 +30,23 @@ NO_LEASE=0
 
 for meta in "$WORKDIR"/jobs/*/meta.yaml; do
     [[ -f "$meta" ]] || continue
-    status=$(grep '^status:' "$meta" | head -1 | sed 's/^status:[[:space:]]*//; s/^"//; s/"$//')
+    job=$(basename "$(dirname "$meta")")
+
+    # `s/"$//` does not match a line with a trailing comment, so
+    # `status: "running" # agent-01` parsed as `running" # agent-01` and the
+    # job was skipped -- invisible to the very check meant to surface it (#29).
+    # meta-get.sh reads it with a YAML parser instead.
+    rc=0; status=$(bash "$WORKDIR/tools/meta-get.sh" "$meta" status 2>/dev/null) || rc=$?
+    if [[ "$rc" -ne 0 ]]; then
+        # The same reasoning the lease already used: a status nobody can read is
+        # not a reason to skip the job, it is a reason to report it.
+        STALE=$((STALE + 1))
+        [[ "$QUIET" -eq 1 ]] || echo "!  $job — a meta.yaml status mezője nem olvasható. Nem eldönthető, fut-e."
+        continue
+    fi
     [[ "$status" == "running" ]] || continue
 
-    job=$(basename "$(dirname "$meta")")
-    lease=$(grep '^lease_expires:' "$meta" | head -1 | sed 's/^lease_expires:[[:space:]]*//; s/^"//; s/"$//')
+    lease=$(bash "$WORKDIR/tools/meta-get.sh" "$meta" lease_expires 2>/dev/null) || lease=""
 
     if [[ -z "$lease" ]]; then
         NO_LEASE=$((NO_LEASE + 1))

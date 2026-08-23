@@ -9,11 +9,11 @@ schema_version: "1.0"
 dependencies:
   - name: cic-factory-core
     repo: https://github.com/CentralInfraCore/cic-factory-core
-    tag: "core/@v0.1.2"
-    commit: "705d8b6"
+    tag: "core/@v0.2.1"
+    commit: "1a00ceb"
     pinned: true
     mode: merge
-    adopted: "2026-08-22"
+    adopted: "2026-08-23"
     # Paths owned by the core. Local edits here are overwritten by the next
     # adoption -- change them upstream instead.
     imported_paths:
@@ -25,6 +25,8 @@ dependencies:
       # The core ships these three under docs/; the rest of docs/ is local.
       - docs/onboarding.md
       - docs/RELEASE-0.1.0.md
+      - docs/RELEASE-0.2.0.md
+      - docs/RELEASE-0.2.1.md
       - docs/RUNNER-CONTRACT.md
     # Owned here; the core never overwrites them.
     local_paths:
@@ -35,3 +37,17 @@ dependencies:
     exceptions:
       - path: tools/relay-build-test.sh
         reason: "factory-only — drives a CIC-Relay build, deliberately not in the core"
+      - path: LICENSE.md
+        reason: >-
+          Shared, and neither side owns it. The core's is a pure
+          AGPL + section 7(b) document; this one describes a mixed licence
+          (own content CC BY-NC-SA, adopted tooling AGPL, two hooks MIT).
+          Every adoption conflicts here and needs a deliberate resolution:
+          keep this structure, and reflect what changed in the AGPL section.
+          Not a merge strategy — an owner decision each time.
+      - path: LICENSE
+        reason: >-
+          Taken from the core verbatim, including the section 7 appendix.
+          tools/check-licence.sh verifies the AGPL text byte for byte and
+          refuses a state where LICENSE and LICENSE.md disagree about the
+          additional term.
