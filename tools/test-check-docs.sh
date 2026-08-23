@@ -145,6 +145,20 @@ check "exit 0" "0" "$(run "$R")"
 rm -rf "$R"
 
 echo
+echo "D3 — átvevő repóban a hiányzó táblázat nem hiba"
+R=$(mkroot); printf '#!/usr/bin/env bash\n' > "$R/tools/test-valami.sh"
+printf 'schema_version: "1.0"\n' > "$R/dependency.yaml"
+commit "$R"
+check "exit 0" "0" "$(run "$R")"
+rm -rf "$R"
+
+echo
+echo "  ugyanez dependency.yaml nélkül (a mag) → hiba"
+R=$(mkroot); printf '#!/usr/bin/env bash\n' > "$R/tools/test-valami.sh"; commit "$R"
+check "exit 1" "1" "$(run "$R")"
+rm -rf "$R"
+
+echo
 echo "D4 — nem létező szabályra hivatkozó tartomány"
 R=$(mkroot); printf '# Fixture\n\nkapu (K1–K3)\n' > "$R/README.md"; commit "$R"
 check "exit 1" "1" "$(run "$R")"

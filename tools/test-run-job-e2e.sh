@@ -31,7 +31,15 @@ mkfactory() {
     local r; r=$(mktemp -d)
     mkdir -p "$r/repo/tools/runners" "$r/repo/jobs/.schema" "$r/repo/jobs/t/output" \
              "$r/home/.claude-personal/agents/agent-01"
-    cp "$SRC"/*.sh "$r/repo/tools/" 2>/dev/null
+    # env.sh KIVÉVE: az a gép saját konfigja, gitignored, és a run-job.sh
+    # sourceolja. Bemásolva a fixture nem hermetikus -- a futtató gépének
+    # FACTORY_PROMPT_VARS és CIC_* értékei felülírnák azt, amit a teszt állít
+    # be. A magban ez nem látszik (ott csak env.sh.example van); egy átvevő
+    # repóban viszont minden ilyen eset elbukik.
+    for f in "$SRC"/*.sh; do
+        [[ "$(basename "$f")" == "env.sh" ]] && continue
+        cp "$f" "$r/repo/tools/" 2>/dev/null
+    done
     cp "$SRC"/runners/*.sh "$r/repo/tools/runners/"
     cp "$ROOT"/jobs/.schema/*.json "$ROOT"/jobs/.schema/meta.yaml "$r/repo/jobs/.schema/"
 

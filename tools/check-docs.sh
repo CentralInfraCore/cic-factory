@@ -114,13 +114,21 @@ fi
 echo
 echo "D3 — a README suite-táblázata a valódi fájlokat sorolja"
 DRIFT=$(python3 - <<'PYD3'
-import re, subprocess
+import os, re, subprocess
 files = set(subprocess.check_output(
     ["git", "ls-files", "--cached", "--others", "--exclude-standard", "tools/test-*.sh"],
     text=True).split())
 rows = set("tools/" + m for m in re.findall(
     r'^\| `tools/(test-[A-Za-z0-9._-]+\.sh)`',
     open("README.md", encoding="utf-8").read(), re.M))
+
+# Ez a szabály a README ÁLLÍTÁSAIT ellenőrzi. Egy átvevő repó örökli az
+# eszközöket, de nem az állításokat: a saját READMEjében nincs suite-táblázat,
+# és nem is kell lennie. A dependency.yaml jelzi, hogy ez egy átvevő -- a mag
+# maga nem hordoz ilyet. A magban a táblázat hiánya továbbra is hiba.
+if not rows and os.path.exists("dependency.yaml"):
+    print("")
+    raise SystemExit(0)
 out = [f"  {f} — van fájl, nincs README-sor" for f in sorted(files - rows)]
 out += [f"  {r} — van README-sor, nincs fájl" for r in sorted(rows - files)]
 print("\n".join(out))
