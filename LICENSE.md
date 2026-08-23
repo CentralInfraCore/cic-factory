@@ -32,9 +32,29 @@ Full text: <https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode>
 
 ## The adopted tooling — AGPL-3.0-or-later
 
-Verbatim text in [`LICENSE`](LICENSE). The section 7(b) attribution term is
-documented in the
-[core repository](https://github.com/CentralInfraCore/cic-factory-core/blob/main/LICENSE.md).
+Verbatim text in [`LICENSE`](LICENSE), followed by the section 7 additional term
+under a marked separator.
+
+That term is an attribution requirement, and it applies to this part:
+
+> Any conveyed copy or modified version of this work, and any work that
+> conveys it or offers it to users over a network, must preserve the
+> copyright notice below and must state, in its documentation and in any
+> Appropriate Legal Notices it displays, that it incorporates
+> `cic-factory-core` from CentralInfraCore.
+
+It grants no additional permission and removes none: it does not restrict
+commercial use, and it does not restrict building proprietary products that
+communicate with the core across a defined contract boundary. As section 7
+provides, a recipient may remove it from any copy they convey.
+
+Until `core/@v0.2.0` this term lived only in the core repository's own
+`LICENSE.md`, and was referenced here by link. It is stated here now because a
+licence obligation carried by a link is not carried at all —
+`tools/check-licence.sh` refuses the state where `LICENSE` and this file
+disagree about it.
+
+The other two parts below are **not** affected by it.
 
 ## The vendored hooks — MIT
 

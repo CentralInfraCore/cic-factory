@@ -13,12 +13,24 @@ Ezt NEM delegálod agentnek — te futtatod le.
 ```bash
 git -C . log --oneline -15
 git -C . status --short
+bash tools/update-index.sh        # az index a metákból; megjelöli az elakadtakat
 tail -20 jobs/index.yaml          # totals: + a legutóbbi jobok állapota
+bash tools/check-stale-jobs.sh    # részletek arról, ami elakadt
 gh pr list --state open           # nyitott review-k
 ```
 
 Ez adja meg, hol tartunk. A `jobs/index.yaml` **auto-generált** (`tools/update-index.sh`) —
 ez a job-állapot kanonikus forrása. Ne memóriából idézd fel, melyik job készült el.
+
+A `totals.stale_jobs` és a job soraiban álló `stale:` mező azt mondja meg, melyik
+job ragadt `running`-ban a lease lejárta után. Ez korábban csak akkor derült ki,
+ha valaki külön begépelte a checkert — egy képesség, amit alapból senki nem
+használt. Ha van elakadt job, azt a boot végén jelezd, mielőtt bármi máshoz
+kezdenél: egy futónak látszó job blokkolhatja azt, amit indítani akarsz.
+
+A `status: "unreadable"` sor azt jelenti, hogy egy `meta.yaml` nem értelmezhető
+YAML. Az ilyen job NEM tűnik el az indexből — épp akkor lenne láthatatlan,
+amikor baj van vele.
 
 ### 0/b. Memória: index most, fájl később
 

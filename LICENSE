@@ -659,3 +659,26 @@ specific requirements.
 if any, to sign a "copyright disclaimer" for the program, if necessary.
 For more information on this, and how to apply and follow the GNU AGPL, see
 <https://www.gnu.org/licenses/>.
+--- ADDITIONAL TERMS (AGPL-3.0 section 7) ---
+
+Everything above this line is the verbatim text of the GNU Affero General
+Public License, version 3, and is not modified by what follows. Section 7 of
+that licence permits supplementing it with the additional term below.
+
+  ATTRIBUTION (section 7(b))
+
+  Any conveyed copy or modified version of this work, and any work that
+  conveys it or offers it to users over a network, must preserve the
+  copyright notice below and must state, in its documentation and in any
+  Appropriate Legal Notices it displays, that it incorporates
+  `cic-factory-core` from CentralInfraCore.
+
+  This is an attribution requirement only. It grants no additional permission
+  and removes none: it does not restrict commercial use, and it does not
+  restrict building proprietary products that communicate with this core
+  across a defined contract boundary.
+
+  As section 7 provides, a recipient may remove this additional term from any
+  copy they convey, at their option.
+
+  Copyright (c) 2025-2026 Sinkó Gábor Zoltán / OpenIntentSign / CentralInfraCore

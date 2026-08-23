@@ -1,5 +1,7 @@
 # job-validate — Job spec validátor
 
+
+<!-- manual-rules: K2 K5 K6 -->
 Minden agent indítás előtt kötelező futtatni. Nem az input.md szándékát értékeli — konkrét kritériumok meglétre kérdez rá.
 
 ## Futtatás
@@ -39,7 +41,7 @@ FAIL ha: csak "nézd meg a kódot" / "KB alapján" — path vagy node-id nélkü
 
 ---
 
-### K2 — Státusz definíció ellenőrzési módszerrel (kritikus)
+### K2 — Státusz definíció ellenőrzési módszerrel (kritikus) — **kézi**
 **Kérdés:** Az `implemented` / `scaffold` / `concept` definíció tartalmaz-e explicit ellenőrzési módszert?
 
 PASS csak ha:
@@ -67,7 +69,7 @@ FAIL ha: csak "írj összefoglalót" — fájlnév és struktúra nélkül
 
 ---
 
-### K5 — Tesztelhető sikeresség (közepes prioritás)
+### K5 — Tesztelhető sikeresség (közepes prioritás) — **kézi**
 **Kérdés:** Van-e legalább egy olyan elvárás amit az orchestrátor közvetlenül ellenőrizhet?
 
 Példa: "minden implemented mellé add meg a hívó fájlt és sort", "grep eredményt idézd a report-ban"
@@ -76,7 +78,7 @@ FAIL ha: az output ellenőrizhetetlen az agent saját állításain kívül
 
 ---
 
-### K6 — Negatív példák (közepes prioritás)
+### K6 — Negatív példák (közepes prioritás) — **kézi**
 **Kérdés:** Van-e legalább egy példa arra hogy MIT NE csináljon az agent?
 
 FAIL ha: csak pozitív utasítások vannak
@@ -179,11 +181,11 @@ FAIL ha: az output csak narratív összefoglalót vagy státuszlistát kér — 
 | Kritérium | Státusz | Idézet a specből |
 |---|---|---|
 | K1 — Forrás | PASS/FAIL | "...pontos idézet..." (N. sor) |
-| K2 — Státusz def + módszer | PASS/FAIL | "...pontos idézet..." (N. sor) |
+| K2 — Státusz def + módszer *(kézi)* | PASS/FAIL | "...pontos idézet..." (N. sor) |
 | K3 — Tiltott rövidítések | PASS/FAIL | "...pontos idézet..." (N. sor) |
 | K4 — Output formátum | PASS/FAIL | "...pontos idézet..." (N. sor) |
-| K5 — Ellenőrizhetőség | PASS/FAIL | "...pontos idézet..." (N. sor) |
-| K6 — Negatív példák | PASS/FAIL | "...pontos idézet..." (N. sor) |
+| K5 — Ellenőrizhetőség *(kézi)* | PASS/FAIL | "...pontos idézet..." (N. sor) |
+| K6 — Negatív példák *(kézi)* | PASS/FAIL | "...pontos idézet..." (N. sor) |
 | K7 — Call-chain grep + _test.go kizárás | PASS/N/A/FAIL | "...pontos idézet..." (N. sor) |
 | K8 — Claim-evidence tábla | PASS/FAIL | "...pontos idézet..." (N. sor) |
 | K9 — Reachability artifact | PASS/N/A/FAIL | "...pontos idézet..." (N. sor) |

@@ -22,9 +22,15 @@ check_log() {
 # Külön git repo, hogy a `git ls-files` a fixture-t lássa és ne az igazit.
 mkroot() {
     local r; r=$(mktemp -d)
-    mkdir -p "$r/tools" "$r/jobs/.schema"
+    mkdir -p "$r/tools" "$r/jobs/.schema" "$r/.claude/commands"
     cp "$SRC/check-docs.sh" "$r/tools/"
     printf 'job_id: ""\nstatus: "pending"\n' > "$r/jobs/.schema/meta.yaml"
+    # D3/D4 a README-t, a szabály-forrásokat és a kézi deklarációt olvassa.
+    printf '# Fixture\n' > "$r/README.md"
+    printf 'K1 K3\n' > "$r/tools/validate-spec.sh"
+    printf 'O1 O5\n' > "$r/tools/validate-output.sh"
+    printf 'C1 C5\n' > "$r/tools/close-job.sh"
+    printf '# job-validate\n\n<!-- manual-rules: K2 -->\n' > "$r/.claude/commands/job-validate.md"
     git -C "$r" init -q
     git -C "$r" config user.email t@t; git -C "$r" config user.name t
     echo "$r"
@@ -113,5 +119,78 @@ check "exit 0" "0" "$(run "$R")"
 rm -rf "$R"
 
 echo
+echo
+echo "D3 — suite-fájl README-sor nélkül"
+R=$(mkroot); printf '#!/usr/bin/env bash\n' > "$R/tools/test-valami.sh"; commit "$R"
+check "exit 1" "1" "$(run "$R")"
+check_log "  megnevezi a fájlt" "tools/test-valami.sh — van fájl, nincs README-sor" "$R/out.log"
+rm -rf "$R"
+
+echo
+echo "D3 — README-sor fájl nélkül"
+R=$(mkroot)
+printf '# Fixture\n\n| `tools/test-nincs.sh` | valami (3 checks) |\n' > "$R/README.md"
+commit "$R"
+check "exit 1" "1" "$(run "$R")"
+check_log "  megnevezi a sort" "tools/test-nincs.sh — van README-sor, nincs fájl" "$R/out.log"
+rm -rf "$R"
+
+echo
+echo "D3 — a párban álló fájl és sor rendben"
+R=$(mkroot)
+printf '#!/usr/bin/env bash\n' > "$R/tools/test-jo.sh"
+printf '# Fixture\n\n| `tools/test-jo.sh` | valami (3 checks) |\n' > "$R/README.md"
+commit "$R"
+check "exit 0" "0" "$(run "$R")"
+rm -rf "$R"
+
+echo
+echo "D3 — átvevő repóban a hiányzó táblázat nem hiba"
+R=$(mkroot); printf '#!/usr/bin/env bash\n' > "$R/tools/test-valami.sh"
+printf 'schema_version: "1.0"\n' > "$R/dependency.yaml"
+commit "$R"
+check "exit 0" "0" "$(run "$R")"
+rm -rf "$R"
+
+echo
+echo "  ugyanez dependency.yaml nélkül (a mag) → hiba"
+R=$(mkroot); printf '#!/usr/bin/env bash\n' > "$R/tools/test-valami.sh"; commit "$R"
+check "exit 1" "1" "$(run "$R")"
+rm -rf "$R"
+
+echo
+echo "D4 — nem létező szabályra hivatkozó tartomány"
+R=$(mkroot); printf '# Fixture\n\nkapu (K1–K3)\n' > "$R/README.md"; commit "$R"
+check "exit 1" "1" "$(run "$R")"
+check_log "  megnevezi a hiányzót" "K2-et ígér" "$R/out.log"
+rm -rf "$R"
+
+echo
+echo "D4 — nem létező szabály egyedi hivatkozása"
+R=$(mkroot); printf '# Fixture\n\nlásd C4\n' > "$R/README.md"; commit "$R"
+check "exit 1" "1" "$(run "$R")"
+check_log "  megnevezi" "C4 nincs a tools/close-job.sh-ben" "$R/out.log"
+rm -rf "$R"
+
+echo
+echo "D4 — kézi szabály a saját listájában rendben, máshol nem"
+R=$(mkroot)
+printf '# job-validate\n\n<!-- manual-rules: K2 -->\n\n### K2 — kézi\n' > "$R/.claude/commands/job-validate.md"
+commit "$R"
+check "a saját listájában exit 0" "0" "$(run "$R")"
+printf '# Fixture\n\nkapu: K2\n' > "$R/README.md"; commit "$R"
+check "  a README-ben exit 1" "1" "$(run "$R")"
+check_log "  meg is mondja miért" "csak a .claude/commands/job-validate.md listájában" "$R/out.log"
+rm -rf "$R"
+
+echo
+echo "D4 — elavult kézi deklaráció (közben implementálva lett)"
+R=$(mkroot)
+printf 'K1 K2 K3\n' > "$R/tools/validate-spec.sh"
+commit "$R"
+check "exit 1" "1" "$(run "$R")"
+check_log "  megnevezi" "K2 kéziként van deklarálva" "$R/out.log"
+rm -rf "$R"
+
 echo "==== $pass PASS / $fail FAIL ===="
 [[ "$fail" -eq 0 ]]

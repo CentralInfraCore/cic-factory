@@ -39,7 +39,8 @@ check_reason() {
 mkjob() {
     local root="$1" status="$2" spec_gate="${3-}"
     mkdir -p "$root/tools" "$root/jobs/t/output"
-    cp "$SRC/close-job.sh" "$SRC/validate-output.sh" "$SRC/update-index.sh" "$root/tools/"
+    cp "$SRC/close-job.sh" "$SRC/validate-output.sh" "$SRC/update-index.sh" \
+       "$SRC/meta-get.sh" "$root/tools/"
     cat > "$root/jobs/t/input.md" <<'EOF'
 # Teszt job
 ## Output
@@ -154,6 +155,58 @@ T=$(mktemp -d); mkjob "$T" awaiting_review
 printf '# Review\n## Amit ellenőriztem\n- a kapu zöld\n' > "$T/jobs/t/review.md"
 check "hiányzó spec_gate → lezárható" "0" "$(run_close "$T")"
 check_log "  de figyelmeztet, hogy nem igazolható" "nincs spec_gate érték" "$T/out.log"
+rm -rf "$T"
+
+echo
+echo "C5 — sorvégi komment nem kerülheti meg a spec-kaput (#30)"
+# A régi olvasó ezt `skipped # a review majd`-nak látta, egyik case-ágra sem
+# illett, és a megengedő "régi meta" ágon a job lezárult. YAML szerint az érték
+# `skipped`, tehát a review-elismerés kötelező.
+T=$(mktemp -d); mkjob "$T" awaiting_review
+sed -i 's/^status: "awaiting_review"$/status: "awaiting_review"\nspec_gate: skipped # a review majd/' "$T/jobs/t/meta.yaml"
+printf '# Review\n## Amit ellenőriztem\n- a kapu zöld\n' > "$T/jobs/t/review.md"
+check "elutasít" "1" "$(run_close "$T")"
+check_reason "  a C5-öt nevezi meg" "C5" "$T/out.log"
+check "  a státusz érintetlen" "awaiting_review" "$(status_of "$T")"
+rm -rf "$T"
+
+echo
+echo "C5 — a review elismerése mellett ugyanez átmegy"
+T=$(mktemp -d); mkjob "$T" awaiting_review
+sed -i 's/^status: "awaiting_review"$/status: "awaiting_review"\nspec_gate: skipped # a review majd/' "$T/jobs/t/meta.yaml"
+printf '# Review\nspec_gate: skipped — kézzel néztem át a specet\n' > "$T/jobs/t/review.md"
+check "átmegy" "0" "$(run_close "$T")"
+check "  a státusz done" "done" "$(status_of "$T")"
+rm -rf "$T"
+
+echo
+echo "C5 — ismeretlen érték nem átmenet"
+# Ez az ág korábban nem létezett: a `*)` egyszerre jelentette azt, hogy "régi
+# meta" és azt, hogy "ezt nem értem", és mindkettőt átengedte.
+T=$(mktemp -d); mkjob "$T" awaiting_review banana
+printf '# Review\n## Amit ellenőriztem\n- a kapu zöld\n' > "$T/jobs/t/review.md"
+check "elutasít" "1" "$(run_close "$T")"
+check_reason "  megnevezi az értéket" "banana" "$T/out.log"
+rm -rf "$T"
+
+echo
+echo "C2 — nem értelmezhető meta nem zárható (fail closed)"
+T=$(mktemp -d); mkjob "$T" awaiting_review
+printf 'status: "awaiting_review\nagent:\n  model: "opus\n' > "$T/jobs/t/meta.yaml"
+printf '# Review\n## Amit ellenőriztem\n- ok\n' > "$T/jobs/t/review.md"
+check "elutasít" "1" "$(run_close "$T")"
+check_reason "  a C2-t nevezi meg" "C2" "$T/out.log"
+rm -rf "$T"
+
+echo
+echo "C2 — duplikált status kulcs nem zárható"
+# Regexes olvasó az elsőt látja, YAML-parser az utolsót. Egy dokumentum, ami
+# attól függ, ki nézi, nem alap egy lifecycle-átmenethez.
+T=$(mktemp -d); mkjob "$T" awaiting_review
+printf 'status: "awaiting_review"\nstatus: "done"\n' > "$T/jobs/t/meta.yaml"
+printf '# Review\n## Amit ellenőriztem\n- ok\n' > "$T/jobs/t/review.md"
+check "elutasít" "1" "$(run_close "$T")"
+check_reason "  a C2-t nevezi meg" "C2" "$T/out.log"
 rm -rf "$T"
 
 echo
