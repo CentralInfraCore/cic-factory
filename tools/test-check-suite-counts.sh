@@ -62,5 +62,21 @@ check_log "  ki is mondja" "egyetlen deklarált számot sem" "$R/out.log"
 rm -rf "$R"
 
 echo
+echo "Átvevő repó: nincs suite-táblázat, de van dependency.yaml → GO"
+# A magban a hiányzó táblázat hiba; egy átvevő örökli az eszközöket, de nem az
+# állításokat. Enélkül minden átvevő gate-je pirosra váltana.
+R=$(mkroot 5 5); printf '# Átvevő\n\nnincs tábla.\n' > "$R/README.md"
+printf 'schema_version: "1.0"\n' > "$R/dependency.yaml"
+check "exit 0" "0" "$(run "$R")"
+check_log "  ki is mondja" "átvevő repó" "$R/out.log"
+rm -rf "$R"
+
+echo
+echo "  ugyanez dependency.yaml NÉLKÜL (a mag) → NO-GO"
+R=$(mkroot 5 5); printf '# Mag\n\nnincs tábla.\n' > "$R/README.md"
+check "exit 1" "1" "$(run "$R")"
+rm -rf "$R"
+
+echo
 echo "$pass PASS, $fail FAIL"
 [[ "$fail" -eq 0 ]]

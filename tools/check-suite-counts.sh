@@ -49,6 +49,14 @@ PYEOF
 
 echo
 if [[ "$CHECKED" -eq 0 ]]; then
+    # Átvevő repóban nincs suite-táblázat, és nem is kell: az eszközöket örökli,
+    # az állításokat nem. A dependency.yaml jelzi, hogy átvevő -- a mag maga
+    # nem hordoz ilyet, ott a hiány továbbra is hiba (egy elrontott
+    # táblázat-formátum különben néma sikernek látszana).
+    if [[ -f dependency.yaml ]]; then
+        echo "check-suite-counts: GO — átvevő repó, nincs saját suite-táblázat"
+        exit 0
+    fi
     echo "check-suite-counts: NO-GO — egyetlen deklarált számot sem találtam a README-ben"
     exit 1
 fi
