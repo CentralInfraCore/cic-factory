@@ -332,8 +332,11 @@ lezárás ugyanúgy a `close-job.sh`-n megy át, tehát a `validate-output.sh`
 output-kapuján és a `review.md` meglétén is. Egy runner nem tud olyan utat
 nyitni, ami ezeket megkerüli.
 
-**Amit még nem garantál:** a session-folytatás nem köti magát futás-identitáshoz
-(#42), és a Claude-specifikus mezők még a `meta.yaml`-ben élnek.
+**Amit még nem garantál:** a `--resume` egyáltalán nem része a runner-
+szerződésnek: Claude session-jsonl-t vár, tehát egy másik executor nem tudná
+implementálni. Az agent-konfiguráció helyét mostantól a job mondja meg
+(`agent.config_dir`), de a fallback és a session-elrendezés ismerete még a
+magban van. **#42.**
 
 **Evidence:** a runner JSON-ja, az `agent-output-*.md`, a `usage` blokk.
 
@@ -341,7 +344,7 @@ nyitni, ami ezeket megkerüli.
 
 ### UC-08 — Proof és offline verifikáció
 
-**Státusz:** `részleges` — a bizonyíték nem köti a commit identitását (#38, #44)
+**Státusz:** `részleges` — a bizonyíték a commit kontextusát köti, az OID-jét nem (#44)
 
 **Precondition:** a commitok Vault-aláírással készültek.
 
@@ -349,20 +352,90 @@ nyitni, ami ezeket megkerüli.
 
 ```
 verify-signatures.sh → a commit üzenetéből a signing blokk
-                     → a tree digest újraszámítása
+                     → a manifest-verzió szerinti digest újraszámítása
                      → ECDSA-ellenőrzés a beágyazott certtel
 ```
 
-**Postcondition:** a repository snapshotjának digestje reprodukálható, és az
-aláírás érvényes a beágyazott tanúsítvány kulcsával.
+**Postcondition:** a digest reprodukálható, és az aláírás érvényes a beágyazott
+tanúsítvány kulcsával.
 
-**Amit NEM állít:** az aláírt payload a `git archive` szerinti fát tartalmazza —
-nem a commit OID-t, a szülőket, a branchet, a taget, sem a lifecycle-jelentést.
-A submodule commitok teljesen kimaradnak belőle, ami mérve is van: két különböző
-fa azonos aláírást adott (#38). A teljes proof-profil és az önálló verifier a
-**#44**.
+A submodule-kollízió lezárva (#38): a `cic-tree-manifest/v2` a Git fáját írja le
+közvetlenül, minden bejegyzés mode, típus, OID és path — a gitlink is.
 
-**Evidence:** a `verify-signatures.sh` kimenete, reason code-okkal.
+Az átültethetőség lezárva (#44). A v2 **csak a fát** kötötte, és ez mérve is
+kihasználható volt: egy A repóban készült aláírt blokk változtatás nélkül átment
+egy MÁSIK repó MÁSIK commitján, MÁS üzenettel, mert a két fa azonos volt — a
+verifier GO-t adott rá. A `cic-tree-manifest/v3` a fa mellé beköti a **szerzőt,
+a committert és az üzenet digestjét**.
+
+Két kézenfekvő mező szándékosan **kimarad**, mindkettő mérés után:
+
+- **remote URL** — környezeti állapot, nem commit-állapot. Ugyanaz a repó SSH-n
+  és HTTPS-en más URL-t ad, egy mirror harmadikat, egy remote nélküli másolat
+  semmit. Mind legitim, és mind hamis elutasítást kapott volna.
+- **szülők** — a hook a commit *előtt* fut, tehát csak a HEAD-et látja.
+  `--amend`-nél az új commit szülője a HEAD **szülője**, nem a HEAD: a kötés a
+  saját commitján bukott el elsőként. A `git rebase` pedig nem futtatja újra ezt
+  a hookot (mérve), csak átviszi a régi blokkot egy új szülő alá. Ebben a
+  projektben a rebase minden PR előtt kötelező.
+
+**Amit NEM állít:** a **commit OID-t** a payload nem tartalmazza, és tartalmazni
+sem tudja: a `commit-msg` hook akkor fut, amikor a commit még nem létezik. A
+szülők, a branch, a tag és a lifecycle-jelentés szintén nincsenek bekötve. A
+committer *dátuma* nincs kötve — csak a neve és e-mail címe.
+
+**Fa-kötés és rebase (#81):** egy rebase, ami ténylegesen új alap fölé viszi az
+ágat, megváltoztatja a commit fáját is, és így érvényteleníti az aláírását. Ez
+**nem** v3-tulajdonság: a v1 és a v2 ugyanígy viselkedik, mert mindkettő a fát
+köti. A hatás **nem részleges** — mérve, három commitos ágon rebase után OK: 0,
+FAIL: 3.
+
+A `git rebase` nem futtatja újra a `commit-msg` hookot: a régi blokkot
+változatlanul viszi át. A helyes válasz nem az elavult aláírás elfogadása, hanem
+az **újraaláírás** — a `tools/resign-range.sh` `git rebase --exec`-kel minden
+áthelyezett commitra friss Vault-aláírást kér. A `post-rewrite` hook helyben szól,
+ha egy átírás elavult blokkot hagyott, hogy ez ne a CI-ban derüljön ki.
+
+Amire az aláírás **nem** véd: ha maga az újraaláíró eszköz csonkítja az üzenetet,
+a verifikáció ezt nem veszi észre — az eszköz azt írja alá, amit előállított. Ezt
+csak tartalmi állítás fogja meg, ezért van rá külön eset a suite-ban.
+
+**Tag-verifikáció és tartalom nélküli merge-lánc (#44):** a `--tag` út eddig
+minden merge commitra mutató tag-et elutasított, függetlenül attól, hoz-e
+tartalmat. A release folyamat (feature branch → PR → merge → tag a main-en)
+miatt egy release tag **mindig** merge commitra mutat — mérve mind a három
+addig kiadott release tag (`v0.2.0`, `v0.2.1`, `v0.3.0`) NO-GO-t adott, holott a
+tartalmuk valódi, aláírt commithoz vezet vissza egy vagy több tartalom nélküli
+merge-ön át.
+
+A verifier most a `--range` útnál már meglévő szabályt (a merge fája egyezik-e
+valamelyik szülő fájával — ha igen, a merge nem hoz tartalmat, a tartalmat a
+szülő hordozza) alkalmazza a `--tag` útra is: a tag célpontjáról a tartalom
+nélküli merge-eken át visszalépked az első olyan commitig, ami vagy nem merge,
+vagy maga hoz tartalmat, és **azt** ellenőrzi. Mind a három meglévő release tag
+most GO-t ad.
+
+**A tag objektum saját aláírása (#44, `tools/sign-release-tag.sh`):** a git nem
+ismer "pre-tag" hookot — a `commit-msg` mintája itt nem alkalmazható, ez a
+script egy explicit lépés a `git tag -a` helyett, nem automatikusan lefutó
+horog. A `cic-tag-manifest/v1` a tag NEVÉT, a CÉLPONT commit OID-ját, a TAGGER
+személyét (dátum nélkül — szimmetrikus a commit v3 döntésével) és az ÜZENET
+digestjét köti. Nem köti a tag objektum SAJÁT OID-ját — az a blokk
+hozzáfűzése UTÁN dől el, önhivatkozás lenne.
+
+A verifier ezt EGY MÁSODIK, független rétegként ellenőrzi a `--tag` úton: a
+mögöttes commit tartalom-ellenőrzése (fenti bekezdés) mellett, ha a tag
+objektum hordoz egy `cic-tag-manifest/v1` blokkot, azt is verifikálja. Egy
+RÉGI, e nélkül készült tag (a `v0.2.0`, `v0.2.1`, `v0.3.0`) továbbra is GO-t
+ad — a tag-szintű kötés hiánya nem hiba, csak hiányzó plusz-evidencia. Egy
+ÚJONNAN aláírt tag mindkét réteget hordozza, és mindkettőnek stimmelnie kell.
+
+A v1 (tar-alapú) és a v2 aláírások továbbra is ellenőrizhetők; a verifier a
+blokkban álló manifest-verzió szerint dönt, ismeretlen verziót pedig elutasít.
+
+**Evidence:** a `verify-signatures.sh` kimenete reason code-okkal, és a
+`tools/test-proof-binding.sh` — ami a VALÓDI hookot futtatja valódi
+`git commit`-on, és a VALÓDI verifierrel olvassa vissza.
 
 ---
 

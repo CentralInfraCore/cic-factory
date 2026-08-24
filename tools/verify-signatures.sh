@@ -40,6 +40,9 @@ set -uo pipefail
 WORKDIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$WORKDIR" || exit 1
 
+# shellcheck source=lib-tag-manifest.sh
+source "$WORKDIR/tools/lib-tag-manifest.sh"
+
 RANGE=""
 TAG=""
 while [[ $# -gt 0 ]]; do
@@ -76,6 +79,65 @@ tree_digest() {
     printf '%s' "$out"
 }
 
+# cic-tree-manifest/v2: a Git fáját írja le közvetlenül, minden bejegyzés mode,
+# típus, OID és path -- a GITLINK is, `commit` típussal.
+#
+# A v1 (tar roundtrip) a gitlinket üres könyvtárként vitte: két fa, ami csak a
+# submodule commitjában tért el, azonos digestet adott (#38). Nincs benne
+# fájlrendszer, tehát umask sincs.
+manifest_digest_v2() {
+    # A hívó revízió-kifejezést ad (`<sha>^{tree}`); a manifestbe a FELOLDOTT
+    # OID tartozik, mert a hook is azt írja (git write-tree).
+    local tree; tree=$(git rev-parse "$1" 2>/dev/null) || tree="$1"
+    { printf 'cic-tree-manifest/v2\n'
+      printf 'object-format: %s\n' "$(git rev-parse --show-object-format 2>/dev/null || echo sha1)"
+      printf 'tree: %s\n' "$tree"
+      git ls-tree -r -t "$tree" | LC_ALL=C sort
+    } | openssl dgst -sha256 -binary | openssl base64 -A
+}
+
+# cic-tree-manifest/v3: a fa MELLETT a commit kontextusát is köti.
+#
+# A v2 aláírás átültethető volt: egy A repóban készült blokk átment egy MÁSIK
+# repó MÁSIK commitján, más üzenettel, mert csak a fa volt aláírva (#44).
+#
+# A commit OID-t a hook nem tudja bekötni -- a commit még nem létezik, amikor
+# fut. A szerző, a committer és az üzenet viszont ismertek, és együtt zárják az
+# átültetést.
+#
+# A remote URL és a SZÜLŐK szándékosan kimaradnak. A remote URL környezeti
+# állapot (SSH/HTTPS/mirror mind más). A szülők azért nem, mert a hook a commit
+# előtt fut: `--amend`-nél a HEAD nem az új commit szülője, a `git rebase` pedig
+# nem futtatja újra a hookot, csak átviszi a régi blokkot egy új szülő alá --
+# mindkettő mérve. Ebben a projektben a rebase minden PR előtt kötelező.
+manifest_digest_v3() {
+    local c="$1" tree author committer msg_sha
+    tree=$(git rev-parse "$c^{tree}")
+    author=$(git log -1 --format='%an <%ae>' "$c")
+    committer=$(git log -1 --format='%cn <%ce>' "$c")
+    # Az üzenet a signing blokk NÉLKÜL. A blokkot az UTOLSÓ olyan `---` sornál
+    # vágjuk le, amit `[signing-metadata]` követ -- egy sima `sed '/^---$/,$d'`
+    # levágta volna a felhasználó saját `---` elválasztóját is, és a commitja
+    # ellenőrizhetetlenné vált volna anélkül, hogy bármi baja lenne.
+    local body
+    body=$(git log -1 --format=%B "$c" | awk '
+        { line[NR] = $0; if ($0 == "---" && cut == 0) start = NR }
+        $0 == "[signing-metadata]" && start == NR - 1 { cut = start }
+        END { last = (cut ? cut - 1 : NR); for (i = 1; i <= last; i++) print line[i] }')
+    # Ugyanaz a két normalizálás, mint a hookban: komment-strip és a záró
+    # újsorok levágása a $( ) által.
+    body=$(printf '%s\n' "$body" | git stripspace --strip-comments)
+    msg_sha=$(printf '%s' "$body" | openssl dgst -sha256 -binary | openssl base64 -A)
+    { printf 'cic-tree-manifest/v3\n'
+      printf 'object-format: %s\n' "$(git rev-parse --show-object-format 2>/dev/null || echo sha1)"
+      printf 'author: %s\n' "$author"
+      printf 'committer: %s\n' "$committer"
+      printf 'message-sha256: %s\n' "$msg_sha"
+      printf 'tree: %s\n' "$tree"
+      git ls-tree -r -t "$tree" | LC_ALL=C sort
+    } | openssl dgst -sha256 -binary | openssl base64 -A
+}
+
 # Returns the umask that reproduces $2, or empty.
 matching_umask() {
     local tree="$1" want="$2" m
@@ -98,16 +160,38 @@ verify_commit() {
         return 1
     fi
 
-    local mask
-    if ! mask=$(matching_umask "$c^{tree}" "$rec"); then
-        echo "    a digest NEM a saját fájára illik (egyik umask mellett sem)"
-        echo "      rögzített:   ${rec:0:32}…"
-        echo "      újraszámolt: $(tree_digest "$c^{tree}" 022 | cut -c1-32)… (umask 022)"
-        return 1
-    fi
-    if [[ "$mask" != "022" ]]; then
-        echo "    (a digest umask $mask mellett jön ki — a hook 022-t rögzít azóta)"
-    fi
+    local manifest mask
+    manifest=$(grep -oP '^manifest = \K\S+' <<<"$msg" | head -1)
+    case "$manifest" in
+        cic-tree-manifest/v3)
+            if [[ "$(manifest_digest_v3 "$c")" != "$rec" ]]; then
+                echo "    a digest NEM erre a commitra illik (v3 manifest)"
+                echo "      rögzített:   ${rec:0:32}…"
+                echo "      újraszámolt: $(manifest_digest_v3 "$c" | cut -c1-32)…"
+                echo "      A v3 a fán túl a szerzőt, a committert és az üzenetet"
+                echo "      is köti — ezek bármelyike eltérhet."
+                return 1
+            fi
+            ;;
+        cic-tree-manifest/v2)
+            if [[ "$(manifest_digest_v2 "$c^{tree}")" != "$rec" ]]; then
+                echo "    a digest NEM a saját fájára illik (v2 manifest)"
+                echo "      rögzített:   ${rec:0:32}…"
+                echo "      újraszámolt: $(manifest_digest_v2 "$c^{tree}" | cut -c1-32)…"
+                return 1
+            fi
+            ;;
+        "")
+            if ! mask=$(matching_umask "$c^{tree}" "$rec"); then
+                echo "    a digest NEM a saját fájára illik (egyik umask mellett sem)"
+                echo "      rögzített:   ${rec:0:32}…"
+                echo "      újraszámolt: $(tree_digest "$c^{tree}" 022 | cut -c1-32)… (umask 022)"
+                return 1
+            fi
+            [[ "$mask" == "022" ]] || echo "    (v1 manifest, umask $mask — a hook azóta v2-t ír)"
+            ;;
+        *)  echo "    ismeretlen manifest-verzió: $manifest"; return 1 ;;
+    esac
 
     tmp=$(mktemp -d) || return 1
     sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' <<<"$msg" > "$tmp/cert.pem"
@@ -120,6 +204,110 @@ verify_commit() {
     if ! openssl pkeyutl -verify -pubin -inkey "$tmp/pub.pem" \
             -in "$tmp/dig.bin" -sigfile "$tmp/sig.der" >/dev/null 2>&1; then
         echo "    az ECDSA aláírás NEM érvényes a tanúsítványra"
+        rm -rf "$tmp"; return 1
+    fi
+    rm -rf "$tmp"
+    return 0
+}
+
+# resolve_content_commit <c> -- fejti le a TARTALOM NÉLKÜLI merge-öket, amíg egy
+# olyan commithoz nem ér, amit valóban ellenőrizni kell: nem-merge, vagy olyan
+# merge, ami maga hoz tartalmat.
+#
+# Mérve (#44): a --tag path minden merge-re egységesen elutasított, függetlenül
+# attól, hoz-e tartalmat. A release folyamat (feature branch -> PR -> merge ->
+# tag main) miatt a release tag MINDIG merge commitra mutat -- eredmény: mindhárom
+# létező annotált release tag (v0.2.0, v0.2.1, v0.3.0) NO-GO-t adott, holott a
+# tartalmuk valódi, aláírt commithoz vezet vissza egy tartalom nélküli merge-ön
+# át. A --range loop ezt már helyesen kezelte (lásd lent); a --tag path nem
+# használta ugyanazt a logikát.
+#
+# A láncban nem lehet kör: minden lépés egy szigorú ősre lép, a git DAG-ja
+# aciklikus. A mélységi korlát csak túlzottan hosszú láncok ellen fail-closed.
+resolve_content_commit() {
+    local c="$1" depth=0 parents t p introduces matched
+    while :; do
+        depth=$((depth + 1))
+        if [[ "$depth" -gt 200 ]]; then
+            echo "$c"; return 1
+        fi
+        parents=$(git log -1 --format=%P "$c")
+        if [[ $(wc -w <<<"$parents") -le 1 ]]; then
+            echo "$c"; return 0
+        fi
+        t=$(git rev-parse "$c^{tree}")
+        introduces=1
+        matched=""
+        for p in $parents; do
+            if [[ "$(git rev-parse "$p^{tree}")" == "$t" ]]; then
+                introduces=0
+                matched="$p"
+                break
+            fi
+        done
+        if [[ "$introduces" -eq 1 ]]; then
+            echo "$c"; return 0
+        fi
+        c="$matched"
+    done
+}
+
+# verify_tag_object <tag-ref> -- ellenőrzi, hogy MAGA a tag objektum (nem a
+# célpont commitja) alá van-e írva a cic-tag-manifest/v1-gyel (#44).
+#
+# Visszatérési kódok:
+#   0  a tag maga is aláírva, és a digest+ECDSA rendben
+#   1  van signing-metadata a tag üzenetében, de NEM stimmel -- FAIL
+#   2  a tag objektum nem hordoz signing-metadata blokkot (régi/kézi tag,
+#      vagy lightweight tag) -- ez NEM hiba, csak hiányzó plusz-evidencia
+verify_tag_object() {
+    local ref="$1" full msg name target tagger_raw tagger rec sig manifest body calc tmp
+    if [[ "$(git cat-file -t "$ref" 2>/dev/null)" != "tag" ]]; then
+        return 2
+    fi
+    full=$(git cat-file tag "$ref" 2>/dev/null) || return 2
+    msg=$(awk 'f{print} /^$/{f=1}' <<<"$full")
+    name=$(awk '/^tag /{print substr($0,5); exit}' <<<"$full")
+    target=$(awk '/^object /{print substr($0,8); exit}' <<<"$full")
+    tagger_raw=$(awk '/^tagger /{print substr($0,8); exit}' <<<"$full")
+    if [[ -z "$name" || -z "$target" ]]; then
+        echo "    a tag objektum fejléce nem értelmezhető"
+        return 1
+    fi
+
+    rec=$(grep -oP '^digest = \K\S+' <<<"$msg" | head -1)
+    sig=$(grep -oP '^signature = vault:v1:\K\S+' <<<"$msg" | head -1)
+    if [[ -z "$rec" || -z "$sig" ]]; then
+        return 2
+    fi
+    manifest=$(grep -oP '^manifest = \K\S+' <<<"$msg" | head -1)
+    if [[ "$manifest" != "cic-tag-manifest/v1" ]]; then
+        echo "    ismeretlen tag-manifest verzió: $manifest"
+        return 1
+    fi
+
+    tagger=$(tag_normalize_ident "$tagger_raw")
+    body=$(tag_strip_signing_block "$msg")
+    calc=$(tag_manifest_digest_v1 "$name" "$target" "$tagger" "$body")
+    if [[ "$calc" != "$rec" ]]; then
+        echo "    a tag-digest NEM erre a tagre illik (cic-tag-manifest/v1)"
+        echo "      rögzített:   ${rec:0:32}…"
+        echo "      újraszámolt: ${calc:0:32}…"
+        echo "      a tag neve, célpontja, taggere vagy üzenete eltér attól, amit aláírtunk"
+        return 1
+    fi
+
+    tmp=$(mktemp -d) || return 1
+    sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' <<<"$msg" > "$tmp/cert.pem"
+    if ! openssl x509 -in "$tmp/cert.pem" -noout -pubkey > "$tmp/pub.pem" 2>/dev/null; then
+        echo "    nincs értelmezhető tanúsítvány a tag üzenetében"
+        rm -rf "$tmp"; return 1
+    fi
+    base64 -d <<<"$sig" > "$tmp/sig.der" 2>/dev/null
+    base64 -d <<<"$rec" > "$tmp/dig.bin" 2>/dev/null
+    if ! openssl pkeyutl -verify -pubin -inkey "$tmp/pub.pem" \
+            -in "$tmp/dig.bin" -sigfile "$tmp/sig.der" >/dev/null 2>&1; then
+        echo "    a tag ECDSA aláírása NEM érvényes a tanúsítványra"
         rm -rf "$tmp"; return 1
     fi
     rm -rf "$tmp"
@@ -176,18 +364,43 @@ if [[ -n "$TAG" ]]; then
         fail=$((fail + 1))
     else
         c=$(git rev-list -1 "$TAG")
-        if [[ $(git log -1 --format=%P "$c" | wc -w) -gt 1 ]]; then
-            # A release tag has to name a commit whose own signature covers the
-            # released tree. A merge commit is unsigned by construction, so a tag
-            # on one points at content nothing vouches for.
-            echo "  FAIL  $(git log -1 --format='%h %s' "$c" | cut -c1-58)"
-            echo "        merge commitra mutat — tedd az aláírt szülőre"
-            fail=$((fail + 1))
-        elif verify_commit "$c"; then
-            echo "  OK    $(git log -1 --format='%h %s' "$c" | cut -c1-58)"
+        resolved=$(resolve_content_commit "$c")
+        resolve_rc=$?
+        target_desc=$(git log -1 --format='%h %s' "$c" | cut -c1-58)
+        content_pass=1
+        if [[ "$resolve_rc" -ne 0 ]]; then
+            echo "  FAIL  $target_desc"
+            echo "        a tartalom-nélküli merge-lánc túl mély (>200) — fail closed"
+            content_pass=0
+        elif verify_commit "$resolved"; then
+            echo "  OK    $target_desc"
+            if [[ "$resolved" != "$c" ]]; then
+                echo "        a tartalom nélküli merge-eken át: $(git log -1 --format='%h %s' "$resolved" | cut -c1-58)"
+            fi
+        else
+            echo "  FAIL  $target_desc"
+            if [[ "$resolved" != "$c" ]]; then
+                echo "        a tartalom nélküli merge-eken át: $(git log -1 --format='%h %s' "$resolved" | cut -c1-58) — az sem verifikál"
+            fi
+            content_pass=0
+        fi
+
+        # A tartalom-ellenőrzés a MÖGÖTTES commitot nézi. Ez egy MÁSODIK,
+        # független réteg: magát a tag NEVÉT, célpontját, taggerét és üzenetét
+        # köti-e valami (#44). Régi vagy kézzel csinált tagen ez hiányzik --
+        # nem hiba, csak hiányzó plusz-evidencia (rc=2).
+        tag_obj_out=$(verify_tag_object "$TAG")
+        tag_obj_rc=$?
+        case "$tag_obj_rc" in
+            0) echo "  OK    a tag objektum maga is aláírva (cic-tag-manifest/v1)" ;;
+            2) echo "        (a tag objektum maga nincs aláírva — a tartalom-kötés önmagában áll)" ;;
+            *) echo "  FAIL  a tag objektum aláírása hibás:"
+               echo "$tag_obj_out" | sed 's/^/    /' ;;
+        esac
+
+        if [[ "$content_pass" -eq 1 && "$tag_obj_rc" -ne 1 ]]; then
             ok=$((ok + 1))
         else
-            echo "  FAIL  $(git log -1 --format='%h %s' "$c" | cut -c1-58)"
             fail=$((fail + 1))
         fi
     fi
