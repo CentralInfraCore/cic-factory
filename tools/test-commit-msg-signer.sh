@@ -19,6 +19,7 @@ set -uo pipefail
 
 SRC="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$SRC/git_hook_commit-msg.sh"
+HOOKDIR="$SRC"
 TOKEN="hvs.TESTTOKEN0123456789"
 pass=0; fail=0
 
@@ -30,7 +31,9 @@ check() {
 # Git repo + staged tartalom, hogy a `git write-tree` működjön.
 mkenv() {
     local r; r=$(mktemp -d)
-    mkdir -p "$r/repo" "$r/vault" "$r/bin"
+    mkdir -p "$r/repo/tools" "$r/vault" "$r/bin"
+    # A hook a lib-vault-sign.sh-t a SAJÁT repója gyökeréhez képest keresi.
+    cp "$HOOKDIR/lib-vault-sign.sh" "$r/repo/tools/"
     git -C "$r/repo" init -q
     git -C "$r/repo" config user.email t@t
     git -C "$r/repo" config user.name t
@@ -144,6 +147,26 @@ rc=$( cd "$R/repo" && env -i PATH="$R/bin:$PATH" HOME="$R" \
 check "exit 1" "1" "$rc"
 check "  nem unbound variable" "0" "$(grep -c 'unbound variable' "$R/out.log")"
 check "  a hiányzó CA-t nevezi meg" "1" "$(grep -c 'CA certificate not found' "$R/out.log")"
+rm -rf "$R"
+
+echo
+echo "A hook a manifest-verziót és egy ép digestet ír a blokkba"
+# FIGYELEM: ez a szakasz korábban azt a CÍMET viselte, hogy "a hook és a
+# verifier ugyanazt a manifestet számolja" — és a verifiert EL SEM INDÍTOTTA.
+# Csak a manifest-sort és a digest ALAKJÁT nézte. Egy hook, ami helyes alakú,
+# de rossz digestet ír, átment volna rajta.
+#
+# A valódi round-tripet (valódi hook → valódi `git commit` → valódi verifier)
+# a tools/test-proof-binding.sh méri. Itt csak az marad, ami tényleg itt van:
+# a blokk alakja.
+R=$(mkenv)
+run "$R" >/dev/null
+check "a hook manifest-verziót ír a blokkba" "1" \
+    "$(grep -c 'manifest = cic-tree-manifest/v3' "$R/msg.txt")"
+check "  a digest base64-sha256 alakú" "1" \
+    "$(grep -oP '^digest = \K\S+' "$R/msg.txt" | head -1 | base64 -d 2>/dev/null | wc -c | grep -c '^32$')"
+check "  a commit-kontextust is behasheli" "1" \
+    "$(grep -c "printf 'message-sha256:" "$HOOK")"
 rm -rf "$R"
 
 echo
