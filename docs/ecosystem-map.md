@@ -15,17 +15,26 @@ Forrás: `jobs/map-private-source`, `jobs/deep-inspect-private-repos` output-ok 
 | `cic-schemas/template` | `.../schemas/template` | `CIC_Schemas.git` (branch: template) | Meta-schema sablon |
 | `cic-basic-knowledge` | `.../MCPs/private/source/CentralInfraCore/CIC-basic-knowledge` | `github_private.git` | Fogalmi KB forrás (NDJSON + MD + YAML) |
 | `cic-mcp-private` | `.../MCPs/private` | (private) | KB indexáló + MCP szerver (Python, 25 tool) |
-| `cic-primitives` | `.../CIC-objs/cic-primitives` | `cic-primitives.git` | Meta-séma réteg: 7 atom + aggregate-k |
-| `cic-compute` | `.../CIC-objs/cic-compute` | `cic-compute.git` | Compute domain (VM, bare metal, cloud) |
-| `cic-kubernetes` | `.../CIC-objs/cic-kubernetes` | `cic-kubernetes.git` | Kubernetes domain (cluster, pod, service) |
-| `cic-network` | `.../CIC-objs/cic-network` | `cic-network.git` | Network domain (switch, VLAN, routing) |
-| `cic-storage` | `.../CIC-objs/cic-storage` | `cic-storage.git` | Storage domain (volume, pool, filesystem) |
-| `cic-yang` | `.../CIC-objs/cic-yang` | `cic-yang.git` | YANG domain (hálózati konfig) |
+| `cic-schema-registry` | `${CIC_SCHEMA_REGISTRY_PATH}` | `cic-schema-registry.git` | Konszolidált séma-repó — publikus, `base-repo` `schema-registry/main` flavorjából ágazva (2026-09-09) |
+| `cic-primitives` | `.../CIC-objs/cic-primitives` | `cic-primitives.git` | Meta-séma réteg: 7 atom + aggregate-k (saját repó marad, a kernel bundle-je is átkerült a `cic-schema-registry`-be) |
+| `cic-compute` | *(archivált)* | `cic-compute.git` | **Archivált 2026-09-09** — tartalma migrálva: `cic-schema-registry/general/compute/` |
+| `cic-kubernetes` | *(archivált)* | `cic-kubernetes.git` | **Archivált 2026-09-09** — tartalma migrálva: `cic-schema-registry/general/kubernetes/` |
+| `cic-network` | *(archivált)* | `cic-network.git` | **Archivált 2026-09-09** — tartalma migrálva: `cic-schema-registry/general/network/` |
+| `cic-storage` | *(archivált)* | `cic-storage.git` | **Archivált 2026-09-09** — tartalma migrálva: `cic-schema-registry/general/storage/` |
+| `cic-yang` | *(archivált)* | `cic-yang.git` | **Archivált 2026-09-09** — tartalma migrálva: `cic-schema-registry/standards/yang/` |
 | `base-repo` | `.../base` | `base-repo.git` | Sablon repo: Makefile, CI, docs struktúra |
 | `ois-github` | `.../OpenIntentSign/github` | `OpenIntentSign/.github.git` | OIS trust modell spec (nem implementáció) |
 | `cic-factory` | `${CIC_WORKDIR}` | `cic-factory.git` | Agent factory (ez a repo) |
 
-**Megjegyzés:** Minden CIC-objs repo a `cic-primitives`-re épül. A `base-repo` `remote-merge`-gel adja át Makefile/CI sablonokat az összes repónak.
+**Megjegyzés:** Az öt `cic-compute`/`cic-kubernetes`/`cic-network`/`cic-storage`/`cic-yang`
+domain-repó 2026-09-09-én migrálva lett a `cic-schema-registry`-be és archiválva
+lett a forrás (mindegyik `main`-je előre mutató jelzést kapott). A `cic-primitives`
+NEM archiválva — önálló repóként fejlődik tovább, a kernel bundle-je párhuzamosan
+él a `cic-schema-registry/general/primitives/`-ben is. **Ez a bekezdés
+2026-09-10-i utólagos regisztráció** — a `cic-schema-registry` és az öt archiválás
+sosem ment át a factory job-pipeline-en (lásd `docs/*` egyéb szakaszainál is: a
+`cic-primitives — 7 irreducibilis atom` és `Adatfolyam` szekciók még a régi,
+2026-06-06-i állapotot tükrözik, ezt a passzt szándékosan nem bővítettem rájuk).
 
 ---
 
