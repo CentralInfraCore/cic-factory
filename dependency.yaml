@@ -9,11 +9,11 @@ schema_version: "1.0"
 dependencies:
   - name: cic-factory-core
     repo: https://github.com/CentralInfraCore/cic-factory-core
-    tag: "core/@v0.3.0"
-    commit: "bee6ba8"
+    tag: "core/@v0.4.0"
+    commit: "07d2c34"
     pinned: true
     mode: merge
-    adopted: "2026-08-23"
+    adopted: "2026-08-24"
     # Paths owned by the core. Local edits here are overwritten by the next
     # adoption -- change them upstream instead.
     imported_paths:
@@ -28,7 +28,10 @@ dependencies:
       - docs/RELEASE-0.2.0.md
       - docs/RELEASE-0.2.1.md
       - docs/RELEASE-0.3.0.md
+      - docs/RELEASE-0.4.0.md
       - docs/RUNNER-CONTRACT.md
+      # New with v0.4.0: the core's own reasoning trail, not a release note.
+      - docs/SESSION-2026-08-proof-profile.md
     # Owned here; the core never overwrites them.
     local_paths:
       - CLAUDE.md

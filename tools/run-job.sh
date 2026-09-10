@@ -196,7 +196,23 @@ INPUT="$JOB_DIR/input.md"
 WORKSPACE="$JOB_DIR/workspace"
 FACTORY_CLONE="$WORKSPACE/cic-factory"
 FEATURE_BRANCH="feature/$JOB_ID"
-AGENT_CONFIG="$HOME/.claude-personal/agents/$AGENT_ID"
+# Az agent-konfiguráció helyét a JOB mondja meg, ha megmondja.
+#
+# Az `agent.config_dir` mező a sémában régóta benne van, és minden meta kitölti
+# — a run-job.sh viszont SEHOL nem olvasta, hanem egy beégetett útvonalat
+# származtatott (#42). Egy dokumentált mező, amit mindenki ír és senki nem
+# olvas, hamis konfigurációs felület: úgy néz ki, mintha lehetne állítani.
+#
+# Ez nem szünteti meg a Claude-kötést — a fallback továbbra is a
+# ~/.claude-personal alak —, de a döntést a specbe teszi, ahol látszik. A
+# teljes leválasztás (a runner deklarálja a saját igényét) a #42 nyitott fele.
+AGENT_CONFIG=$(bash "$WORKDIR/tools/meta-get.sh" "$META" agent.config_dir 2>/dev/null) || AGENT_CONFIG=""
+if [[ -n "$AGENT_CONFIG" ]]; then
+    AGENT_CONFIG_SOURCE="meta.yaml agent.config_dir"
+else
+    AGENT_CONFIG="$HOME/.claude-personal/agents/$AGENT_ID"
+    AGENT_CONFIG_SOURCE="alapértelmezés (a meta nem adta meg)"
+fi
 # Claude Code slugs a project path by replacing BOTH separators and underscores
 # with dashes. Replacing only '/' silently produced a directory that does not
 # exist for any path containing '_' — here /home/sinkog/sync/claude_factory/...
@@ -208,7 +224,11 @@ SESSION_DIR="$AGENT_CONFIG/projects/$PROJECT_SLUG"
 # --- Ellenőrzések ---
 [[ -f "$META" ]]  || { echo "[ERROR] Nem létezik: $META"; exit 1; }
 [[ -f "$INPUT" ]] || { echo "[ERROR] Nem létezik: $INPUT"; exit 1; }
-[[ -d "$AGENT_CONFIG" ]] || { echo "[ERROR] Agent nem létezik: $AGENT_CONFIG"; exit 1; }
+[[ -d "$AGENT_CONFIG" ]] || {
+    echo "[ERROR] Agent-konfiguráció nem létezik: $AGENT_CONFIG" >&2
+    echo "        Forrás: $AGENT_CONFIG_SOURCE" >&2
+    exit 1
+}
 
 # `set -o pipefail` mellett egy nem illeszkedő grep miatt ez a sor korábban
 # ÜZENET NÉLKÜL megölte a scriptet: a finalizer lefutott, de nem szólt, mert még
@@ -795,14 +815,30 @@ if [[ -n "$RUN_SESSION_ID" ]]; then
     SESSION_ID="$RUN_SESSION_ID"
     echo "[*] Session UUID: $SESSION_ID (JSON)"
 else
-    NEW_SESSION_ID=$(find "$SESSION_DIR" -maxdepth 1 -name '*.jsonl' -newer "$SESSION_MARKER" 2>/dev/null \
-        | xargs -r ls -t 2>/dev/null | head -1 | xargs -r basename -s .jsonl || true)
-    if [[ -n "$NEW_SESSION_ID" ]]; then
-        SESSION_ID="$NEW_SESSION_ID"
-        echo "[*] Session UUID: $SESSION_ID (jsonl fallback)"
-    else
-        echo "[WARN] Session UUID nem állapítható meg — --resume nem fog működni"
-    fi
+    # Fallback, ha a runner nem adta vissza a session azonosítóját.
+    #
+    # Mérve (#42): az őr eddig az IDŐ volt, nem a job. Két azonos agent-configon
+    # futó job közül a marker után keletkezett legfrissebb .jsonl-t vitte,
+    # akármelyik írta — és a rossz session azonosítója került a metába, ahonnan
+    # a --resume egy IDEGEN beszélgetést folytatott volna.
+    #
+    # A javítás nem az, hogy okosabban tippelünk. Ha a jelölt nem egyértelmű,
+    # nem választunk: egy hibás session-azonosító rosszabb, mint a hiánya,
+    # mert a hiány látszik, a hibás pedig működőnek tűnik.
+    mapfile -t SESSION_CANDIDATES < <(
+        find "$SESSION_DIR" -maxdepth 1 -name '*.jsonl' -newer "$SESSION_MARKER" 2>/dev/null \
+        | xargs -r ls -t 2>/dev/null || true)
+    case "${#SESSION_CANDIDATES[@]}" in
+        0)  echo "[WARN] Session UUID nem állapítható meg — --resume nem fog működni" ;;
+        1)  SESSION_ID=$(basename -s .jsonl "${SESSION_CANDIDATES[0]}")
+            echo "[*] Session UUID: $SESSION_ID (jsonl fallback)" ;;
+        *)  echo "[WARN] ${#SESSION_CANDIDATES[@]} session-jelölt keletkezett a futás alatt:" >&2
+            printf '         %s\n' "${SESSION_CANDIDATES[@]##*/}" >&2
+            echo "       Nem tudjuk eldönteni, melyik ezé a jobé — valószínűleg egy" >&2
+            echo "       másik futás osztozik ezen az agent-configon. Nem tippelünk:" >&2
+            echo "       a session_id üresen marad, a --resume nem fog működni." >&2
+            ;;
+    esac
 fi
 rm -f "$SESSION_MARKER"
 

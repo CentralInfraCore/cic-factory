@@ -130,6 +130,31 @@ jobs:
       - name: commit-msg signer trust boundary
         run: bash tools/test-commit-msg-signer.sh
 
+      # A git nem futtatja újra a commit-msg hookot rebase-nél, a commit fája
+      # viszont megváltozik. Mérve (#81): rebase után az ág MINDEN commitja
+      # ellenőrizhetetlen (OK: 0, FAIL: 3) — nem részleges hatás.
+      - name: a rebase leaves signatures re-signable
+        run: bash tools/test-resign-on-rebase.sh
+
+      # A release tag maga is Vault-tal aláírva -- a nevét, célpontját, taggerét
+      # és üzenetét semmi nem kötötte eddig, csak a mögötte álló commitot.
+      - name: signed release tags round-trip
+        run: bash tools/test-sign-release-tag.sh
+
+      # A repó nem azzal a hookkal írt alá, amit kiad: a core.hooksPath egy repón
+      # kívüli megosztott könyvtárra mutatott, benne a signer elavult másolatával
+      # (#82). A CI-ban nincs hook telepítve, ezért itt a CHECKER-t mérjük
+      # fixture-ökkel — a checker maga a fejlesztői gépen fut.
+      - name: the effective hook is the shipped signer
+        run: bash tools/test-check-hook-provenance.sh
+
+      # Az aláírás a COMMITHOZ van kötve, nem csak a fához. Mérve (#44): egy A
+      # repóban készült blokk átment egy MÁSIK repó MÁSIK commitján. Ez a suite
+      # a valódi hookot futtatja valódi git commit-on, és a valódi verifierrel
+      # ellenőriz — a régi "round-trip" szakasz a verifiert el sem indította.
+      - name: the signature is bound to the commit
+        run: bash tools/test-proof-binding.sh
+
       # A prompt és a path határa: mi kerülhet be az input.md-ből a modellhez,
       # és milyen alakú azonosítóból épülhet törölhető útvonal.
       - name: prompt and path boundaries
