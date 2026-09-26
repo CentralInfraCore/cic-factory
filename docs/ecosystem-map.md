@@ -16,7 +16,7 @@ Forrás: `jobs/map-private-source`, `jobs/deep-inspect-private-repos` output-ok 
 | `cic-basic-knowledge` | `.../MCPs/private/source/CentralInfraCore/CIC-basic-knowledge` | `github_private.git` | Fogalmi KB forrás (NDJSON + MD + YAML) |
 | `cic-mcp-private` | `.../MCPs/private` | (private) | KB indexáló + MCP szerver (Python, 25 tool) |
 | `cic-schema-registry` | `${CIC_SCHEMA_REGISTRY_PATH}` | `cic-schema-registry.git` | Konszolidált séma-repó — publikus, `base-repo` `schema-registry/main` flavorjából ágazva (2026-09-09) |
-| `cic-primitives` | `.../CIC-objs/cic-primitives` | `cic-primitives.git` | Meta-séma réteg: 7 atom + aggregate-k (saját repó marad, a kernel bundle-je is átkerült a `cic-schema-registry`-be) |
+| `cic-primitives` | `.../primitives-group/primitives` | `cic-primitives.git` | Meta-séma réteg: 7 atom + aggregate-k (saját repó marad, a kernel bundle-je is átkerült a `cic-schema-registry`-be) |
 | `cic-compute` | *(archivált)* | `cic-compute.git` | **Archivált 2026-09-09** — tartalma migrálva: `cic-schema-registry/general/compute/` |
 | `cic-kubernetes` | *(archivált)* | `cic-kubernetes.git` | **Archivált 2026-09-09** — tartalma migrálva: `cic-schema-registry/general/kubernetes/` |
 | `cic-network` | *(archivált)* | `cic-network.git` | **Archivált 2026-09-09** — tartalma migrálva: `cic-schema-registry/general/network/` |
