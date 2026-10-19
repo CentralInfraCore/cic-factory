@@ -214,5 +214,23 @@ commit "$R"
 check "exit 0" "0" "$(run "$R")"
 rm -rf "$R"
 
+echo "theads/ — a munkanapló nem dokumentáció (D1, D2, D4)"
+# Egy session-transcript idézhet másik repo szabály-azonosítóját, törött linket
+# vagy séma-blokkot; az nem állítás erről a repóról.
+R=$(mkroot); mkdir -p "$R/theads"
+printf '# Napló\n\nC99 mas repo szabalya\n[nincs](docs/hianyzik.md)\n\n```yaml\njob_id: "x"\nstatus: "pending"\n```\n' > "$R/theads/s.md"
+commit "$R"
+check "exit 0" "0" "$(run "$R")"
+rm -rf "$R"
+
+echo
+echo "  ugyanez a szöveg docs/ alatt → továbbra is bukik (a kivétel nem nyel le mindent)"
+R=$(mkroot); mkdir -p "$R/docs"
+printf '# Doc\n\nC99 mas repo szabalya\n' > "$R/docs/d.md"
+commit "$R"
+check "exit 1" "1" "$(run "$R")"
+check_log "  megnevezi a C99-et" "C99 nincs a tools/close-job.sh-ben" "$R/out.log"
+rm -rf "$R"
+
 echo "==== $pass PASS / $fail FAIL ===="
 [[ "$fail" -eq 0 ]]
