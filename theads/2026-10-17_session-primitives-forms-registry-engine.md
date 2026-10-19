@@ -10986,3 +10986,162 @@ A `theads/` munkanaplót a rögzített lezárási eljárás szerint frissítsd.
 ~~~~~
 I guessed the SHA wrongly there; the merge was refused, so nothing happened. Using the real full SHA:
 ~~~~~
+
+
+### 2026-10-19 08:15 — Claude
+
+~~~~~
+A PR #22 mergelve van, a jóváhagyott HEAD-re pinelve (`f1c523b`). A `main` merge-commitja `8f2c7e7`, és minden releváns CI-kapu sikeres rajta:
+- `corpus`
+- `p1`, ezen belül: `rust`, `go`, `fuzz`, `quality` (sor-, ág- és mutációs kapu az ellenpróbákkal), `quality-gate-selftest`, `branch-coverage`
+- a `Graph Update: go_modules` dependabot-futás
+
+Az első merge-kísérlet elhibázott SHA-val ment, ezt a GitHub elutasította, ezért nem történt semmi. A második, a teljes SHA-val már átment.
+
+A `theads/` munkanaplót a rögzített eljárás szerint frissítettem: a cic-factory `main`-jén `38ab4b0` az új transcript (27 PR-hivatkozás, 326 üzenet). A titokkereső minták nem találtak benne semmit.
+
+**A következő szelethez még nem kezdtem hozzá.** Az üzeneted csak a merge-et kérte. A beillesztett review a következő P1-korpuszrészhalmaz megvalósítását kéri a `cic-primitive-forms` repóban, az engine és a Relay érintése nélkül. Ehhez a szeletet te választod ki.
+
+Javaslatom a `presence` suite `validate` kind-ja (37 eset), mert közvetlenül ráépül az elkészült parse-ra és validate-re:
+- Ide tartozik a mandatory/optional, nullable, az absent és a `null` megkülönböztetése, a default-jelölt, valamint a típus- és min_items-szabályok.
+- Az ADR 0003 egyértelműen eldönti ezeket, és `MISSING_MANDATORY`, `NULL_NOT_ALLOWED`, `MIN_ITEMS_NOT_MET` hibakódokat használ.
+- A hiányzó mező hibája a szülőhöz horgonyoz, az üres skalár a kulcshoz. Ez a pozíciómodell új esete, ezért a két YAML-könyvtárral együtt tesztelendő.
+
+Alternatívák: a `path_*` kind-ok (125 eset, önálló és nagy), vagy a `collapse`/`expand` (P2, ez a PHASES.md szerint a következő fázis).
+
+Szólj, melyiket kéred, és indítom a szeletet ugyanazzal a menettel: korpusz-futtatás mindkét nyelven, minőségi kapuk és ellenpróbák, külön PR.
+~~~~~
+
+
+### 2026-10-19 08:15 — Claude
+
+~~~~~
+Ez csak a háttérben futó CI-várakozás befejezését jelzi. Az eredménye már a fenti jelentésben van: a `main` merge-commitján (`8f2c7e7`) minden kapu sikeres.
+
+Új feladatba nem kezdtem. A következő P1-szelethez továbbra is a te választásodra várok (javaslatom: a `presence` suite `validate` kind-ja).
+~~~~~
+
+
+### 2026-10-19 08:22 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+**Új feladat: `cic-primitive-forms` – P1, Presence Validation**
+
+A PR #22 lezárt, main HEAD: `8f2c7e7`. Minden releváns CI zöld.
+
+A következő szelet a `corpus/presence/vectors.yaml` **29 `kind: validate` esete**, Rust és Go implementációval.
+
+**Normatív alap:** elfogadott ADR 0003, ADR 0007 és a pinelt Shape grammar. Nem nyitunk új specifikációs kört.
+
+Implementálandó:
+
+1. Absent és Present(null) szigorú megkülönböztetése. Az Absent nem külön YAML-érték, hanem hiányzó mező.
+2. Mandatory/optional, nullable, típusellenőrzés, valamint a listák `min_items` szabálya a korpusz által igényelt részhalmazban.
+3. A default kizárólag **candidate**, ha egy optional mező hiányzik. Nem alkalmazunk defaultot, és nem végzünk Role-alapú eligibility döntést; az P3.
+4. Összetett struktúráknál az összes releváns validációs hiba jelentése az ADR 0007 szerint: kanonikus `logical_path`, determinisztikus sorrend és a megfelelő forráspozíció.
+5. A hiányzó mandatory mező hibája a szülőhöz, az explicit null a value node-hoz, az üres YAML-skalár nullértéke a kulcshoz legyen horgonyozva.
+6. A validáció ne módosítsa a bemenetet.
+
+A `schema.synthetic.shape` korpuszjelölést fixture-adapterrel kösd a pinelt Shape szerződés tényleges tagjaihoz. Ne hozz létre új, konkurens primitive-sémát.
+
+**Bizonyítás:**
+
+- A 29 `validate` vektor mindkét nyelven tényleges termékkódon fusson.
+- Az összes korábbi `recognize` és P1 subset teszt maradjon zöld.
+- A teljes hibaválaszt hasonlítsd össze, ne csak az első hibakódot.
+- A sor-/utasítás-, ág- és mutációs minőségi kapuk maradjanak 90% fölött, a meglévő ellenpróbákkal.
+- Bővítsd a property- és fuzz-teszteket ott, ahol az új validációs szemantika ezt indokolja.
+- Dokumentáld a lefedett és a `NOT RUN` eseteket.
+
+**Scope-határok:**
+
+Nincs P2 expand/collapse, P3 default-alkalmazás, P5 materializáció, engine- vagy Relay-módosítás.
+
+A `state_surface` hiányzó megfigyelését ne minősítsd automatikusan authored-validation hibának vagy `absent` megfigyelési állapotnak. Az ADR 0003 szerint ez külön coverage-kérdés.
+
+Nyiss egyetlen célzott P1 PR-t, a konkrét eredményekkel és hiányokkal. **Merge kizárólag külön jóváhagyás után.**
+
+A `theads/` munkanapló lezárását továbbra is a rögzített eljárás szerint végezd.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-19 09:09 — Claude
+
+~~~~~
+Pusholva. PR-t nyitok, majd a CI-t várom (a `quality` feladat ~18 perc).
+~~~~~
+
+
+---
+**▶ PR cic-primitive-forms#23** — 2026-10-19 09:09 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/23
+---
+
+
+### 2026-10-19 09:33 — Claude
+
+~~~~~
+A PR #23 (`712108e`) elkészült, és mind a hét CI-feladat zöld: `rust`, `go`, `corpus`, `branch-coverage`, `quality-gate-selftest`, `fuzz`, `quality` (22 perc 48 mp). Nem mergeltem.
+
+**Mit valósít meg.** A `corpus/presence` mind a 29 shape-alapú `validate` esetét Rustban és Goban, tényleges termékkóddal. A normatív alap az ADR 0003 és 0007, valamint a pinelt Shape tagjai. Új specifikációs kört nem nyitottam.
+
+- **Absent és null.** Az absent hiányzó mező, a `Null` jelenlévő érték. A válaszuk eltér: `MISSING_MANDATORY` az egyik, `NULL_NOT_ALLOWED` a másik. Egy nullable mező is mandatory marad.
+- **Szabályok.** Mandatory/optional, nullable, skalár típus (string, integer, boolean), `min_items` (inklúzív), composite mezők és opaque. Mapping skalár helyén `MAP_AT_SCALAR_POSITION`, ismeretlen kulcs `UNKNOWN_FIELD`.
+- **A default csak candidate.** A hiányzó optional mező, amely default-ot deklarál, felkerül a candidate-ek listájára (a gyökér `$`, egyébként a kanonikus útvonal). Semmit nem alkalmazunk, Role-döntés nincs (az P3), és `null`, `""`, `0`, `false` nem váltja ki.
+- **Teljes hibaválasz.** Minden hiba megjelenik kanonikus `logical_path`-szal, szegmensenként rendezve, így a `$.a.x` előbb jön, mint az `$.a b`.
+- **Horgonyok.** A hiányzó mandatory mező a szülőre, az explicit null az értékre, az üres skalár (amelynek nincs szövege) a kulcsra mutat.
+- **A bemenet változatlan.** Vektoronként és property-vel is ellenőrzött.
+- **Határ.** A `state_surface` hiányzó megfigyelését nem minősítem authored-validation hibának vagy `absent` megfigyelési állapotnak. A `schema.synthetic.shape` korpuszjelölést a runnerek kötik a Shape tényleges tagjaihoz, saját séma nincs.
+
+**Bizonyíték**
+- Mindkét nyelv mind a 29 vektort lefuttatja, és a teljes gépi választ hasonlítja össze. A runnerek leellenőrzik a darabszámot (31 `recognize`, 29 `validate`). A korábbi `recognize` és subset tesztek zöldek.
+- A minőségi kapuk 90 % fölött maradtak, a CI ugyanazt méri:
+
+| | Rust | Go |
+|---|---|---|
+| Sor/utasítás | 99,23 % | 100 % |
+| Ág | 97,35 % | 100 % |
+| Mutáció | 100 % (174/174) | 98,96 % (380/384, 4 ekvivalens túlélő) |
+
+- Az ellenpróbák ugyanúgy pirosra váltanak, és ezt a CI is reprodukálja:
+  - Sorlefedettség: 49,22 % (Rust) és 26,29 % (Go).
+  - Mutáció: 0,00 % és 23,53 %.
+  - Ágfedettség: 64,41 % és 0,00 %.
+- Bővítettem a property-teszteket (8 tulajdonság mindkét nyelven) és a fuzzingot. Új `validate` fuzz target van mindkét nyelven, saját canary-val, így négy fuzz target és négy canary-ellenpróba fut CI-ban.
+
+**NOT RUN (a dokumentum táblázata is tartalmazza):** 37 slot-alapú `validate` (Access-szókincs és `conformance` eredet), 15 `collapse`, 11 `roundtrip`/`expand`/`equality`, 16 `basis`, 125 `path_*`, 66 `diff`.
+
+**Megállapítások**
+1. **Helytelen típusú értékre nincs hibakód a regiszterben.** Csak a mapping a skalár helyén kódolt (`MAP_AT_SCALAR_POSITION`). Más eltérésre (például string, ahol integer a deklarált) semmi. Vektor sem kér ilyet, ezért a szelet kifejezetten elutasítja (`UNSUPPORTED_SYNTAX`, a regiszteren kívül), és nem találok ki kódot. Ez az ADR-tulajdonosra tartozó hiány, nem döntöttem el.
+2. A parser az üres értéket `~` skalárként adja üres span-nel, az explicit `~` span-je egy karakter. A szelet a span alapján különbözteti meg őket, így az üres érték kulcsra horgonyzik. Go-ban az üres skalár szöveg nélküli csomópont.
+3. A validált dokumentumban megjelenő expanded Access csomópontot elutasítom, mert az `value`-ja az expand/collapse (P2) feladata.
+4. Nincs modellezve: `number`, `bytes`, `set`, `choice`, `item_choice`, a lista elemek alakja, valamint a séma-érvényességi szabályok (például `default` mandatory mellett).
+
+**Munkanapló.** A `theads/` naplót a PR lezárásakor frissítem, ahogy rögzítettük. Merge-engedélyedre várok.
+~~~~~
+
+
+### 2026-10-19 09:40 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+**PR #23 — REVIEW: ACCEPTED. MERGE AUTHORIZED.**
+
+A `712108ef` commit merge-elhető a `main` ágba.
+
+A merge előtt nincs új implementációs vagy specifikációs követelmény.
+
+A következőket a dokumentált határként őrizzük meg:
+
+- A hibás skalártípusok hiányzó regiszterkódja ADR-tulajdonosi döntést igényel. Ne találj ki új hibakódot.
+- A recognition primitívpozíciókra vonatkozik; a dokumentáció megfogalmazását a következő dokumentációs módosításnál pontosítsd.
+- A pinelt Shape sémabetöltésének end-to-end bizonyítása továbbra is külön feladat.
+
+Ellenőrizd, hogy a merge pillanatában a PR fejállapota továbbra is `712108ef`, és a hét CI-job sikeres. Merge után frissítsd a `theads/` munkanaplót a megállapodás szerint.
+
+A következő feladatot ne kezdd el automatikusan; előbb add vissza a merge eredményét és az új `main` commit SHA-ját.
+</pasted_content id="1805">
+
+ ha értem mergeld be
+~~~~~
