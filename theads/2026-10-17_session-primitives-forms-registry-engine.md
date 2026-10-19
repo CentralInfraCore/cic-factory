@@ -11145,3 +11145,115 @@ A következő feladatot ne kezdd el automatikusan; előbb add vissza a merge ere
 
  ha értem mergeld be
 ~~~~~
+
+
+### 2026-10-19 09:40 — Claude
+
+~~~~~
+Merge megtörtént. Most a `main` CI-t várom, és közben frissítem a munkanaplót.
+~~~~~
+
+
+### 2026-10-19 09:58 — Claude
+
+~~~~~
+A PR #23 mergelve van a `main`-be. Mielőtt mergeltem, ellenőriztem: a fejállapot `712108ef660f172a28d86f1d61966c5ac34be8a9` volt, a hét CI-job sikeres. A merge a fejállapotra pinelve ment (`--match-head-commit`).
+
+**Az új `main` SHA: `5f0c18e281768d6eaa031238f0fc62a482fbfc95`.**
+
+A `main` ezen a commitján minden kapu sikeres:
+- `corpus`
+- `p1`, ezen belül: `rust`, `go`, `branch-coverage`, `quality` (sor-, ág- és mutációs kapu), `quality-gate-selftest`, `fuzz` (mind a négy target és a canary-ellenpróbák)
+
+**Munkanapló.** A `theads/` transcriptet frissítettem a cic-factory `main`-jén (`123e265`, 332 üzenet, 28 PR-hivatkozás). A titokkereső minták nem találtak benne semmit.
+
+A három dokumentált határt a következők szerint őrzöm:
+- A hibás skalártípus hiányzó regiszterkódja ADR-tulajdonosi döntésre vár. Új hibakódot nem találok ki; a szelet addig kifejezetten elutasítja ezt az esetet.
+- A recognition megfogalmazását a primitívpozíciókra vonatkozóan a következő dokumentációs módosításnál pontosítom.
+- A pinelt Shape sémabetöltésének end-to-end bizonyítása külön feladat marad.
+
+Következő feladatba nem kezdtem. A választást rád hagyom.
+~~~~~
+
+
+### 2026-10-19 09:58 — Claude
+
+~~~~~
+Ez csak a háttérben futó CI-várakozás befejezését jelzi. Az eredménye már a fenti jelentésben van: a `main` merge-commitján (`5f0c18e`) minden kapu sikeres.
+
+Új feladatba nem kezdtem. A következő szelet kiválasztására várok.
+~~~~~
+
+
+### 2026-10-19 10:06 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+## NEXT TASK — CIC Primitive Forms P1/3
+
+**Repository:** `CentralInfraCore/cic-primitive-forms`
+
+**Base:** `main@5f0c18e281768d6eaa031238f0fc62a482fbfc95`
+
+**Goal:** Adopt the accepted upstream D-018 `access-policy/1` contract and implement the 21 `kind: validate` cases in `corpus/inherit/vectors.yaml` in Rust and Go.
+
+### 1. Upstream adoption
+
+Normative source: `cic-primitives` D-018, PR #19 and #20, merged at `73ae4692f0680a316d367179ce057195a0031688`.
+
+- Review the new Access and PolicySurface grammar and its compatibility with Forms ADR 0001, 0002, 0004 and 0010.
+- Create a new immutable grammar pin, recompute and verify the complete manifest, and migrate corpus references deliberately.
+- Include the normative P0.4 sources required to interpret the new grammar in the verified file set. Preserve explicit license provenance.
+- Update ADR 0004's obsolete upstream-open statements to reflect D-018. Record compatibility findings; do not silently rewrite accepted decisions.
+- Derive the Access grammar version from the verified pinned schema. The processing context must agree with that version. No hardcoded version chosen from document contents.
+
+### 2. Implement the 21 inheritance validate vectors
+
+Implement in both Rust and Go, using real product code and the shared corpus.
+
+Required behavior:
+
+- Grammar 1: `true`, `false` and integer `0` remain distinct, losslessly represented values.
+- Reject integer `1`, quoted `"true"` / `"0"`, null and other invalid forms as required by the contract.
+- `access` / `modify`: the symbolic `inherit` is different from a CertPattern list.
+- `[]` means explicitly nobody; `[inherit]` is not the symbolic default and is invalid as a CertPattern.
+- Validate CertPattern syntax and reject malformed patterns.
+- Preserve typed values and input immutability.
+- Reproduce complete ADR 0007 machine errors, including phase, location and path when determinable.
+- Keep grammar-version binding fail-closed. No implicit fallback and no silent cross-version conversion.
+
+Do not invent new semantics or error codes. Where the upstream contract supplies a code, trace it explicitly to that contract. If a gap remains between the upstream error vocabulary and the Forms registry, report it rather than guessing.
+
+### 3. Explicit exclusions
+
+No P2 expansion/collapse, no P3 effective permission resolution, no runtime authorization, no default application, no conformance-basis implementation, no Engine changes and no Relay changes.
+
+The upstream 187 vectors are contract evidence, not a substitute for independent Rust/Go conformance.
+
+### 4. Evidence and quality
+
+- All 21 inheritance `validate` vectors must run in both languages.
+- All previous 31 recognition and 29 presence validation vectors must remain green.
+- Compare complete machine results, not just accept/reject.
+- Property tests for type preservation, version binding and nonmutation.
+- Fuzz and negative/canary tests for the added code.
+- Line/statement, branch and mutation quality gates strictly above 90%.
+- Preserve an exact RUN / NOT RUN coverage table.
+- Demonstrate that weakened tests or deliberately defective implementations turn the appropriate gates red.
+
+### 5. Deliverable
+
+Open one reviewable PR against `main`.
+
+Report the complete HEAD SHA, changed contracts, implementation boundaries, corpus parity, CI evidence, upstream compatibility findings and remaining unsupported cases.
+
+**Do not merge.** Wait for separate review and merge approval bound to the exact HEAD SHA.
+
+Update the `theads/` transcript at the established PR completion boundary.
+</pasted_content id="1805">
+~~~~~
+
+
+---
+**▶ PR cic-primitive-forms#24** — 2026-10-19 11:08 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/24
+---
