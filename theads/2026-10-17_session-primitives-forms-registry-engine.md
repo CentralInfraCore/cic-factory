@@ -13553,3 +13553,300 @@ Ezzel a CIC Forms fejlesztésében most már a tesztelési minőségről átlép
 ~~~~~
 Várom, hogy a `main` P1 minden kapuja zöld legyen. Az A lépést akkor indítom, ahogy engedélyezted, előtte lezárom a `theads/` naplót.
 ~~~~~
+
+
+### 2026-10-19 22:27 — Claude
+
+~~~~~
+A két független implementáció mind a 63 kézzel írt vektoron egyezik. Jön a rekord-séma, a validity key és a verifier.
+~~~~~
+
+
+---
+**▶ PR cic-primitive-forms#28** — 2026-10-19 22:34 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/28
+---
+
+
+### 2026-10-19 22:34 — Claude
+
+~~~~~
+Az A lépés PR-ja megnyílt: https://github.com/CentralInfraCore/cic-primitive-forms/pull/28 (head `bdfcb323a1d7db559052290cdbaa5c32a5121832`, merge nélkül). A CI most fut rajta. Az első valós eredményt az `evidence-selftest` jobtól várom, mert az a `gh attestation verify` kapcsolókat is ellenőrzi, amiket helyben a régi `gh` miatt nem tudtam kipróbálni.
+
+**Tartalma röviden**
+- **Kanonikus JSON kétszer, függetlenül:** `canon.py` és `canon-go/main.go` nem oszt meg kódot. 63 kézzel gépelt vektoron mindkettőnek egyeznie kell a kanonikus bájtokban és a visszautasítás osztályában.
+- **Rekord, kulcs, verifier:** a `test-evidence/1` séma pontosan a tagjaival, címkék helyett feloldott verziókkal és SHA-ra rögzített action-revíziókkal. A validity key hibára fut (nincs találat, symlink, címke). A verifier nyolc sorrendben visszautasító lépést ad, az attesztáció interfész mögött van, és a lánc-szabály nem enged visszalépni régebbi sikerre.
+- **Bizonyítás:** 36 teszt és negatív próba, valamint egy `seeded.py`, ami 40 szándékosan hibás verifiert ültet be, és mindegyiknél pirosat követel. Az első futásban egy nem akadt fenn rajta (a hiba előtti siker kizárása felesleges szűrőnek látszott), ezért írtam hozzá a próbát.
+
+**Két nyitott pont, amit tudni érdemes**
+- A helyi `gh` (2.45) nem ismeri az `attestation` parancsot, ezért a négy kapcsolót (`--repo`, `--signer-workflow`, `--source-ref`, `--source-digest`) a CI-n ellenőrzöm, és nem feltételezem. Ha valamelyik nem létezik, az `evidence-selftest` pirosra vált, és azt javítom.
+- A terv "mutánsazonosító duplikált vagy ismeretlen" próbája a C lépéshez tartozik, itt még nincs mutánsformátum.
+
+A B infrastruktúrát nem építettem bele. A merge-engedélyedet a konkrét HEAD-re várom.
+~~~~~
+
+
+### 2026-10-19 22:39 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+PR #28 — CHANGES REQUESTED
+
+Reviewed HEAD: `bdfcb323a1d7db559052290cdbaa5c32a5121832`.
+
+Az evidence-selftest sikeres: 36 teszt, 63 kanonikus JSON-vektor, 40/40 elkapott seeded defect. A `gh attestation verify` négy használt kapcsolója a CI-n ellenőrizve.
+
+Három merge-blokkoló javítás szükséges:
+
+1. **Rekordkonzisztencia:** a `quality_full` számaiból ellenőrizd önállóan, hogy a PASS valóban teljesíti-e az előírt küszöböket. Nulla mérés, pontosan 90% és 90% alatti eredmény nem lehet PASS. A számítás legyen egész számos, és egyezzen a jelenlegi kapuk szemantikájával.
+
+2. **Git tree binding:** a verifier ellenőrizze, hogy `target.tree` valóban a megadott commit fája. Merge-jelöltnél a célállapotot is kösse a base/head/merge commit megfelelő azonosítóihoz. Tegyél be negatív tesztet helytelen tree SHA-ra.
+
+3. **Validity key symlink:** az `expand()` ne hagyhasson ki symlinkelt könyvtárat hallgatólagosan. A kiválasztott fákban a könyvtársymlinkeket is utasítsa vissza, negatív próbával.
+
+Mindháromhoz kérek normatív tesztet és seeded hibát, amely bizonyítja, hogy a gyengített ellenőrzés pirosra váltja a CI-t.
+
+Az A lépés hatóköre maradjon változatlan. Ne építsd bele a B publikálási és aláírási infrastruktúráját.
+
+Új teljes HEAD SHA-t és a friss CI eredményeit kérem. PR marad nyitva, merge nélkül.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-19 22:44 — Claude
+
+~~~~~
+A #28-ra felkerültek a három blokkoló javításai, az új HEAD `55ea9ba4f906c2c0200c02f8a358fe025401737e`, a CI fut rajta.
+
+1. **Verdikt a számokból** (`record.py`): a `gate_verdict` ugyanaz kell legyen, mint amit a hat mérés ad, egész számokkal és szigorúan a küszöb fölött (`covered * 100 > total * threshold`, `total > 0`), pontosan a `quality_gate.py` és `coverage_gate.py` szemantikája szerint. A pontosan 90%, a 90% alatti és a nulla mérés nem lehet PASS. A mutáció `killed / (killed + survived)`, az unviable és uncompilable nem számít. Mindkét irányban ellenőrzöm, az incomplete shard is FAIL.
+2. **Git tree-kötés** (`verify.py`): a `target.tree` a megadott commit fája kell legyen ebben a repóban. Merge-jelöltnél a commit pontosan a rekordban megnevezett base (első szülő) és head (második szülő) merge-e. A `GitRepo` a gitnek csak 40 hexás, ténylegesen commit azonosítót ad át. A `HEAD`, egy ág, `--help`, egy rövidített SHA vagy egy tree-azonosító nem válasz. Ha nincs mód a gitet kérdezni, nincs válasz (`TREE_UNCHECKED`). A rekord a saját commitján futott run műve kell legyen.
+3. **Könyvtár-symlink** (`key.py`): az `os.walk` a symlinkelt könyvtárat a könyvtárak között listázza, de nem lép be, ezért némán kimaradt. Most minden kiválasztott fában, vagy egy kiválasztott fájl feletti könyvtárnál visszautasítja (`NOT_A_REGULAR_FILE`). Egy olyan link, ami alatt semmi kiválasztott nem lehet, vagy kizárt helyen van (például `rust/target`), nem érinti a kulcsot.
+
+**Bizonyítás**
+- **Normatív tesztek:** 43 teszt (előtte 36), köztük küszöbélek mind a hat mérésre (91, pontosan 90, 89, nulla, 90,0001 és 89,9999 százalék), valódi git-repó merge-jelölttel és hamis tree-kkel, valamint symlink minden kiválasztott fában.
+- **Seeded defect:** 15 új, összesen 55, mind elkapva. Ezek közül a gyengített ellenőrzések: `>=` a `>` helyett, nulla mérés pass, a túlélők kihagyása, tree nem összevetve, szülők nem összevetve, tetszőleges argumentum a gitnek, tree-azonosító commitként, és a némán kihagyott symlink.
+
+A B lépés hatóköréhez nem nyúltam. Az eredményt az új SHA-n a CI végén jelentem. Merge nincs.
+~~~~~
+
+
+### 2026-10-19 22:51 — Felhasználó
+
+~~~~~
+na ezzel mi a helyzet?
+~~~~~
+
+
+### 2026-10-19 22:51 — Claude
+
+~~~~~
+A PR #28 jelenlegi HEAD-je `55ea9ba4f906c2c0200c02f8a358fe025401737e`, nyitott és mergelhető. A CI majdnem kész.
+
+- **Zöld:** `evidence-selftest` (2 perc 23 mp: 43 teszt, 63 Go-vektor, 55 seeded defect, `check-gh`), `rust`, `go`, `parity`, `corpus`, `branch-coverage`, `quality-lines`, `quality-gate-selftest`, `seeded-defects`, mind a 6 Go-mutációs shard és az 1. Rust-shard.
+- **Fut még:** 3 Rust-mutációs shard (1, 2, 3), utána jön a döntő `quality`, és a `fuzz`.
+
+A három blokkoló javítása a CI-n is átment az `evidence-selftest`-en: az 55 seeded defect mind elbukik, vagyis a gyengített küszöb-, tree- és symlink-ellenőrzés pirosra vált. A teljes eredményt a `quality` és a `fuzz` után küldöm, egyben a SHA-val. Merge nincs.
+~~~~~
+
+
+### 2026-10-19 22:51 — Felhasználó
+
+~~~~~
+nem az lenne a lényeg hogy a full teszt ne fusson mindig le?
+~~~~~
+
+
+### 2026-10-19 22:51 — Claude
+
+~~~~~
+Igen, a cél az, hogy a teljes mérés ne fusson le mindig. A sorrendet viszont te magad szabtad meg, ezért most még lefut:
+
+- **Amit mondtál:** a DELTA csak shadow módban indul a teljes PR- és `main`-kapuk mellett, és a teljes kapukat nem kapcsolhatom ki, amíg a szelektor helyessége és gazdaságossága nem bizonyított.
+- **Mit épít az A lépés:** nem a kihagyást, hanem az alapját: egy ellenőrizhető rekordot arról, hogy egy commiton a teljes mérés lefutott és átment. Ez nélkül egy "kihagyhatjuk, mert a baseline zöld" állítás üres lenne, mert senki sem tudná bizonyítani, hogy a baseline tényleg zöld.
+- **Mikor spórolunk valójában:** a B lépés után van napi anchor, az E–F lépésben a shadow-jelentés mutatja, mit választana ki a DELTA és mennyibe kerülne, és a G lépésben döntesz a mérések alapján. Addig a PR-ok teljes mérést kapnak.
+
+**Már most is kimarad, ami biztonságosan kimaradhat:** a `p1` PR-on `paths`-szűrővel fut, így egy csak dokumentumot érintő PR nem indítja. Ez a #27-nél is látszott.
+
+Ha gyorsabban szeretnél tényleges megtakarítást, két lehetőség van, amelyek nem érintik a bizonyítási láncot:
+1. **A sharding kiegyensúlyozása** (a terv S lépése): a Rust mutáció 29 percből ~10-re mehet, ha egyenletesen osztjuk szét az időtúllépő mutánsokat. Ez a teljes mérést gyorsítja, nem hagy ki semmit.
+2. **Tartalom-alapú kihagyás a `main` push-on**: ha a commit csak dokumentumot érint, a `main` push nem kell, hogy teljes mérést futtasson. Ez kisebb, jól körülhatárolt szabály, de külön döntés, mert a `main` kapu mostani szemantikáját módosítja.
+
+Melyiket szeretnéd előrehozni, vagy maradjon a terv sorrendje?
+~~~~~
+
+
+### 2026-10-19 23:04 — Claude
+
+~~~~~
+Ez a régi figyelő (`b7mjxo3x3`) lejárata volt, az előző HEAD-re szólt. A jelenlegi (`bn3jz9yy5`) figyeli a #28-at az új HEAD-en. A kérdésemre (S lépés előrehozása, `main` push dokumentum-szűrés, vagy a terv sorrendje) a válaszodat várom.
+~~~~~
+
+
+### 2026-10-19 23:10 — Claude
+
+~~~~~
+A PR #28 CI-ja az új HEAD-en teljesen zöld: `55ea9ba4f906c2c0200c02f8a358fe025401737e`, 21 check-run mind sikeres, a PR nyitott és mergelhető. Merge nincs.
+
+**Az A lépés ellenpróbái a CI-n (`evidence-selftest`)**
+- **Tesztek:** 43 teszt OK.
+- **Go-vektorok:** `canon-go`: 63 vektor, 0 eltérés.
+- **Seeded defect:** 55 szándékos hiba, mind elkapva, köztük a három blokkolóhoz tartozó 15.
+- **`gh attestation verify` kapcsolók:** a négy használt kapcsoló (`--repo`, `--signer-workflow`, `--source-ref`, `--source-digest`) a CI `gh`-jában létezik.
+
+**A meglévő kapuk számai** ugyanazok, mint a `main`-en: Rust line 98,69% (1279/1296), Go 100% (601/601), Rust mutáció 99,77% (438/439), Go 97,82% (806/824). A küszöböket nem érintettem, a B lépés hatóköréhez nem nyúltam.
+
+**A korábbi kérdésem még nyitott:** előrehozzam-e a shard-kiegyensúlyozást (S lépés), vagy bevezessem-e a dokumentum-csak commitok kihagyását a `main` push-on, vagy maradjon a terv sorrendje (A merge, B külön review). A #28 merge-engedélyét a konkrét HEAD-re várom.
+~~~~~
+
+
+### 2026-10-19 23:13 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+## PR #28 — APPROVED FOR MERGE
+
+A konkrét HEAD-re megadom a merge-engedélyt.
+
+A [PR #28](https://github.com/CentralInfraCore/cic-primitive-forms/pull/28?utm_source=chatgpt.com) állapotát közvetlenül ellenőriztem a GitHubon.
+
+ENGEDÉLYEZETT HEAD
+
+`55ea9ba4f906c2c0200c02f8a358fe025401737e`
+
+21/21 check
+
+PASS
+
+PR állapota
+
+Nyitott, mergelhető
+
+Korábbi blokkolók
+
+3/3 rendezve
+
+Célág HEAD
+
+`e7e1fa30`
+
+Az `evidence-selftest` és valamennyi eredeti FULL CI-kapu zöld. A 43 teszt, a 63 kanonizációs vektor és az 55/55 elkapott szándékos hiba mellett a korábbi három hibát javító implementációt is megfelelőnek látom.
+
+### Merge-utasítás
+
+```
+gh pr merge 28 \
+  --repo CentralInfraCore/cic-primitive-forms \
+  --squash \
+  --match-head-commit 55ea9ba4f906c2c0200c02f8a358fe025401737e
+```
+
+A branch maradjon meg. Más HEAD-re nem érvényes az engedély.
+
+## A következő munkasorrendről is döntök
+
+Maradjon A → B → S → C0 → C.
+
+| Feladat                                                      | Döntés                |
+| ------------------------------------------------------------ | --------------------- |
+| A — Evidence verifier                                        | Merge engedélyezve    |
+| B — FULL evidence előállítás, Sigstore, napi FULL, védett ág | Következő külön PR    |
+| S — Shard-kiegyensúlyozás, cache                             | B után, C előtt       |
+| Docs-only commitok FULL-kihagyása                            | Most nem engedélyezem |
+| C0 — Go-mutánsazonosító költségvizsgálat                     | S után                |
+
+A dokumentáció-only commitok kihagyásával most pont azt a szerződést lazítanánk fel, amelynek bizonyítási rendszerét építjük. A kötelező napi FULL és a `main`-re történő push utáni FULL maradjon. Később ez külön, bizonyítékokkal alátámasztott optimalizációs döntés lehet.
+
+A shard-kiegyensúlyozás hasznos, de jelenleg nem blokkolja a FULL működését. A B lépés sokkal fontosabb: ott derül ki, hogy az A-ban elkészült verifier valóban képes-e ellenőrizni egy éles, tartósan tárolt, attesztált FULL rekordot.
+
+Tehát: #28 merge, `main` CI ellenőrzés, naplófrissítés, majd B külön PR-ban. A B infrastruktúra merge-jét a tényleges aláírási, publikálási és jogosultsági negatív próbák alapján fogjuk eldönteni.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-19 23:13 — Claude
+
+~~~~~
+A HEAD pontosan `55ea9ba4…`, a `main` változatlanul `e7e1fa30`, 21/21 check sikeres. Futtatom a megadott merge-et, branch-törlés nélkül.
+~~~~~
+
+
+### 2026-10-19 23:13 — Claude
+
+~~~~~
+A #28 mergelve van: `c9580ef90795dc1aab2aeeb2797fa178c4017ed0` (squash, a branch megmaradt). Most a `main` CI-ját várom.
+~~~~~
+
+
+### 2026-10-19 23:13 — Claude
+
+~~~~~
+Várom a `main` CI végét. Utána frissítem a `theads/` naplót, és rátérek a B lépés tervezésére. A B-ben vannak olyan elemek, amelyekhez a te döntésed vagy közreműködésed kell: GitHub App létrehozása és telepítése, védett ág és ruleset a repóban. Ezeket nem hozom létre egyoldalúan, csak a PR-t készítem elő, és külön jelzem, mit kell neked beállítanod.
+~~~~~
+
+
+### 2026-10-19 23:14 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 23:14 — Claude
+
+~~~~~
+Állás:
+
+- **Mergelve:** a #28 (A lépés) `c9580ef90795dc1aab2aeeb2797fa178c4017ed0`-val a `main`-en, a feature branch megmaradt.
+- **`main` CI:** a `p1` és a `corpus` fut a merge commitján (3 job kész, 16 fut), eddig nincs piros.
+- **Új jelenség:** egy `Graph Update: go_modules` Dependabot-futás indult a `tools/test-evidence/canon-go` modulra, mert a Go-modul új `go.mod`-ot hozott. Ez sikeresen lefutott, tehát a Dependabot észlelte a modult. Ha később PR-okat nyit rá, azt külön kell kezelni.
+- **Hátra:** a `main` CI végének megvárása, a `theads/` napló frissítése, majd a B lépés külön PR-ban.
+
+A B lépésnél jelzem előre, hogy mit nem tudok egyedül megcsinálni: a GitHub App létrehozása és telepítése, a `ci-evidence` ág védelme és a ruleset repository-adminisztrációs beállítások. Ezek külső, nem visszavonhatatlanul egyszerű változtatások, ezért csak a te jóváhagyásoddal csinálom, és a kódot, a workflow-kat meg a negatív próbákat előbb PR-ban készítem elő.
+~~~~~
+
+
+### 2026-10-19 23:16 — Felhasználó
+
+~~~~~
+csináld
+~~~~~
+
+
+### 2026-10-19 23:16 — Claude
+
+~~~~~
+Értem, megyek tovább: előbb a `main` CI vége és a napló, aztán a B lépés előkészítése.
+~~~~~
+
+
+### 2026-10-19 23:17 — Claude
+
+~~~~~
+Várom a `main` `p1` végét. Közben a B lépéshez feltérképeztem az alapot: öt külső action van használatban (`checkout@v4`, `setup-go@v5`, `setup-python@v5`, `upload-artifact@v4`, `download-artifact@v4`), ezeket kell SHA-ra rögzíteni a B-ben. A `main` CI és a napló után a B tervét és a hozzá szükséges, általad elvégzendő beállításokat egy rövid összefoglalóban küldöm el, mielőtt bármit létrehoznék a repóban.
+~~~~~
+
+
+### 2026-10-19 23:17 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 23:18 — Claude
+
+~~~~~
+Állás:
+
+- **Mergelve:** #28 (`c9580ef…`), a `main`-en.
+- **`main` CI:** a `corpus` zöld, a `p1` fut: 9 job sikeres, 10 fut (a mutációs shardok és a `fuzz`), nincs piros.
+- **Következő:** a CI vége, a `theads/` napló frissítése, utána a B lépés.
+
+A mutációs shardok miatt a `p1` még néhány percig tart. Amint kész, folytatom a napló frissítésével.
+~~~~~
+
+
+### 2026-10-19 23:30 — Felhasználó
+
+~~~~~
+vidd végig a folyamatot
+~~~~~
