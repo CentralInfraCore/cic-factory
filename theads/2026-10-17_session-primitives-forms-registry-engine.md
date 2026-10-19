@@ -13213,3 +13213,343 @@ végzett
 ~~~~~
 A `main` CI teljesen zöld: `p1` 19/19 job és a `corpus` sikeres a `ace0740d…`-on. Jön a `theads/` napló frissítése.
 ~~~~~
+
+
+### 2026-10-19 21:45 — Claude
+
+~~~~~
+A `main` CI zöld, és a `theads/` napló frissítve.
+
+- **`main` CI `ace0740d…`-on:** a `p1` mind a 19 jobja és a `corpus` sikeres.
+- **Napló:** a `theads/2026-10-17_session-primitives-forms-registry-engine.md` regenerálva a session transcriptből (497 üzenet, 31 PR-hivatkozás, 13 215 sor). Commit előtt secret-scan, nincs találat. A cic-factory `main`-re commitolva és pusholva (`141b8c5`, aláírva).
+
+A #25 és #26 lezárása kész: a #25 squash-mergelve (`ace0740…`), a #26 superseded megjelöléssel lezárva.
+
+**Következő lépés:** a FULL/DELTA evidence-rendszer terve külön, review-zható dokumentumban. A három részre bontást átveszem:
+1. FULL evidence: tartós rekord a sikeres teljes mérésről, commit- és környezetazonossággal.
+2. DELTA shadow mode: a legutóbbi FULL baseline és a merge-jelölt kumulatív változásaiból választ mutánsokat, egyelőre csak jelent.
+3. Szelektor-önteszt: beültetett változtatásokkal bizonyítja, hogy releváns teszt vagy mutáns nem marad ki észrevétlenül.
+
+A FULL kötelező marad, amíg a DELTA szelekciót nem bizonyítottuk. A küszöböket és a teljes PR-kapukat nem érintem. Mielőtt nekilátok, szólj, ha a tervet a forms-repo `docs/`-ába vagy külön helyre (például artifactként) kéred.
+~~~~~
+
+
+### 2026-10-19 21:45 — Felhasználó
+
+~~~~~
+írd meg a FULL/DELTA tervet a forms docs-ba
+~~~~~
+
+
+---
+**▶ PR cic-primitive-forms#27** — 2026-10-19 21:47 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/27
+---
+
+
+### 2026-10-19 21:47 — Claude
+
+~~~~~
+A FULL/DELTA terv megvan a `docs/FULL-DELTA-PLAN.md`-ben: https://github.com/CentralInfraCore/cic-primitive-forms/pull/27 (docs-only, kód nincs, merge nélkül). A branch és a commit `27f3ba489eadc29b1b0d0b13ff7599eebe0c3b67`.
+
+**Tartalma** (292 sor, tisztán ASCII):
+- **Az eddigi döntések** átvéve, nem újranyitva: shadow mode a teljes kapuk mellett, kötelező napi FULL a `main`-en, nincs visszaesés régebbi zöldre, kanonikus tartalom-hash-elt JSON a védett `ci-evidence` ágon Sigstore-attesztációval, nincs Vault Transit, az ős-baseline és a kumulatív `baseline..target` hatás.
+- **FULL evidence:** a `test-evidence/1` rekord mezői, a kanonikus forma és a hash, a validity key (szándékosan nyers: a lista bármely változása FULL-t jelent), és hétlépéses ellenőrzés, ahol bármelyik hiba azt jelenti, hogy nincs érvényes rekord.
+- **Mutánsonkénti ítéletek és stabil azonosító:** a mostani nevek sorszámot hordoznak, a Go-shardszkript azonosítója pedig a teljes mutált fájl digestje, ezért egyik sem stabil commitok között.
+- **DELTA:** egy mutáns újrafut, ha új, ha a függvénye változott, ha egy őt lefedő teszt változott kódot futtat, vagy ha teszt- vagy adatfájl változott (akkor az összes). Ha a szelektor nem tud valamit leképezni, mindent kiválaszt. A DELTA sosem dönt `main`-en.
+- **Bizonyítás:** ground-truth sorozat a FULL ellen, negatív próbák a rekordra (egy bájt, rossz aláíró, nem ős, más kulcs, lejárt) és a shadow-összevetés, ami csak biztonságtalan eltérésre piros.
+- **Munkarend:** A–G, mindegyik külön PR.
+
+**Ahol a terv őszinte önmagával:**
+- A C lépés (stabil mutánsazonosító, főleg Go-ra) a legbizonytalanabb, és kiderülhet, hogy a mutáció DELTA-ja többe kerül, mint amennyit nyer.
+- A sharding után a FULL 10–29 perc, és a 29 egyensúlyi hiba. Az újrakiegyensúlyozás, rövidebb timeout, eszköz-cache és több Go-shard olcsóbb a DELTA-nál és független tőle. Te döntöd el, jöjjenek-e a C lépés előtt.
+
+**Hat nyitott döntés a tulajdonosra**, mind javasolt alapértékkel: érvényességi ablak (3 nap), ki pusholhat a `ci-evidence` ágra, attesztációs eszköz, a lefedettségi térkép a rekordban vagy mellette, a Go-azonosító költsége, és a gyorsítások sorrendje.
+
+Implementációt nem kezdtem. A következő lépést (A: rekordformátum és verifier) akkor indítom, ha a tervet elfogadod vagy módosítod.
+~~~~~
+
+
+### 2026-10-19 21:53 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+## PR #27 — Tervreview
+
+A [PR #27](https://github.com/CentralInfraCore/cic-primitive-forms/pull/27?utm_source=chatgpt.com) teljes, 292 soros tervét elolvastam, a `27f3ba489eadc29b1b0d0b13ff7599eebe0c3b67` HEAD-en.
+
+Döntésem: az architektúrát elfogadom, de a tervdokumentumot néhány ponton módosítanám az implementáció megkezdése előtt.
+
+A tervezett A–G felbontás jó. Kifejezetten helyes, hogy az A–B lépés önálló értéket teremt, és a DELTA gazdaságossága nincs előre adottnak tekintve.
+
+A három legerősebb döntés szerintem:
+
+- A FULL evidence nem egy CI-zöld állapot, hanem ellenőrizhető, commitra és mérési környezetre kötött bizonyíték.
+- A DELTA a teljes `baseline..target` változáshalmazból dolgozik, és a bizonytalan hatás nem jogosít tesztkihagyásra.
+- A szelektor helyességét nem pusztán saját tesztjeivel, hanem teljes futásokból származó ellenpéldákkal vizsgáljuk.
+
+Viszont a terv jelenlegi formájában még nem elég pontos a hibás FULL utáni baseline-kezelés, az ellenőrzési hatókör és a kódváltozások közvetett hatásának kezelésében.
+
+## Négy módosítás, amit még kérnék
+
+### 1. A sikertelen FULL-nak meg kell szakítania a baseline érvényességét
+
+A terv szerint egy sikertelen napi FULL után a korábbi rekordok csak az érvényességi ablak végén járnak le. A shadow-job pedig a legújabb sikeresen verifikálható rekordot keresi.
+
+Ez megengedi, hogy egy hétfői hibás FULL után a vasárnapi sikeres FULL legyen a keddi DELTA alapja. Ez szembemegy a korábbi, régebbi zöldre vissza nem lépő döntéssel.
+
+Módosítás: a verifiernek a legutóbbi esedékes, megbízható FULL-futás állapotát is ellenőriznie kell. Sikertelen, elmaradt vagy bizonytalan állapotú kötelező futás után nem léphet vissza egy korábbi sikeres rekordra.
+
+A terv 5.1 pontja helyesen írja, hogy a sikertelen FULL-ról is maradjon bizonyíték. Az 5.6 pont viszont azt mondja, hogy hibás futás esetén nem születik új rekord. Ezt össze kell hangolni.
+
+Különösen fontos, hogy a GitHub dokumentációja szerint az ütemezett workflow késhet, sőt egyes ütemezett futások el is maradhatnak. Ezért a napi horgonyt nem elegendő pusztán egy cron-bejegyzéssel megvalósítani.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.github.com\&sz=32)
+
+GitHub Docs
+
++1
+
+
+
+### 2. A DELTA kiválasztása nem zárható kizárólag függvényhatárok közé
+
+A 6.2–6.3 pont a függvénytörzsek változásaira és a tesztek lefedettségi térképére épül.
+
+Mi történik például, ha egy másik fájlban megváltozik egy globális konfiguráció, konstans, inicializáló vagy generált kód?
+
+Egy változatlan függvény mutánsának ítélete ettől megváltozhat akkor is, ha maga a függvény érintetlen.
+
+A jelenlegi „ismeretlen változás → az adott fájl minden mutánsa” szabály ehhez túl szűk.
+
+Módosítás: ha egy megváltozott elem hatása nem képezhető bizonyítottan a tesztekre és a mutánsokra, akkor nem fájlszintű, hanem teljes mutációs fallback kell. A függvényenkénti optimalizáció csak bizonyított dependency- és coverage-határokon belül használható.
+
+A target teljes mutánshalmazát ettől függetlenül újra enumerálni kell, hogy a megszűnt, új és áthelyezett mutánsok ne torzíthassák a DELTA nevezőjét.
+
+### 3. A FULL evidence pontos hatókörét le kell zárni
+
+A dokumentum egyszer a teljes CI ellenőrzéséről beszél, máshol a quality-gate négy méréséről.
+
+Ez nem ugyanaz.
+
+A javaslatom: a `test-evidence/1` rekordban külön szerepeljen a quality FULL és a teljes kötelező ellenőrzés eredménye. A napi FULL akkor hiteles teljes horgony, ha az összes előírt corpus-, parser-parity-, property-, fuzz-, coverage-, mutation- és önellenőrző kapu teljesítése ellenőrizhető.
+
+Emellett a PR targetje ne csak a feature branch HEAD-je legyen, hanem az adott célágállapottal képzett merge-jelölt. A FULL és DELTA összevetésének ugyanarra a ténylegesen ellenőrzött kódállapotra kell vonatkoznia.
+
+### 4. Az érvényességi kulcsból hiányzik a tényleges végrehajtási környezet egy része
+
+A jelenlegi workflow-k `stable` Rust toolchaint és például `ubuntu-latest` runnert használnak. Ezek címkék, nem változhatatlan környezetazonosítók.
+
+A rekord ezért tartalmazza a ténylegesen feloldott toolchainverziókat, a runner image azonosítóját, az alkalmazott action-revíziókat és az ellenőrzés teljes harness-scope-ját is.
+
+A canonical JSON specifikációját is pontosítanám: legyen egyetlen deklarált bájtszintű formátum, ismert tesztvektorokkal, duplikált JSON-kulcsok szigorú elutasításával. Ne pusztán arra építsünk, hogy a kanonizálás néhány sor Pythonban.
+
+## A hat tulajdonosi döntésem
+
+| Kérdés                  | Döntés                                                                                                                                                |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Evidence érvényesség | 3 nap maximális kor. De a legutóbbi kötelező FULL sikertelensége vagy hiánya azonnal kizárja a régebbi baseline használatát.                          |
+| 2. `ci-evidence` írása  | Dedikált GitHub App-identitás, korlátozott jogosultsággal, védett ággal és ellenőrzött publikáló workflow-val.                                        |
+| 3. Attesztáció          | GitHub Artifact Attestations / Sigstore, változhatatlan revízióra rögzített actionökkel, pontos workflow-, repository-, ref- és commit-ellenőrzéssel. |
+| 4. Coverage map         | A rekordban csak digest, méret és objektumhivatkozás; maga a térkép külön artifact. Hiánya vagy digesthibája esetén nincs DELTA.                      |
+| 5. Go mutánsazonosító   | Először megvalósíthatósági és költségvizsgálat. Ha túl drága vagy nem bizonyíthatóan stabil, a Go-mutáció marad FULL.                                 |
+| 6. Gyorsítás sorrendje  | Cache és shardkiegyensúlyozás a C lépés előtt, külön PR-ban. Utána a stabil ID-k vizsgálata és a DELTA.                                               |
+
+A második döntésnél ellenőriztem a repository aktuális állapotát: jelenleg nincs `ci-evidence` ág és nincs aktív repository ruleset. Ezeket a B lépésben ténylegesen ki kell építeni, nem elegendő dokumentálni.
+
+A GitHub ruleset támogat alkalmazásalapú kivételeket, a `gh attestation verify` pedig tud konkrét aláíró workflow-t és forrásidentitást ellenőrizni.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.github.com\&sz=32)
+
+GitHub Docs
+
++1
+
+&#x20;Az alkalmazás jogosultságait és az ág tényleges védelmét viszont külön negatív próbával is ellenőrizni kell.
+
+
+
+Egy gyorsítási ötletet kifejezetten kivennék az automatikusan elfogadhatók közül: a mutációnkénti timeout csökkentését. A jelenlegi Rust-kapu a timeoutot elkapott mutánsnak számolja. Rövidebb timeouttal könnyen javulhat a mérési idő és a pontszám anélkül, hogy több hibát fognának el a tesztek. Ez külön szemantikai döntés, nem ártalmatlan optimalizáció.
+
+## Javasolt végrehajtási döntés
+
+PR #27: ACCEPTED WITH CHANGES.
+
+Nem kell az architektúrát újratervezni. A négy pontosítást és a hat döntést bele kell vezetni a tervbe. Utána a docs-only PR merge-elhető, és elindítható az A lépés: `test-evidence/1` rekordformátum, kanonizálás, validity key, verifier és negatív ellenpróbák.
+
+A B lépés publikálási és aláírási infrastruktúráját külön review-ban tartanám.
+
+PR #27 — ACCEPTED WITH CHANGES
+
+A terv architektúráját és az A–G munkafelbontást elfogadom. Implementáció még ne induljon, előbb az alábbi módosítások kerüljenek a tervdokumentumba.
+
+**Baseline:** A háromnapos érvényességi ablak felső korlát. Sikertelen, elmaradt vagy ellenőrizhetetlen kötelező FULL után nem szabad visszalépni korábbi sikeres baseline-ra. A legutóbbi esedékes FULL állapota is legyen ellenőrizhető. A sikertelen futás auditrekordja különüljön el a felhasználható baseline-tól.
+
+**FULL scope:** A quality FULL és a teljes kötelező CI ellenőrzés eredménye legyen megkülönböztetve. A PR-célállapot a konkrét merge-jelölt legyen, nem pusztán a feature branch HEAD.
+
+**DELTA soundness:** Nem leképezhető globális, konfigurációs, generált vagy más fájlokra átterjedő változás esetén teljes mutációs fallback szükséges. A target mutánshalmazának önálló enumerációja kötelező.
+
+**Validity key:** Tartalmazza a ténylegesen feloldott toolchain-, runner- és action-azonosságokat, valamint az összes releváns tesztharness verzióját és bemenetét. A JSON kanonizálás pontos, tesztvektorokkal ellenőrizhető szerződés legyen.
+
+**Tulajdonosi döntések:** 3 napos maximális baseline-kor; dedikált GitHub App-alapú evidence-írás; GitHub/Sigstore attesztáció szigorú identitásellenőrzéssel; coverage map külön, digesthez kötött artifactban; Go mutánsazonosítónál megvalósíthatósági vizsgálat és szükség esetén FULL; cache és shardkiegyensúlyozás a C lépés előtt.
+
+A mutációs timeoutot ne csökkentsd pusztán gyorsítás céljából, mert az a jelenlegi pontszám szemantikáját is érinti.
+
+Kérem a terv módosított HEAD-jét review-ra. Ha a dokumentum ezeket megfelelően rögzíti, engedélyezem a PR #27 merge-jét és utána az A lépés külön PR-ban történő megkezdését.
+
+A meglévő FULL kapukhoz és küszöbökhöz továbbra se nyúlj.
+
+És még egy lényeges észrevétel: a shardinggal a FULL már jelentősen gyorsult. Ez azt jelenti, hogy a DELTA-nak most valóban bizonyítania kell a saját gazdaságosságát. Ha a megbízható impact-analízis és mutánsazonosítás többe kerül, mint a teljes futás, akkor a helyes mérnöki döntés a FULL megtartása — az A–B lépéssel létrehozott bizonyítási infrastruktúra ettől még értékes marad.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-19 21:53 — Claude
+
+~~~~~
+Elfogadom a review-t. A tervet átírom a négy módosítás és a hat döntés szerint, implementáció nélkül. A teljes dokumentumot újraírom, mert a baseline-kezelés, a hatókör és az érvényességi kulcs több szakaszt érint.
+~~~~~
+
+
+### 2026-10-19 21:55 — Claude
+
+~~~~~
+A terv módosított HEAD-je a PR #27-en: `bc489cf5f22d5d08fb3d220dd6d3dec2123a9222` (409 sor, tisztán ASCII, a `corpus` check fut rajta). Implementációt nem kezdtem, merge nincs.
+
+**A négy módosítás**
+1. **Sikertelen vagy elmaradt FULL megszakítja a láncot** (5.6, 5.7).
+   - Egy baseline akkor használható, ha van rekord a legutóbbi esedékes naphoz (UTC, 06:00-kor esedékes), a legújabb rekord sikeres anchor, és nem követi hiba. Legfeljebb 3 napos lehet.
+   - A sikertelen futás külön audit-rekord, a hétfői hiba után tehát a vasárnapi siker keddre sem baseline. Bizonytalan állapotban semmi sem használható, és a válasz FULL.
+   - A cron önmagában nem horgony: az elmaradt nap hibának számít, a watchdog elindítja a FULL-t, a publikálás nélküli sikeres futás is elmaradtnak számít.
+2. **DELTA hatókör** (6.2). A target mutánshalmazát önállóan újra enumeráljuk, ez a nevező. Minden olyan változás, ami nem teljesen függvénytörzsön belüli (konstans, static, inicializáló, makró, generált kód, fixture, konfig), teljes mutációs fallbacket kap, nem fájlszintűt. A függvényenkénti szabály csak bizonyított coverage-határokon belül él.
+3. **FULL hatókör** (5.1, 5.8). A rekord külön tartalmazza a quality FULL-t és a teljes `required-checks.yaml` lista eredményét. Anchor csak akkor, ha mind sikeres. A PR targetje a merge-jelölt, és a FULL, a DELTA és az összevetés ugyanarra a fára vonatkozik.
+4. **Validity key és kanonikus JSON** (5.2, 5.3).
+   - A kulcs a feloldott toolchain-verziókat, a runner image-et, az action-revíziókat (SHA-ra pinnelve) és a teljes harness-hatókört tartalmazza.
+   - A JSON egyetlen deklarált bájtformátum (RFC 8785 részhalmaz), szigorú olvasóval, duplikált kulcs elutasításával, és két független implementáció olvassa ugyanazokat a tesztvektorokat.
+
+**A hat döntésed** a 2. szakaszban döntésként szerepel. A mutációnkénti timeoutot külön kimondtam: gyorsításként nem csökkentjük, mert a pontszám jelentését érinti. A cache és a shard-kiegyensúlyozás az új S lépés a C előtt. A Go-azonosító C0-ban megvalósíthatósági vizsgálat. A DELTA gazdaságosságát a shadow-jelentés méri (6.6), és ha nem fizetődik ki, a FULL marad a kapu, az A–B pedig önállóan értékes. A repóban jelenleg nincs `ci-evidence` ág és ruleset, ezt a terv is rögzíti: a B lépésben kell kiépíteni, és valódi negatív próbával (rossz token, más workflow, force push, törlés) bizonyítani.
+
+A PR-leírást is átírtam erre. Ha a dokumentum megfelel, a merge-engedélyedet várom, külön HEAD-hez kötve. Utána az A lépés külön PR-ban indulhat.
+~~~~~
+
+
+### 2026-10-19 21:58 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+## PR #27 — APPROVED FOR MERGE
+
+A módosított tervet elfogadom. Merge engedélyezve.
+
+A [PR #27](https://github.com/CentralInfraCore/cic-primitive-forms/pull/27?utm_source=chatgpt.com) teljes, 409 soros dokumentumát ellenőriztem.
+
+ENGEDÉLYEZETT HEAD
+
+Corpus PASS
+
+`bc489cf5f22d5d08fb3d220dd6d3dec2123a9222`
+
+Módosított fájlok
+
+1 — csak dokumentáció
+
+PR-állapot
+
+Nyitott, mergelhető
+
+Korábbi review-pontok
+
+4/4 rendezve
+
+### Amit elfogadok
+
+A FULL-lánc megszakításának kezelése, a teljes mutációs fallback, a merge-jelölt azonosítása és az evidence környezeti kötése immár következetes szerződést alkotnak.
+
+Különösen fontos, hogy a terv kimondja: a target mutánshalmaza nem származhat a baseline-ból, és a DELTA nem kaphat döntési jogot addig, amíg a szelektor helyessége és gazdaságossága nem bizonyított.
+
+### Egy fontos megjegyzés a B lépéshez
+
+A 7.4 pontban szerepel, hogy egy másik workflow még ugyanazzal a GitHub App-identitással se tudjon pusholni.
+
+A GitHub ruleset az App-identitást tudja megkülönböztetni, nem azt, hogy az adott App-token melyik workflow-ból származik.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.github.com\&sz=32)
+
+GitHub Docs
+
++1
+
+
+
+Ezért a B implementáció review-jában külön ellenőrizni kell a tokenkibocsátás izolációját és az attesztáció workflow-identitáshoz kötését. Ezt nem tekintem a terv PR-jának merge-blokkolójának, de a B lépés lezárásának feltétele lesz.
+
+### Merge-utasítás
+
+```
+gh pr merge 27 \
+  --repo CentralInfraCore/cic-primitive-forms \
+  --squash \
+  --match-head-commit bc489cf5f22d5d08fb3d220dd6d3dec2123a9222
+```
+
+Más HEAD-re ez az engedély nem érvényes.
+
+A merge után az A lépés külön PR-ban indulhat: `test-evidence/1` szerződés, kanonikus JSON, két független implementációval ellenőrzött tesztvektorok, validity key, verifier és negatív ellenpróbák.
+
+A B infrastruktúráját még ne építsük hozzá az A PR-hez.
+
+Ez most már nem pusztán tesztgyorsítási terv. Egy olyan ellenőrizhető bizonyítékrendszer terve, amelynek a DELTA később csak egy opcionális, igazolásra kötelezett optimalizációja lesz.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-19 21:59 — Claude
+
+~~~~~
+A HEAD pontosan `bc489cf5…`, a `corpus` check zöld, a PR mergelhető és csak a dokumentum változik (409 sor). Futtatom a megadott, HEAD-hez kötött merge-et.
+~~~~~
+
+
+### 2026-10-19 22:00 — Claude
+
+~~~~~
+A PR #27 mergelve van `main`-be: `e7e1fa30af0fb7f59c87e252726b38501c72e438` (squash, a HEAD-hez kötött paranccsal, branch-törlés nélkül, ahogy a parancsod mondta). A `main` `e7e1fa3` commitján a `corpus` zöld, a `p1` még fut.
+
+- **Terv a `main`-en:** `docs/FULL-DELTA-PLAN.md`, 409 sor. Az A lépés külön PR-ban indulhat (rekordformátum, kanonikus JSON két implementációval, validity key, verifier, negatív ellenpróbák). A B infrastruktúrát nem építem hozzá.
+- **A B lépéshez a megjegyzésed rögzítve:** a ruleset az App-identitást különbözteti meg, nem azt, hogy melyik workflow kapta a tokent. Ezért a B review-jában külön kell ellenőrizni a tokenkibocsátás izolációját és az attesztáció workflow-identitáshoz kötését. Ez a B lezárásának feltétele, a terv PR-jának nem volt blokkolója.
+- **Memória:** két bejegyzést mentettem. Az egyik a terv állapota, a döntések és a következő lépés (A, B külön). A másik egy tanulság: szövegszintű visszautasító szabály előtt exhaustív emit→parse ellenőrzés és fuzz kell, mert ebben a munkában négy ilyen hamis refusal jutott CI-ig.
+
+Hátra van még a `main` `p1` CI-jának vége. Az után a `theads/` naplót frissítem (a #27 lezárása), és megkérdezem, indulhat-e az A lépés PR-ja.
+~~~~~
+
+
+### 2026-10-19 22:05 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+Megerősítve: a PR #27 sikeresen bekerült a `main` ágba.
+
+A GitHubon ellenőriztem:
+
+- Merge SHA: `e7e1fa30af0fb7f59c87e252726b38501c72e438`
+- Corpus: sikeres.
+- P1: az ellenőrzés pillanatában még futott.
+- Terv: a `docs/FULL-DELTA-PLAN.md` immár a `main` része.
+
+A munkasorrenddel egyetértek: előbb a `main` P1-kapuinak lezárása, majd a `theads/` napló frissítése.
+
+Az A lépés indítását előzetesen engedélyezem, amint a `main` P1 minden kötelező kapuja zöld. Nem szükséges újra megkérdezni az indulást; az elkészült A PR-t viszont külön review-zni kell, és merge-engedélyt csak a konkrét HEAD ellenőrzése után adok.
+
+Az A lépésnél a legfontosabb elvárásom: ne csak egy helyesnek vélt evidence-formátumot építsünk, hanem olyan verifiert, amelynek minden bizalmi határa negatív ellenpróbával igazolt. A két független JSON-implementáció pontosan ezt az irányt szolgálja.
+
+A B infrastruktúra továbbra is külön feladat marad. Nem akarom, hogy a formátum és az ellenőrzési szerződés összekeveredjen a GitHub-jogosultságokkal, tokenkezeléssel vagy a publikálási folyamattal.
+
+Ezzel a CIC Forms fejlesztésében most már a tesztelési minőségről átlépünk a tesztelési eredmények bizonyítható hitelességének megvalósításába.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-19 22:05 — Claude
+
+~~~~~
+Várom, hogy a `main` P1 minden kapuja zöld legyen. Az A lépést akkor indítom, ahogy engedélyezted, előtte lezárom a `theads/` naplót.
+~~~~~
