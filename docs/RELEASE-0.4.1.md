@@ -21,10 +21,10 @@ A `check-docs.sh` D1, D2 és D4 szabálya minden követett `*.md`-t dokumentáci
 tekintett a `jobs/<id>/` archívumon kívül. Egy session-transcript viszont napló:
 azt rögzíti, ami elhangzott, és nincs mihez igazodnia.
 
-Az átvevő cic-factory-ban a D4 egy transcriptben idézett `C17`-et jelzett. Az a
-`C17` egy másik repo (cic-primitives) szabálya volt, amiről a session szólt, nem a
-`close-job.sh` kapuja. A checker a tokent látja, a kontextust nem — négy egymás
-utáni `main` push bukott emiatt.
+Az átvevő cic-factory-ban a D4 egy transcriptben idézett, `C`-betűs szabály-azonosítót
+jelzett. Az egy másik repo (cic-primitives) szabálya volt, amiről a session szólt,
+nem a `close-job.sh` kapuja. A checker a tokent látja, a kontextust nem — négy
+egymás utáni `main` push bukott emiatt.
 
 ## Mi változott
 
