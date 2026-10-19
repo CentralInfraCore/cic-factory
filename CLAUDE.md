@@ -36,6 +36,25 @@ került a magba.
 
 ---
 
+## Session-napló (thread log)
+
+Minden interaktív session (nem factory-job) egy naplót kap a [`theads/`](theads/)
+alatt: `theads/YYYY-MM-DD_session-<téma>.md`.
+
+- **Csak transcript:** a felhasználó üzenetei (beillesztett külső review-kkal,
+  szó szerint) és a válaszok, időrendben, UTC. Eszközhívás és kimenet,
+  rendszer-emlékeztető, task-notification nem kerül bele.
+- **Menet közben vezetve:** a napló a session alatt gyarapodik, nem a végén készül.
+- **Lezárt PR-onként commitolva:** a napló frissítése megy a PR lezárása utáni
+  commitba. Visszamenőleg dátumozott vagy hamis commit nincs; ha a napló utólag
+  készül (a transcriptből), a fejléce ezt kimondja.
+- **Nem helyettesít semmit:** a PR-ok és a git-történet marad a forrás; a napló
+  az interakció nyoma. Ide nem kerül titok (token, kulcs) — commit előtt át kell nézni.
+- A session `.jsonl` transcriptje a forrás utólagos előállításhoz; a `theads/`
+  README-je rögzíti a nevezéktant.
+
+---
+
 ## Ökoszisztéma térkép
 
 **Olvasd el session elején:** [`docs/ecosystem-map.md`](docs/ecosystem-map.md)
