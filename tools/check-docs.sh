@@ -48,7 +48,13 @@ def is_job_artifact(path):
     # whatever rules applied at the time. Retroactively editing it to satisfy a
     # rule invented later would damage the evidence it exists to preserve.
     # jobs/.schema/ is not an artifact -- it is the contract.
+    # theads/ holds session transcripts: logs of manual runs, not documentation.
+    # They record what was said at the time and have nothing to stay consistent
+    # with; a rule id quoted there (e.g. another repo's C17) is not a claim
+    # about this repo's gates.
     parts = path.split("/")
+    if parts[0] == "theads":
+        return True
     return len(parts) > 2 and parts[0] == "jobs" and parts[1] != ".schema"
 
 
@@ -94,6 +100,8 @@ pat = re.compile(r'```ya?ml\n(.*?)```', re.S)
 out = []
 def is_job_artifact(path):
     parts = path.split("/")
+    if parts[0] == "theads":
+        return True
     return len(parts) > 2 and parts[0] == "jobs" and parts[1] != ".schema"
 
 
@@ -187,6 +195,8 @@ docs = subprocess.check_output(
 
 def is_job_artifact(path):
     parts = path.split("/")
+    if parts[0] == "theads":
+        return True
     return len(parts) > 2 and parts[0] == "jobs" and parts[1] != ".schema"
 
 
