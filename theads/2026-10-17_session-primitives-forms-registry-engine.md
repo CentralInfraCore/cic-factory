@@ -11257,3 +11257,228 @@ Update the `theads/` transcript at the established PR completion boundary.
 ---
 **▶ PR cic-primitive-forms#24** — 2026-10-19 11:08 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/24
 ---
+
+
+### 2026-10-19 11:39 — Claude
+
+~~~~~
+A PR #24 elkészült a `cic-primitive-forms`-ban, a teljes HEAD SHA `2810c323b3dff659dd61811ec8a1fdd5dcbb1465`. Mind a kilenc CI-feladat zöld, de nem mergeltem.
+
+**A CI első futása elbukott.** Az új `upstream-pinned` action manifestje érvénytelen YAML volt, és öt job öt másodperc alatt leállt. A `p1.yml`-t ellenőriztem, az `action.yml`-t nem. A `2810c32` javítja, és ez a futás zöld.
+
+**1. Upstream-átvétel (D-018, `73ae469`)**
+- Új, immutábilis pin: `cic-primitives-73ae469-71ee71ca`. A `grammar_identity.py verify` reprodukálja egy pinelt-commitos munkafán, a `make corpus` 164 hibaesete mind bukik, ahogy kell.
+- Az ellenőrzött fájlkészlet hétről tízre nőtt: a normatív `P0-4-ACCESS-GRAMMAR.md` és `P0-4-MIGRATION.md`, valamint az upstream `LICENSE.md`. A licenc hash-e így ugyanabban a manifestben van, mint a bájtoké. A referenciamodell és a 187 upstream vektor nincs a készletben, és nem is futtatom őket.
+- Az ADR 0004 és 0002 amendment-rekordot kapott, az elfogadott szöveget nem írtam át. Az `inherit.policy-zero-ok-despite-boolean-declaration` elvesztette az elavult `upstream_conflict` elvárását, az azonosítója marad.
+- Az Access grammar-verzió az ellenőrzött `access.yaml`-ból jön: a bájtok SHA-256-ja egyezik a pinnel, és csak ezután olvasom a `spec.access_grammar.version` mezőt. A feldolgozási kontextusnak ugyanazt az egész számot kell adnia. Dokumentumból soha nem olvasom, és alapértelmezése nincs.
+
+**2. Implementáció (`rust/src/access.rs`, `go/access.go`)**
+- **Grammar 1:** a `true`, a `false` és az egész `0` három külön, veszteségmentes érték. Az `1`, a `"true"`, a `"0"`, a `null`, a lista és a mapping `INVALID_INHERIT`.
+- **Grammar 2:** az enum-nevek érvényesek. Mindkét verzió elutasítja a másik írásmódját, nincs konverzió, és a `write_mode` verziónként bijekció.
+- **`access`/`modify`:** a szimbólum nem lista, az `[]` "senki", és soha nem a szimbólum. A `[inherit]` `INVALID_CERT_PATTERN`.
+- **CertPattern:** pontosan az upstream kifejezés szerint. A whitespace-osztály megegyezik a Python `\s`-ével (Unicode White_Space plusz U+001C–U+001F). Mindkét nyelven regex-orákulum ellen ellenőriztem.
+- **Verziókötés:** hiányzó, ismeretlen és ütköző verzió három külön hiba, ebben a sorrendben.
+- **Hibakódok:**
+  - Regiszterben van: `INVALID_INHERIT`, `INVALID_ACCESS_VALUE`, `INVALID_CERT_PATTERN`, `GRAMMAR_DIGEST_MISMATCH`.
+  - Az upstream szerződésből, változtatás nélkül vettem át: `INHERIT_ENUM_IN_GRAMMAR_1`, `LEGACY_INHERIT_IN_GRAMMAR_2`, `GRAMMAR_VERSION_MISSING`, `UNKNOWN_GRAMMAR_VERSION`, `GRAMMAR_VERSION_CONFLICT`.
+  - Ez az öt nincs a `corpus/codes.yaml`-ban, mert egy vektor sem használja őket, és a korpusz-kapu elutasít minden nem használt regiszterkódot. Ezt hiányként jelzem, nem találtam ki kódot.
+
+**Korpusz-egyezés.** Mindkét nyelven lefut a 21 inheritance vektor a teljes gépi eredménnyel. A korábbi 29 presence és 31 recognition vektor zöld maradt. A futás/nem futás elszámolás pontos és tesztelt: **81 fut + 258 NOT RUN = 339**. A részletes táblázat a `docs/P1-SUPPORTED-SUBSET.md`-ben van.
+
+**Minőségi kapuk (mind 90 % fölött)**
+
+| | Rust | Go |
+|---|---|---|
+| Sor/utasítás | 99,23 % (908/915) | 100 % (470/470) |
+| Ág | 97,70 % (426/436) | 100 % (471/471) |
+| Mutáció | 100 % (227/227) | 98,18 % (485/494, 9 ekvivalens túlélő) |
+
+- Property-tesztek: típusmegőrzés, verziókötés az orákulum ellen, CertPattern az upstream kifejezés ellen, nem-mutáció.
+- Új `access` fuzz target saját canary-val.
+- Gyengített tesztekkel a kapuk pirosak:
+  - Sorlefedettség: 41,72 % (Rust) és 21,70 % (Go).
+  - Mutáció: 0 % és 23,53 %.
+  - Ágfedettség: 50,22 % és 0 %.
+- Szándékosan hibás implementációkra külön eszköz (`tools/seeded_defects.py`) 14 beültetett hibát (nyelvenként 7) alkalmaz másolatokon, és a tesztcsomagoknak buknia kell. Ilyen hiba például: a `0` kényszerítése `false`-ra, a hiányzó verzió csendes 1-es alapértéke, a pin ellenőrzés nélküli használata, az `=` nélküli minta elfogadása. Mindegyiket elkapják, és ez új CI-jobként is fut.
+
+**Hátralévő, nem támogatott esetek**
+- Az effektív jogosultság és a `no-inherit`/`reset` szemantika (P3).
+- A surface rule-ok és a rendszer-alapértelmezések.
+- A request context.
+- A `conformance` eredet: 16+16 vektor NOT RUN.
+- Az Access-csomópontok expand/collapse-a (P2) és a `migrate_mode`.
+- A szöveges `0.0`: az upstream szerint `INVALID_INHERIT`, de a YAML-részhalmaz korábban `UNSUPPORTED_SYNTAX`-szal elutasítja.
+
+A `theads/` naplót a PR-lezárási ponton frissítettem (`9e60249`). A korpusz-futtatók mostantól igénylik a `cic-primitives` pinelt checkoutját (`CIC_PRIMITIVES_ROOT`), és ennek hiányakor elbuknak, nem ugranak át. A CI ezt az új action-nel adja.
+
+Merge-engedélyedre várok, a pontos HEAD-hez kötve.
+~~~~~
+
+
+### 2026-10-19 12:03 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+## PR #24 — REVIEW: CHANGES REQUESTED
+
+Reviewed HEAD: `2810c323b3dff659dd61811ec8a1fdd5dcbb1465`.
+
+A D-018 adoptálását, a grammar pint, a corpus-lefedést és a minőségi bizonyítékokat elfogadom. Két Go fail-closed hibát kell még javítani a merge előtt.
+
+**1. Invalid/unbound Grammar**
+
+A `ReadMode` és `WriteMode` nem kezelheti automatikusan grammar 2-ként az összes nem-1 verziót.
+
+- `Grammar{}` nem eredményezhet sikeres olvasást vagy írást.
+- Ismeretlen verzió nem eredményezhet sikeres olvasást vagy írást.
+- A támogatott verziók halmaza nem lehet kívülről módosítható.
+- A hibajelzés használja a meglévő upstream szerződés megfelelő kódját; nincs szükség új szemantikára.
+
+**2. Invalid Mode serialization**
+
+A `WriteMode(ModeInvalid, grammar1)` jelenleg integer `0`-t, azaz `reset` értéket állít elő.
+
+- Csak a három érvényes Mode legyen írható.
+- Ismeretlen és invalid Mode esetén nincs sikeres kimeneti Node.
+- Mindkét grammar-verzióval legyen regressziós teszt.
+
+**Evidence**
+
+Adj hozzá ellenpróbákat ezekre az esetekre mind a Go-tesztekben, mind a seeded-defects mechanizmusban, ahol releváns.
+
+A Rust oldalon ellenőrizd a megfelelő invariánsokat is, de ne módosíts működő kódot szükségtelenül.
+
+A javítás után futtasd újra az összes CI-kaput, és add vissza az új teljes HEAD SHA-t.
+
+**Do not merge.** Az új HEAD-re külön merge-engedélyt adok.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-19 12:15 — Claude
+
+~~~~~
+Javítom a két Go hibát; a regressziós tesztek és a seeded defect-ek kész, most a minőségi mérések futnak az új kódon.
+~~~~~
+
+
+### 2026-10-19 12:39 — Claude
+
+~~~~~
+Mind a két Go hibát javítottam, és a CI mind a kilenc kapuja zöld. A PR #24 új teljes HEAD SHA-ja `f6c1bcd467cfe18faa95ffcd30dff218a267f000`. Nem mergeltem.
+
+**1. Kötetlen vagy ismeretlen Grammar**
+- **`ReadMode`:** a `Grammar{}` (nulla érték) vagy bármely nem támogatott verzió nem olvas többé grammar 2-ként. `UNKNOWN_GRAMMAR_VERSION` jön, az upstream kód, új szemantika nélkül.
+- **`WriteMode`:** ugyanezekre nem ír semmit.
+- **`SupportedGrammars`:** már nem exportált, módosítható változó. A `SupportedGrammars()` függvény másolatot ad, és egy teszt ellenőrzi, hogy a hívó nem tudja bővíteni.
+
+**2. Érvénytelen Mode kiírása**
+- A `WriteMode` aláírása most `(*Node, error)`. Csak a három érvényes Mode írható ki, és csak támogatott, kötött grammarral.
+- A `ModeInvalid`, az ismeretlen Mode és a kötetlen Grammar eredménye nincs Node és hiba. Ez mindkét grammar-verzióval tesztelt.
+- Az ismeretlen verziójú `Grammar` a csomagon kívülről nem építhető. Ezért külön belső teszt ellenőrzi a −1, 0, 3 és 100 verziót.
+
+**Ellenpróbák**
+- A seeded-defects készlet 14-ről 18 beültetett hibára nőtt (7 Rust, 11 Go). Az új négy: kötetlen Grammar olvasása és írása grammar 2-ként, érvénytelen Mode kiírása `reset`-ként, és a támogatott verziók halmazának hívó általi módosíthatósága. Mindegyiket elkapják a tesztek, és a CI-ban is lefut.
+- **Rust:** működő kódhoz nem nyúltam. A `Grammar` mezője privát, nincs `Default`-ja, és csak sikeres `bind_grammar` után létezik. A `Mode` zárt enum, a támogatott halmaz konstans. Egy új teszt rögzíti ezt: −3..5 verzióra a kötés pontosan a támogatottakra sikerül, és minden Mode kiírható és visszaolvasható.
+
+**Újramért kapuk (mind 90 % fölött)**
+
+| | Rust | Go |
+|---|---|---|
+| Sor/utasítás | 99,23 % | 100 % (478/478) |
+| Ág | 97,70 % | 100 % (481/481) |
+| Mutáció | 100 % (227/227) | 98,40 % (493/501, 8 ekvivalens túlélő) |
+
+- Az ellenpróbák továbbra is pirosak: gyengített tesztekkel a Go sorlefedettsége 21,34 %, az ágfedettsége 0 %.
+- A dokumentumot és a PR-leírást az új számokra frissítettem. A PR-ban külön "Changes after the review" szakasz van.
+
+**CI:** `rust`, `go`, `corpus`, `branch-coverage`, `quality` (20 perc 29 mp), `quality-gate-selftest`, `fuzz`, `seeded-defects` és `qualify` sikeres a `f6c1bcd` HEAD-en. A `theads/` naplót az előző lezárási ponton frissítettem. Az új lezárás, vagyis a merge utáni frissítés a merge-engedélyed után jön.
+
+Az új HEAD-re külön merge-engedélyedre várok.
+~~~~~
+
+
+### 2026-10-19 12:39 — Claude
+
+~~~~~
+Ez csak a háttérben futó CI-várakozás befejezését jelzi. Az eredménye már a fenti jelentésben van: a `f6c1bcd` HEAD-en mind a kilenc kapu zöld.
+
+Nem mergeltem. A PR #24-re az új HEAD-hez kötött, külön merge-engedélyedet várom.
+~~~~~
+
+
+### 2026-10-19 12:47 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+## PR #24 — Végleges review
+
+ACCEPTED — MERGE ENGEDÉLYEZVE
+
+Jóváhagyott HEAD: `f6c1bcd467cfe18faa95ffcd30dff218a267f000`
+
+A [PR #24](https://github.com/CentralInfraCore/cic-primitive-forms/pull/24?utm_source=chatgpt.com) továbbra is nyitott, merge-elhető. A `main` változatlanul `5f0c18e281768d6eaa031238f0fc62a482fbfc95`, tehát a korábban review-zott alap is megfelelő.
+
+### 1. A két korábbi blokkoló hiba
+
+| Probléma                                                     | Ellenőrzött javítás                                                     | Döntés          |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------- | --------------- |
+| `Grammar{}` és ismeretlen verzió grammar 2-ként értelmeződik | `ReadMode` és `WriteMode` ellenőrzi a támogatott verziót                | &#x20;Javítva   |
+| `ModeInvalid` írásakor `reset` keletkezik                    | `WriteMode` most `(*Node, error)`; csak három érvényes állapot írható   | &#x20;Javítva   |
+| A támogatott verziók kívülről módosíthatók                   | `SupportedGrammars()` másolatot ad                                      | &#x20;Javítva   |
+| Rust megfelelő invariánsai                                   | Privát `Grammar`, zárt `Mode`, konstans verzióhalmaz; regressziós teszt | &#x20;Megfelelő |
+
+A tényleges commit-diffet és a tesztkódot is átnéztem, nem csak a worker jelentését.
+
+### 2. CI és ellenpróbák
+
+# 9/9
+
+Sikeres CI-job
+
+# 18/18
+
+Elkapott beültetett hiba
+
+# 81/81
+
+Futtatott corpus-vektor
+
+A `seeded-defects` job naplójában külön ellenőriztem a négy új Go-ellenpróbát: mind `CAUGHT` eredménnyel zárult. A teljes quality-job naplójában a mért eredmények is egyeznek a jelentéssel.
+
+| Minőségi kapu  | Rust   | Go     |
+| -------------- | ------ | ------ |
+| Sor / utasítás | 99,23% | 100%   |
+| Ág             | 97,70% | 100%   |
+| Mutáció        | 100%   | 98,40% |
+
+A gyengített tesztekkel a kapuk továbbra is elbuknak. Ez különösen fontos, mert a zöld eredményhez negatív bizonyíték is társul.
+
+### 3. Mi marad nyitva?
+
+A PR #24 vállalt szerződésén belül nem találtam új merge-blokkoló hibát.
+
+A parser differenciális auditjában jelzett problémák ettől még nincsenek megoldva. Azt nem állítanám, hogy a teljes P1 parser-paritás bizonyított, pusztán mert a PR #24 elfogadható. Ez két külön állítás.
+
+Ugyanígy külön nyitott marad az upstreamből származó öt, a Forms hibakódregiszterében még nem szereplő kód kérdése, illetve a valós sémabetöltési integráció teljes bizonyítása.
+
+### Merge-utasítás
+
+A PR #24 merge-je engedélyezett, kizárólag a fenti HEAD-re kötve, az alábbi ellenőrzések megtartásával:
+
+```
+gh pr merge 24 --repo CentralInfraCore/cic-primitive-forms \
+  --squash \
+  --delete-branch \
+  --match-head-commit f6c1bcd467cfe18faa95ffcd30dff218a267f000
+```
+
+A `--squash` a választott merge-stratégia; ha a projektben más a rögzített stratégia, azt megtartva kell végrehajtani a HEAD-hez kötött merge-et. Utána a szokásos main-CI és `theads/` lezárás következik.
+
+A következő munkánk nem P1/4 lesz automatikusan. Ahogy kérted, a merge után visszatérünk a tesztelés problémájára: először a Rust/Go differenciális parser-paritásra, utána a teljes és inkrementális mutációs tesztelés kapurendszerére.
+
+A review lezárva.
+</pasted_content id="1805">
+
+ -> ha jól értem mehet a mergeld-be
+~~~~~
