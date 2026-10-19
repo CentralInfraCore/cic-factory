@@ -11482,3 +11482,1734 @@ A review lezárva.
 
  -> ha jól értem mehet a mergeld-be
 ~~~~~
+
+
+### 2026-10-19 12:48 — Claude
+
+~~~~~
+Merge megvan. Most a `main` CI-t várom, és közben lezárom a `theads/` naplót.
+~~~~~
+
+
+### 2026-10-19 13:15 — Claude
+
+~~~~~
+A PR #24 mergelve van a `main`-be. A merge a jóváhagyott `f6c1bcd467cfe18faa95ffcd30dff218a267f000` HEAD-re volt pinelve (`--match-head-commit`).
+
+**Az új `main` SHA: `2c58713253cf1946ccc1e7772c334d611c954f1b`.**
+
+- **Merge-stratégia:** a javasolt `--squash` helyett `--merge`-et használtam, mert a repó korábbi merge-ei (#22, #23) is merge-commitok. A `--delete-branch`-et nem futtattam, a `feat/p1-inherit-validate-d018` ág megmaradt. Ha törölni szeretnéd, egy parancs.
+- **Main CI:** a `2c58713` commiton minden kapu sikeres: `corpus`, `branchcov` és `p1` mind a hét jobjával (`rust`, `go`, `branch-coverage`, `quality-gate-selftest`, `quality`, `fuzz`, `seeded-defects`).
+- **Munkanapló:** a `theads/` transcriptet lezártam a cic-factory `main`-jén (`40b0da9`, 342 üzenet, 29 PR-hivatkozás), a titokkereső minták nem találtak benne semmit.
+
+**Amit a review is külön nyitva hagyott, és nem is állítottam:**
+- a teljes P1 parser-paritás (a Rust/Go differenciális parser-audit eltérései);
+- az öt upstream hibakód regiszterbe vétele;
+- a valós sémabetöltés teljes bizonyítása.
+
+A következő munkát nem kezdtem el. Ahogy a review írja, a Rust/Go differenciális parser-paritás jönne, utána a mutációs kapurendszer. Szólj, ha indulhat.
+~~~~~
+
+
+### 2026-10-19 13:15 — Claude
+
+~~~~~
+Ez csak az utolsó háttérben futó CI-várakozás befejezését jelzi. Az eredménye már a fenti jelentésben van: a `main` merge-commitján (`2c58713`) minden kapu sikeres.
+
+Új munkát nem kezdtem, a Rust/Go differenciális parser-paritás indításához a jelzésedet várom.
+~~~~~
+
+
+### 2026-10-19 13:29 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+Igen. Sőt, szerintem ez lenne a CIC teljes CI-architektúrájának logikus következő lépése. Nemcsak a mutációs teszteket, hanem az összes költséges tesztelési módot ugyanarra a FULL → DELTA → FULL bizonyítási modellre építeném.
+
+De van egy fontos feltétel: a delta futásnak nem egyszerűen a PR új tesztjeit kell végrehajtania, hanem a változás által érintett összes releváns tesztet.
+
+## Egy közös tesztelési szerződés
+
+A modell működhet minden tesztkategóriára, de nem minden tesztnél ugyanaz a helyes delta-stratégia.
+
+| Tesztkategória       | PR-en                                        | FULL                          |
+| -------------------- | -------------------------------------------- | ----------------------------- |
+| Unit                 | Teljes, ha olcsó; egyébként érintett tesztek | Naponta                       |
+| Integration          | Érintett komponensek                         | Naponta                       |
+| Property-based       | Változással érintett property-k              | Nagyobb mintával naponta      |
+| Fuzz                 | Rövid célzott futás                          | Teljes kampány naponta        |
+| Mutation             | Módosított kód mutánsai                      | Teljes kódbázis naponta       |
+| Rust/Go differential | Érintett esetek + állandó regressziós mag    | Teljes bemenetkészlet naponta |
+| Corpus / contract    | Az egész, ha olcsó                           | Teljes ellenőrzés naponta     |
+
+## Itt jön az igazán fontos rész: nem elég a PR diffje
+
+Tegyük fel:
+
+- Hétfő 00:00 — FULL sikeres az `A` commiton.
+- Hétfő 09:00 — `B` commit mergelve.
+- Hétfő 12:00 — `C` commit mergelve.
+- Hétfő 14:00 — új PR `D`.
+
+Ha csak a `C → D` diffet vizsgálod, elszalaszthatod azt, hogy a `B` és `D` változtatások együtt hibát okoznak.
+
+Ezért a delta alapja mindig a legutóbbi érvényes FULL bizonyíték és az ellenőrizendő HEAD közötti teljes változáshalmaz.
+
+```
+FULL@A (PASS)
+    |
+    +-- B
+    |
+    +-- C
+    |
+    +-- D (PR HEAD)
+         |
+         +-- impact(A..D)
+         +-- affected tests
+         +-- DELTA PASS
+```
+
+A `D`-n elvégzett célzott futás tehát az `A` óta felhalmozott változások hatását is figyelembe veszi.
+
+Második fontos szabály: ha a rendszer nem tudja bizonyítani, hogy egy teszt nem érintett, nem hagyhatja ki puszta feltételezés alapján. Ilyenkor az adott tesztcsoportot teljesen futtatja.
+
+## A CIC-hez ezt a szabályt rögzíteném
+
+```
+FULL proof érvényes,
+ÉS azonos a releváns környezet,
+ÉS a változás hatása meghatározható
+    → DELTA
+
+Egyébként
+    → FULL
+
+FULL bukás
+    → BLOCK
+
+DELTA bukás
+    → BLOCK
+
+Naponta legalább egyszer
+    → FULL, feltétel nélkül
+```
+
+Az érvényességhez nem elég a commit SHA és az időbélyeg: számít a dependency lock, a toolchain, a tesztharness, a szerződés és a tesztkiválasztási algoritmus verziója is.
+
+Van azonban egy elvi határ: egy célzott delta futás nem ugyanazt a teljes körű állítást bizonyítja, mint egy új full futás. Azt bizonyítja, hogy az ismert változásokhoz kiválasztott ellenőrzések sikeresek voltak, egy korábbi teljes baseline-ra támaszkodva. Ezért kell külön tárolni a két bizonyítékot, és ezért kell a napi full.
+
+## Amit még hozzátennék: maga a tesztkiválasztás is legyen tesztelve
+
+Itt lehet igazán CIC-szerűvé tenni.
+
+Szándékosan megváltoztatnék például egy olyan Rust függvényt, amelynek a változása egy régi Go/Rust parity teszt eredményét befolyásolja. Az impact-selectornak ki kell választania azt a tesztet akkor is, ha maga a tesztfájl nem változott.
+
+Ha ez nem történik meg, a delta-gate-nek kell elbuknia, nem a változásnak észrevétlenül átcsúsznia.
+
+A parserauditból származó ellenpéldák ehhez kiváló regressziós alapot adhatnak.
+
+A javaslatom tehát: legyen egyetlen közös `test-evidence` mechanizmus, amely az összes költséges tesztfajtánál kezeli a FULL bizonyítékot, annak érvényességét, a kumulatív változást és a DELTA kiválasztását. A tényleges tesztfuttatók maradjanak különállók.
+
+Ezzel a tesztelés már nem csupán egy CI-feladatsor lenne, hanem bizonyítási lánc: FULL baseline → változáshalmaz → hatáselemzés → kiválasztott ellenőrzések → új eredmény.
+
+Ez valódi architekturális előrelépés lenne a mostani kilenc zöld jobhoz képest.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-19 13:29 — Claude
+
+~~~~~
+Ezt tervjavaslatként olvasom, nem megvalósítási utasításként, ezért nem indítottam el semmit. Alább a véleményem és az ajánlott sorrend.
+
+**Egyetértek az alapmodellel.**
+- A FULL baseline, a kumulatív `A..HEAD` változáshalmaz, a hatáselemzés és a kiválasztott ellenőrzések lánca a helyes alap. Az `A..D` bázis kulcsfontosságú, a `C→D` diff valóban elszalasztana kölcsönhatásokat.
+- A szabály, hogy ami nem bizonyíthatóan érintetlen, azt futtatni kell, szintén jó. Ezért minden bizonytalanság FULL-ra esik vissza.
+- A delta és a full bizonyíték külön tárolása is helyes, mert más állítást igazolnak.
+
+**Ami a CIC jelenlegi helyzetéből adódik, és szerintem rögzíteni kell:**
+- **Ma minden PR a teljes csomagot futtatja** (a `quality` job 20+ perc), és a `main` is ugyanazt. Nincs napi FULL és nincs perzisztens bizonyíték.
+- **Két külön bizonyítéktípus kell.** A DELTA nem helyettesítheti a FULL-t a merge-kapuban, csak gyorsíthatja. A `main`-en a napi FULL marad a feltétel nélküli horgony.
+- **A bizonyíték-érvényesség kulcsa** a commit SHA, a `Cargo.lock`/`go.sum`, a toolchain pinek (`coverage/tools.yaml`), a pinelt grammar identitása, a teszt-harness és a szelektor verziója. Bármelyik változása érvényteleníti, és a következő futás FULL.
+- **A bizonyíték tárolása** a nehéz kérdés. Egy CI-artifact lejár. Tartós, aláírt rekord (a Vault-aláírási lánc mintájára) erősebb, de ez infrastrukturális döntés, ezért ezt a tervben külön kell eldönteni.
+- **A hatáselemzés eszközei nyelvenként eltérnek.** A `cargo-mutants` támogatja a diff-alapú futást (`--in-diff`), a `go-mutesting`-nél függvényszintű szűrés (`--match`) jöhet szóba. A property- és fuzz-tesztek hatásfüggvényei nem ugyanazok. Ezért a közös rész legyen a `test-evidence` rekordformátum és a döntési szabály, a szelektorok kategóriánként külön modulok.
+- **A szelektort tesztelni kell.** Ez a javaslat legjobb része. Minden szelektorhoz beültetett változtatás tartozzon, amely egy változatlan tesztfájlt érint, és a delta-kapunak elbuknia kell, ha az nem kerül kiválasztásra. A parser-audit ellenpéldái erre jó alapot adnak.
+
+**Ajánlott sorrend** (a review sorrendjéhez igazodva):
+1. **Rust/Go differenciális parser-paritás.** Ez önmagában szükséges, és előállítja azt a regressziós magot, amelyre a szelektor-tesztek épülnek. Egyúttal lezárja a jelenleg nem bizonyított állítást a parser-paritásról.
+2. **`test-evidence` formátum és érvényességi szabály,** napi FULL ütemezett munkafolyamattal és tartós bizonyíték-tárolással. Itt a tárolás helyéről kell döntened.
+3. **Mutációs delta** (`A..HEAD` alapú), FULL-ra visszaeséssel és szelektor-önteszttel. Először csak jelent, nem váltja ki a jelenlegi kaput.
+4. **A többi kategória** (property, fuzz, differenciális) egyenként, ha a mutációs modell bevált.
+
+**Három kérdés, mielőtt bármit építek:**
+1. A mostani teljes kapukat a `main`-en és a PR-eken is meghagyjuk, amíg a delta bizonyítottan helyesen választ, vagy már az első delta-bevezetéskor kiváltsuk őket?
+2. Hol éljen a `test-evidence`: a `cic-primitive-forms` `tools/` alatt, vagy a `cic-factory-core`-ban mint újrahasznosítható eszköz?
+3. Hol tároljuk a FULL bizonyítékot: CI-artifact vagy aláírt rekord?
+
+A parser-paritáshoz külön döntés nem kell, azzal indulhatok, amint jelzed.
+~~~~~
+
+
+### 2026-10-19 13:48 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+A három architekturális döntés megszületett.
+
+**1. FULL/DELTA bevezetés**
+
+A jelenlegi teljes PR- és main-kapuk a shadow mode alatt maradnak. A DELTA párhuzamosan fut, és összevetjük a FULL eredményeivel.
+
+Csak bizonyított szelektor és megfelelő ellenpróbák után válthatja ki a DELTA a költséges PR-kapukat. A main napi FULL futása kötelező. Hiányzó, sikertelen, lejárt vagy érvénytelen FULL esetén új FULL szükséges; nincs automatikus fallback egy régebbi sikeres rekordra.
+
+Az olcsó corpus, unit és contract ellenőrzések továbbra is minden PR-en futhatnak.
+
+**2. Komponenshatár**
+
+A `test-evidence` első implementációja a `cic-primitive-forms/tools/` alatt legyen, független, verziózott rekordformátummal és külön kategóriaszelektorokkal.
+
+A `cic-factory-core` egyelőre nem stabil függőség. Később oda vagy önálló közös komponensbe emelhető a bizonyítottan újrahasznosítható rész, a licenchatarok figyelembevételével.
+
+**3. FULL evidence tárolása**
+
+Ne a lejáró CI-artifact legyen az egyetlen bizonyíték.
+
+Az első megoldás kanonikus, tartalomhash-elt FULL evidence JSON, védett `ci-evidence` ágon tárolva, GitHub/Sigstore attestationnel. Az ellenőrzés kötődjön a megbízható workflow identitásához is.
+
+A részletes mérési naplók maradhatnak CI-artifactok. Vault Transit integráció nem előfeltétel.
+
+**Fontos érvényességi pontosítás**
+
+A FULL commit SHA-jának nem kell egyeznie az aktuális PR HEAD-jével. A FULL az A baseline-t bizonyítja, a DELTA pedig az A és a ténylegesen ellenőrzött merge-jelölt közötti összes változást vizsgálja.
+
+Ha a baseline nem őse a célcommitnak, hiányzik a változástörténet, a szelektor nem tud teljes hatáselemzést adni, vagy az ellenőrzési szerződés megváltozott, FULL szükséges.
+
+**Végrehajtási sorrend**
+
+Elsőként a Rust/Go parser differenciális hibáit reprodukáljuk és javítjuk, közös regressziós korpusszal.
+
+Utána külön review-olható terv és implementáció következik az evidence szerződésre, a napi FULL workflow-ra és a shadow-mode DELTA-szelektorra.
+
+Ne módosítsd most a jelenlegi minőségi küszöböket, és ne kapcsold ki a teljes PR-kapukat. Egyik PR-t se merge-eld külön engedély nélkül.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-19 13:54 — Claude
+
+~~~~~
+I've applied the Rust fixes and they compile. Next I'm removing an unused field, then running Rust's tests and the differential against Go.
+~~~~~
+
+
+### 2026-10-19 13:55 — Claude
+
+~~~~~
+Now the Go mirror.
+~~~~~
+
+
+### 2026-10-19 14:06 — Claude
+
+~~~~~
+Now the Go side: split `read`, and add the internal tests.
+~~~~~
+
+
+### 2026-10-19 14:06 — Claude
+
+~~~~~
+Go mutation on `parse.go` is done. I'm reading the survivors now, while the Rust mutation run continues.
+~~~~~
+
+
+### 2026-10-19 14:07 — Claude
+
+~~~~~
+Both mutation runs are still in the background and will notify me when they finish. Meanwhile I'm drafting the documentation changes.
+~~~~~
+
+
+### 2026-10-19 14:08 — Claude
+
+~~~~~
+Both mutation runs are still in progress, and I'll continue when they report back.
+~~~~~
+
+
+### 2026-10-19 14:13 — Claude
+
+~~~~~
+Both mutation runs are still going. I'll pick up their results when the monitor reports.
+~~~~~
+
+
+### 2026-10-19 14:13 — Felhasználó
+
+~~~~~
+öszintén mutaációs teszt esetében ami már 10x lefutott miért várjuk meg
+~~~~~
+
+
+### 2026-10-19 14:13 — Claude
+
+~~~~~
+Jogos a kérdés. Nem azért várok, mert muszáj, hanem mert a korábbi mutációs futások erre a kódra nem érvényesek.
+
+- **Miért nem érvényes a korábbi eredmény:** a `parse.rs` és a `parse.go` érdemben megváltozott (`prescan`, `scan_words`, a hibakésleltetés, a pozíció-helperek). Az új kódban a túlélő mutánsok mások, és egy nem megölt mutáns dobhatja a küszöböt. A korábbi 227/227 és 493/501 az előző kódról szól.
+- **Mit nyerek a helyi futással:** a CI `quality` jobja (~20 perc) úgyis lefuttatja. A helyi futás csak annyit ad, hogy egy piros CI-kör előtt látom a túlélőket és be tudom foltozni őket. A futásidő nem költség ([[feedback_quality_over_ci_time]]), de a tétlen várakozás pazarlás.
+- **Mi akad el miatta:** a `go-mutesting` helyben módosítja a `go/` fájljait, ezért addig nem futtathatok Go tesztet. Emiatt áll a differenciális újrafuttatás, a seeded defects és a Go-oldali ellenőrzés is. A Rust-mutáció másolaton fut, az nem blokkol semmit.
+
+Javaslatom: megvárom a Rust-mutációt, mert az akadálymentesen fut. A Go-mutációt leállítom, a blokkolt lépéseket (differenciális, seeded defects, Go tesztek) előrehozom, és a Go-mutációt utána futtatom újra, vagy a CI-re bízom. Ha a CI-re bízod, nem várok rá külön.
+
+Szólj, ha jobb, hogy ne állítsam le; különben leállítom és haladok.
+~~~~~
+
+
+### 2026-10-19 14:14 — Felhasználó
+
+~~~~~
+ebben kifejezetten a diff-es tesztelés van kérve ....
+~~~~~
+
+
+### 2026-10-19 14:14 — Claude
+
+~~~~~
+Igen, ez pontosan az a költség, amit a FULL/DELTA modell kiváltana. Most mégsem hagyhatom ki a teljes mutációt, a saját döntésed szerint:
+
+- **A sorrend:** először a parser-differenciál javítása, utána külön, review-zható terv az evidence-szerződésre és a shadow-mode DELTA szelektorra. A DELTA tehát még nem létezik, és nincs mivel kiváltani a teljes kaput.
+- **A kapuk maradnak:** a shadow mode a jelenlegi teljes PR-kapuk mellett fut. A küszöböket nem változtatom, és a teljes PR-kaput nem kapcsolom ki. Ha most DELTA-szerűen kihagynám a mutációt, az épp az a kapu-lazítás lenne, amit kizártál.
+- **Amit már kisebbre vettem:** a helyi futás csak a `parse.rs`-re és a `parse.go`-ra megy, nem az egész crate-re. Ez a kézi delta, csak szelektor nélkül. A teljes mutációt a CI `quality` jobja futtatja, az dönt.
+
+Amit kihagyhatok: a Go-mutáció megvárását. Leállítom, hogy a `go/` fájlokat ne módosítsa, és előrehozom a blokkolt lépéseket (differenciális újrafuttatás, seeded defects, Go tesztek). A Rust-mutáció másolaton fut, az nem akaszt.
+
+Ha a PR megvan (merge nélkül), jön az evidence-terv külön dokumentumként. Ezt az esetet is felveszem bele indoknak: a `parse.*` változása után a mutáció csak a megváltozott fájlokra újraszámolható, a többi baseline-ból örökölhető.
+~~~~~
+
+
+### 2026-10-19 14:14 — Felhasználó
+
+~~~~~
+párhuzamosan is mehetnek dolgot
+~~~~~
+
+
+### 2026-10-19 14:14 — Claude
+
+~~~~~
+Értem. A Go-mutációt nem állítom le. Ami `go/`-ban futna, azt a repó másolatán futtatom, így nem ütközik vele.
+~~~~~
+
+
+### 2026-10-19 14:17 — Claude
+
+~~~~~
+Igen, a mutációt később darabolni is lehet, és a gép elbírja. Ezt az evidence-tervbe veszem be: `cargo-mutants --shard k/n`, Go-nál fájlonként vagy mutánstartományonként párhuzamos másolatokon. A szelektor és a shardolás együtt adja a DELTA-t.
+
+Állás:
+- **Go-mutáció (`parse.go`):** kész, 98,58% (417 megölt, 6 túlélő). Az előző kódon 98,40% volt, a küszöb 90% fölött van. A 6 túlélőt még át kell nézni, hogy ekvivalensek-e.
+- **Párhuzamosan fut:** a seeded defects (másolatokon, 11 új parity-hibával), a differenciális a repó másolatán, és a Rust-mutáció.
+
+Az eredményekkel folytatom.
+~~~~~
+
+
+### 2026-10-19 14:17 — Felhasználó
+
+~~~~~
+sőt a teszteket agenteknek is kiszervezheted :P git clone és hajrá
+~~~~~
+
+
+### 2026-10-19 14:17 — Claude
+
+~~~~~
+Lehet, de most nem érné meg:
+
+- **A munka még nincs commitolva.** Az ágon minden módosítatlan vagy untracked, a `git clone` ezt nem látná. Commit és push kellene hozzá, a push pedig külső lépés. Egy ágra pusholni a megszokott folyamat, de erre még nem kértél.
+- **Ami fut, az már párhuzamos és helyi:** Rust-mutáció, seeded defects, differenciális. A hátralévő idő perc, egy agent induló költsége (hideg kontextus, klón, build) nagyjából ennyi.
+- **Amikor viszont megéri:** a teljes mutáció shardolva, a 20 perces `quality` job darabokra osztva. Ott érdemes agentenként egy shardot futtatni a klónban, és az evidence-tervbe ezt is beírom végrehajtási módként. A CI-ben ugyanez matrix-job lesz.
+
+Ha mégis kérnéd már erre a PR-ra, szólj. Akkor commitolom az ágat, és a push előtt megerősítem veled.
+~~~~~
+
+
+### 2026-10-19 14:18 — Claude
+
+~~~~~
+Mind a 29 seeded defect elbukik (18 régi + 11 új). A differenciális és a Rust-mutáció még fut, megvárom őket.
+~~~~~
+
+
+### 2026-10-19 14:18 — Claude
+
+~~~~~
+Itt tartok, amíg a differenciális és a Rust-mutáció be nem fejeződik. Az eredményüket a monitor jelzi.
+~~~~~
+
+
+### 2026-10-19 14:18 — Felhasználó
+
+~~~~~
+leteheted b-be is az adott tesztet :P
+~~~~~
+
+
+### 2026-10-19 14:18 — Claude
+
+~~~~~
+Értem, a hosszú futások már háttérben (`B`) mennek: a Rust-mutáció, a differenciális és a seeded defects is. Közben nem blokkolnak, a következő lépéssel (a `parity-known.txt` allow-lista véglegesítése) addig sem várok rájuk.
+~~~~~
+
+
+### 2026-10-19 14:19 — Claude
+
+~~~~~
+A Go és a Rust dump háttérben fut, a Rust-mutáció is megy. Ha ezek lefutnak, véglegesítem az allow-listát, és jön a Rust-túlélők áttekintése.
+~~~~~
+
+
+### 2026-10-19 14:20 — Felhasználó
+
+~~~~~
+hol tart a történet
+~~~~~
+
+
+### 2026-10-19 14:20 — Claude
+
+~~~~~
+Röviden: a kód kész és zöld, a mérések futnak, a PR még nincs nyitva.
+
+**Kész**
+- **Rust/Go parser-differenciál:** a 30 005 bemeneten 3 134 eltérésről 24-re csökkent (a Go-dump az előző futásban 24-et adott). A maradék mind flow-kontextusú, szándékosan nyitott eset.
+- **Közös regressziós korpusz:** `testdata/p1/parity.json`, 394 egyező eset és 12 pinelt nyitott eltérés. Mindkét nyelv teszteli, és az eltérések negatív teszttel maradnak láthatók.
+- **Tesztek:** a teljes Rust- és Go-suite zöld, a clippy tiszta.
+- **Seeded defects:** mind a 29 elbukik, ebből 11 az új parity-hiba.
+- **Go-mutáció (`parse.go`):** 98,58% (417 megölt, 6 túlélő).
+- **Line coverage:** Rust 98,28%, Go 99,3%.
+- **CI és doksi:** a `p1.yml`-ben új `parity` job, a `docs/P1-SUPPORTED-SUBSET.md`-ben új "Parser parity" szakasz.
+
+**Fut**
+- **Rust-mutáció (`parse.rs`):** a `scan_words` mutánsainál időtúllépések vannak. A végeredményre és a túlélőkre várok.
+- **Differenciális a másolaton:** a Go- és Rust-dump még nem készült el, mert versenyez a mutációval a CPU-n. Ebből lesz az `testdata/p1/parity-known.txt` allow-lista, amit a `parity` job használ.
+
+**Hátra**
+1. A Rust-túlélők áttekintése, szükség esetén tesztek hozzá.
+2. Az allow-lista véglegesítése, a doksiban a számok ellenőrzése a végső futásból.
+3. `cargo fmt`, clippy, gofmt utolsó menet; commit az ágra.
+4. PR megnyitása `devel` ellen, merge nélkül. A `theads/` átirat frissítése a PR lezárása után.
+5. Utána külön dokumentumban az evidence-terv (FULL/DELTA, shardolt mutáció).
+
+Egy dolgot jelzek: az új pre-parse szabályok (tab, `!`/`&`/`*`/`?` szavak, `...`, direktíva) szűkítik a támogatott YAML-t. A repó saját sémái, vektorai és az emitter kimenete ettől zöldek maradtak, de a PR-leírásban ezt külön kiemelem.
+~~~~~
+
+
+### 2026-10-19 14:25 — Claude
+
+~~~~~
+Folyamatban: a Go-dump lefagy, ezt bisecting-gel keresem. Rust-mutáció: 266 mutánsból kb. 96 kész. A `?%`-ra: nagyjából a kód 90%-ánál tartunk, a mérések vannak hátra.
+~~~~~
+
+
+### 2026-10-19 14:26 — Claude
+
+~~~~~
+Hamis riasztás: a másolat egy futó mutáció közben készült, és egy mutáns (`i++` helyett `_ = i`) végtelen ciklust okozott. A valódi `parse.go` jó. Tiszta másolattal futtatom újra.
+~~~~~
+
+
+### 2026-10-19 14:26 — Claude
+
+~~~~~
+Az allow-lista kész (305 ismert nyitott eltérés, 0 új). A Rust-mutáció még fut, a monitor jelzi a végét.
+~~~~~
+
+
+### 2026-10-19 14:28 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 14:28 — Claude
+
+~~~~~
+Röviden, hol tartunk:
+
+- **Kód, tesztek, doksi, CI-job, seeded defects:** kész. Minden suite zöld, a 29 seeded defect elbukik.
+- **Differenciális:** 3 134 eltérésből 305 maradt, mind a dokumentált nyitott osztályokban. A `parity-known.txt` allow-lista kész, 0 új eltéréssel.
+- **Go-mutáció:** 98,58%, kész.
+- **Rust-mutáció (`parse.rs`):** a 266 mutánsból 110 kész: 93 megölt, 9 időtúllépés, 3 nem fordítható, **5 túlélő**. Még ~156 hátra.
+
+Az 5 túlélő eddig:
+- `parse.rs:98` (`>` → `<` a `read`-ben): a `docs > 1` ellenőrzés.
+- `parse.rs:349` (`||` → `&&` a `prescan`-ben): a marker-feltétel.
+- `parse.rs:371` (`+` → `*` a `scan_words`-ben).
+- `parse.rs:391` (`&&` → `||` és `==` → `!=` a `scan_words`-ben): két mutáns ugyanazon a soron.
+
+Eddig 5 túlélő van 101 eldöntött mutánson (~95% megölt), tehát a 90% fölött vagyunk, de a végeredményt nem tudom. A mutáció lefutása után célzott tesztet írok az 5-höz, ami nem ekvivalens, és újrafuttatom csak azokat a sorokat. Utána commit, PR `devel` ellen merge nélkül.
+~~~~~
+
+
+### 2026-10-19 14:32 — Felhasználó
+
+~~~~~
+mutációs tesztnél az egész teszt lefut?
+~~~~~
+
+
+### 2026-10-19 14:32 — Claude
+
+~~~~~
+Igen, mutánsonként a teljes tesztkészlet lefut, nem csak a releváns teszt.
+
+- **Rust (cargo-mutants):** a `--file src/parse.rs` csak azt szűkíti, hogy melyik fájlból generál mutánst (266 db). Minden mutánsra lefuttatja a `cargo test -- --tests` parancsot: unit, `behaviour`, `corpus`, `subset`, `properties` (proptest), `access`, `validate`, `parity_dump`. Egy mutáns megölt, ha valamelyik teszt elbukik. Az első bukásnál megáll, a túlélőknél viszont mindent végigfuttat. Ezért a túlélők a drágák, és ezért vannak a 120 másodperces időtúllépések a végtelen ciklust okozó mutánsoknál.
+- **Go (go-mutesting):** mutánsonként `go test` a csomagon, vagyis szintén az összes teszt, a rapid property-tesztekkel együtt.
+
+A költség tehát nagyjából mutánsok száma × a teljes suite ideje. Három helyen lehet rajta faragni, ezek kerülnek az evidence-tervbe:
+1. **Shardolás:** a mutánsok szétosztása párhuzamos futtatók között (`cargo mutants --shard k/n`, Go-nál fájl- vagy mutánstartomány szerint).
+2. **Tesztszelekció:** mutánsonként csak azok a tesztek, amelyek lefedik a mutált sort (coverage-térkép). A kioltás eredménye ugyanaz marad, de a futás jóval rövidebb.
+3. **Delta:** csak a megváltozott fájlok mutánsai, a többi az ősből örökölt baseline-ból.
+
+A 2. pontnál van egy kockázat: a coverage-alapú szelekció kihagyhat olyan tesztet, ami nem fedi le a sort, de mégis megölné a mutánst (például a korpusz-teszt egy másik fájlon át). Ezért a FULL-futás marad a mérce, a szelekció csak shadow módban gyorsít, és össze kell vetni a FULL eredményével.
+~~~~~
+
+
+### 2026-10-19 14:35 — Felhasználó
+
+~~~~~
+ok akkor van jelenlg egy teljes teszt és van egy delta a ci-ban ha jól értem
+~~~~~
+
+
+### 2026-10-19 14:35 — Claude
+
+~~~~~
+Nem, a CI-ban jelenleg csak teljes teszt van. Delta még nincs, sem a CI-ban, sem máshol.
+
+- **Ami létezik:** a `p1.yml` minden PR-nál és `main` push-nál a teljes kapukat futtatja. Ez a `rust`, `go`, `branch-coverage`, `quality` (mutációval, ~20 perc), `fuzz`, `seeded-defects`, `quality-gate-selftest` job, és most az új `parity` job.
+- **Ami a deltához hasonlít, de nem az:** a helyi mutációt csak a `parse.rs`-re és a `parse.go`-ra futtattam. Ez kézi szűkítés a gépemen, nem része a CI-nak, és nem is szelektor.
+- **Ami még nincs:** a FULL/DELTA evidence-szerződés, a napi FULL workflow, a `ci-evidence` ág, az attesztáció és a DELTA szelektor. Ezekről szólt az utolsó döntésed. A sorrendet te mondtad meg: először a parser-differenciál (ez a mostani PR), utána külön, review-zható terv, és csak azután implementáció shadow módban, a teljes PR-kapuk mellett.
+
+Tehát a mostani PR-ban nincs delta. Az evidence-terv a PR után jön külön dokumentumként.
+~~~~~
+
+
+### 2026-10-19 14:39 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 14:39 — Claude
+
+~~~~~
+Nagyjából a Rust-mutáció felénél tartunk, ez az egyetlen, ami még fut.
+
+- **Rust-mutáció (`parse.rs`):** 116 a 266-ból kész (94 megölt, 14 időtúllépés, 3 nem fordítható, 5 túlélő), és még fut. Az időtúllépések (mutánsonként 120 s) lassítják, ezért csak a második felénél járunk.
+- **Túlélők:** még ugyanaz az 5: `read:98`, `prescan:349`, `scan_words:371` és két mutáns a `scan_words:391`-en. Nem jött újabb.
+- **Minden más kész:** a kód, a tesztek, a seeded defects, a differenciális és az allow-lista, a Go-mutáció, a doksi és a CI-job.
+
+Amíg a mutáció fut, megnézem, melyik túlélő ekvivalens, és melyikre kell célzott teszt. A tesztek a mutációs futástól függetlenek, mert az másolaton fut. Utána jön commit és PR (`devel` ellen, merge nélkül).
+~~~~~
+
+
+### 2026-10-19 14:42 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 14:42 — Claude
+
+~~~~~
+Az 5 túlélőből 4-et célzott teszttel támadtam, és a 4 mutánst külön újrafuttatom. A `read:98` (`docs > 1`) ekvivalens: a végső `docs > 1` ellenőrzés úgyis ugyanazt adja vissza. A fő Rust-mutáció és az újrafuttatás párhuzamosan megy.
+~~~~~
+
+
+### 2026-10-19 14:43 — Claude
+
+~~~~~
+Mindkét Rust-mutációs futás fut, a monitor jelzi, ha vége.
+~~~~~
+
+
+### 2026-10-19 14:46 — Claude
+
+~~~~~
+Az előző (régi kódra futó) mutációt leállítottam. A végleges kódon indítom újra: a Rust két shardban párhuzamosan, a Go egyben.
+~~~~~
+
+
+### 2026-10-19 14:46 — Claude
+
+~~~~~
+Három mutációs futás megy a végleges kódon (Rust 0/2, Rust 1/2, Go). Közben a Go-fájlokhoz nem nyúlok, a többi kész.
+~~~~~
+
+
+### 2026-10-19 14:47 — Felhasználó
+
+~~~~~
+kb mennyi idő
+~~~~~
+
+
+### 2026-10-19 14:47 — Claude
+
+~~~~~
+Kb. 30–45 perc, ez becslés.
+
+- **Rust:** a 266+ mutánsból az első futásban ~115 lett kész kb. 25 perc alatt, egyetlen szálon, a Go-mutációval versengve. Most két shardra van osztva, mindegyik ~135 mutáns. Az időtúllépések (mutánsonként 120 s) dominálnak, ezért ~30–40 perc.
+- **Go:** az előző futás ~25 perc volt. Most a Rust-shardokkal osztozik a CPU-n, tehát ~25–35 perc.
+
+Tehát a három futás nagyjából egyszerre, 30–45 perc múlva végez. Utána a túlélők áttekintése, commit és a PR megnyitása (merge nélkül) legfeljebb 10–15 perc. Ha valamelyik mutáns újabb túlélőt hoz, az célzott tesztet és újrafuttatást jelent, de az csak a hibás sorra fut, néhány perc.
+~~~~~
+
+
+### 2026-10-19 14:48 — Claude
+
+~~~~~
+A monitor figyeli a három futást, és jelez, ha mind végzett.
+~~~~~
+
+
+### 2026-10-19 14:48 — Felhasználó
+
+~~~~~
+közben tudod nézni a túlélőket?
+~~~~~
+
+
+### 2026-10-19 14:49 — Claude
+
+~~~~~
+Igen, közben néztem a túlélőket. A Rust-oldali túlélők:
+
+- **`read:98` (`>` → `<`):** ekvivalens, a végső `docs > 1` ellenőrzés úgyis ugyanazt adja.
+- **`scan_words:374` (`== '\r'` → `!=`) és `:376` (`>` → `>=`):** célzott tesztet írtam hozzájuk, egy CR-sortörésű blokk-skalár esetet és egy olyan esetet, ahol a tag helyett `[? c]` kell, mert a saphyr magától elkapja a tag-et. Újrafuttatva mindkét sor (4 mutáns) megölt.
+- **A korábbi 4 túlélő** (`prescan:349`, `scan_words:371`, `:391` ×2) szintén megölt.
+
+A Go-nál eddig 80 megölt és 2 túlélő van, ugyanazok a sorok, mint az előző futásban. A teljes eredményre még várok.
+~~~~~
+
+
+### 2026-10-19 14:50 — Felhasználó
+
+~~~~~
+közben tudod nézni a túlélőket?
+~~~~~
+
+
+### 2026-10-19 14:51 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 14:52 — Claude
+
+~~~~~
+Közben a Go-mutáció 31 túlélőt mutat a `scan_words` környékén. Ezt a három futást leállítom, mert az új tesztek és az egyszerűsítések úgyis újrafuttatást kívánnak.
+~~~~~
+
+
+### 2026-10-19 14:53 — Claude
+
+~~~~~
+Újraindítottam a három mutációs futást a végleges kódon. A teszteket, a korpuszt (420 eset) és az allow-listát (302) frissítettem. Ezúttal nem nyúlok a `go/` fájlokhoz a futás alatt, és a végén ellenőrzöm, hogy nem maradt mutáns a fában.
+~~~~~
+
+
+### 2026-10-19 14:56 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 14:56 — Claude
+
+~~~~~
+Folyamatban a három mutációs futás, a többi kész.
+
+- **Rust shard 0/2:** 74 a 142-ből kész, 70 megölt és 3 nem fordítható. Egyetlen túlélő van, a `read:98`, ami ekvivalens.
+- **Rust shard 1/2:** 6 a 142-ből kész, 5 megölt, 1 időtúllépés, nincs túlélő. Ez a lassabb shard, mert sok időtúllépő mutánst kapott.
+- **Go (`parse.go`):** kb. 166 mutáns kész, 160 megölt és 6 túlélő. Ez nagyjából az előző, 6 túlélős szintet adja vissza, és a korábbi 31 túlélő eltűnt.
+
+**Készen áll:** a kód, a tesztek, a korpusz (420 eset), az allow-lista (302), a 29 seeded defect, a doksi és a CI-job.
+
+**Hátra:** a mutációk végén a végleges számok. Ha nincs új túlélő, jön a commit, a push és a PR `devel` ellen, merge nélkül. Utána a `theads/` átirat frissítése. A becslésem a hátralévő időre ~20–30 perc.
+~~~~~
+
+
+### 2026-10-19 15:04 — Claude
+
+~~~~~
+A Go-mutáció kész, a Rust két shard még fut. Ha lefutott, összesítem a számokat a doksiba, és jön a commit meg a PR.
+~~~~~
+
+
+### 2026-10-19 15:13 — Claude
+
+~~~~~
+Ez a régi monitor lejárt, az újat (`b1p8kwgj2`) már elindítottam, az figyeli a futó Rust-shardokat. Megvárom az eredményt.
+~~~~~
+
+
+### 2026-10-19 15:28 — Claude
+
+~~~~~
+Egy Go-teszt elbukott a `-race -rapid.checks=1000` futásban. Megnézem, melyik és miért.
+~~~~~
+
+
+### 2026-10-19 15:30 — Claude
+
+~~~~~
+A seeded defects mind elbukik. Most indítom a Go-mutációt a végleges kódon, a Rust-shardok már futnak.
+~~~~~
+
+
+### 2026-10-19 15:30 — Claude
+
+~~~~~
+Három futás megy a végleges kódon, kb. 30 perc. Eddig két valódi hibát hozott a property-teszt, mindkettőt javítottam: a `[&`-ot tartalmazó sima kulcs és a skalár közepén álló `*`, `!`, `&`, `?` hamis visszautasítása. A végén összesítem a számokat, utána jön a commit és a PR.
+~~~~~
+
+
+### 2026-10-19 15:44 — Claude
+
+~~~~~
+Elindult a végleges mutációs kör (Rust két shard, Go). Ezt már nem módosítom, a kód és a tesztek befagytak. Az eredmény után jön a commit és a PR.
+~~~~~
+
+
+### 2026-10-19 15:54 — Claude
+
+~~~~~
+Go-mutáció: **96,55%** (420 megölt, 15 túlélő), a korábbi 91,6%-ról javult. A Rust mutáció két shardból az egyik még fut. Ennek a végét megvárom, aztán commit.
+~~~~~
+
+
+---
+**▶ PR cic-primitive-forms#25** — 2026-10-19 16:11 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/25
+---
+
+
+### 2026-10-19 16:11 — Claude
+
+~~~~~
+A PR megnyílt: https://github.com/CentralInfraCore/cic-primitive-forms/pull/25 (base `main`, merge nélkül, head `f1932533dba1…`). Most a CI-t figyelem, a `parity` job az első valós futása. Közben a `theads/` átiratot készítem elő, mert a PR lezárása után kell commitolni.
+~~~~~
+
+
+### 2026-10-19 16:28 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+PR #25 review — CHANGES REQUESTED
+
+Reviewed HEAD: `f1932533dba11cc2dbdf8012a48067486c2e0375`.
+
+Három feladat van a merge előtti lezáráshoz:
+
+1. Javítsd a Rust/Go prescan kontextuskezelését: a blokkskalárokban és idézett skalárokban előforduló `---` és `...` tartalom nem dokumentumhatároló. Tegyél be önálló, normatív elvárású regressziós teszteket mindkét nyelvre, ne csak egymáshoz hasonlítsd az eredményüket.
+
+2. A differential allow-list ne pusztán bemenetre adjon kivételt. Ha egy ismert eltérés természete vagy eredménye megváltozik, a kapu ne engedje át észrevétlenül. Készíts seeded ellenpróbát erre.
+
+3. Vizsgáld felül a dokumentált „syntax error anywhere wins” szabályt a prescan előtti/utáni hibákra is. Hozd összhangba a szerződést, a megvalósítást és a teszteket.
+
+A már feltárt, de nyitva tartott 299 parsereltérést nem szükséges mind ebben a PR-ben megoldani. A kivételek működésének azonban bizonyíthatónak kell lennie.
+
+Futtasd az összes CI-kaput az új HEAD-en. PR marad nyitva, merge nélkül; kérem az új teljes SHA-t és az ellenpróbák eredményeit.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-19 16:29 — Claude
+
+~~~~~
+Most a prescan sorszintű ellenőrzéseit beolvasztom a `scan_words`-be, hogy idézett és blokkskalár-tartalomban a `---`, `...`, `%` szöveg legyen.
+~~~~~
+
+
+### 2026-10-19 16:36 — Claude
+
+~~~~~
+Pusholtam (`15aafb21…`), a CI fut. Párhuzamosan indítom a helyi mutációt a végleges kódon, hogy a CI `quality` kapuját megelőzzem.
+~~~~~
+
+
+### 2026-10-19 16:36 — Claude
+
+~~~~~
+A CI és a helyi mutáció fut az új HEAD-en (`15aafb213939e912255aead4de0a78feb4e347e7`). Az eredmények után küldöm az összesítést a SHA-val és az ellenpróbák kimenetével.
+~~~~~
+
+
+### 2026-10-19 16:40 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 16:40 — Claude
+
+~~~~~
+Állás, head `15aafb213939e912255aead4de0a78feb4e347e7`:
+
+**Mind a három review-pont kész, és fel van töltve.**
+1. **Markerek skalárokban.** A `---`, `...` és `%` blokk- és idézett skalárban szöveg (behúzva idézett skalárban is). A sor elején álló marker idézett skalárban, vagy ami lezár egy blokkskalárt, elutasítva. Önálló, normatív tesztek mindkét nyelven, a YAML 1.2-es értékekkel mint elvárással.
+2. **Allow-lista.** Egy ismert eltérést a bemenet **és** a két kimenet digestje azonosít. Ha az eredménye bármelyik oldalon megváltozik, a státusz CHANGED és a kapu piros; az új eltérés NEW és szintén piros. A `tools/parity/selftest.py` a valós kimeneteket 6 módon eltöri, és mindegyiknél a helyes ítéletet követeli (egy javítás nem piros). Ez a `parity` jobban fut. A termékszintű ellenpróbából 4 új seeded defect van a marker-kontextusra, összesen 33, mind elbukik.
+3. **Hibasorrend.** Egyetlen dokumentált szabály: méret → U+0085/2028/2029 → szövegszkenner → szintaxis bárhol → második dokumentum → első fastruktúra-szintű hiba. A „syntax error anywhere wins” szabály csak a fastruktúra-szintű hibákra igaz, a szövegszkenner találatai (tab, tag, direktíva, marker) megelőzik a szintaxist. Explicit kódokkal tesztelve mindkét nyelven.
+
+**CI:** `rust` és `seeded-defects` zöld, a többi (`go`, `branch-coverage`, `quality`, `fuzz`, `parity`, `quality-gate-selftest`, `corpus`) fut.
+
+**Helyi mutáció:** Rust 182 megölt, 2 időtúllépés, 1 túlélő (a `read:98`, ekvivalens), még fut. Go: eddig 204 megölt és 3 túlélő, még fut.
+
+A teljes CI-eredményt és a mutációs számokat ezek lefutása után küldöm. A PR nyitva marad, merge nélkül.
+~~~~~
+
+
+### 2026-10-19 16:41 — Claude
+
+~~~~~
+Ez a régi PR-figyelő (`bex903f6o`) lejárt, nem érint semmit. Az új HEAD-et figyelő (`b8slwxu9x`) fut, és a Rust-shardok meg a Go-mutáció is.
+~~~~~
+
+
+### 2026-10-19 16:43 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 16:43 — Claude
+
+~~~~~
+`parity` elbukott. Megnézem a naplót.
+~~~~~
+
+
+### 2026-10-19 16:44 — Claude
+
+~~~~~
+A `parity` job a CI-n elbukott, és ez jogos: a gyökérok a generátorban van. A `glob.glob` rendezetlen, ezért a CI-n más sorrendben álltak össze a bemenetek, mint nálam (242 ismert, 22 új, 19 megszűnt). A kapu tehát jól jelzett. A sorrendet rendeztem, a Go-mutáció végeztével újragenerálom az allow-listát, és új HEAD-et pusholok.
+~~~~~
+
+
+### 2026-10-19 16:46 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 16:46 — Claude
+
+~~~~~
+Állás, a vizsgált HEAD `15aafb21…`:
+
+- **CI:** `go`, `rust`, `branch-coverage`, `corpus`, `fuzz`, `seeded-defects`, `quality-gate-selftest` zöld. A `quality` még fut. A `parity` piros, mert a generátor fájlsorrendje nem volt determinisztikus. Ezt javítottam (`sorted(glob…)`), de még nincs pusholva.
+- **Helyi Go-mutáció:** még fut, kb. a végén jár. Amíg tart, nem futtathatok Go-tesztet a fában.
+- **Helyi Rust-mutáció:** 65 megölt és 4 időtúllépés az egyik shardban, 137 megölt és 1 időtúllépés a másikban, 1 túlélő a `read:98`-on (ekvivalens).
+
+**Következő lépések:**
+1. A Go-mutáció befejezése után az allow-lista újragenerálása a rendezett sorrenddel, és ellenőrzés, hogy a CI-vel azonos bemenetet ad.
+2. Commit, push, új HEAD, és az új SHA-n újra az összes CI-kapu.
+3. A kért összesítés: az új teljes SHA és az ellenpróbák eredményei.
+
+A PR nyitva marad, merge nélkül.
+~~~~~
+
+
+### 2026-10-19 16:47 — Claude
+
+~~~~~
+Pusholtam az új HEAD-et (`53e6c91d3d4d069c5c9ebdd5fe33dc31d60a783a`). Most megvárom, hogy az összes CI-kapu lefusson rajta.
+~~~~~
+
+
+### 2026-10-19 16:47 — Claude
+
+~~~~~
+A CI az új HEAD-en fut. Amint befejeződik, jelentek a teljes SHA-val és az ellenpróbák eredményeivel.
+~~~~~
+
+
+### 2026-10-19 16:48 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 16:49 — Claude
+
+~~~~~
+Állás a HEAD-en `53e6c91d3d4d069c5c9ebdd5fe33dc31d60a783a`:
+
+- **Zöld:** `go`, `rust`, `quality-gate-selftest` és **`parity`**. A `parity` job a CI-n is lefut a determinisztikus generátorral, és vele a `selftest.py` ellenpróba is.
+- **Fut:** `quality` (mutáció, a leghosszabb), `branch-coverage`, `fuzz`, `seeded-defects`, `corpus`.
+
+A `quality` ~20–30 perc. Amint mindegyik kész, küldöm az összesítést az ellenpróbák kimenetével. A PR nyitva marad, merge nélkül.
+~~~~~
+
+
+### 2026-10-19 16:53 — Felhasználó
+
+~~~~~
+fuzz piros
+~~~~~
+
+
+### 2026-10-19 16:56 — Claude
+
+~~~~~
+Várom a CI-t `9bf7d1aa…`-n. Eredménnyel jelentkezem.
+~~~~~
+
+
+### 2026-10-19 17:06 — Claude
+
+~~~~~
+Ez a régi figyelő (`b8slwxu9x`) lejárt. Az aktuális, `9bf7d1aa…`-ra szóló figyelő (`b2nnj76ns`) fut.
+~~~~~
+
+
+### 2026-10-19 17:17 — Claude
+
+~~~~~
+Ez is egy régi figyelő (`bmjpdj917`) lejárata volt, az előző HEAD-re szólt. A jelenlegi (`b2nnj76ns`) még fut.
+~~~~~
+
+
+### 2026-10-19 17:23 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 17:23 — Claude
+
+~~~~~
+Állás a HEAD-en `9bf7d1aa52993c243a838a1813de780642e1e969`:
+
+- **Zöld:** `rust`, `go`, `branch-coverage`, `corpus`, `fuzz` (a korábban piros, most 7 perc 19 mp), `parity` (benne a `selftest.py` ellenpróba), `seeded-defects`, `quality-gate-selftest`.
+- **Fut még:** `quality` (line coverage + mutáció, a leghosszabb kapu).
+
+A `quality` eredményét megvárom, és csak utána küldöm a teljes összesítést (SHA, minden kapu, ellenpróbák). A helyi mutációs futások: Go 95,48%, Rust egyetlen ekvivalens túlélővel.
+~~~~~
+
+
+### 2026-10-19 17:26 — Claude
+
+~~~~~
+A `quality` még fut. A figyelő lejárt, ezért újraindítom.
+~~~~~
+
+
+### 2026-10-19 17:26 — Claude
+
+~~~~~
+A `quality` jobra várok a `9bf7d1aa…` HEAD-en. Ha lefutott, jön a teljes összesítés.
+~~~~~
+
+
+### 2026-10-19 17:37 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 17:37 — Claude
+
+~~~~~
+Az egyetlen hátralévő kapu a `quality`, és most a Rust-mutációs lépésnél jár. A lépések: line coverage kész (siker), Rust-mutáció fut, utána jön a Go-mutáció, a kapu, majd a két seeded proof. Ez a CI-n egyetlen szálon fut, ezért ~20–30 percre számítok. Minden más kapu zöld a `9bf7d1aa52993c243a838a1813de780642e1e969` HEAD-en.
+~~~~~
+
+
+### 2026-10-19 17:57 — Claude
+
+~~~~~
+A Rust-mutáció a CI-n lefutott, most a Go-mutáció megy. Utána jön a kapu és a két seeded proof. A figyelőt újraindítom.
+~~~~~
+
+
+### 2026-10-19 17:57 — Claude
+
+~~~~~
+Folytatom a `quality` figyelését, a Go-mutáció és a kapu van hátra.
+~~~~~
+
+
+### 2026-10-19 17:59 — Claude
+
+~~~~~
+**PR #25 új HEAD-je: `9bf7d1aa52993c243a838a1813de780642e1e969`.** Mind a 9 CI-kapu zöld ezen a SHA-n, a PR nyitva van és mergelhető állapotú. Nem mergeltem.
+
+**CI-kapuk:** `rust`, `go`, `branch-coverage`, `corpus`, `fuzz`, `parity`, `seeded-defects`, `quality-gate-selftest` és `quality` (1 óra 2 perc).
+
+**Minőségi kapu (`quality`, az egész crate és modul):**
+
+| | Rust | Go |
+|---|---|---|
+| line / statement coverage | 98,69% | 99,83% |
+| mutáció | 99,77% (443/444) | 96,01% (795/828) |
+
+A küszöböket nem változtattam. A két „weakened tests” ellenpróba is elbukik, ahogy kell (Rust coverage 50,80%, Go 32,78%; a mutációs score Rustnál 0/23, Gónál 16/68).
+
+**Review-pontok**
+1. **`---`, `...`, `%` skalárokban.** Blokkskalárban, és idézett skalárban behúzva ezek szövegek. A sor elején álló marker idézett skalárban, vagy ami lezár egy blokkskalárt, elutasítva. Az elvárások mindkét nyelven a YAML 1.2-es értékek, nem a másik nyelv kimenete.
+2. **Allow-lista.** Egy ismert eltérést a bemenet és a két kimenet digestje azonosít. Ha az eredménye bármelyik oldalon változik, a státusz `CHANGED`, ha új, `NEW`, mindkettő piros. A `selftest.py` a CI-n 6 töréssel igazolja, és mind a hatot a helyes ítélettel zárja:
+   - Go-oldali változás: `CHANGED`
+   - Rust-oldali változás: `CHANGED`
+   - mindkét oldal változik: `CHANGED`
+   - a lista sora hiányzik: `NEW`
+   - egy eddig egyező bemenet eltér: `NEW`
+   - egy eltérés megszűnik (javítás): zöld marad
+
+   Termékszinten 4 új seeded defect van a marker-kontextusra, összesen 33, mind elbukik.
+3. **Hibasorrend.** Egy dokumentált, mindkét nyelven explicit kódokkal tesztelt szabály: méret → U+0085/2028/2029 → szövegszkenner → szintaxis bárhol → második dokumentum → első fastruktúra-szintű hiba. A „syntax error anywhere wins” szabály ezért csak a fastruktúra-szintű hibákra igaz. A szkenner találatai (tab, tag, direktíva, marker) megelőzik a szintaxist, és ez bekerült a doksiba.
+
+**Menet közben három valódi hibát találtak a körút-vizsgálatok.** Mindhárom abból jött, hogy az új szabályok szigorúbbak lettek az emitter kimeneténél:
+- `a[&: 1` sima kulcsot anchornak vette (property-teszt)
+- `a *b: 1` skalár közepén a `*`-ot aliasnak vette (property-teszt)
+- az 512 karakternél hosszabb `-` vagy `:` kezdetű kulcs `? -kkk…` alakban nem olvasódott vissza (fuzz)
+
+Mindegyiknél regressziós teszt van mindkét nyelven.
+
+**A parity job egyszer elbukott.** A generátor `glob.glob`-ja rendezetlen volt, így a CI más bemeneteket generált, mint a helyi futás. A kapu helyesen jelzett. Rendeztem, ellenőriztem hogy a kimenet azonos marad bármilyen `PYTHONHASHSEED`-del és könyvtárból, és újragenerálva zöld.
+
+**Maradt nyitva:** a 274 ismert eltérés a `parity-known.txt`-ben, nem oldottam meg mindet, ahogy kérted. A javítás a flow-szkenner lenne. A Rust-mutáció egy ekvivalens túlélője (`read`, `docs > 1`) szintén nyitott.
+
+A `theads/` átirat frissítése a PR lezárása utáni commitba megy, merge-engedélyedre várok.
+~~~~~
+
+
+### 2026-10-19 18:10 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+PR #25 — CHANGES REQUESTED
+
+Reviewed HEAD: `9bf7d1aa52993c243a838a1813de780642e1e969`
+
+A korábbi három review-blokkoló javítása elfogadva. A kilenc CI-job és a 33 seeded defect eredménye ellenőrizve.
+
+**Új blokkoló hiba: differential comparator fail-open.**
+
+A `tools/parity/compare.py` deklarálja a `NONCONTRACT` hibakódhalmazt, de nem használja az elutasítások osztályozására.
+
+Emiatt a `UNSUPPORTED_SYNTAX` és `NOT_AN_ERROR_TYPE` eredmények azonos értékű elutasításnak számíthatnak, pedig a második belső harnesshibát jelez.
+
+Javítsd a kimeneti struktúra és hibakódok ellenőrzését. Ismeretlen hibakódoknak mindkét oldalon piros kaput kell eredményezniük, azonos ismeretlen hibakód esetén is.
+
+Egészítsd ki a `selftest.py` fájlt az ismeretlen hibakódra és hibás eredménystruktúrára vonatkozó negatív ellenpróbákkal.
+
+**Dokumentáció:**
+
+Frissítsd a quality táblázatot a PR #25 tényleges teljes méréseire, a seeded defect számokat és a PR-leírás elavult adatait.
+
+A 274 dokumentált, eredményhez kötött ismert parsereltérést most nem szükséges megszüntetni.
+
+Kérem az új teljes HEAD SHA-t és az ellenpróbákkal együtt lefuttatott CI eredményét. Merge továbbra sincs külön engedély nélkül.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-19 18:11 — Claude
+
+~~~~~
+Most a `compare.py` kimenet-validálását írom meg, hogy ismeretlen hibakód vagy hibás szerkezet, akár azonos is mindkét oldalon, piros kaput adjon.
+~~~~~
+
+
+### 2026-10-19 18:12 — Claude
+
+~~~~~
+Az ellenőrző megvan és helyi futáson mind a 25 negatív ellenpróba piros. A doksi „survivors” része a teljes Go-mutáció (828 mutáns) osztályozására vár, azt most futtatom helyben. Utána egyben commitolom.
+~~~~~
+
+
+### 2026-10-19 18:14 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 18:14 — Claude
+
+~~~~~
+Állás:
+
+- **Kész:**
+  - A `compare.py` most minden kimenetet ellenőriz, a szerkezetet és a hibakódot is. Ismeretlen kódra (`NOT_AN_ERROR_TYPE`, `SOMETHING_NEW`) és hibás szerkezetre `INVALID` és piros kapu lesz, mindkét oldalon, azonos hiba esetén is, és allow-listázott bemenetnél is.
+  - A `selftest.py` 18 új negatív ellenpróbát kapott (ismeretlen kód egy- és kétoldalt, harnesshiba, 10 szerkezeti hiba). Helyben mind a 25 törés a helyes ítéletet adja.
+  - A `make_corpus.py` is validálja a dumpokat, és a commitolt `parity.json`-t bájtra azonosan állítja elő.
+- **Fut:** a teljes Go-modul mutációja (828 mutáns) a helyi osztályozáshoz. Eddig 216 kész, 210 megölt, 6 túlélő. Erre a doksi „survivors” bekezdéséhez van szükség: a régi „nyolc ekvivalens túlélő” állítás elavult, a CI szerint 33 a túlélő.
+- **Hátra:**
+  1. A doksi quality-táblázata a CI tényleges méréseire. Ezek már megvannak a logból: line 98,69% és 99,83%, branch 97,29% és 99,73%, mutáció 99,77% és 96,01%, weakened-proof számok, 33 seeded defect.
+  2. A PR-leírás frissítése.
+  3. Commit, push, és a teljes CI az új HEAD-en.
+
+A mutáció becsülten még ~25–30 perc. A PR nyitva, merge nélkül.
+~~~~~
+
+
+### 2026-10-19 18:22 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 18:22 — Claude
+
+~~~~~
+A teljes Go-mutáció 645-nél jár a ~828-ból: 620 megölt, 25 túlélő, még fut. Ezek alapján a CI 33 túlélőjéhez közel kerülünk. A befejezés után osztályozom őket, frissítem a doksit és a PR-leírást, commitolok és pusholok. Kb. 10 perc a mutációból.
+~~~~~
+
+
+### 2026-10-19 18:24 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 18:24 — Claude
+
+~~~~~
+712 mutánson vagyunk túl: 680 megölt, 32 túlélő, még fut. A CI 33 túlélőjéhez már közel van, tehát a végszám nagyjából egyezik vele. A befejezés után jön az osztályozás, a doksi és a PR-leírás, majd a commit.
+~~~~~
+
+
+### 2026-10-19 18:25 — Felhasználó
+
+~~~~~
+ez igy durván lassu
+~~~~~
+
+
+### 2026-10-19 18:25 — Claude
+
+~~~~~
+Igazad van, lassú. Egyetlen szálon futtattam a teljes modult, pedig a shardolást te javasoltad korábban, és ezt nem alkalmaztam. A mutáció közel van a végéhez, nem várom meg: a doksit és a táblázatot most írom, az osztályozás a végén kerül be.
+~~~~~
+
+
+### 2026-10-19 18:26 — Claude
+
+~~~~~
+A doksi táblázat és a számok készen vannak. A Go-mutáció pár percen belül végez, akkor osztályozom a túlélőket, és commitolok.
+~~~~~
+
+
+### 2026-10-19 18:30 — Claude
+
+~~~~~
+Itt tartunk, a push megtörtént, csak a PR nézete késett:
+
+- **Új HEAD:** `36809bab904bd48d2d45f63ef635c972b9db78ed`. A CI most indul ezen. A korábbi zöld kapuk a régi SHA-ra (`9bf7d1aa`) vonatkoztak.
+- **Kész ebben a körben:**
+  - A `compare.py` minden kimenetet ellenőriz: ismeretlen hibakód vagy hibás szerkezet `INVALID` és piros kapu, mindkét oldalon, azonos hiba esetén is, allow-listázott bemenetnél is. A `NONCONTRACT` halmaz használatban van.
+  - A `selftest.py` 18 új negatív ellenpróbát kapott, összesen 25 törés van, mind pirosat ad. A `make_corpus.py` is validál.
+  - A 33 Go-túlélőt helyben reprodukáltam (795/828, pontosan a CI-szám) és osztályoztam. A nem ekvivalenseket célzott teszt és korpuszeset fedi, egy redundáns kód (a komment-átugrás) kikerült.
+  - A doksi quality-táblázata a PR tényleges CI-méréseivel frissült.
+- **Hátra:**
+  1. Az új SHA-n lefutó teljes CI megvárása. A `quality` kb. 1 óra.
+  2. A táblázat számainak frissítése az új futásból egy doksi-only commitban.
+  3. A PR-leírás frissítése, mert a régi adatai (394 eset, 299 eltérés, 29 seeded defect) elavultak.
+
+Az új SHA-t és az ellenpróbák CI-eredményét a CI végén küldöm. A PR nyitva marad, merge nélkül.
+~~~~~
+
+
+### 2026-10-19 18:31 — Felhasználó
+
+~~~~~
+mi van ha a CI folyamatot is beleteszük ebbe az ezapba?
+~~~~~
+
+
+### 2026-10-19 18:32 — Claude
+
+~~~~~
+Technikailag jó ötlet, de külön PR-ban csinálnám, és nem ebben.
+
+**Miért jó:** a `quality` job egy órát tart, mert a Rust-mutáció, a Go-mutáció és a gate egymás után, egy szálon fut. Mutációs shardolással (`cargo-mutants --shard k/n` matrixban, a Go-nál fájlonként vagy mutánstartományonként) a futásidő ~15–20 percre menne. Ugyanazok a mutánsok, ugyanaz a küszöb, ugyanaz a gate, tehát semmit nem lazít. Ez az evidence-terv első, kockázatmentes lépése, és te magad javasoltad korábban.
+
+**Miért nem ebben a PR-ben:**
+- A #25 review-ja a parser-differenciálról szól, és a `p1.yml` módosítása újra nyitná: a reviewer ezt is átnézné, és a CI-t megint végig kellene futtatni.
+- A sorrend, amit megadtál: először a parser-javítás, utána külön, review-zható terv, és csak azután az implementáció shadow módban. A matrix-shardolás ennek a tervnek az első pontja, így ott a helye.
+- A shardolt eredményeket össze kell fésülni a `quality_gate.py` bemenetében (több `outcomes.json`, több `mut-go.txt`), és ezt is önálló teszttel kell bizonyítani, hogy a gate-nek ne legyen vakfoltja.
+
+**Mit javaslok:** a #25-öt lezárom a mostani lépéssel (SHA, ellenpróbák). Közvetlenül utána nyitok egy kis, külön PR-t a `quality` job shardolásával, merge nélkül, és abból indul az evidence-terv. Ha szeretnéd, hogy a shardolás még a #25 előtt menjen be, szólj, de akkor a #25 review-ját a workflow-változással együtt kell újra átnézni.
+~~~~~
+
+
+### 2026-10-19 18:50 — Felhasználó
+
+~~~~~
+külön PR-ban csináld a shardolást
+~~~~~
+
+
+### 2026-10-19 18:50 — Claude
+
+~~~~~
+Rendben, külön PR-ban csinálom. Először megnézem a `quality_gate.py` bemeneti formátumát, mert az összefésülést és a teljességi ellenőrzést ott kell megoldani.
+~~~~~
+
+
+### 2026-10-19 18:54 — Claude
+
+~~~~~
+Mindkét helyi kísérlet fut (3 Go-shard, 4 Rust-shard) a `main` kódján. Közben megírom a workflow szétbontását.
+~~~~~
+
+
+### 2026-10-19 18:54 — Claude
+
+~~~~~
+A mindkét helyi kísérlet fut (a Go-ledgerek ~140 soron, a Rust-shardok az alapfutás után). Míg várok, megírom a rövid dokumentációt a shardolásról.
+~~~~~
+
+
+### 2026-10-19 18:55 — Claude
+
+~~~~~
+A shardolt futtatások az `main` kódján mennek. Amint kész mindegyik, összevetem őket az egyben futtatott ismert számokkal (Rust 227/227, Go 493/501), és csak utána commitolom és nyitom meg a külön PR-t.
+~~~~~
+
+
+---
+**▶ PR cic-primitive-forms#26** — 2026-10-19 18:59 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/26
+---
+
+
+### 2026-10-19 18:59 — Claude
+
+~~~~~
+A shardolás külön PR-ban elkészült, és megnyitottam: https://github.com/CentralInfraCore/cic-primitive-forms/pull/26 (head `0b3121618d5a5776bb55004d83995422fca87599`, merge nélkül).
+
+- **Mit változtat:** a `quality` job helyett négy párhuzamos Rust-shard, hat Go-shard, egy `quality-lines` és a `quality` nevű döntő job. A küszöbök, a mutánsok és a gate változatlanok, és a kötelező check neve is megmaradt.
+- **Teljességi ellenőrzés:** az összefésülés előtt a gate ellenőrzi, hogy minden mutáns pontosan egy shardban lett tesztelve, és egy shard sem hiányzik. Ha hiányzik, az új `INCOMPLETE_SHARDS` ok piros kaput ad. A self-test 14 új hibával 35-re nőtt, a döntő job `if: always()`, mert egy kihagyott job zöldnek számítana.
+- **Azonos számok:** a `main` kódján 4 Rust- és 3 Go-shardot futtattam párhuzamosan, és az új gate-tel összefésülve pontosan az egyben futtatott szám jön ki. Rust 227/227, Go 493/501 (3+3+2 túlélő).
+
+A #25 CI-je ettől függetlenül fut az új SHA-n (`36809bab…`). A #26 CI-jén a valódi 4+6 shard eredményének egyeznie kell ezekkel. Ha a két PR közül a #25 mergelődik először, a #26-ot rebase-elni kell, mert mindkettő a `p1.yml`-t érinti.
+~~~~~
+
+
+### 2026-10-19 19:08 — Claude
+
+~~~~~
+Pusholtam a javítást a #26-ra (`1d5fd419…`), a CI újra fut. A #25 CI-je (`36809bab…`) közben ugyanúgy fut, azt is figyelem.
+~~~~~
+
+
+### 2026-10-19 19:18 — Felhasználó
+
+~~~~~
+tényleg nem lehet a githubon több szálon futtatni a CI-t?
+~~~~~
+
+
+### 2026-10-19 19:19 — Claude
+
+~~~~~
+Dehogynem, lehet, és ezt a #26 már csinálja: a matrix 4 Rust- és 6 Go-shardot indít egyszerre, ez 10 párhuzamos GitHub-runner, plusz a lines job.
+
+**Mi korlátoz:**
+- **Egyidejű jobok száma.** A szervezet `free` tervén van, ott 20 párhuzamos job fut egyszerre. Most 11-et használunk, de a #25 és #26 CI-je együtt már e fölé mehet, és a többi vár.
+- **Runner mérete.** A repo publikus, így a standard runnernek 4 vCPU-ja van. Egy runneren belül is lehet több szál (`cargo mutants --jobs N`, `go test -p`), de a mutációknál a tesztek egymással versenyeznek a CPU-n, és az időtúllépéses mutánsok megbízhatatlanná válhatnak, ha túlterheljük.
+- **Shardonkénti fix költség.** Minden shard ~3–4 percig telepíti a `cargo-mutants`-ot, és 1–2 percig építi az alapot. Ezért 4 helyett 8 shard nem felezi az időt.
+
+**Mit lehetne még gyorsítani** (külön lépésként):
+1. A `cargo-mutants`, a `cargo-llvm-cov` és a `go-mutesting` bináris cache-elése (`actions/cache`), ami shardonként ~3 percet spórol.
+2. Több shard a Go-nál, mert ott a mutánsonkénti teszt a drága rész.
+3. A tesztszelekció és a delta a FULL/DELTA tervben.
+
+Az eredeti egyórás futásnak az volt az oka, hogy egyetlen job futott sorosan, nem a GitHub korlátja. A #26 első teljes futásából látszik majd a tényleges falidő, és abból döntöm el, melyik cache-elés vagy shardszám éri meg.
+~~~~~
+
+
+### 2026-10-19 19:20 — Claude
+
+~~~~~
+A #26 zöld, és a falidő a `quality` kapura **10,5 perc** (előtte kb. egy óra).
+
+**CI a `1d5fd419d808d89ccec4e5496a1f570e30401733` HEAD-en:** mind a 19 check zöld, benne `quality-lines`, `quality-mutation-rust` ×4, `quality-mutation-go` ×6, a döntő `quality`, és a többi kapu.
+
+**Ugyanazok a számok, mint az egyben futott jobban a `main` kódján:**
+
+| | sharded, a CI-n | egy job (PR #24) |
+|---|---|---|
+| Rust line | 99,23% (908/915) | 99,23% |
+| Go statement | 100% (478/478) | 100% |
+| Rust mutáció | 227/227 | 227/227 |
+| Go mutáció | 493/501 | 493/501 |
+| gyengített tesztek: line | Rust 41,72%, Go 21,34%, mindkettő piros | ugyanez |
+| gyengített tesztek: mutáció | Rust 0/23, Go 16/68, mindkettő piros | ugyanez |
+
+Az első futás elbukott a Rust-shardoknál (nem létezett a kimeneti könyvtár), és a döntő `quality` 4 másodperc alatt pirosra váltott. Ez a fail-closed viselkedés bizonyítéka. A javítás egy sor.
+
+**Falidő:**
+
+| Job | Idő |
+|---|---|
+| Rust-shardok | 3,6–6,2 perc |
+| Go-shardok | ~2,3 perc |
+| `quality` (letöltés, gate, két ellenpróba) | 4,2 perc |
+
+A leghosszabb szakasz most a `quality` job eszköztelepítése és a két ellenpróba, nem a mutáció. Egy `actions/cache` ezen ~3 percet faragna, de ezt külön lépésnek hagyom.
+
+A #26 nyitva marad, merge nélkül.
+
+A #25 (`36809bab…`, a comparator fail-closed javítás) CI-ját is figyelem, annak eredményét külön jelentem.
+~~~~~
+
+
+### 2026-10-19 19:20 — Felhasználó
+
+~~~~~
+hol tart a #25 CI?
+~~~~~
+
+
+### 2026-10-19 19:20 — Claude
+
+~~~~~
+A #25 HEAD-je `36809bab904bd48d2d45f63ef635c972b9db78ed`. Nyolc kapu zöld, egy fut:
+
+- **Zöld:** `rust`, `go`, `branch-coverage`, `corpus`, `fuzz`, `parity` (benne a bővített `selftest.py`), `seeded-defects`, `quality-gate-selftest`.
+- **Fut:** `quality`, a régi, egyben futó változat (ebben a PR-ban még nincs shardolva). Ez nagyjából egy óra, jelenleg a mutációs lépéseknél jár.
+
+A `quality` zöld állapota és a tényleges méréseik után frissítem a doksi táblázatát a CI-számokra egy doksi-only commitban, és a PR-leírást is, mert az elavult adatokat tartalmaz. Utána küldöm az összesítést.
+~~~~~
+
+
+### 2026-10-19 19:44 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+## PR #25 — Aktuális állapot
+
+Mind a 9 CI-kapu zöld az új HEAD-en.
+
+A [PR #25](https://github.com/CentralInfraCore/cic-primitive-forms/pull/25?utm_source=chatgpt.com) továbbra is nyitott és merge-elhető.
+
+Aktuális HEAD: `36809bab904bd48d2d45f63ef635c972b9db78ed`
+
+A korábbi review óta érkezett egy új commit, amely kijavítja a differenciális comparator fail-open hibáját. A `compare.py` most már külön ellenőrzi a kimenetek szerkezetét és a megengedett hibakódokat. Az ismeretlen hibakód `INVALID` eredménnyel pirosra váltja a kaput, akkor is, ha mindkét implementáció ugyanazt a hibás választ adja.
+
+A `selftest.py` is bővült: már 25 negatív ellenpróbát tartalmaz, az ismert eltérésekre, az ismeretlen hibakódokra és a hibás kimeneti struktúrákra.
+
+### A legutóbbi teljes CI mért eredményei
+
+| Kapu           | Rust             | Go               |
+| -------------- | ---------------- | ---------------- |
+| Sor / utasítás | 98,69%           | 100,00%          |
+| Ág             | 97,23%           | 100,00%          |
+| Mutáció        | 99,77% (432/433) | 97,67% (798/817) |
+
+A parity job 30 005 bemenetet vizsgált. 326 ismert eltérés, 0 új és 0 megváltozott eltérés szerepel a naplóban; a kivétel-ellenőrzés és a selftest sikeres.
+
+A korábbi 274-ről 326-ra növekedés nem bizonyított regresszió: bővült a generátor bemenetkészlete, így a két szám nem közvetlenül összehasonlítható.
+
+A 33 beültetett termékhiba mindegyikét elkapják a tesztek, és a szándékosan gyengített coverage- és mutációs tesztek továbbra is pirosra váltják a kaput.
+
+### Ami még hátravan
+
+A korábbi fail-open blokkolót megoldottnak tekintem. A mostani review-ban nem találtam új, bizonyított parser- vagy comparatorlogikai blokkolót.
+
+Viszont van még egy bizonyíték–dokumentáció eltérés:
+
+A `docs/P1-SUPPORTED-SUBSET.md` azt állítja, hogy a quality-számok a `9bf7d1aa` commitból származnak, és azóta nem változott a termékkód. Ez utóbbi nem igaz: a legújabb commit a Rust és Go parserkódból is eltávolított részeket. A dokumentált számok emiatt nem egyeznek a legújabb CI-val.
+
+A PR leírásában is korábbi adatok szerepelnek: 299 eltérés, 455 regressziós eset és 29 seeded defect, miközben a jelenlegi állapot 326, 494 és 33.
+
+A döntésem: a kód review-ja elfogadható, de a végleges merge-engedélyt még nem adnám ki a dokumentáció rendezése előtt.
+
+A következő lépés mindössze a dokumentáció és a PR-leírás szinkronizálása a legutóbbi méréshez, majd az új HEAD-hez tartozó ellenőrzések megerősítése. A nyitott parsereltérések megoldását nem követelném meg ebben a PR-ben.
+
+Összességében a PR #25 már nagyon közel van a lezáráshoz. A tesztrendszer közben jelentősen erősödött: most már nemcsak a parserkimenetek eltérését méri, hanem a bizonyítást végző comparator saját hibáira is képes piros kapuval reagálni. Ez érdemi minőségi előrelépés.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-19 19:45 — Claude
+
+~~~~~
+A számok a doksiban a tényleges CI-ből (`36809bab`) frissültek. A Go-túlélők újraosztályozására a 6 shard eredményét várom, utána írom át a túlélő-bekezdést és a PR-leírást.
+~~~~~
+
+
+### 2026-10-19 19:47 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 19:47 — Claude
+
+~~~~~
+Állás:
+
+- **Kész:** a doksi quality-táblázata a #25 tényleges CI-méréseire frissült (`36809bab`), a hamis „a termékkód nem változott" mondat helyére ellenőrizhető állítás került: `git diff 36809bab..HEAD -- rust/src go/*.go` üres. A stale parse-only számok kikerültek.
+  - line: Rust 98,69% (1278/1295), Go 100% (600/600)
+  - ág: Rust 97,23% (633/651), Go 100% (730/730)
+  - mutáció: Rust 99,77% (432/433), Go 97,67% (798/817)
+  - gyengített proofok: line 50,55% és 32,33%, ág 63,59% és 0/730, mutáció 0/23 és 16/68
+- **Fut:** a 6 helyi Go-mutációs shard az új kódon, a 19 túlélő újraosztályozásához. A ledgerek ~3270 soron járnak. Várhatóan pár perc.
+- **Hátra:**
+  1. A túlélő-bekezdés átírása a 19 tényleges túlélőre.
+  2. A PR-leírás frissítése (326 / 494 / 33 / valós mérések).
+  3. Doksi-only commit, push, majd az új HEAD-en a teljes CI megerősítése. A termékkód nem változik, ezt a diff bizonyítja.
+
+Utána jelentek az új teljes SHA-val.
+~~~~~
+
+
+### 2026-10-19 19:50 — Claude
+
+~~~~~
+A célzott teszt megöli a túlélő mutánst. Most regenerálom a korpuszt, átírom a túlélő-bekezdést a tényleges 19-re, frissítem a PR-leírást, és commitolok.
+~~~~~
+
+
+### 2026-10-19 19:52 — Claude
+
+~~~~~
+A #25 új HEAD-je `02102347641d7add6b846e4fc9240302fb38e7f2`. A CI fut rajta, a `quality` itt még egyben fut, ezért kb. egy óra. Ez rendezte a doksi–bizonyíték eltérést:
+
+- **Doksi:** a quality-táblázat a `36809bab` tényleges CI-méréseit tartalmazza (line, ág, mutáció, a három gyengített proof). A hamis mondat helyén ellenőrizhető állítás áll: `git diff 36809bab..HEAD -- rust/src go/*.go` üres.
+- **Túlélők:** a 19 Go-túlélőt újraosztályoztam (helyi shardok, pontosan 798/817): 18 ekvivalens, 1 nem az (a blokkskalár állapotának visszaállítása a blokk végén). Erre célzott teszt van mindkét nyelven és a korpuszban, és a mutáns elhal tőle.
+- **Eltérésszám:** a doksi kimondja, hogy az ismert eltérések száma a generált készlethez tartozik, és minden új regressziós esettel mozog (274 → 299 → 326 → 300). A kapu a bemenetet és a kimeneteket tartja fixen.
+- **PR-leírás:** újraírva az aktuális adatokkal (495 eset, 13 pinelt és 300 ismert eltérés, 33 seeded defect, valós CI-mérések).
+
+Az új SHA-n a teljes CI eredményét a végén jelentem. Merge nincs.
+~~~~~
+
+
+### 2026-10-19 20:02 — Felhasználó
+
+~~~~~
+quality esetében nem lehet quality go és quality rust lépés nem lehetett szétvágni a quality-t?
+~~~~~
+
+
+### 2026-10-19 20:03 — Claude
+
+~~~~~
+Igen, szét lehetett vágni, és ez az egyszerűbb változat: egy `quality-rust` és egy `quality-go` job egymással párhuzamosan, utána egy döntő job. Mutációban a Rust és a Go nagyjából fele-fele az időnek, így az egy óra ~30 percre esett volna.
+
+Ezt a #25-ben azért nem csináltam, mert a `p1.yml` módosítása újranyitotta volna a review-t, és a gate (`quality_gate.py check`) egyszerre vár mind a négy riportot, tehát egy összegző job kell hozzá. Ez az összegző job már megvan a #26-ban, és ott a nyelvi szétvágás finomabb: 4 Rust- és 6 Go-shard. Az eredmény 10,5 perc, ugyanazokkal a számokkal.
+
+Ezért a #25 `quality` jobja a régi, egyben futó változat, és emiatt tart még kb. egy órát.
+
+Ha jónak látod, a sorrendet megfordíthatjuk. Előbb a #26 (csak CI, a `main`-re épül, a számok egyeznek), utána a #25 rebase-e rá, és a #25 már a gyors `quality`-vel fut tovább. A merge a te döntésed. A #25 mostani futását addig is megvárom, hogy a SHA és az ellenpróbák eredménye meglegyen.
+~~~~~
+
+
+### 2026-10-19 20:03 — Felhasználó
+
+~~~~~
+25 pr-en
+~~~~~
+
+
+### 2026-10-19 20:03 — Claude
+
+~~~~~
+Értem: a #25-ön csináljuk. A #26 két commitját (a shardolt `quality` a teljességi ellenőrzéssel) átemelem a #25 ágára. A mostani, egyórás `quality` futás ezzel feleslegessé válik.
+~~~~~
+
+
+### 2026-10-19 20:03 — Felhasználó
+
+~~~~~
+[Request interrupted by user]
+~~~~~
+
+
+### 2026-10-19 20:04 — Felhasználó
+
+~~~~~
+26-os is lehet lehet csináld
+~~~~~
+
+
+### 2026-10-19 20:04 — Claude
+
+~~~~~
+Értem: ugyanaz a változás mindkét PR-ben legyen benne. Folytatom az átemelést a #25 ágán, a `p1.yml` konfliktust feloldom, és a #26 marad ahogy van.
+~~~~~
+
+
+### 2026-10-19 20:04 — Claude
+
+~~~~~
+Csak a `paths:` sor ütközik: mindkét oldal hozzáadott egy elemet. Egyesítem a kettőt.
+~~~~~
+
+
+### 2026-10-19 20:05 — Claude
+
+~~~~~
+A #25-ön most a sharded `quality` fut, a HEAD pedig `1ef2d16efc001123895f501e2010379f6266b349`.
+
+- **Átemelve:** a #26 két commitja bekerült a #25 ágára (a `paths:` sor egy konfliktusa feloldva). Az ellenőrzés teljességét ugyanaz a gate adja (`INCOMPLETE_SHARDS`), mint a #26-ban. A két PR így ugyanazt a CI-konfigurációt tartalmazza, bármelyik mergelődik előbb, a másik tisztán követi.
+- **Pontosítás, amit menet közben találtam:** a doksiban azt állítottam, hogy `git diff 36809bab..HEAD -- rust/src go/*.go` üres. A `go/*.go` glob a `_test.go` fájlokat is elkapja, ahol később egy tesztsort adtam hozzá, így a kimenet nem üres. Pontosítottam a parancsot a termékkódra (`':(glob)go/*.go' ':(exclude)go/*_test.go'`), amire a diff üres. A doksiban és a PR-leírásban is javítottam.
+- **Fut:** a teljes CI az új HEAD-en. A `quality` most a shardolt változatban, így nagyjából 10–12 perc, nem egy óra.
+
+Az eredményeket a végén jelentem az új SHA-val. Merge továbbra sincs.
+~~~~~
+
+
+### 2026-10-19 20:10 — Felhasználó
+
+~~~~~
+tedd át a 25-re is ez igy q lassu
+~~~~~
+
+
+### 2026-10-19 20:10 — Claude
+
+~~~~~
+A #25-ön már át van téve a shardolt `quality`, a `1ef2d16efc001123895f501e2010379f6266b349` HEAD-en. Épp most fut a 4 Rust- és 6 Go-shard párhuzamosan. Eddig megvan: `quality-lines`, `quality-gate-selftest`, `branch-coverage`, `corpus`, `go` és `rust` zöld, egy Go-shard kész. A `fuzz`, a `parity` és a `seeded-defects` is fut.
+
+Ha a #25 `quality` jobja még mindig egy órás lenne, akkor az a régi futás lehetett, ami a push előtt indult. Az új HEAD-en a mutáció ~10 percig tart, a teljes `quality` ~12 perc. Az eredményt és az új SHA-n a teljes CI-t a végén jelentem.
+~~~~~
+
+
+### 2026-10-19 20:11 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-19 20:11 — Claude
+
+~~~~~
+A #25 `1ef2d16efc001123895f501e2010379f6266b349` HEAD-jén:
+
+- **Zöld:** `rust`, `go`, `branch-coverage`, `corpus`, `parity` (benne a 25 ellenpróba), `quality-lines`, `quality-gate-selftest`, és 2 a 6 Go-shardból.
+- **Fut még:** 4 Go-shard, mind a 4 Rust-shard, `fuzz` (~8 perc) és `seeded-defects`.
+- **Hátra:** a döntő `quality` job, amely a shardok után ~4 percig fut (letöltés, gate, két ellenpróba).
+
+Az előző shardolt futás 10–11 percig tartott, ezért várhatóan pár percen belül kész. Ha minden zöld, jelentem az új SHA-t és a `quality` pontos számait.
+~~~~~
+
+
+### 2026-10-19 20:13 — Felhasználó
+
+~~~~~
+fuzz meghalt
+~~~~~
+
+
+### 2026-10-19 20:14 — Claude
+
+~~~~~
+Van nightly és `cargo-fuzz`, így helyben reprodukálom a fuzz-találatot.
+~~~~~
+
+
+### 2026-10-19 20:21 — Claude
+
+~~~~~
+A CI és a 6 helyi Go-shard is fut az új kódon (`fe80d559…`). Ha mindkettő kész, frissítem a doksi számait és a hivatkozott mért SHA-t, aztán jelentek.
+~~~~~
+
+
+### 2026-10-19 20:21 — Claude
+
+~~~~~
+Ez egy régi figyelő lejárata volt (`bkesmjoix`, egy korábbi HEAD-re). A jelenlegi (`b461y21qi`) fut az új HEAD-en.
+~~~~~
+
+
+### 2026-10-19 20:35 — Claude
+
+~~~~~
+Ez is egy régi figyelő lejárata (`bhjapb6ah`, az előző HEAD-re). A jelenlegi, `b461y21qi` fut.
+~~~~~
+
+
+### 2026-10-19 20:52 — Claude
+
+~~~~~
+A #25 új HEAD-je `37fc1f84f060c6bb3eb86ff3f7bc5d7378c9b5f0`. A `fe80d559` volt az utolsó, ami a termékkódot változtatta, és erre mind a 9 kapu zöld volt. A doksi-only commit CI-ja most fut.
+
+**Mit találtam és javítottam a fuzz-bukás után:** a `fuzz` jelezte, hogy az emitter kimenetét a szkenner visszautasítja (`a? *` sima skalár, de a `?`-t indikátornak vette, így a `*`-ot aliasnak). A gyökérok az volt, hogy a `-` és `?` csak ott indikátor, ahol skalár kezdődhet. Brute-force ellenőrzéssel találtam meg, ami most teszt mindkét nyelven (minden legfeljebb 3 karakteres indikátor-karakterlánc, 4 pozícióban). Egy 3,4 millió hosszabb karakterláncos futás is tiszta.
+
+**Menet közbeni hiba, amit magam csináltam:** egy commitba véletlenül belekerült 3316 generált fuzz-korpuszfájl a helyi `cargo fuzz` futásomból. Egy követő commitban kiszedtem (force-push nélkül), a nettó diff tiszta. Squash merge-nél ez eltűnik.
+
+**Mérések `fe80d559`-en (CI):**
+
+| | Rust | Go |
+|---|---|---|
+| line / statement | 98,69% (1279/1296) | 100% (601/601) |
+| ág | 97,25% (638/656) | 100% (735/735) |
+| mutáció | 99,77% (438/439) | 97,82% (806/824) |
+
+- **Gyengített proofok:** a gate piros a line (50,59% / 32,45%), az ág (67,22% / 0/735) és a mutáció (0/23 / 16/68) méréseken.
+- **Parity:** 287 ismert, 0 új és 0 megváltozott eltérés, a selftest minden törésre piros.
+- **Go-túlélők:** mind a 18 ekvivalens (helyben, a 6 shardon reprodukálva).
+- **Doksi, PR-leírás:** mindkettő a `fe80d559` mérésekre és ellenőrizhető állításra frissítve.
+
+**Falidő:** a `quality` 29 perc, nem 10. Egy Rust-shard 21 percig tartott, mert az időtúllépő mutánsok (120 s) abban csoportosultak. A többi shard 4–10 perc. A kiegyensúlyozás külön lépés lehet (több Rust-shard vagy rövidebb timeout), a küszöböt nem érintem.
+
+Merge nincs.
+~~~~~
+
+
+### 2026-10-19 20:55 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+A GitHub alapján a két korábbi PR állapota jelenleg eltér:
+
+- [PR #24](https://github.com/CentralInfraCore/cic-primitive-forms/pull/24?utm_source=chatgpt.com): sikeresen mergelve a `main` ágba. Merge commit: `2c58713253cf1946ccc1e7772c334d611c954f1b`.
+- [PR #25](https://github.com/CentralInfraCore/cic-primitive-forms/pull/25?utm_source=chatgpt.com): még nyitott, merge-elhető. A HEAD időközben `fe80d55976e436ba720bc1838c4283c2878c3609` lett.
+
+A `main` jelenleg még a #24 merge commitján áll. Tehát a #25 kódja nincs benne a `main` ágban.
+
+## A másik két PR: #25 és #26
+
+[PR #26 — Quality sharding](https://github.com/CentralInfraCore/cic-primitive-forms/pull/26?utm_source=chatgpt.com)
+
+HEAD: `1d5fd419d808d89ccec4e5496a1f570e30401733`
+
+A teljes CI sikeres, beleértve a négy Rust- és hat Go-mutációs shardot és a `quality` döntési kaput. A számok a korábbi teljes, soros mérésével egyeznek: Rust 227/227, Go 493/501 mutáció.
+
+[PR #25 — Parser parity](https://github.com/CentralInfraCore/cic-primitive-forms/pull/25?utm_source=chatgpt.com)
+
+Legfrissebb HEAD: `37fc1f84f060c6bb3eb86ff3f7bc5d7378c9b5f0`
+
+A megelőző `fe80d559` HEAD-en már minden kapu sikeres volt. A legfrissebb HEAD-en az ellenőrzésemkor a corpus sikeres, a P1-futásból hat job sikeres és tizenkettő még futott. Így ezt a HEAD-et még nem nevezném teljesen zöldnek.
+
+Van egy fontos integrációs kérdés: a #25 már tartalmazza a #26 quality-sharding változtatásait is. Ezért a két PR-t nem kezelném két teljesen független merge-ként.
+
+A jelenlegi állapot alapján a #26 technikai CI-futtatása lezárult, a #25-é még nem teljesen. Én a #25 legfrissebb CI-jének sikerét és a két PR közös változtatásainak összevetését tekinteném a következő merge-döntés előfeltételének. Egyelőre egyikhez sem adnék új, HEAD-hez kötött merge-engedélyt.
+
+A lényeg viszont pozitív: a teljes mutációs teszt párhuzamosítását már ténylegesen sikerült bizonyítani. Ez jó alap a következő fázishoz, a FULL/DELTA evidence-rendszerhez.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-19 20:56 — Claude
+
+~~~~~
+Egyetértek: egyik PR-hoz sem kérek és nem használok merge-engedélyt. Amit a két PR közös részéről ellenőriztem:
+
+- **Teljesen azonosak** a #25 és #26 ágán: `tools/quality_gate.py`, `tools/mutation_shard_exec.sh`, `docs/QUALITY-SHARDING.md`.
+- **A `p1.yml` különbsége** a #25-ös ág javára csak a `parity` job és a `paths:` sorban a `tools/parity/**` bejegyzés. A `quality-*` jobok blokkja sorról sorra megegyezik. Ha tehát bármelyik PR mergelődik előbb, a másik változtatása tisztán ráül, a közös commitokból nem marad különbség. Az egyetlen kézi lépés a `paths:` sor egyesítése lehet, és azt már egyszer feloldottam.
+- **#26** (`1d5fd419…`): teljes CI zöld, a számok egyeznek a soros méréssel (Rust 227/227, Go 493/501).
+- **#25 új HEAD** (`37fc1f84…`): a doksi-only commit CI-ja még fut. A shardolt `quality` most a Rust- és Go-shardoknál tart, a `fuzz` is fut, a többi zöld. A termékkód ezen a HEAD-en azonos a teljesen zöld `fe80d559`-cel, ezt a diff bizonyítja.
+
+Amint a #25 CI-ja befejeződik, jelzem az eredményt. Az evidence-terv (FULL/DELTA) külön dokumentumban jön, miután mindkét PR lezárult a te döntésed szerint.
+~~~~~
+
+
+### 2026-10-19 21:17 — Claude
+
+~~~~~
+Az engedély a #25 `37fc1f84…` HEAD-jére szól, feltételekkel. Először ellenőrzöm mindet, és csak utána futtatom a megadott parancsot.
+~~~~~
+
+
+### 2026-10-19 21:17 — Claude
+
+~~~~~
+Minden feltétel teljesül: a HEAD `37fc1f84…`, a `main` változatlanul `2c58713`, a 20 check-run mind sikeres, nincs kihagyott vagy megszakadt. Futtatom a megadott, HEAD-hez kötött merge-et.
+~~~~~
+
+
+### 2026-10-19 21:17 — Claude
+
+~~~~~
+Merge kész: a #25 squash commitja `ace0740d7cce7f57a4db19e2250171d8bdbc233a`. Most a #26-ot zárom le superseded megjelöléssel, és megnézem a `main` CI-ját.
+~~~~~
+
+
+### 2026-10-19 21:18 — Claude
+
+~~~~~
+A #25 mergelve van `main`-be (`ace0740d7cce7f57a4db19e2250171d8bdbc233a`, squash, a branch törölve), és a #26 lezárva superseded megjelöléssel. A `main` p1 és corpus CI-ja most fut. Ha lefutott, jön a `theads/` napló frissítése.
+~~~~~
+
+
+### 2026-10-19 21:20 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+A lezárás megtörtént, a változtatások a `main` ágon vannak.
+
+Ellenőriztem GitHubon. Pontosan az előzetesen egyeztetett módon történt:
+
+| PR                                                                                                               | Állapot               | Eredmény                                             |
+| ---------------------------------------------------------------------------------------------------------------- | --------------------- | ---------------------------------------------------- |
+| [#25 — Parser parity](https://github.com/CentralInfraCore/cic-primitive-forms/pull/25?utm_source=chatgpt.com)    | Mergelve              | Rust/Go differenciális tesztelés és quality-sharding |
+| [#26 — Quality sharding](https://github.com/CentralInfraCore/cic-primitive-forms/pull/26?utm_source=chatgpt.com) | Lezárva, nem mergelve | Változtatásai a #25-tel bekerültek                   |
+
+Az új `main` SHA:
+
+`ace0740d7cce7f57a4db19e2250171d8bdbc233a`
+
+A merge utáni corpus CI sikeres, a teljes P1 workflow az ellenőrzéskor még futott.
+
+## Most következhet a FULL/DELTA rendszer
+
+A CIC Forms jelenleg rendelkezik a szükséges alapokkal: közös regressziós korpusz, differenciális parser-kapu, párhuzamosított teljes mutációs mérés, teljességellenőrzés és negatív ellenpróbák.
+
+A következő feladatot három részre bontanám:
+
+1. FULL evidence: tartós, ellenőrizhető rekord a sikeres teljes mérésről, pontos commit- és környezetazonossággal.
+2. DELTA shadow mode: a legutóbbi FULL baseline és az aktuális merge-jelölt közötti kumulatív változásokból mutánsokat kiválasztó, egyelőre csak jelentő futtatás.
+3. Szelektor-önteszt: beültetett változtatásokkal bizonyítani, hogy releváns teszt vagy mutáns nem marad ki észrevétlenül.
+
+A FULL továbbra is kötelező marad, amíg a DELTA szelekció helyességét nem bizonyítottuk.
+
+A mostani fontos eredmény: már nem kell a FULL/DELTA optimalizálással együtt újraépíteni a tesztelési infrastruktúrát. A következő réteg valóban a tesztbizonyítékok kezeléséről és az ellenőrzések biztonságos kiválasztásáról szólhat.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-19 21:20 — Claude
+
+~~~~~
+Elfogadom az összefoglalót. A `main` CI-ja `ace0740d…`-on már részben zöld (`corpus`, `rust`, `go`, `parity`, `branch-coverage`, `seeded-defects`, `quality-lines`, `quality-gate-selftest`), a mutációs shardok és a `fuzz` még futnak. A sorrend, amit megadtál: előbb a `main` teljes CI-ja, aztán a `theads/` napló, és csak utána a FULL/DELTA terv. A tervet külön, review-zható dokumentumként írom, implementáció és merge nélkül, amíg nem engedélyezed.
+
+Megvárom a `main` CI végét.
+~~~~~
+
+
+### 2026-10-19 21:44 — Felhasználó
+
+~~~~~
+végzett
+~~~~~
+
+
+### 2026-10-19 21:44 — Claude
+
+~~~~~
+A `main` CI teljesen zöld: `p1` 19/19 job és a `corpus` sikeres a `ace0740d…`-on. Jön a `theads/` napló frissítése.
+~~~~~
