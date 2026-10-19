@@ -59,3 +59,10 @@ ellenőrizni kell, mielőtt tényként hivatkozunk rájuk.
 A `rejected` szakasz kötelező, ha bármit elvetettünk. A `CLAUDE.md` „Felülvizsgált AI
 párbeszédek" táblája ezekre a döntésekre hivatkozik — a `rejected` részeket egy későbbi
 session nem tervezheti újra.
+
+## Session-naplók
+
+A `YYYY-MM-DD_session-<téma>.md` fájlok egy Claude Code session **transcriptjei**:
+csak az interakció (felhasználói üzenetek és válaszok, időrendben), eszközhívások
+nélkül. Ezek naplók, nem külső eszköz állításai — a fenti bizonyíték-osztály
+szabály rájuk nem vonatkozik, de ők sem helyettesítik a PR-okat és a git-történetet.
