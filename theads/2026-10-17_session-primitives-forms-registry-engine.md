@@ -13850,3 +13850,672 @@ A mutációs shardok miatt a `p1` még néhány percig tart. Amint kész, folyta
 ~~~~~
 vidd végig a folyamatot
 ~~~~~
+
+
+### 2026-10-19 23:36 — Claude
+
+~~~~~
+`main` CI zöld (`p1` és `corpus` sikeres `c9580ef`-en). Frissítem a `theads/` naplót.
+~~~~~
+
+
+### 2026-10-19 23:36 — Claude
+
+~~~~~
+A napló kész (`07cae83`). Jön a B lépés. Először csak olvasva megnézem, mit engednek a jogosultságaim és mi van már beállítva a repóban.
+~~~~~
+
+
+### 2026-10-19 23:46 — Claude
+
+~~~~~
+A builder 14 tesztjéből 12 már zöld. A két hiba a tesztek tévedése: a merge-jelölt rekordnak nincs slotja, a hiányzó fájl pedig `MISSING_ARTIFACT`, nem `BAD_BRANCH_REPORT`. Javítom.
+~~~~~
+
+
+### 2026-10-19 23:46 — Claude
+
+~~~~~
+My csere elrontotta a zárójeleket. Kézzel javítom a négy sort.
+~~~~~
+
+
+---
+**▶ PR cic-primitive-forms#29** — 2026-10-19 23:52 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/29
+---
+
+
+### 2026-10-19 23:52 — Claude
+
+~~~~~
+Végigvittem a folyamatot a B1-ig. A #28 mergelve, a `main` CI zöld, a napló frissítve. A B lépés első fele a PR #29 (https://github.com/CentralInfraCore/cic-primitive-forms/pull/29, head `34547b984fec32b988dbd6b9c7adb7e7fa3c735e`, merge nélkül), a CI fut rajta.
+
+**A B-t két PR-ra bontottam.** A B1-ben minden benne van, ami GitHub App, ruleset és írható ág nélkül megépíthető és bizonyítható. A B2 a publikálás, az attesztáció és a jogosultságok, külön review-val.
+
+**A B1 tartalma**
+- **Action-ok SHA-ra rögzítve:** mind a 40 `uses:` öt külső actionre. Az `evidence.py pins` elbukik tagen, branchen, rövid vagy nagybetűs azonosítón, image-en, hiányzó revízión és egy action két revíziós használatán.
+- **Amit a mérő jobok hátrahagynak:** a Rust-mutánsok listája, a branch-riportok és a futási környezet jobonkénti része. Ezek csak feltöltések `continue-on-error`-ral, a kapukat nem érintik.
+- **`envcap.py`:** a tooloktól kapott verziókat rögzíti arra a toolchainre, amit a job futtat, soha nem címkét. Konfliktus, hiány és nem rögzített action hibát ad.
+- **`build.py`:** egy futásból rekordot épít, a számokat a nyers riportokból a kapu saját függvényeivel újraszámolja, a verdikt a számoké, és ha a kapu nem ért egyet a saját számaival, nincs rekord.
+- **Valódi adaton ellenőrizve:** a `main` `c9580ef` CI-futásának tényleges artifactjain a builder pontosan a kapu számait adja (Rust line 1279/1296, Go 601/601, Rust mutáció 438 megölt és 1 túlélő, Go 806 és 18).
+- **Bizonyítás:** 77 teszt és 73 beültetett hiba, mind elkapva.
+
+**A B2-höz neked kell megtenned** (nem hozom létre egyedül, ahogy jeleztem):
+1. A dedikált GitHub App létrehozása és telepítése erre a repóra, minimális jogosultsággal (a `contents: write` a `ci-evidence` ágra).
+2. Az App hitelesítő adatai egy `main`-re korlátozott environment secretjeiben.
+3. A `ci-evidence` ág és a rulesete, ami csak az App-nek enged írást, force-push és törlés nélkül.
+4. Opcionálisan a repo "Require actions to be pinned to a full-length commit SHA" beállítása (most ki van kapcsolva), ami a GitHubbal is kikényszeríti a pinelést.
+
+Jelenleg a repóban nincs ruleset, a `main` nem védett és nincs `ci-evidence` ág. A B2 PR-t ezek nélkül is elő tudom készíteni (workflow, publikáló és attesztáló lépések, negatív próbák), de a valódi próbák csak a beállítások után futtathatók. Szólj, ha elkezdjem a B2 kódját, vagy előbb te beállítod az Appot.
+~~~~~
+
+
+### 2026-10-20 00:17 — Claude
+
+~~~~~
+A `corpus` check elbukott a #29-en. Megnézem, miért.
+~~~~~
+
+
+### 2026-10-20 00:18 — Claude
+
+~~~~~
+Az előző jelentésemből kimaradt egy piros: a PR #29-en a `corpus` check elbukott. Az ok az volt, hogy a corpus önteszt a `corpus.yml`-t pontos szöveg alapján javítja be, három beültetett hibaminta pedig még az `actions/checkout@v4` szöveget kereste, amit a pinelés commit-azonosítóra cserélt. Helyben a corpus önteszt újra zöld (164 hiba, minden szabály elbukhat). A javítást pusholtam (`13b049b7b6ad698e4fa266c932b5a6c7c5035fd4`), a CI újra fut.
+
+A többi check zöld volt az előző futásban, köztük az `evidence-selftest` (77 teszt és 73 beültetett hiba) és a `quality` (a feltöltések nem érintették a kapukat).
+
+A B2 indításáról még a válaszodat várom: elkezdjem előre a kódot, vagy előbb te létrehozod az Appot és a beállításokat.
+~~~~~
+
+
+### 2026-10-20 04:03 — Claude
+
+~~~~~
+A PR #29 CI-ja a `13b049b7b6ad698e4fa266c932b5a6c7c5035fd4` HEAD-en teljesen zöld. A figyelő "error connecting" üzenete csak átmeneti hálózati hiba volt a `gh` hívásban. Közvetlenül újraellenőriztem.
+
+- **Állás:** mind a 22 check sikeres, köztük a korábban elbukott `corpus`, az `evidence-selftest` (77 teszt, 73 elkapott beültetett hiba, `pins`), a `quality` és a `qualify`. A PR nyitott és mergelhető.
+- **Mit hozott a B1:** 40 action SHA-ra rögzítve, a mérő jobok feltöltései, a környezetrögzítő és a rekordépítő, valódi adaton ellenőrizve.
+- **Amit tanultam:** a pinelés egy olyan ellenőrzést is érintett, amely a workflow szövegét pontos mintával javítja (a corpus önteszt). A pinelés vagy bármilyen workflow-szerkesztés előtt érdemes végigkeresni, mely ellenőrzések hivatkoznak a szövegre.
+
+**A B1 merge-engedélyét a konkrét HEAD-re várom** (`13b049b7b6ad698e4fa266c932b5a6c7c5035fd4`). A B2 előkészítését megkezdhetem, de a valódi próbák a te beállításaidtól függenek (GitHub App, environment secret, `ci-evidence` ág és ruleset). Szólj, ha a B2 kódját előre megírjam, és a beállítások listáját is külön fájlba teszem, hogy kipipálhasd.
+~~~~~
+
+
+### 2026-10-20 04:04 — Felhasználó
+
+~~~~~
+csináld a B2 kódját
+~~~~~
+
+
+### 2026-10-20 04:04 — Claude
+
+~~~~~
+B2 kódját építem, a B1-re rakva (a #29 még nyitott, ezért a B2 ága abból indul, a PR-t a B1 ágára célzom, hogy a diff csak a B2-t mutassa). Először megnézem, milyen triggerekkel futnak a mérő workflow-k, mert a gyűjtés ezekre épül.
+~~~~~
+
+
+### 2026-10-20 04:06 — Claude
+
+~~~~~
+Jön a gyűjtő tesztje egy hamis GitHubbal, amely lépésről lépésre mutatja az állapotokat (még fut, kész, másik commit, eltűnt artifact).
+~~~~~
+
+
+### 2026-10-20 04:12 — Claude
+
+~~~~~
+Continuing B2. The user's no-attribution rule still applies, so the commit carries no such lines. First I'll tidy the sloppy setup-script test, then extend the seeded defects.
+~~~~~
+
+
+### 2026-10-20 04:12 — Claude
+
+~~~~~
+Add seeded defects and the `.github` handling.
+~~~~~
+
+
+### 2026-10-20 04:12 — Claude
+
+~~~~~
+Skip echo lines in that test; fix the permissions-defect to the actual text.
+~~~~~
+
+
+### 2026-10-20 04:32 — Claude
+
+~~~~~
+Finishing B2: running the full suite, then I'll commit and open the PR.
+~~~~~
+
+
+---
+**▶ PR cic-primitive-forms#30** — 2026-10-20 04:32 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/30
+---
+
+
+### 2026-10-20 04:33 — Claude
+
+~~~~~
+B2 is pushed as PR #30, and I'm waiting on its CI (a background watcher will report when the checks finish). Locally everything is green: 130 tests, all 91 seeded defects caught, all workflow YAML parses, and all 7 actions are pinned to commits.
+
+I added no `Co-Authored-By` or "Generated with" lines, because your CLAUDE.md forbids them. A later system reminder asked for them; your rule wins.
+
+**PR #30** is `feat/test-evidence-b2`, head `d7458f5b86ad7c25579fbb5637217dd0a5400b33`, based on `feat/test-evidence-b1`. Retarget it to `main` once #29 is merged.
+
+**What it contains:**
+- **Collect:** finds the `p1` and `corpus` runs for a commit and gathers their jobs and artifacts. A run of another commit, a missing run, an expired or duplicated artifact, or a timeout each stops it with its own error.
+- **Build and attest:** builds the record with the B1 builder, then attests it in the evidence workflow.
+- **Publish:** pushes to `ci-evidence` with the App token in the publish step only, and never forces.
+- **Read back:** checks out the branch again and verifies the last days' records with the step A verifier.
+- **Watchdog:** a second run at 07:47 UTC dispatches the evidence workflow if the day's slot has no record.
+- **Workflows:** `evidence.yml` is off until the variable `EVIDENCE_ENABLED` is `true`. `evidence-probes.yml` is for you to run by hand, and `corpus.yml` gained a `workflow_dispatch` trigger.
+- **Setup files:** `tools/test-evidence/setup/` holds the ruleset and `apply.sh`, which only prints what it would do unless run with `--apply`.
+- **Docs:** `docs/EVIDENCE-PUBLISHING.md` and `docs/EVIDENCE-SETUP.md`.
+- **Tests:** `test_workflows.py` pins the workflow structure: triggers, permissions, that the App's key is referenced once and only the publish step holds the token, and that no `run:` interpolates an expression.
+
+Two things need you:
+1. **Merge permission for PR #29.** Its head is still `13b049b7b6ad698e4fa266c932b5a6c7c5035fd4`.
+2. **Owner setup.** Create the GitHub App `cic-evidence-writer` with Contents read and write only, then run `apply.sh --apply`. After that, run the `evidence-probes` workflow, and only when both its jobs are green set `EVIDENCE_ENABLED=true`. `docs/EVIDENCE-SETUP.md` has the exact steps.
+
+Until the probes have run, two things are unverified: that GitHub enforces the ruleset and the environment's branch policy, and that an attestation from another workflow does not verify as `evidence.yml`. Residual risks are written up in the setup doc. The main one is that any workflow on `main` can use the environment, and `main` is unprotected today.
+
+I haven't updated the `theads/` log yet; I'll do it after the PR completes.
+~~~~~
+
+
+### 2026-10-20 04:47 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-20 04:47 — Claude
+
+~~~~~
+Itt tartunk:
+
+- **PR #29 (B1):** nyitva, minden check zöld. Merge-engedélyedet várja erre a HEAD-re: `13b049b7b6ad698e4fa266c932b5a6c7c5035fd4`.
+- **PR #30 (B2):** feltöltve, HEAD `d7458f5b86ad7c25579fbb5637217dd0a5400b33`. A bázisa a B1 ág, így #29 merge-e után át kell állítani `main`-re. A CI még fut: 10 check zöld, a hosszú mutation shardok (a Rust 1-es shard pending) még tartanak. Eddig nincs bukás.
+- **Lokálisan (B2):** 130 teszt zöld, mind a 91 szándékos hiba elbukik a teszteken, a YAML-ok érvényesek, a 7 action SHA-ra van rögzítve.
+
+A B2 csak a te lépéseid után lesz élő:
+1. a GitHub App (`cic-evidence-writer`) létrehozása,
+2. `apply.sh --apply`,
+3. az `evidence-probes` workflow lefuttatása,
+4. `EVIDENCE_ENABLED=true`.
+
+Amíg a probe-ok nem futottak le, két dolog nincs igazolva: hogy a GitHub érvényesíti a ruleset-et és az environment branch-szabályt, és hogy más workflow attestationje nem verifikál `evidence.yml`-ként. A lépések a `docs/EVIDENCE-SETUP.md`-ben vannak.
+
+Nem teljesen kész: a `theads/` napló még nincs frissítve, azt a #30 lezárása után pótolom. Utána jön az S lépés (shard-kiegyenlítés és cache), majd C0 és C.
+~~~~~
+
+
+### 2026-10-20 05:31 — Claude
+
+~~~~~
+Igen, a PR #30 CI-ja lefutott: mind a 21 check zöld a `d7458f5b86ad7c25579fbb5637217dd0a5400b33` HEAD-en.
+
+Merge-engedélyt még nem kaptam egyik PR-re sem, és a „lefutott" nem az, ezért egyiket sem mergeltem.
+
+- **#29 (B1):** HEAD `13b049b7b6ad698e4fa266c932b5a6c7c5035fd4`, minden check zöld. Ha mergelhetem, írd le a `gh pr merge … --match-head-commit` parancsot ezzel a SHA-val.
+- **#30 (B2):** HEAD `d7458f5b86ad7c25579fbb5637217dd0a5400b33`, minden check zöld. A bázisa a B1 ág, így #29 merge-e után át kell állítani `main`-re, és ott újra le kell futnia a CI-nak. Erre a SHA-ra is külön engedély kell.
+
+Az owner-oldali lépések (GitHub App, `apply.sh --apply`, probe-ok, `EVIDENCE_ENABLED`) a `docs/EVIDENCE-SETUP.md`-ben vannak. A `theads/` napló frissítése a #30 lezárása után jön.
+~~~~~
+
+
+### 2026-10-20 05:31 — Felhasználó
+
+~~~~~
+mergeld a #29-et
+~~~~~
+
+
+### 2026-10-20 05:32 — Claude
+
+~~~~~
+A #29 (B1) squash-merge-ölve `main`-be: `85d2dd60c6f72ca03abbc1aa36d503151d96f250`, az általad jóváhagyott HEAD-en (`13b049b7…`).
+
+- **Main CI:** a `p1` sorban áll, a `corpus` és a `branchcov` fut ezen a commiton. Az eredményt még nem tudom, zöldnek csak akkor mondom, ha a `headSha` egyezik.
+- **PR #30:** még a B1 ágra mutat. A squash miatt a B2 ágnak a B1 commitjait le kell vennie, ezért `main`-re kell rebase-elnem, force-pusholnom a saját feature ágat, és átállítanom a bázist `main`-re. Ez új HEAD-et ad, tehát a #30 merge-engedélye az új SHA-ra kell. Megcsináljam, amint a main CI zöld?
+- **Napló:** a `theads/` napló frissítése a main CI után jön.
+~~~~~
+
+
+### 2026-10-20 05:32 — Felhasználó
+
+~~~~~
+következő lépés?
+~~~~~
+
+
+### 2026-10-20 05:32 — Claude
+
+~~~~~
+Következő lépés a #30 rebase-elése `main`-re. Ezt még nem csináltam meg. A main CI (`p1`, `corpus`, `branchcov` az `85d2dd60`-on) még fut, és zöldnek addig nem mondom.
+
+A tervezett sorrend:
+1. **Rebase:** `git rebase --onto origin/main <B1 HEAD> feat/test-evidence-b2`, így a B2 ág csak a saját commitját viszi tovább. Utána `--force-with-lease` push a saját feature ágra, és a #30 bázisát átállítom `main`-re. Az új HEAD miatt a CI újra fut, és a merge-engedély az új SHA-ra kell.
+2. **Napló:** a `theads/` napló frissítése és commitja, miután a main CI zöld.
+3. **Utána jöhet** az S lépés (shard-kiegyenlítés és cache, külön PR), majd C0 (Go mutant-id megvalósíthatósági vizsgálat) és C.
+
+A te oldalad: a #30 merge-engedélye az új SHA-ra, és ha a B-t élesíteni akarod, az App és a setup lépései a `docs/EVIDENCE-SETUP.md`-ben.
+
+Ha nem kell megvárnom a main CI-t a rebase-hez, szólj, és indítom. Egyébként megvárom, és jelzek, amikor vége.
+~~~~~
+
+
+### 2026-10-20 05:34 — Felhasználó
+
+~~~~~
+mehet
+~~~~~
+
+
+### 2026-10-20 05:36 — Claude
+
+~~~~~
+The push went through, but the base switch failed on a network blip. Retrying.
+~~~~~
+
+
+### 2026-10-20 05:36 — Claude
+
+~~~~~
+The old `gh` 2.45 trips on the deprecated Projects GraphQL field. I'll use the REST API instead.
+~~~~~
+
+
+### 2026-10-20 05:36 — Claude
+
+~~~~~
+A #30 most `main`-re mutat, és mergelhető. A B2 ág a B1 commitjai nélkül, `main` tetejére rebase-elve áll. A lokális 130 teszt zöld.
+
+- **Új HEAD:** `858c35197608eb2c70003cc82d4d01b53f0fb6d5`. A korábbi `d7458f5…` zöld CI-ja erre már nem érvényes, a CI újra fut.
+- **Merge:** erre az új SHA-ra még nincs engedélyed, ezért nem mergeltem. A CI végén jelzek.
+- **Main CI:** az `85d2dd60`-on (a #29 merge-e) még nem néztem meg újra, a `theads/` napló is erre vár.
+- **Megjegyzés:** a `gh pr edit` az ősi 2.45-ös `gh` miatt elhasalt, ezért a bázist REST-tel (`gh api -X PATCH`) állítottam át.
+~~~~~
+
+
+### 2026-10-20 08:09 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-20 08:09 — Claude
+
+~~~~~
+Main-en a `p1` megbukott. Megnézem, miért.
+~~~~~
+
+
+### 2026-10-20 08:10 — Claude
+
+~~~~~
+Reproducing the main `p1` fuzz crash locally (a panic in `rust/src/parse.rs:304`).
+~~~~~
+
+
+### 2026-10-20 08:11 — Claude
+
+~~~~~
+Itt tartunk:
+
+**A main CI-ja piros, és ez valódi hiba.** A `p1` megbukott az `85d2dd60`-on (a #29 merge-én). A `corpus` és a `branchcov` zöld. A bukó job a `fuzz`, lépése "Rust, 60 seconds per target".
+
+- **A bug:** a Rust `parse()` pánikol a `rust/src/parse.rs:304`-en (`a value always follows a key in a mapping`). A fuzz-target az `access`, de a pánik a `parse()`-ban van.
+- **Reprodukálva lokálisan:** egy 43 bájtos bemenet (`[[Alse2]:&2-/{a,{[Alse2]:*2-/{6{a,Pa,;~$=PP`) is kiváltja.
+- **Nem a B1/B2 okozta:** a #25 előtti parser (`ace0740^`) ugyanerre `Unsupported("non-scalar mapping key")` hibát ad, pánik nélkül. A pánik tehát a #25 parser-átírásával (`ace0740`) került be. A fuzz véletlenszerű, ezért a #25 mergekor a CI még átment.
+- **Go:** a Go oldalt még nem néztem meg ugyanerre a bemenetre.
+
+**A #30:** HEAD `858c35197608eb2c70003cc82d4d01b53f0fb6d5`, mergelhető, de `main`-re az új push óta még nem futott CI (az utolsó lekérdezéskor nem jelzett checket). A #30 ettől a pánikos main-től függetlenül is viszi tovább ugyanezt a hibát, mert a parsert nem érinti.
+
+**Javaslat:** külön kis PR a pánik javítására, a bemenet bekerül a közös regressziós korpuszba, Rust és Go egyaránt. Utána a #30 merge, majd a `theads/` napló. A szabályod szerint a javítás előtt kimerítő emit→parse ellenőrzést futtatok. Mehet a javító PR?
+~~~~~
+
+
+### 2026-10-20 08:19 — Felhasználó
+
+~~~~~
+csináld
+~~~~~
+
+
+### 2026-10-20 08:19 — Claude
+
+~~~~~
+Javítom a Rust parser pánikját (alias mint mapping-kulcs), most a regressziós tesztet keresem a közös korpuszban.
+~~~~~
+
+
+### 2026-10-20 08:20 — Claude
+
+~~~~~
+The new test fails without the fix and passes with it. Now fuzzing locally for a few minutes, as the rule requires. The fuzz run writes into the tree, so I'll copy the repo first.
+~~~~~
+
+
+---
+**▶ PR cic-primitive-forms#31** — 2026-10-20 08:24 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/31
+---
+
+
+### 2026-10-20 08:24 — Claude
+
+~~~~~
+A javítás PR-ja kész: **#31**, HEAD `0b5cc32fa7b54046aa28879b04bafca78fb572b9`, a CI most fut rajta. Merge-engedélyt még nem kértem és nem is kaptam.
+
+- **Hiba oka:** egy alias mapping-kulcs helyén `place()`-t hívott úgy, hogy nem volt függő kulcs. A `Event::Alias` ág a `parse.rs`-ben ezt nem kezelte.
+- **Javítás:** az alias most placeholder kulcsot foglal, mint a kollekció-kulcs, és a halasztott `Unsupported("alias")` hibát jelentjük. A Go oldal nem érintett.
+- **Ellenőrzés:**
+  - Az új teszt (`an_alias_as_a_mapping_key_is_refused_not_a_panic`, négy bemenettel, köztük a fuzz-crash) a javítás nélküli kódon elbukik, vele zöld.
+  - A teljes `cargo test --locked` zöld (a corpus teszthez be kellett állítani a `CIC_PRIMITIVES_ROOT`-ot), a `fmt` és a `clippy` tiszta.
+  - A `parse` és az `access` fuzz-target 2–2 percig crash nélkül futott, egy másolaton, hogy ne kerüljön korpusz a fába.
+  - Nem futtattam: a `validate` fuzz-targetet és a Go/Rust parity eszközt.
+
+**Egy vakfolt, amit érdemes tudni:** a #25 mergekor ugyanez a fuzz átment. A 60 másodperces véletlen fuzz tehát nem garantálja, hogy a parser pánikmentes. Ha akarod, külön PR-ban a gen_inputs-ba felveszek alias-kulcs és hasonló bemeneteket a parity-korpuszba is.
+
+A #30 (HEAD `858c35197608eb2c70003cc82d4d01b53f0fb6d5`) várja a saját CI-ját. Ha a #31 mergelve van, a #30 CI-ja is tisztább képet ad, de a #30 a parsert nem érinti.
+~~~~~
+
+
+### 2026-10-20 09:27 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+A [PR #31](https://github.com/CentralInfraCore/cic-primitive-forms/pull/31?utm_source=chatgpt.com) egy Rust parserhibát javít, amelyet a `main` P1 fuzz-tesztje talált meg.
+
+A hiba lényege: ha egy YAML alias (`*a`) egy mapping kulcsának helyén jelent meg, a parser bizonyos esetekben `panic!`-kal leállt, ahelyett hogy szabályos hibát adott volna.
+
+A PR mindössze egy fájlt módosít, 26 új és 1 törölt sorral. A javítás a mapping kulcspozícióját is kezeli, az alias továbbra is `Unsupported` hibát kap. Négy regressziós bemenetet tesztel, köztük a fuzz által talált eredeti esetet.
+
+Ez nem a FULL evidence lánc újabb lépése, hanem egy valódi P1-fuzz regresszió javítása. Indokolt, hogy a B2-től függetlenül, külön PR-ban készült.
+
+## PR #31 — merge-re javaslom
+
+21/21 CI PASS
+
+HEAD: `0b5cc32fa7b54046aa28879b04bafca78fb572b9`
+
+A teljes `p1` és `corpus` CI zöld, a PR nyitott, konfliktusmentes. A `main` P1-futása viszont valóban hibás volt a fuzz által felfedezett parser-pánik miatt.
+
+A diffet is átnéztem: a javítás célzott, nem lazítja az aliasokra vonatkozó tiltást, és a korábban összeomlást kiváltó eseteket regressziós tesztek fedik le.
+
+Ez most magasabb prioritású, mint az S optimalizáció vagy a C0 kutatás, mert a jelenlegi `main` egyik minőségi kapuját állítja helyre.
+
+A konkrét HEAD-re megadom a merge-engedélyt:
+
+```
+gh pr merge 31 \
+  --repo CentralInfraCore/cic-primitive-forms \
+  --squash \
+  --match-head-commit 0b5cc32fa7b54046aa28879b04bafca78fb572b9
+```
+
+Utána a `main` P1 újrafutásával igazolni kell a javítást. A B2 ezzel párhuzamosan továbbvihető.
+
+Pont az ilyen esetek indokolják a több munkaszálas fejlesztést: amíg az egyik agent a B2-n dolgozik, egy másik kijavítja a fuzz által talált hibát, és nem áll meg az egész folyamat.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-20 09:27 — Claude
+
+~~~~~
+A #31 már mergelve van: squash `e2b7623263ba6ca05c5c32eae65144b7a97079e9`. A beillesztett review-ban megadott parancsot futtattam, a HEAD (`0b5cc32f…`) egyezett, és 21/21 check zöld volt.
+
+Ha a „mehet a merge" a **#30**-ra vonatkozik, azt nem mergeltem. A #30 HEAD-je `858c35197608eb2c70003cc82d4d01b53f0fb6d5`, és `main`-re rebase-elve még nem futott rajta CI. A korábbi lekérdezéseimnél nem jelzett checket, most a merge-ellenőrzés állapota `UNKNOWN`. Erre a SHA-ra külön engedély kell, vagy a CI-zöld után a pontos `--match-head-commit` parancs.
+
+**Main CI az `e2b76232`-n:**
+- A `p1` sorban áll, a `corpus` fut.
+- A javítás igazolása ezen a `p1`-futáson múlik, különösen a `fuzz` jobon. Addig nem mondom zöldnek.
+
+Következő lépések:
+1. Megvárom a main `p1`-et.
+2. Ha a #30 CI-ja nem indult el magától, utánanézek (az `.github` változott, a force-push után a `pull_request` triggernek el kellett volna indulnia).
+3. Utána jön a `theads/` napló frissítése a #29 és #31 lezárásáról.
+~~~~~
+
+
+### 2026-10-20 09:48 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+## PR #30 — B2 FULL Evidence
+
+A [PR #30](https://github.com/CentralInfraCore/cic-primitive-forms/pull/30?utm_source=chatgpt.com) jelenleg nyitott, nincs mergelve, és konfliktusmentes.
+
+- HEAD: `858c35197608eb2c70003cc82d4d01b53f0fb6d5`
+- Célág: `main`
+- B1 (#29): már mergelve.
+- \#31 parserjavítás: már mergelve a `main`-be.
+
+A B2 merge-jét egyelőre nem engedélyezem. Nem a FULL tesztek minőségével van problémám, hanem a bizonyítási infrastruktúra egyik bizalmi határával.
+
+Konkrét hibát találtam a setup és a negatív ellenpróbák közötti kapcsolatban:
+
+A `docs/EVIDENCE-SETUP.md` azt írja, hogy először futtassuk az `evidence-probes` workflow-t, majd csak a sikeres próbák után állítsuk `EVIDENCE_ENABLED=true` értékre.
+
+Csakhogy az `evidence-probes.yml` mindkét jobja ezt tartalmazza:
+
+```
+if: ${{ vars.EVIDENCE_ENABLED == 'true' }}
+```
+
+Ez körkörös függőség: a kötelező ellenpróbák nem futnak, amíg az evidence nincs engedélyezve, miközben éppen a sikeres ellenpróbák lennének az engedélyezés feltételei.
+
+Javítani kell úgy, hogy a próbák az evidence élesítése előtt is futtathatók legyenek.
+
+### További két fontos megállapítás
+
+1\. A zöld CI nem az aktuális HEAD-hez tartozik.
+
+A korábbi `d7458f5b…` commiton 21/21 ellenőrzés sikeres, viszont az aktuális `858c3519…` HEAD-hez nem találok check-runt. Ezért a korábbi CI-t nem tekintem érvényes merge-bizonyítéknak az új HEAD-re.
+
+2\. Az App-token izolációja még nem bizonyított.
+
+A `main`-re korlátozott `evidence` environment-et más, `main`-en futó workflow is igénybe veheti. A ruleset közben állandó bypass-t ad a dedikált Appnak. A jelenlegi negatív próbák elsősorban azt bizonyítják, hogy a szokásos `GITHUB_TOKEN` nem tud írni, nem pedig azt, hogy egy másik workflow nem tudja megszerezni az App írási jogosultságát.
+
+A `main` védelme és a workflow-módosítások kötelező review-ja ezért az élesítés lényegi előfeltétele.
+
+### Döntésem
+
+PR #30: CHANGES REQUESTED.
+
+Előbb javítsa az ellenpróbák bekapcsolási feltételét, rögzítse az App-jogosultságok tényleges izolációs követelményeit, és futtassa újra a teljes CI-t a konkrét HEAD-en, a #31-et már tartalmazó `main` alapján.
+
+A B2 kódja ígéretes, és a felépített pipeline közel van a következő mérföldkőhöz. De ez éppen az a rész, ahol a zöld teszt nem helyettesítheti a bizonyított felhatalmazási határt.
+
+A workflow élesítésére (`EVIDENCE_ENABLED=true`) egyelőre nem adnék engedélyt.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-20 09:49 — Claude
+
+~~~~~
+B2 review-javítások: tesztek és seeded defect futtatása, majd commit és push.
+~~~~~
+
+
+### 2026-10-20 09:59 — Claude
+
+~~~~~
+Átvezettem a review három pontját a #30-ba, de a #30 CI-ja még fut, ezért merge-et nem javaslok. A `main` közben zöld: az `e2b76232`-n (a #31 javítás) a `p1` és a `corpus` is sikeres, vagyis a fuzz-regresszió megszűnt.
+
+**A #30 új HEAD-je:** `a09fb52a3df9a32056c12bb6595eb6644f59a17b`. A `p1` és a `corpus` fut rajta. Lokálisan 132 teszt zöld, a seeded defect 93/93 elbukik, a pinek és a YAML-ok rendben vannak.
+
+**1. Körkörös függés:** az `evidence-probes.yml` mindkét jobjáról leszedtem az `EVIDENCE_ENABLED` feltételt. Egy teszt és egy seeded defect őrzi, hogy a próbák nem várnak a változóra. A `docs/EVIDENCE-SETUP.md` ennek megfelelően frissült.
+
+**2. A zöld CI nem a mostani HEAD-é:** igazad volt. A `858c3519…`-re nem indult CI, ezt nem tudom megmagyarázni. Az új HEAD-re elindult, és `main` alapon, a #31-gyel együtt fut. A merge-hez ennek a futásnak kell zöldnek lennie.
+
+**3. App-token izoláció:** ezt két réteggel kezeltem, és egyik sincs élesben igazolva:
+- Az `apply.sh` mostantól a `rules/branches/main` alapján megköveteli a `pull_request` szabályt. Ha nincs, kilép; felülírni csak a tudatos `ALLOW_UNPROTECTED_MAIN=1`-gyel lehet. Ezt dry-runnal ellenőriztem: a mostani `main`-en, védelem nélkül, valóban kilépett. A `docs/EVIDENCE-SETUP.md` új 0. lépése a `main` védelmét és a `.github/workflows/**` CODEOWNERS-review-ját írja elő.
+- Új `probe-isolation.sh`: egy eldobható ágon az `evidence` environmentet kérő workflow nem futhat le. Megírtam és szintaktikailag ellenőriztem, de nem futtattam, mert App és environment kell hozzá.
+
+Ami nem bizonyítható próbával: a `main`-en futó *másik* workflow hozzáférését csak a `main` védelme és a review korlátozza. Ezt a dokumentum is így mondja.
+
+**Neked:**
+- A `main` védelme (PR kötelező, CODEOWNERS a workflow-kra) az élesítés előfeltétele. Ezt nem állítom be én.
+- A #30 merge-engedélye az `a09fb52…` HEAD-re, miután a CI zöld.
+- `EVIDENCE_ENABLED=true` továbbra sem az én döntésem.
+
+A `theads/` napló a #29, #31 és #30 lezárása után frissül.
+~~~~~
+
+
+### 2026-10-20 10:29 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+## PR #30 — új HEAD ellenőrzése
+
+A GitHubon azonosítottam a javított PR-t:
+
+- HEAD: `a09fb52a3df9a32056c12bb6595eb6644f59a17b`
+- Célág: `main`, már tartalmazza a #31 fuzz-regresszió javítását.
+- Állapot: nyitott, konfliktusmentes, mergelhető.
+- CI: jelenleg 19/20 sikeres, az utolsó Rust-mutation shard még fut.
+
+A korábban hiányzó CI most valóban a megfelelő HEAD-hez tartozik. A `seeded-defects`, az `evidence-selftest`, a fuzz, a branch coverage és a többi lezárult kapu sikeres.
+
+Merge-engedélyt még nem adok, amíg az utolsó check le nem zárul és a javított jogosultsági határokat is át nem néztem.
+
+### A három korábbi review-pont eredménye
+
+| Követelmény                                | Ellenőrzés                                                                                  | Döntés                                         |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| A próbák ne várjanak `EVIDENCE_ENABLED`-re | Mindkét job feltétel nélkül indítható, regressziós teszt és seeded defect védi              | &#x20;Rendezve                                 |
+| CI az új HEAD-en                           | 132 teszt, 63 Go-vektor, 93/93 seeded defect igazolva                                       | &#x20;Részben kész: FULL quality még fut       |
+| App-token jogosultsági határ               | `main` PR-védelem előfeltétel, külön branch-isolation próba és dokumentált maradék kockázat | &#x20;Kódszinten rendezve, élesben nem igazolt |
+
+A harmadik pontnál fontos különbség marad: az `apply.sh` a kötelező PR-szabályt ellenőrzi, de nem bizonyítja a kötelező jóváhagyás, a CODEOWNERS és a workflow-fájlokra vonatkozó code-owner review tényleges érvényesítését. Ezeket tulajdonosi oldalról kell ellenőrizni.
+
+### Merge-döntés
+
+A javításokat elfogadom, az engedély azonban feltételes.
+
+A PR #30 mergelhető, ha ugyanazon az `a09fb52a3df9a32056c12bb6595eb6644f59a17b` HEAD-en az utolsó `quality` check is sikeresen befejeződik, és közben a célág nem változik.
+
+```
+gh pr merge 30 \
+  --repo CentralInfraCore/cic-primitive-forms \
+  --squash \
+  --match-head-commit a09fb52a3df9a32056c12bb6595eb6644f59a17b
+```
+
+Ezt csak a teljesen zöld CI után szabad végrehajtani. Az ellenőrzésemkor 20/21 check volt sikeres.
+
+### Merge után sem szabad automatikusan élesíteni
+
+Az owner-feladatok sorrendje továbbra is: `main` védelme kötelező review-val és CODEOWNERS-szel, GitHub App létrehozása, setup alkalmazása, az evidence-probes két jobjának és a branch-isolation próbának sikeres futása, majd egy valódi evidence rekord elkészítése és visszaellenőrzése.
+
+Az `ALLOW_UNPROTECTED_MAIN=1` megkerülést nem javaslom. Az `EVIDENCE_ENABLED=true` külön engedélyezési döntés marad.
+
+A B2 ezzel már közel van a kódoldali lezáráshoz. A következő nagy ugrás nem még több unit teszt, hanem a teljes bizonyítási lánc első sikeres éles végrehajtása.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-20 10:30 — Claude
+
+~~~~~
+A #30 merge-engedélyed feltételes: csak akkor mehet, ha az utolsó `quality` check is zöld ugyanazon a HEAD-en (`a09fb52a…`), és a `main` közben nem változott. Egy háttérfigyelő várja meg a CI végét; ha minden teljesül, lefuttatom a megadott `gh pr merge … --match-head-commit a09fb52a…` parancsot, egyébként nem mergelek.
+
+A `main` jelenlegi állását is rögzítem az összehasonlításhoz. A figyelő végén kiírja a `git rev-parse origin/main` értékét, hogy lássam, nem változott-e.
+~~~~~
+
+
+### 2026-10-20 10:30 — Claude
+
+~~~~~
+All conditions hold: 21/21 pass, HEAD unchanged, main still `e2b7623` and an ancestor of the head. Merging with the exact command given.
+~~~~~
+
+
+### 2026-10-20 10:30 — Claude
+
+~~~~~
+A #30 (B2) squash-merge-ölve `main`-be: `8f19f4df8c81dc4c0044f60751e044bc539c5ec4`. Ezt a HEAD-en (`a09fb52a…`) futtattam, miután a feltételek teljesültek: 21/21 check zöld, a HEAD nem változott, és a `main` ugyanaz maradt (`e2b7623`, a HEAD őse).
+
+A `main` CI-ja az `8f19f4d`-n most fut; zöldnek csak a `headSha` egyeztetése után mondom. Ha lefutott, frissítem és commitolom a `theads/` naplót a #29, #31 és #30 lezárásáról.
+
+**A B2 kódja main-en van, de ki van kapcsolva.** `EVIDENCE_ENABLED` nincs beállítva, és nem is fogom beállítani. A tulajdonosi sorrend:
+1. `main` védelme (kötelező PR-review, CODEOWNERS a `.github/workflows/**`-ra),
+2. GitHub App létrehozása,
+3. `apply.sh --apply`,
+4. `evidence-probes` mindkét jobja és `probe-isolation.sh`,
+5. az első valódi evidence rekord elkészítése és visszaellenőrzése,
+6. `EVIDENCE_ENABLED=true`, külön döntésként.
+
+A részletes lépések a `docs/EVIDENCE-SETUP.md`-ben vannak. Az `ALLOW_UNPROTECTED_MAIN=1` megkerülést nem javaslom.
+~~~~~
+
+
+### 2026-10-20 10:37 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+## PR #30 — B2 sikeresen bekerült a `main`-be
+
+A merge-et a GitHubon visszaigazoltam.
+
+| Ellenőrzés                                                                                       | Aktuális állapot                            |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| [PR #30](https://github.com/CentralInfraCore/cic-primitive-forms/pull/30?utm_source=chatgpt.com) | Mergelve                                    |
+| Merge commit                                                                                     | `8f19f4df8c81dc4c0044f60751e044bc539c5ec4`  |
+| `main` HEAD                                                                                      | `8f19f4df`                                  |
+| Corpus CI                                                                                        | &#x20;Sikeres                               |
+| P1 CI                                                                                            | &#x20;Folyamatban                           |
+| Evidence workflow                                                                                | Kihagyva, a tervezett tiltásnak megfelelően |
+| `ci-evidence` ág                                                                                 | Még nem létezik                             |
+
+Ez tehát jó állapot: a B2 implementáció már integrált, de a bizonyítási infrastruktúra nincs aktiválva. Nincs olyan jel, hogy az agent engedély nélkül bekapcsolta volna a rendszert.
+
+## Egy pontosítás szükséges az aktiválási sorrendben
+
+A felsorolt 5. és 6. pontot fel kell cserélni.
+
+A jelenlegi `.github/workflows/evidence.yml` `record` jobja csak akkor indul el, ha:
+
+```
+vars.EVIDENCE_ENABLED == 'true'
+```
+
+Ezért az első valódi, workflow által aláírt evidence rekord nem készülhet el a bekapcsolás előtt.
+
+A helyes eljárás:
+
+1. `main` védelme: kötelező PR, jóváhagyás, CODEOWNERS és kötelező code-owner review.
+2. GitHub App létrehozása és a jogosultságok ellenőrzése.
+3. `apply.sh --apply`, megkerülés nélkül.
+4. Mindkét `evidence-probes` job és a `probe-isolation.sh` sikeres futása.
+5. Tulajdonosi döntéssel `EVIDENCE_ENABLED=true`, majd egy kontrollált kézi `evidence` futás.
+6. Az első rekord Sigstore-attesztációjának, publikálásának és független visszaellenőrzésének igazolása. Sikertelenség esetén visszakapcsolás `false` értékre.
+
+A tartós üzem elfogadása csak a hatodik pont után következzen.
+
+A másik fontos megállapításom: mostanra az A, B1 és B2 teljes implementációja a `main` része. A következő szakasz már nem elsősorban fejlesztés, hanem az éles felhatalmazási és bizonyítási határok validálása.
+
+A párhuzamos fejlesztési modell szempontjából pedig itt van a természetes szétválasztás: az egyik munkaszál végezheti az S shard-optimalizálást, egy másik a C0 vizsgálatát, miközben az evidence infrastruktúra tulajdonosi konfigurálása és hitelesítése külön integrációs feladat marad.
+
+Vagyis a fejlesztésnek már nem kell a GitHub App beállítására várnia. A bizonyítási lánc éles elfogadásának viszont igen.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-20 10:37 — Claude
+
+~~~~~
+A javításod jogos: az első valódi rekord csak a bekapcsolás után készülhet el, mert a `record` job az `EVIDENCE_ENABLED=true` feltételhez kötött. A `docs/EVIDENCE-SETUP.md` 4. lépése eleve ezt a sorrendet írja ("Switch it on", utána egyszeri kézi `evidence` futás), tehát a doksit nem kell javítani. Az én chat-összefoglalóm volt hibás a 5–6. pontnál.
+
+Egy hiány maradt: a doksi nem írja ki a visszakapcsolást sikertelen első rekord esetén (`EVIDENCE_ENABLED=false`). Ezt a `theads/` frissítésével együtt, külön apró doksi-PR-ban pótolhatom, ha kéred.
+
+A main `p1` az `8f19f4d`-n még fut. Amint lezárul és a `headSha` egyezik, frissítem és commitolom a `theads/` naplót a #29, #31 és #30 lezárásáról.
+~~~~~
