@@ -1,0 +1,8 @@
+{
+  "conformance_claimed": false,
+  "drift_paths": [
+    "/dns_label"
+  ],
+  "object": "DRIFT",
+  "unobserved_paths": []
+}

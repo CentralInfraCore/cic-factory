@@ -1,0 +1,11 @@
+{
+  "conformant": "everything wanted is there",
+  "desired-absent": "the dns label is not managed (not in the intent) and OCI has none: OBSERVED_ABSENT, the object conforms",
+  "desired-absent-observed-present": "OPEN QUESTION: the dns label is not in the intent but is in the plan and OCI has one; the engine says NOT_COMPARABLE (object DRIFT), the module's 'absent = unmanaged' would say fine",
+  "drift": "the dns label and one tag value differ",
+  "field-absent": "a wanted dns label that OCI does not report (not set): DRIFT, not 'unknown'",
+  "malformed-cidr": "cidrBlocks is not a list: it was read but cannot be trusted: unknown",
+  "not-found": "HTTP 404 NotAuthorizedOrNotFound: OCI does not tell 'deleted' from 'not allowed', so absence is NOT authoritative",
+  "partial-read": "the answer has no ipv6CidrBlocks at all: ipv6_enabled was not observed, it is not 'false'",
+  "transport-error": "no answer (timeout): nothing was observed"
+}

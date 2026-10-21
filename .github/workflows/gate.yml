@@ -58,6 +58,9 @@ jobs:
       - name: pr-status reads only, and says what each PR state is
         run: python3 -W error::ResourceWarning -m unittest tools/test_pr_status.py
 
+      - name: the common VCN fixture is what its generator writes
+        run: python3 -W error::ResourceWarning -m unittest tools/test_vcn_fixture.py
+
       - name: dependency checker can fail
         run: bash tools/test-check-dependencies.sh
 

@@ -1,0 +1,9 @@
+{
+  "conformance_claimed": false,
+  "drift_paths": [
+    "/dns_label",
+    "/tags/{key=env}/value"
+  ],
+  "object": "DRIFT",
+  "unobserved_paths": []
+}
