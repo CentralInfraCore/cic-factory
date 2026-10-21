@@ -6,13 +6,15 @@
     ci-gate.py check OWNER/REPO#N --head SHA --require-from FILE            one reading: GREEN, RED, PENDING or HEAD-MOVED
     ci-gate.py watch OWNER/REPO#N --head SHA --require-from FILE [--interval S]
     ci-gate.py merge OWNER/REPO#N --head SHA --require-from FILE --approver LOGIN... [--dry-run]
-    ci-gate.py post-merge OWNER/REPO --sha SHA                               the CI of the merge commit on the target branch
+    ci-gate.py post-merge OWNER/REPO --sha SHA --require-from FILE           the CI of the merge commit, against its own named set
+    ci-gate.py late-advisory OWNER/REPO --head SHA --require-from FILE       what the checks not waited for said in the end
 
 The merge is the execution of a decision that was already taken, never the decision, and the evidence of the decision is read from
 GitHub, not typed in:
 
 * the checks: FILE names every check that must have run on the head (one name per line, `#` comments). Each must be present and
-  completed passing; one that has not reported yet is PENDING, not green, so a head with a single finished check cannot pass.
+  completed with `success` (skipped or neutral is not the gate having run); one that has not reported yet is PENDING, not green,
+  so a head with a single finished check cannot pass. When a name has several results (re-runs, two apps) the worst stands.
   A cancelled or unknown conclusion is not a pass, and a failure of any check, required or not, is RED;
 * the approval: a review APPROVED on that very commit by one of the `--approver` logins, or a comment by one of them that holds
   the line `merge-approved: <full head sha>`, with nothing of theirs after it that withdraws it (a review CHANGES_REQUESTED or
@@ -43,19 +45,33 @@ def run_gh(args):
     return done.returncode, (done.stdout + done.stderr).strip()
 
 
+def _merge_state(old, new):
+    """Several results under one name (a re-run, two apps): the worst one stands. fail > pending > skip > pass."""
+    rank = lambda v: 3 if v.startswith("fail") else 2 if v == "pending" else 1 if v == "skip" else 0
+    return new if old is None or rank(new) > rank(old) else old
+
+
 def check_states(get, repo, sha):
-    """name -> 'pass' | 'pending' | 'fail' for every check run and commit status of exactly this commit."""
+    """name -> 'pass' | 'skip' | 'pending' | 'fail:<why>' for every check run and commit status of exactly this commit.
+
+    `skip` is a skipped or neutral run: fine for a check nobody required, not a pass for one that is required. When one name has
+    several results (re-runs, two apps) none of them is dropped: the worst stands, so an old failure is not hidden behind a
+    newer success that came from somewhere else."""
     out = {}
     for r in ps.pages(get, "repos/%s/commits/%s/check-runs" % (repo, sha)):
         if r.get("status") != "completed":
             state = "pending"
-        elif r.get("conclusion") in ps.OK:
+        elif r.get("conclusion") == "success":
             state = "pass"
+        elif r.get("conclusion") in ps.OK:
+            state = "skip"
         else:
             state = "fail:%s" % r.get("conclusion")
-        out[r.get("name")] = state
+        out[r.get("name")] = _merge_state(out.get(r.get("name")), state)
+    # the combined status API already keeps the latest state of each context
     for st in get("repos/%s/commits/%s/status" % (repo, sha)).get("statuses", []):
-        out[st.get("context")] = {"success": "pass", "pending": "pending"}.get(st.get("state"), "fail:%s" % st.get("state"))
+        state = {"success": "pass", "pending": "pending"}.get(st.get("state"), "fail:%s" % st.get("state"))
+        out[st.get("context")] = _merge_state(out.get(st.get("context")), state)
     return out
 
 
@@ -92,6 +108,9 @@ def read(get, repo, n, head, required, advisory=()):
     failing = ["%s (%s)" % (k, v[5:]) for k, v in sorted(states.items()) if v.startswith("fail") and not (soft(k) and v == "fail:cancelled")]
     out["warnings"] = ["%s was cancelled (advisory, not counted as evidence)" % k for k, v in sorted(states.items()) if soft(k) and v == "fail:cancelled"]
     out["not_waited_for"] = [k for k, v in sorted(states.items()) if soft(k) and v == "pending"]
+    # a required check passes only by succeeding: skipped or neutral is not the gate having run
+    not_run = ["%s (%s)" % (r, "skipped") for r in required if states.get(r) == "skip"]
+    failing += not_run
     missing = [r for r in required if r not in states]
     waiting = [k for k, v in sorted(states.items()) if v == "pending" and not soft(k)]
     if failing:
@@ -215,17 +234,35 @@ def merge(get, repo, n, head, required, approvers, dry_run=False, gh=run_gh, say
     return 0 if after.get("merged") else 1
 
 
-def post_merge(get, repo, sha, say=print):
+def post_merge(get, repo, sha, required, say=print):
+    """The CI of the merge commit on the target branch against its own named set (`post-merge` profile): 0 only when every
+    required check is present and succeeded; a missing one is pending (4), a failure or a skipped required one is 1."""
     states = check_states(get, repo, sha)
     failing = ["%s (%s)" % (k, v[5:]) for k, v in sorted(states.items()) if v.startswith("fail")]
+    failing += ["%s (skipped)" % r for r in required if states.get(r) == "skip"]
+    missing = [r for r in required if r not in states]
     pending = [k for k, v in sorted(states.items()) if v == "pending"]
-    say("post-merge %s: %d checks, %d passing, %d pending, %d failing" % (
-        sha[:12], len(states), sum(v == "pass" for v in states.values()), len(pending), len(failing)))
+    say("post-merge %s: %d checks, %d passing, %d pending, %d failing, %d required not reported" % (
+        sha[:12], len(states), sum(v == "pass" for v in states.values()), len(pending), len(failing), len(missing)))
     for f in failing:
         say("    - " + f)
-    if not states:
-        say("    no check ran on this commit")
-        return 1
+    for m in missing:
+        say("    . not reported yet: " + m)
+    return 1 if failing else 4 if (missing or pending) else 0
+
+
+def late_advisory(get, repo, head, advisory, say=print):
+    """After the merge: what the advisory checks (not waited for) of the merged head said in the end. A failure is a defect of the
+    merged state and needs a ticket; this prints the command, it does not open one."""
+    states = {k: v for k, v in check_states(get, repo, head).items() if any(k.startswith(a) for a in advisory)}
+    failing = ["%s (%s)" % (k, v[5:]) for k, v in sorted(states.items()) if v.startswith("fail")]
+    pending = [k for k, v in sorted(states.items()) if v == "pending"]
+    say("late advisory %s: %d checks, %d passing, %d pending, %d failing" % (
+        head[:12], len(states), sum(v == "pass" for v in states.values()), len(pending), len(failing)))
+    for f in failing:
+        say("    - " + f)
+    if failing:
+        say("A defect found after the merge needs a ticket: gh issue create --repo %s --title \"Late advisory check failed on %s\"" % (repo, head[:12]))
     return 1 if failing else 4 if pending else 0
 
 
@@ -253,10 +290,17 @@ def main(argv=None, get=ps.gh_get, gh=run_gh, sleep=time.sleep):
     p = sub.add_parser("post-merge")
     p.add_argument("repo")
     p.add_argument("--sha", required=True)
+    p.add_argument("--require-from", required=True, help="the post-merge profile: every check that must have succeeded on the merge commit")
+    p = sub.add_parser("late-advisory")
+    p.add_argument("repo")
+    p.add_argument("--head", required=True, help="the head that was merged")
+    p.add_argument("--require-from", required=True, help="the profile whose advisory prefixes are reported")
     a = ap.parse_args(argv)
     try:
         if a.cmd == "post-merge":
-            return post_merge(get, a.repo, a.sha)
+            return post_merge(get, a.repo, a.sha, load_required(a.require_from)[0])
+        if a.cmd == "late-advisory":
+            return late_advisory(get, a.repo, a.head, load_required(a.require_from)[1])
         repo, n = target(a.pr)
         required, advisory = load_required(a.require_from)
         if a.cmd == "merge":

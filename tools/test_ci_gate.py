@@ -277,11 +277,64 @@ class Merging(unittest.TestCase):
         self.assertTrue(all(p.startswith("repos/o/r/") for p in fake.asked))
 
 
+class Strictness(unittest.TestCase):
+    """The three cases of the second review: none of them may give a false green."""
+
+    def test_a_required_check_that_was_skipped_is_not_green(self):
+        r = cg.read(Fake(runs=[run("build"), run("test", "skipped"), run("lint")]), R, N, H, REQ)
+        self.assertEqual((r["verdict"], r["failing"]), ("RED", ["test (skipped)"]))
+        self.assertEqual(verdict(runs=[run("build"), run("test", "neutral"), run("lint")]), "RED")
+
+    def test_a_skipped_check_nobody_required_is_fine(self):
+        self.assertEqual(verdict(runs=ALL_OK + [run("record", "skipped")]), "GREEN")
+
+    def test_two_results_under_one_name_do_not_overwrite_each_other(self):
+        # an old failure from one app is not hidden by a later success under the same name, in either order
+        self.assertEqual(verdict(runs=[run("build", "failure"), run("build"), run("test"), run("lint")]), "RED")
+        self.assertEqual(verdict(runs=[run("build"), run("build", "failure"), run("test"), run("lint")]), "RED")
+        self.assertEqual(verdict(runs=[run("build", status="in_progress"), run("build"), run("test"), run("lint")]), "PENDING")
+        self.assertEqual(verdict(runs=[run("build"), run("build"), run("test"), run("lint")]), "GREEN")
+
+    def test_a_commit_status_and_a_check_of_one_name_are_both_kept(self):
+        self.assertEqual(verdict(statuses=[{"state": "failure", "context": "build"}]), "RED")
+
+
 class PostMerge(unittest.TestCase):
-    def test_the_merge_commit_ci_is_read(self):
-        self.assertEqual(cg.post_merge(Fake(), R, "m" * 40, say=lambda *_: None), 0)
-        self.assertEqual(cg.post_merge(Fake(runs=[run("a"), run("b", status="queued")]), R, "m" * 40, say=lambda *_: None), 4)
-        self.assertEqual(cg.post_merge(Fake(runs=[run("x", "failure")]), R, "m" * 40, say=lambda *_: None), 1)
+    def pm(self, fake):
+        said = []
+        return cg.post_merge(fake, R, "m" * 40, REQ, say=said.append), "\n".join(said)
+
+    def test_the_whole_named_set_must_have_succeeded_on_the_merge_commit(self):
+        self.assertEqual(self.pm(Fake())[0], 0)
+
+    def test_one_finished_check_is_not_a_finished_merge_commit(self):
+        code, said = self.pm(Fake(runs=[run("build")]))
+        self.assertEqual(code, 4)
+        self.assertIn("not reported yet: test", said)
+
+    def test_pending_and_failed_and_skipped_required_checks(self):
+        self.assertEqual(self.pm(Fake(runs=[run("build"), run("test", status="queued"), run("lint")]))[0], 4)
+        self.assertEqual(self.pm(Fake(runs=[run("build"), run("test", "failure"), run("lint")]))[0], 1)
+        self.assertEqual(self.pm(Fake(runs=[run("build"), run("test", "skipped"), run("lint")]))[0], 1)
+
+    def test_a_merge_commit_with_no_check_at_all_is_not_a_success(self):
+        self.assertEqual(self.pm(Fake(runs=[]))[0], 4)
+
+
+class LateAdvisory(unittest.TestCase):
+    def late(self, runs):
+        said = []
+        return cg.late_advisory(Fake(runs=runs), R, H, ("mut",), say=said.append), "\n".join(said)
+
+    def test_passing_pending_and_failed_advisory_checks_after_the_merge(self):
+        self.assertEqual(self.late(ALL_OK + [run("mut (0)"), run("mut (1)")])[0], 0)
+        self.assertEqual(self.late(ALL_OK + [run("mut (0)"), run("mut (1)", status="queued")])[0], 4)
+        code, said = self.late(ALL_OK + [run("mut (0)", "failure")])
+        self.assertEqual(code, 1)
+        self.assertIn("needs a ticket", said)
+
+    def test_only_the_advisory_checks_are_reported(self):
+        self.assertEqual(self.late([run("build", "failure"), run("mut (0)")])[0], 0)
 
 
 if __name__ == "__main__":
