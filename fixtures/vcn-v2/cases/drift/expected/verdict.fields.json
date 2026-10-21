@@ -1,0 +1,10 @@
+{
+  "fields": {
+    "/cidr_block": "CONFORMANT",
+    "/dns_label": "DRIFT",
+    "/ipv6_enabled": "CONFORMANT",
+    "/tags/{key=env}/value": "DRIFT",
+    "/tags/{key=owner}/value": "CONFORMANT"
+  },
+  "object": "DRIFT"
+}

@@ -55,6 +55,9 @@ jobs:
       - name: declared dependencies are present
         run: bash tools/check-dependencies.sh
 
+      - name: the scope-aware VCN fixture v2 is what its generator writes
+        run: python3 -W error::ResourceWarning -m unittest tools/test_vcn_fixture_v2.py
+
       - name: dependency checker can fail
         run: bash tools/test-check-dependencies.sh
 

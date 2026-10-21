@@ -1,0 +1,15 @@
+{
+  "conformant": "everything wanted is there",
+  "declared-tag-missing": "a declared tag key that OCI does not have, while the tags were read: authoritative absence, DRIFT",
+  "desired-absent": "the dns label is not declared and OCI has none: it is not planned, there is no verdict entry",
+  "desired-absent-observed-present": "DECISION CASE: the dns label is not declared and OCI has one: unmanaged, not planned, not drift; seen and listed as unmanaged",
+  "drift": "the dns label and one tag value differ",
+  "empty-cidr-blocks": "a successful answer with cidrBlocks [] : OCI requires one IPv4 block, so the empty list is not a trustworthy state: unknown, the raw [] is kept",
+  "extra-tag-full-set": "the same extra tag under an explicit full-set tag supervision: it is in the scope, and an observed tag the intent does not carry is NOT_COMPARABLE in the engine (object DRIFT)",
+  "extra-tag-undeclared": "OCI has a tag the intent does not declare; declared-keys scope: seen, unmanaged, not compared",
+  "field-absent": "a wanted dns label that OCI does not report (not set): DRIFT, not 'unknown'",
+  "malformed-cidr": "cidrBlocks is not a list: it was read but cannot be trusted: unknown",
+  "not-found": "HTTP 404 NotAuthorizedOrNotFound: OCI does not tell 'deleted' from 'not allowed', so absence is NOT authoritative",
+  "partial-read": "the answer has no ipv6CidrBlocks at all: ipv6_enabled was not observed, it is not 'false'",
+  "transport-error": "no answer (timeout): nothing was observed"
+}

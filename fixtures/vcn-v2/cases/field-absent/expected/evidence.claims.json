@@ -1,0 +1,20 @@
+{
+  "conformance_claimed": false,
+  "conformance_scope": "declared",
+  "drift_paths": [
+    "/dns_label"
+  ],
+  "object": "DRIFT",
+  "scope": {
+    "managed_paths": [
+      "/cidr_block",
+      "/dns_label",
+      "/ipv6_enabled",
+      "/tags/{key=env}/value",
+      "/tags/{key=owner}/value"
+    ],
+    "tags_scope": "declared-keys",
+    "unmanaged_observed_paths": []
+  },
+  "unobserved_paths": []
+}

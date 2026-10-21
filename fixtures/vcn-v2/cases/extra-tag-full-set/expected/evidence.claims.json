@@ -1,0 +1,21 @@
+{
+  "conformance_claimed": false,
+  "conformance_scope": "declared",
+  "drift_paths": [
+    "/tags/{key=cost-center}/value"
+  ],
+  "object": "DRIFT",
+  "scope": {
+    "managed_paths": [
+      "/cidr_block",
+      "/dns_label",
+      "/ipv6_enabled",
+      "/tags/{key=cost-center}/value",
+      "/tags/{key=env}/value",
+      "/tags/{key=owner}/value"
+    ],
+    "tags_scope": "full-set",
+    "unmanaged_observed_paths": []
+  },
+  "unobserved_paths": []
+}

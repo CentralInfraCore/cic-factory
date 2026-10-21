@@ -1,0 +1,10 @@
+{
+  "fields": {
+    "/cidr_block": "UNOBSERVED",
+    "/dns_label": "UNOBSERVED",
+    "/ipv6_enabled": "UNOBSERVED",
+    "/tags/{key=env}/value": "UNOBSERVED",
+    "/tags/{key=owner}/value": "UNOBSERVED"
+  },
+  "object": "INCOMPLETE"
+}

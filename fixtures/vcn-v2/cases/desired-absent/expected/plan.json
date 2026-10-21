@@ -1,0 +1,27 @@
+{
+  "collections": [
+    {
+      "elements": [
+        {
+          "compare": "exact",
+          "path": "value"
+        }
+      ],
+      "keys": [
+        "key"
+      ],
+      "path": "/tags",
+      "topology": "map"
+    }
+  ],
+  "scalars": [
+    {
+      "compare": "exact",
+      "path": "/cidr_block"
+    },
+    {
+      "compare": "exact",
+      "path": "/ipv6_enabled"
+    }
+  ]
+}

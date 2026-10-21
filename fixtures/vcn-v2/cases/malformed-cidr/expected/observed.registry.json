@@ -1,0 +1,27 @@
+{
+  "config": {
+    "dns_label": "prod",
+    "ipv6_enabled": false,
+    "tags": [
+      {
+        "key": "env",
+        "value": "prod"
+      },
+      {
+        "key": "owner",
+        "value": "net"
+      }
+    ]
+  },
+  "coverage": {
+    "/cidr_block": "unknown",
+    "/dns_label": "observed",
+    "/ipv6_enabled": "observed",
+    "/tags/{key=env}/value": "observed",
+    "/tags/{key=owner}/value": "observed"
+  },
+  "state": {
+    "ipv6_cidr_blocks": [],
+    "lifecycle_state": "available"
+  }
+}
