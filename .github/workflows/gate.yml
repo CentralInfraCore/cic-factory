@@ -57,6 +57,8 @@ jobs:
 
       - name: pr-status reads only, and says what each PR state is
         run: python3 -W error::ResourceWarning -m unittest tools/test_pr_status.py
+      - name: ci-gate merges only a green, reviewed, unchanged head
+        run: python3 -W error::ResourceWarning -m unittest tools/test_ci_gate.py
 
       - name: the common VCN fixture is what its generator writes
         run: python3 -W error::ResourceWarning -m unittest tools/test_vcn_fixture.py
