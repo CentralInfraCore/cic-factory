@@ -61,6 +61,9 @@ jobs:
       - name: the common VCN fixture is what its generator writes
         run: python3 -W error::ResourceWarning -m unittest tools/test_vcn_fixture.py
 
+      - name: the VCN pipeline runner labels what it executed and fails closed
+        run: python3 -W error::ResourceWarning -m unittest tools/vcn-pipeline/test_vcn_pipeline.py
+
       - name: dependency checker can fail
         run: bash tools/test-check-dependencies.sh
 

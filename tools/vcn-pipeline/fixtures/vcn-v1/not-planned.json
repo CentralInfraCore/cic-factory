@@ -1,0 +1,7 @@
+[
+  "/secondary_cidr_blocks",
+  "/display_name",
+  "/compartment_id",
+  "/lifecycle_state",
+  "/ipv6_cidr_blocks"
+]

@@ -1,0 +1,12 @@
+{
+  "conformance_claimed": false,
+  "drift_paths": [],
+  "object": "INCOMPLETE",
+  "unobserved_paths": [
+    "/cidr_block",
+    "/dns_label",
+    "/ipv6_enabled",
+    "/tags/{key=env}/value",
+    "/tags/{key=owner}/value"
+  ]
+}
