@@ -4,9 +4,9 @@ A `tools/ci-gate.py` a fejlesztői kör lezáró lépése: egy PR **pontos HEAD-
 pontosan azt a HEAD-et mergeli. A döntést nem pótolja: a merge egy már meghozott döntés végrehajtása.
 
 ```
-tools/ci-gate.py check      OWNER/REPO#N --head SHA                    # egy leolvasás: GREEN | RED | PENDING | HEAD-MOVED
-tools/ci-gate.py watch      OWNER/REPO#N --head SHA [--interval 60]    # addig figyel, amíg a HEAD el nem dől
-tools/ci-gate.py merge      OWNER/REPO#N --head SHA --review-closed-at SHA [--dry-run]
+tools/ci-gate.py check      OWNER/REPO#N --head SHA --require-from tools/ci-required/<repo>.txt
+tools/ci-gate.py watch      OWNER/REPO#N --head SHA --require-from FILE [--interval 60]
+tools/ci-gate.py merge      OWNER/REPO#N --head SHA --require-from FILE --approver LOGIN [--approver ...] [--dry-run]
 tools/ci-gate.py post-merge OWNER/REPO --sha MERGE_SHA                 # a merge commit CI-ja a célágon
 ```
 
@@ -16,27 +16,43 @@ tools/ci-gate.py post-merge OWNER/REPO --sha MERGE_SHA                 # a merge
 2. `watch` fut a háttérben. **Pending** nem hiba és nem siker: nem merge-el, a fejlesztés nem áll meg.
 3. **RED**: a hibás kapuk neve kiíródik; naplóelemzés, besorolás (kód, infrastruktúra, ismert tűrt eset), célzott javítás,
    új push. Az új HEAD új ellenőrzési alap, a `watch` újraindul vele.
-4. **GREEN** és a szerződéses review ugyanezen a HEAD-en lezárt: `merge --review-closed-at <ugyanaz a HEAD>`.
+4. **GREEN** és a jóváhagyás ugyanerre a HEAD-re szól, **GitHubról olvasva**: `merge ... --approver <login>`.
 5. Merge után `post-merge`: a `main` új HEAD-jének CI-ja. Csak ezután lezárt a munka.
+
+## Az elvárt kapuk: név szerint
+
+A `--require-from` fájl soronként egy ellenőrzés nevét tartalmazza (`#` komment). Mindegyiknek **jelen kell lennie** a HEAD-en,
+befejezve és sikeresen. Amelyik még nem jelent meg, az `PENDING` (nem zöld): egyetlen kész ellenőrzés nem elég, hanem a teljes
+készlet kell, tehát nem lehet idő előtt `GREEN` egy HEAD, amelyiknek a többi kapuja még nem is jelent meg. Bármelyik ellenőrzés
+hibája, akár nem elvárté is, `RED`. Üres készletet az eszköz visszautasít.
+
+`advisory: ELŐTAG` sor: a hosszú (mutációs) ellenőrzéseket nem várjuk meg. Futás közben nem tartják pendingben a HEAD-et, egy
+`cancelled` figyelmeztetés és nem bizonyíték, de egy **valódi hiba** megáll. A Forms profilja: `tools/ci-required/cic-primitive-forms.txt`.
+
+## A jóváhagyás: a GitHubról olvasva, HEAD-hez kötve
+
+Nem a hívó paramétere. A `--approver` bejelentkezési nevek valamelyikétől kell lennie: egy `APPROVED` review pontosan erre a
+commitra (`commit_id`), vagy egy hozzászólás, amelyben van egy `merge-approved: <teljes HEAD SHA>` sor. Az utolsó döntés számít:
+egy későbbi `CHANGES_REQUESTED`/`DISMISSED` review vagy `merge-revoked: <sha>` hozzászólás visszavon. Másik HEAD jóváhagyása
+nem vihető át az újra. Idegen felhasználó jóváhagyása nem számít. Az eszközt futtatónak ezért nem lehet magának jóváhagyást
+adnia, ha nem ő az approver.
 
 ## Mit tagad meg a `merge`
 
 | Eset | Eredmény |
 |---|---|
-| a review más HEAD-en zárult le, mint amelyiket mergelni akarunk | REFUSED: új HEAD új review |
-| bármelyik kapu pending, piros, cancelled vagy ismeretlen végeredményű | REFUSED (a cancelled **nem** siker) |
-| a HEAD-en egyetlen ellenőrzés sem futott | REFUSED (nulla kapu nem zöld) |
+| nincs jóváhagyás ezen a HEAD-en az approverektől (vagy visszavonták) | REFUSED |
+| az elvárt készletből valami hiányzik, fut, vagy bármi piros, cancelled vagy ismeretlen végeredményű | REFUSED (a cancelled **nem** siker) |
 | a HEAD azóta elmozdult | REFUSED, kilépési kód 3 |
 | nem mergelhető (konfliktus, ismeretlen), zárt vagy draft PR | REFUSED |
-| a két leolvasás között valami megváltozott | REFUSED |
+| a két egymás utáni leolvasás között a HEAD, az állapot, a draft, a mergelhetőség, a célág commitja vagy a kapuk eredménye változott | REFUSED |
 
 A merge `gh pr merge --squash --match-head-commit <HEAD>`: ha a HEAD közben mozdul, a GitHub is megtagadja. Hálózati hiba
 után az eszköz előbb a PR állapotát olvassa vissza, és nem próbálkozik vakon újra.
 
 ## Amit nem old meg
 
-- A review-t nem helyettesíti és nem hamisítja: a `--review-closed-at` értékét a koordinátor csak akkor adja meg, ha a
-  felhatalmazás a jóváhagyott PR-hatókörre és erre a HEAD-re szól. Szerződésváltozásnál marad a review-megálló.
-- A natív GitHub `--auto` csak a kötelezőnek jelölt kapukat várja meg; ez az eszköz a HEAD **összes** ellenőrzését.
+- A natív GitHub `--auto` csak a kötelezőnek jelölt kapukat várja meg; ez az eszköz a **megnevezett** készletet.
 - Nem dönt el, hogy egy piros kapu infrastruktúra-hiba-e: ezt a naplóelemzés dönti el, és csak egy befejezett, sikeres
-  újrafutás számít bizonyítéknak.
+  újrafutás számít bizonyítéknak. Az `advisory` kapu nem várt, de nem is némított.
+- Az approver listát és a kapukészletet a repó szabályzata adja; az eszköz nem találja ki.
