@@ -90,9 +90,17 @@ class Verdicts(unittest.TestCase):
     def test_three_passing_checks_with_the_wrong_names_are_not_green(self):
         self.assertEqual(verdict(runs=[run("a"), run("b"), run("c")]), "PENDING")
 
-    def test_pending_is_neither_success_nor_failure(self):
-        self.assertEqual(verdict(runs=ALL_OK + [run("slow", status="in_progress")]), "PENDING")
+    def test_a_required_check_that_is_pending_is_neither_success_nor_failure(self):
         self.assertEqual(verdict(runs=[run("build"), run("test", status="queued"), run("lint")]), "PENDING")
+        self.assertEqual(verdict(runs=[run("build"), run("test", status="in_progress"), run("lint")]), "PENDING")
+
+    def test_a_pending_check_nobody_required_is_not_waited_for(self):
+        # the aggregate gate that waits for the advisory shards must not keep an otherwise complete head pending
+        r = cg.read(Fake(runs=ALL_OK + [run("quality", status="queued")]), R, N, H, REQ)
+        self.assertEqual((r["verdict"], r["not_waited_for"]), ("GREEN", ["quality"]))
+
+    def test_a_pending_unrequired_check_does_not_hide_a_failure_of_another(self):
+        self.assertEqual(verdict(runs=ALL_OK + [run("quality", status="queued"), run("extra", "failure")]), "RED")
 
     def test_a_failure_is_red_and_named_even_while_others_are_missing(self):
         r = cg.read(Fake(runs=[run("build", "failure")]), R, N, H, REQ)
@@ -332,6 +340,12 @@ class LateAdvisory(unittest.TestCase):
         code, said = self.late(ALL_OK + [run("mut (0)", "failure")])
         self.assertEqual(code, 1)
         self.assertIn("needs a ticket", said)
+
+    def test_no_advisory_check_found_is_not_a_success(self):
+        code, said = self.late(ALL_OK)
+        self.assertEqual(code, 4)
+        self.assertIn("not verified", said)
+        self.assertEqual(self.late([])[0], 4)
 
     def test_only_the_advisory_checks_are_reported(self):
         self.assertEqual(self.late([run("build", "failure"), run("mut (0)")])[0], 0)

@@ -22,7 +22,8 @@ GitHub, not typed in:
 * the environment: the PR open, not draft, mergeable, its base branch at the same commit and the head unchanged between two
   readings taken one after the other.
 
-Anything else refuses and says why. Pending is neither success nor failure: `watch` keeps watching, nothing is merged.
+Anything else refuses and says why. Pending is neither success nor failure: `watch` keeps watching, nothing is merged. Only the
+named set is waited for: a check nobody required that is still running is reported, a failure of any check still blocks.
 
 Exit status: 0 green / merged, 1 red or refused, 3 head moved, 4 pending (check only), 2 could not read.
 """
@@ -107,12 +108,14 @@ def read(get, repo, n, head, required, advisory=()):
     soft = lambda k: any(k.startswith(a) for a in advisory)
     failing = ["%s (%s)" % (k, v[5:]) for k, v in sorted(states.items()) if v.startswith("fail") and not (soft(k) and v == "fail:cancelled")]
     out["warnings"] = ["%s was cancelled (advisory, not counted as evidence)" % k for k, v in sorted(states.items()) if soft(k) and v == "fail:cancelled"]
-    out["not_waited_for"] = [k for k, v in sorted(states.items()) if soft(k) and v == "pending"]
+    # only the named set decides: a check nobody required (an advisory shard, the aggregate gate that waits for them) that is still
+    # running is reported, never waited for. A real failure of any check, required or not, is still RED above.
+    out["not_waited_for"] = [k for k, v in sorted(states.items()) if v == "pending" and k not in required]
     # a required check passes only by succeeding: skipped or neutral is not the gate having run
     not_run = ["%s (%s)" % (r, "skipped") for r in required if states.get(r) == "skip"]
     failing += not_run
     missing = [r for r in required if r not in states]
-    waiting = [k for k, v in sorted(states.items()) if v == "pending" and not soft(k)]
+    waiting = [k for k in required if states.get(k) == "pending"]
     if failing:
         out["verdict"], out["failing"] = "RED", failing
     elif missing or waiting:
@@ -259,6 +262,10 @@ def late_advisory(get, repo, head, advisory, say=print):
     pending = [k for k, v in sorted(states.items()) if v == "pending"]
     say("late advisory %s: %d checks, %d passing, %d pending, %d failing" % (
         head[:12], len(states), sum(v == "pass" for v in states.values()), len(pending), len(failing)))
+    if not states:
+        # nothing found is not nothing wrong: the checks may not have reported yet, or the prefix matches nothing
+        say("    no advisory check found on this head: not verified")
+        return 4
     for f in failing:
         say("    - " + f)
     if failing:

@@ -20,14 +20,15 @@ tools/ci-gate.py post-merge OWNER/REPO --sha MERGE_SHA                 # a merge
 5. Merge után `post-merge --require-from tools/ci-required/<repo>.post-merge.txt`: a merge commit **teljes** készlete (a mutációs
    shardokkal és az összesítő kapuval együtt) sikeres-e. Csak ezután lezárt a munka.
 6. `late-advisory`: mit mondtak a végül a merge előtt nem várt (advisory) kapuk. Egy későn érkező hiba nem akadályozza meg a már
-   megtörtént merge-et, de **kötelezően hibajegyet** kap (a parancs kiírja a `gh issue create` sort, de nem nyitja meg).
+   megtörtént merge-et, de **kötelezően hibajegyet** kap (a parancs kiírja a `gh issue create` sort, de nem nyitja meg). Ha egyetlen advisory ellenőrzést sem talál, az eredmény nem siker
+   (4, "not verified"): a találat nélküli nem a hiba nélküli.
 
 ## Az elvárt kapuk: név szerint
 
 A `--require-from` fájl soronként egy ellenőrzés nevét tartalmazza (`#` komment). Mindegyiknek **jelen kell lennie** a HEAD-en,
 befejezve és sikeresen. Amelyik még nem jelent meg, az `PENDING` (nem zöld): egyetlen kész ellenőrzés nem elég, hanem a teljes
-készlet kell, tehát nem lehet idő előtt `GREEN` egy HEAD, amelyiknek a többi kapuja még nem is jelent meg. Bármelyik ellenőrzés
-hibája, akár nem elvárté is, `RED`. Üres készletet az eszköz visszautasít.
+készlet kell, tehát nem lehet idő előtt `GREEN` egy HEAD, amelyiknek a többi kapuja még nem is jelent meg. Csak a megnevezett készletet várjuk meg: egy nem elvárt ellenőrzés (pl. az összesítő `quality`, amely a mutációs shardokra
+vár) futás közben csak jelentésben szerepel, nem tartja pendingben a HEADet. Bármelyik ellenőrzés hibája, akár nem elvárté is, `RED`. Üres készletet az eszköz visszautasít.
 
 Ez **nem** ugyanaz, mint a véglegesen zöld CI: az advisory kapuk eredményét a merge már nem várja meg; ezért kell a `post-merge` teljes
 készlete és a `late-advisory`. `advisory: ELŐTAG` sor: a hosszú (mutációs) ellenőrzéseket nem várjuk meg. Futás közben nem tartják pendingben a HEAD-et, egy
