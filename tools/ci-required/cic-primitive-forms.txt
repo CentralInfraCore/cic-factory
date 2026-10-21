@@ -1,0 +1,14 @@
+# The checks that must have run and passed on a head of CentralInfraCore/cic-primitive-forms (workflows p1 and corpus).
+# The long mutation shards are not waited for (owner's decision): they never keep a head pending, a cancelled one is a warning,
+# a real failure of one still blocks. The aggregate gate 'quality' waits for them, so it is not required either.
+advisory: quality-mutation-
+branch-coverage
+corpus
+evidence-selftest
+fuzz
+go
+parity
+quality-gate-selftest
+quality-lines
+rust
+seeded-defects
