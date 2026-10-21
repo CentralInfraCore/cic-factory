@@ -1,0 +1,10 @@
+{
+  "map": {
+    "AVAILABLE": "available",
+    "PROVISIONING": "pending",
+    "TERMINATED": "deleted",
+    "TERMINATING": "deleting",
+    "UPDATING": "unknown"
+  },
+  "other": "unknown"
+}

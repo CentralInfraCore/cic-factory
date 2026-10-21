@@ -1,0 +1,9 @@
+{
+  "fields": {
+    "/cidr_block": "CONFORMANT",
+    "/ipv6_enabled": "CONFORMANT",
+    "/tags/{key=env}/value": "CONFORMANT",
+    "/tags/{key=owner}/value": "CONFORMANT"
+  },
+  "object": "CONFORMANT"
+}

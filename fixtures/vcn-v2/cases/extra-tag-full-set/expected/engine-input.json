@@ -1,0 +1,93 @@
+{
+  "intent": {
+    "cidr_block": "10.0.0.0/16",
+    "dns_label": "prod",
+    "ipv6_enabled": false,
+    "tags": [
+      {
+        "key": "env",
+        "value": "prod"
+      },
+      {
+        "key": "owner",
+        "value": "net"
+      }
+    ]
+  },
+  "observation": [
+    {
+      "coverage": "observed",
+      "path": "/cidr_block"
+    },
+    {
+      "coverage": "observed",
+      "path": "/dns_label"
+    },
+    {
+      "coverage": "observed",
+      "path": "/ipv6_enabled"
+    },
+    {
+      "coverage": "observed",
+      "path": "/tags/{key=cost-center}/value"
+    },
+    {
+      "coverage": "observed",
+      "path": "/tags/{key=env}/value"
+    },
+    {
+      "coverage": "observed",
+      "path": "/tags/{key=owner}/value"
+    }
+  ],
+  "observed": {
+    "cidr_block": "10.0.0.0/16",
+    "dns_label": "prod",
+    "ipv6_enabled": false,
+    "tags": [
+      {
+        "key": "cost-center",
+        "value": "42"
+      },
+      {
+        "key": "env",
+        "value": "prod"
+      },
+      {
+        "key": "owner",
+        "value": "net"
+      }
+    ]
+  },
+  "plan": {
+    "collections": [
+      {
+        "elements": [
+          {
+            "compare": "exact",
+            "path": "value"
+          }
+        ],
+        "keys": [
+          "key"
+        ],
+        "path": "/tags",
+        "topology": "map"
+      }
+    ],
+    "scalars": [
+      {
+        "compare": "exact",
+        "path": "/cidr_block"
+      },
+      {
+        "compare": "exact",
+        "path": "/dns_label"
+      },
+      {
+        "compare": "exact",
+        "path": "/ipv6_enabled"
+      }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "conformance_claimed": true,
+  "conformance_scope": "declared",
+  "drift_paths": [],
+  "object": "CONFORMANT",
+  "scope": {
+    "managed_paths": [
+      "/cidr_block",
+      "/ipv6_enabled",
+      "/tags/{key=env}/value",
+      "/tags/{key=owner}/value"
+    ],
+    "tags_scope": "declared-keys",
+    "unmanaged_observed_paths": [
+      "/dns_label"
+    ]
+  },
+  "unobserved_paths": []
+}

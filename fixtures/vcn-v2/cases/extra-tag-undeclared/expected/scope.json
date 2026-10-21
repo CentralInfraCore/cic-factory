@@ -1,0 +1,13 @@
+{
+  "managed_paths": [
+    "/cidr_block",
+    "/dns_label",
+    "/ipv6_enabled",
+    "/tags/{key=env}/value",
+    "/tags/{key=owner}/value"
+  ],
+  "tags_scope": "declared-keys",
+  "unmanaged_observed_paths": [
+    "/tags/{key=cost-center}/value"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "fields": {
+    "/cidr_block": "CONFORMANT",
+    "/dns_label": "CONFORMANT",
+    "/ipv6_enabled": "CONFORMANT",
+    "/tags/{key=cost-center}/value": "NOT_COMPARABLE",
+    "/tags/{key=env}/value": "CONFORMANT",
+    "/tags/{key=owner}/value": "CONFORMANT"
+  },
+  "object": "DRIFT"
+}

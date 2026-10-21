@@ -1,0 +1,16 @@
+{
+  "cidrBlocks": "10.0.0.0/16",
+  "compartmentId": "ocid1.compartment.oc1..bbbbbbbbexample",
+  "defaultRouteTableId": "ocid1.routetable.oc1.eu-frankfurt-1.cccccccexample",
+  "definedTags": {},
+  "displayName": "prod-vcn",
+  "dnsLabel": "prod",
+  "freeformTags": {
+    "env": "prod",
+    "owner": "net"
+  },
+  "id": "ocid1.vcn.oc1.eu-frankfurt-1.aaaaaaaaexample",
+  "ipv6CidrBlocks": [],
+  "lifecycleState": "AVAILABLE",
+  "timeCreated": "2026-07-19T00:00:00Z"
+}
