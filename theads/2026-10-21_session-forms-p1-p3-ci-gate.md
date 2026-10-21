@@ -1,6 +1,6 @@
 # Thread-napló — 2026-10-21 (Forms P1–P3, ci-gate)
 
-Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-21T21:02:22Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl` (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
+Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-21T21:51:56Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl` (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
 
 
 ### 2026-10-21 05:57 — Claude
@@ -4733,4 +4733,314 @@ Melyik legyen?
 
 ~~~~~
 nézd vissza a logokat kifejezetten kértem -> potold
+~~~~~
+
+
+### 2026-10-21 21:03 — Claude
+
+~~~~~
+A pótlás kész: a 10-21-i napló bekerült a Factory `main`-be, `f16dc9e` commitként, Vault-aláírással.
+
+- **Hol tart a napló:** 2026-10-21 05:57 UTC-tól a mostani kérdésedig tart, 173 blokk (46 tőled, 127 tőlem). Ez a korábban hiányzó rész: a #43 (ADR 0011 elfogadása), a P3 első egysége (#44), a napló maszkolása és az auditjegyzet.
+- **Reprodukálható:** két generálás byte-azonos.
+- **Maszkolás:** a privát repó részletei és a titokminták maszkolva vannak (134 `[MASKED:…]` jelölő, amelyek zöme a maszkolásról szóló beszélgetésben van). A token- és titokkeresés csak a maszkolásról szóló beszélgetés szavait találta, tényleges adatot nem. A linkelt repók mind nyilvánosak.
+- **Átnézés:** az új szakaszt az automatikus vizsgálat mellett szúrópróbaszerűen néztem át, nem soronként.
+
+**Nem commitoltam** az auditjegyzetet (`docs/audit-merge-approval-2026-10-21.md`) és a generátort a tesztjével. Ezekről korábban azt kérted, hogy tulajdonosi felülvizsgálat és külön döntés előzze meg.
+
+**Mostantól** a naplót ténylegesen vezetem. Minden lezárt PR után frissítem és commitolom, külön nem kérdezek rá. A következő frissítés a #44 merge-e után jön.
+
+Az auditjegyzet commitolását és a naplózás hookkal való automatizálását hagytam a döntésedre.
+~~~~~
+
+
+### 2026-10-21 21:04 — Felhasználó
+
+~~~~~
+folytasd PR után commit !!! 
+
+<pasted_content id="d623">
+## Forms #44 – az első P3-egység értékelése
+
+Átnéztem a [Forms #44 PR-t](https://github.com/CentralInfraCore/cic-primitive-forms/pull/44?utm_source=chatgpt.com) és a Rust–Go változtatásokat.
+
+Az első P3-egység architekturálisan jó irányban halad. A sémafordító most már értelmezi a `policy_surface` és az `identity.base` deklarációit, de még nem alkalmaz alapértékeket, nem old fel referenciákat, és nem hoz jogosultsági döntéseket.
+
+A GitHubon a megadott `1f9ea0cb…` commit látható; a corpus ellenőrzés sikeres. A teljes CI végső sikerét még nem igazoltam.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
++1
+
+
+
+| Terület                                        | Értékelésem           |
+| ---------------------------------------------- | --------------------- |
+| Sémafordítás kiterjesztése                     | Megfelelő             |
+| Rust–Go közös tesztesetek                      | Megfelelő irány       |
+| Nem deklarált és üres policy megkülönböztetése | Fontos és helyes      |
+| `SCHEMA_INVALID` részletes hibautakkal         | Megfelelő             |
+| Hozzáférési döntések kizárása                  | Helyes komponenshatár |
+| Teljes CI                                      | Még igazolandó        |
+
+A #44 összevonását szakmailag támogatom a teljes CI sikeres lezárása után. Ez nem jogosult tulajdonosi merge-engedély; a korábbi engedélyeket nem terjeszteném ki automatikusan erre a PR-ra.
+
+## A második P3-egység: igen, elindítható
+
+Szakmailag GO a default-alkalmazás párhuzamos fejlesztésére. Nem szükséges a #44 teljes CI-futásának befejezésére várni ahhoz, hogy az új egységen dolgozzanak.
+
+Ezt a munkaszervezést javaslom:
+
+- Külön branch és worktree induljon a #44 rögzített `1f9ea0cb39d67855512360819f0548050481c1ec` commitjáról.
+- A #44 HEAD-je maradjon változatlan, a második egység ne kerüljön bele.
+- A második egység saját Rust–Go corpus-t, regressziós teszteket és minőségkapukat kapjon.
+- A második PR csak a #44 sikeres összevonása és a függőségek rendezése után kerülhessen merge-re.
+
+### A második egység pontos célja
+
+A hiányzó mezők alapértékeinek alkalmazása az elfogadott ADR 0011 szerint, úgy, hogy az explicit `null`, `false`, `0`, üres string, lista és objektum ne változzon meg.
+
+Különösen fontos az `authored` és `default` eredet megkülönböztetése, a `reference` defaulttiltásának ellenőrzése, valamint hogy a Rust és Go ugyanarra a bemenetre azonos eredményt adjon.
+
+A policy-öröklési resolver és a `PolicyResolution` teljes előállítása maradjon későbbi, külön egység.
+
+## Összefoglaló döntés
+
+P3 első egység: feltételes szakmai GO
+
+P3 második egység fejlesztése: GO
+
+\#44 merge: teljes CI és jogosult jóváhagyás után
+
+A következő fejlesztési lépés tehát világos. Nem kérnék újabb általános architekturális tervet: indulhat a default-alkalmazás implementációja külön ágon, miközben a #44 ellenőrzése befejeződik.
+
+A szakmai GO továbbra sem helyettesíti a repository jogosult tulajdonosának merge-felhatalmazását.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-21 21:06 — Claude
+
+~~~~~
+Status: Go compile-side (Role, stored defaults, default self-check) is in and the existing suite is green. Now writing `ApplyDefaults` (Go), then the Rust twin and shared cases.
+~~~~~
+
+
+### 2026-10-21 21:09 — Claude
+
+~~~~~
+Status: Go defaults pass 28 shared cases. Now porting everything to Rust (Shape field, Role, default check, `apply_defaults`).
+~~~~~
+
+
+### 2026-10-21 21:10 — Claude
+
+~~~~~
+The earlier `use` replacement didn't match (rustfmt had reflowed it); fixing the import directly.
+~~~~~
+
+
+### 2026-10-21 21:40 — Claude
+
+~~~~~
+A második egység kész és fent van, **Forms #45**-ként, de nincs mergelve. A #44 CI-ja lefutott, de a merge-hez a te engedélyed kell.
+
+**#44** (HEAD `1f9ea0cb…`): 23/23 check sikeres, mergelhető és konfliktusmentes. A merge-hez erre a HEAD-re kérem az engedélyed: Approve review, `merge-approved: 1f9ea0cb39d67855512360819f0548050481c1ec` hozzászólás, vagy egy mondat itt. A naplót a #44 mergelése után frissítem, ahogy kérted.
+
+**#45** (HEAD `a18aadccda3b9770a58750db959edbdfaf190ebf`, a `feat/p3-policy-surface` ágra épít, a #44 érintetlen maradt): Role és alapértékek az ADR 0011 szerint. A CI most indult (20 fut, 2 sorban).
+- **Role-olvasás:** minden csomópont `role`-ja be van olvasva rövid és hosszú (három tengelyes) alakban. Az ismeretlen vagy tiltott érték `SCHEMA_INVALID`, és nem lesz belőle `config`.
+- **Default a sémában:** olyan csomóponton, amelynek a Role-ja nem vesz fel defaultot, `SCHEMA_INVALID`. A default értéke ráadásul érvényes értéke kell legyen a saját csomópontjának.
+- **`ApplyDefaults`:** először validál, hibás dokumentumot nem alakít. Csak a hiányzó opcionális mezőre illeszt be defaultot, az explicit `null`, `""`, `0`, `false`, `[]` és `{}` változatlan marad.
+  - A hiányzó összetett mezőbe vagy listába nem lép be.
+  - Minden deklarált pozícióhoz megadja az eredetet (`authored` vagy `default`), és az újraalkalmazás nem változtat az eredményen.
+- **Nem része ennek az egységnek:** a `PolicyResolution`, a policy-öröklés és az `Expand`-tal való összeillesztés.
+
+**Tesztek és helyi kapuk** (a CI megvárása nélkül):
+- **Közös esetek:** 10 dokumentum, 21 elutasítás és 11 elfogadott Role-alak mindkét nyelven, plusz a valódi `network-space` séma.
+- **Seeded defect:** 16 új hiba, mind elbukik.
+- **Ág-lefedettség:** Rust 95,40%, Go 96,96%.
+- **Mutációs teszt:** a Rust viable mutánsait mind elkapja a teszt, a Go 95,8% és 100%.
+- **Fuzz:** új `FuzzApplyDefaults` és `defaults` célpont canary-vel, 40 s futás tiszta.
+
+**Két észrevétel:**
+- **Régi rendezési flake:** a `rust/tests/properties.rs`-ben van egy ritka, a változtatásoktól független hiba. Két `UNKNOWN_FIELD` hiba rendezése eltér, ha az egyik mezőnévnek nincs írható logikai útvonala. A implementáció útvonal-szegmens szerint rendez, a teszt-oracle viszont a `None`-t sorolja előre. Nem javítottam, a reprodukáló seedet elmentettem. Kérésedre külön issue-t nyitok.
+- **Mutációs mérés korábbi hibája:** az első mutációs futásom (a #44-hez) közös target-könyvtárral ment, ami megbízhatatlan volt. Újra futtattam, és az eredmény tiszta, a #44 tartalmát ez nem érinti.
+
+Döntésre vár: a #44 merge-e, és utána a #45 retargetelése `main`-re rebase-zel. A #45 mergelése a #44 után külön engedélyt kér.
+~~~~~
+
+
+### 2026-10-21 21:45 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+## Forms P3 – #44 és #45 felülvizsgálata
+
+Az első két P3-egység megfelelően elkülönül, és az implementáció az elfogadott ADR 0011 irányát követi. Megnéztem mindkét PR nyilvános változtatásait.
+
+| PR                                                                                                  | Szakmai döntésem                                                                              |
+| --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| [Forms #44](https://github.com/CentralInfraCore/cic-primitive-forms/pull/44?utm_source=chatgpt.com) | GO – a megadott HEAD és 23/23 sikeres CI alapján összevonásra késznek tartom                  |
+| [Forms #45](https://github.com/CentralInfraCore/cic-primitive-forms/pull/45?utm_source=chatgpt.com) | Előzetes GO az implementáció irányára; végleges merge csak saját CI és a #44 összevonása után |
+
+A #44-re vonatkozó döntés pontosan erre a commitra szól:
+
+`1f9ea0cb39d67855512360819f0548050481c1ec`
+
+A nyilvános GitHub-felületen az első egység változtatásai és tesztjei láthatók, de a teljes 23/23-as végállapotot a beszámolód alapján veszem figyelembe.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
++1
+
+
+
+Ez szakmai merge-ajánlás, nem tulajdonosi felhatalmazás. A végrehajtáshoz a repository jogosult döntéshozójának engedélye szükséges.
+
+## A #45-ben egy dolgot külön figyelnék
+
+A `ApplyDefaults` visszaadja az `authored` vagy `default` eredetet. A dokumentáció szerint ez mindig az adott bemenethez viszonyított eredet.
+
+Ez azt jelenti, hogy ha a normalizált dokumentumot újra feldolgozzuk, a korábban beszúrt alapérték már explicit mezőként jelenik meg, tehát `authored` besorolást kaphat. A tesztek ezt a működést kifejezetten ellenőrzik.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+Ez nem feltétlenül hiba, de a későbbi P3-egységeknek az első normalizáláskor létrejött eredetinformációt tovább kell vinniük. Nem szabad azt utólag pusztán a normalizált értékfából újrakövetkeztetni.
+
+## A Rust rendezési flake
+
+A reprodukálható `UNKNOWN_FIELD` eltéréshez külön GitHub issue-t javaslok.
+
+Kerüljön bele a reprodukáló seed, a tényleges és az elvárt rendezés, valamint az, hogy az oracle és az implementáció milyen sorrendezési szabályt követ.
+
+Ezt nem javítanám bele a #45-be, amíg nem bizonyított, hogy annak működését érinti. Ha viszont valamelyik kötelező CI-kaput elbuktatja, az adott futást természetesen nem lehet zöldnek tekinteni.
+
+## Következő sorrend
+
+1. \#44: jogosult merge-engedély és változatlan HEAD mellett összevonás.
+2. \#45: célág átállítása `main`-re, a diff újbóli ellenőrzése, majd a teljes CI lezárása.
+3. \#45 merge: csak saját, pontos HEAD-hez kötött jóváhagyással.
+4. P3 harmadik egység: az Expand és az alapérték-alkalmazás összeillesztésének megtervezése, a P2 szerzői eredetének megőrzésével.
+
+A #45-öt már nem kezelném puszta előkészítésként: ez a P3 első tényleges értéktranszformációja, ezért a provenance helyessége különösen fontos.
+
+Összefoglalva: #44 szakmai GO, #45 jó irányban halad, a rendezési hibára külön issue. Új általános architekturális kört nem kérnék. A merge-ek tulajdonosi jóváhagyása továbbra is külön döntés.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-21 21:45 — Claude
+
+~~~~~
+Megnyitottam az issue-t a rendezési flake-ről: **Forms #46**. A #44-et és a #45-öt nem mergeltem.
+
+**Mi van az issue-ban:**
+- **Reprodukció:** a minimális bemenet egy üres összetett `d` mezős séma és a `{"<<": null, "d": {"": null}}` dokumentum, a mentett proptest seeddel együtt.
+- **Tényleges és elvárt sorrend:** az implementáció a két `UNKNOWN_FIELD` hibát útvonal-szegmensek szerint rendezi, ahogy az ADR 0007 előírja (`$.<<` először). A teszt-oracle a logikai útvonal szövege szerint rendez, ahol a `None` kerül előre. Az üres mezőnévnek nincs írható logikai útvonala.
+- **Ok:** az oracle közelítése gyenge, nem az implementáció téves. Az oracle az escape-elt neveket már kihagyja, a `None`-t viszont nem.
+- **Javaslat:** az oracle hagyja ki a `None` útvonalat is, vagy az ADR 0007 kapjon egy mondatot arról, hogy az írható útvonal nélküli hibák is szegmens szerint rendezettek. A #45-be nem javítottam bele, mert annak működését nem érinti.
+
+**Eredet-információ a #45-ben:** egyetértek a megjegyzéssel. A `ValueOrigin` a bemenethez viszonyított, ezért a következő egységnek az első alkalmazásnál keletkezett eredetet tovább kell vinnie az `Expand`-on át, és nem szabad utólag a kész értékfából visszafejtenie. Ezt a harmadik egység tervébe írom.
+
+**Merge-ek:**
+- **#44** (`1f9ea0cb39d67855512360819f0548050481c1ec`, 23/23 sikeres, mergelhető): a merge-hez a te engedélyedet várom, a reviewer szakmai GO-ja ezt nem pótolja.
+- **#45** (`a18aadccda3b9770a58750db959edbdfaf190ebf`): a #44 után retargetelem `main`-re, ellenőrzöm a diffet, és a saját CI-ja után külön engedélyt kérek rá.
+
+A naplót a #44 mergelése után frissítem és commitolom, ahogy kérted.
+~~~~~
+
+
+### 2026-10-21 21:47 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+A #46 issue-t megfelelően dokumentáltnak tartom, a #44 pedig szakmailag készen áll az összevonásra. A két feladatot nem kötném össze.
+
+Ellenőriztem a nyilvános GitHubon a [Forms #44](https://github.com/CentralInfraCore/cic-primitive-forms/pull/44?utm_source=chatgpt.com), [#45](https://github.com/CentralInfraCore/cic-primitive-forms/pull/45?utm_source=chatgpt.com) és [#46 issue](https://github.com/CentralInfraCore/cic-primitive-forms/issues/46?utm_source=chatgpt.com) állapotát. Mindhárom megtalálható, és a dokumentált függőségek megfelelnek a beszámolódnak.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
++2
+
+
+
+## Döntéseim
+
+| Tétel                   | Szakmai álláspont                                      |
+| ----------------------- | ------------------------------------------------------ |
+| Forms #44 – `1f9ea0cb…` | GO – a közölt 23/23 sikeres CI alapján                 |
+| Forms #45 – `a18aadcc…` | A #44 után retarget, új ellenőrzés és külön döntés     |
+| Forms #46               | Megfelelő issue, nem indokolja a #44 blokkolását       |
+| P3 harmadik egység      | Tervezése indulhat, az eredetmegőrzés kiemelt feltétel |
+
+## A #46 javításánál melyik irányt választanám?
+
+A két javaslat közül hosszú távon az oracle útvonalszegmensek szerinti rendezését választanám.
+
+Az `None` útvonalú hibák egyszerű kihagyása gyorsabb javítás lenne, de gyengítené a property-based tesztet. Jobb, ha maga az oracle képes pontosan modellezni az ADR 0007 szerinti sorrendet.
+
+A reprodukáló seed maradjon regressziós esetként. Mindez külön PR-ba tartozik, nem a #45-be.
+
+## A #44 merge-jéről
+
+A pontos commit:
+
+`1f9ea0cb39d67855512360819f0548050481c1ec`
+
+Nincs további ismert technikai kifogásom. A végleges CI, változatlan HEAD és mergelhetőség mellett a merge-et szakmailag támogatom.
+
+Ez azonban továbbra sem a repository tulajdonosának nevében adott engedély. A tényleges merge-felhatalmazást a jogosult személynek kell kimondania vagy GitHubon rögzítenie.
+
+Egy kapcsolódó határt megtartanék: a #44 után a fejlesztési napló frissítése rendben van, de a korábban nyilvános publikálásra előkészített transcript és auditjegyzet commit/push művelete továbbra is külön tulajdonosi döntés.
+
+A következő igazán fontos mérnöki feladat a #45 eredetkezelésének megőrzése a későbbi Expand-integrációban. Ott már nem elég helyesen előállítani a normalizált értéket: azt is bizonyítani kell, hogy a rendszer pontosan tudja, melyik értéket adta meg a szerző, és melyiket hozta létre a normalizálás.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-21 21:47 — Claude
+
+~~~~~
+Ez a message ismét a reviewer szakmai GO-ja. A #44-re saját engedélyed nincs, ezért nem mergeltem, és a #44, a #45 és a #46 állapota nem változott.
+
+- **#44:** `1f9ea0cb39d67855512360819f0548050481c1ec`, 23/23 sikeres, mergelhető. Merge: Approve review, `merge-approved: 1f9ea0cb…` hozzászólás, vagy egy mondat itt.
+- **#46:** a reviewer a pontosabb irányt választaná, az oracle rendezzen útvonalszegmensek szerint. Ez külön PR lesz, mert a tesztnek ehhez a hiba forrásmezőit kell modelleznie, hiszen a válaszban csak a logikai útvonal szövege van. Mivel nem tőled jött, még nem kezdtem el.
+- **Napló:** a reviewer úgy tudja, hogy a transcript commitja külön tulajdonosi döntésre vár. Ez már megtörtént: a 10-21-i transcript `f16dc9e` commitként a Factory `main`-ben van, a kérésedre (a naplót vezetni kell, és PR után commitolni). Az auditjegyzet és a generátor tesztje továbbra is untracked.
+
+Ha szólsz, hogy a #44-re mehet a merge, azonnal mergelem, utána frissítem és commitolom a naplót, a #45-öt pedig retargetelem `main`-re. Addig a harmadik egységhez (Expand és alapérték-alkalmazás összeillesztése, az eredet átvitelével) a tervet írom meg, kódot nem.
+~~~~~
+
+
+### 2026-10-21 21:50 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+A Forms #44 merge-jét engedélyezem a `1f9ea0cb39d67855512360819f0548050481c1ec` HEAD-re, amennyiben mind a 23 kötelező ellenőrzés továbbra is sikeres, a HEAD változatlan és a PR mergelhető.
+
+Az összevonás után:
+- Futtasd le a teljes post-merge ellenőrzést.
+- Frissítsd a fejlesztési naplót.
+- A #45-öt állítsd át `main` célágra, ellenőrizd a diffet és a saját CI-ját. A #45 merge-jéhez külön jóváhagyást kérek.
+- A #46 rendezési oracle hibáját külön PR-ban javítsd az ADR 0007 szerinti útvonalszegmens-rendezéssel.
+- A harmadik P3-egység tervezése folytatódhat, az eredetinformáció megőrzésével.
+
+Más korábban lezárt feladatot ne nyiss újra.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-21 21:51 — Claude
+
+~~~~~
+GREEN, 23/23, HEAD unchanged, mergeable. Merging with the head bound.
 ~~~~~
