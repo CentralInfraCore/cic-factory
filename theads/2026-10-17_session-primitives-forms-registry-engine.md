@@ -14519,3 +14519,646 @@ Egy hiány maradt: a doksi nem írja ki a visszakapcsolást sikertelen első rek
 
 A main `p1` az `8f19f4d`-n még fut. Amint lezárul és a `headSha` egyezik, frissítem és commitolom a `theads/` naplót a #29, #31 és #30 lezárásáról.
 ~~~~~
+
+
+### 2026-10-20 10:57 — Claude
+
+~~~~~
+A `main` CI zöld a B2 merge-commiton: az `8f19f4d`-n a `p1` és a `corpus` sikeres, az `evidence` workflow pedig a tervezett módon `skipped`, mert `EVIDENCE_ENABLED` nincs beállítva.
+
+A `theads/` napló frissítve és pusholva a cic-factory `main`-re (`2071330`). Mentés előtt titokminta-keresést futtattam rajta (token, privát kulcs, JWT és hasonlók), és nem talált semmit.
+
+**Lezárt, `main`-en lévő munka ebből a szakaszból:**
+- **#29 (B1):** a pinelt action-ök és a rekordépítő, merge `85d2dd60`.
+- **#31:** az alias-mint-kulcs pánik javítása, merge `e2b76232`.
+- **#30 (B2):** collect, attest, publish, watchdog, probe-ok és setup, merge `8f19f4df`, kikapcsolva.
+
+**Hátravan:**
+- **Tulajdonosi lépések:** a sorrendet a javításoddal együtt a `docs/EVIDENCE-SETUP.md` tartalmazza. A kulcs a `main` védelme (kötelező PR-review, CODEOWNERS a workflow-kra), mert enélkül az App-token izolációja nem bizonyítható. Az `EVIDENCE_ENABLED` a te döntésed.
+- **Apró doksi-PR:** a sikertelen első rekord esetén a visszakapcsolás (`EVIDENCE_ENABLED=false`) leírása. Szólj, ha kéred.
+- **Következő fejlesztési lépés:** S (shard-kiegyenlítés és cache, külön PR), majd C0 (Go mutant-id megvalósíthatósági vizsgálat) és C. Ezek nem várnak az App beállítására. Indíthatom az S-t?
+~~~~~
+
+
+### 2026-10-20 11:01 — Felhasználó
+
+~~~~~
+mi ezzel a maradék feleadat
+~~~~~
+
+
+### 2026-10-20 11:01 — Claude
+
+~~~~~
+A maradék négy dologból három a te döntésedre vagy lépésedre vár, egyet én tudok azonnal indítani.
+
+**Tőled függ (az én kezem meg van kötve):**
+1. **A `main` védelme** (kötelező PR-review, CODEOWNERS a `.github/workflows/**`-ra). Ez az élesítés előfeltétele, és az `apply.sh` nélküle kilép. A repo admin-beállítása az owner dolga, nem hoztam létre magamtól.
+2. **GitHub App (`cic-evidence-writer`)** létrehozása, utána `apply.sh --apply`. Szintén owner-oldali admin lépés.
+3. **A probe-ok lefuttatása:** `evidence-probes` mindkét jobja és a `probe-isolation.sh`. Ezek nélkül két dolog nincs igazolva: hogy a GitHub érvényesíti a ruleset-et és az environment branch-szabályát, és hogy más workflow attestationje nem verifikál `evidence.yml`-ként.
+4. **`EVIDENCE_ENABLED=true`**, külön döntésként, majd egy kézi `evidence` futás. Az első rekord attestációjának, publikálásának és visszaellenőrzésének igazolása után a tartós üzem. Ha ez elbukik, visszakapcsolás `false`-ra.
+
+**Én csinálhatom, a te jóváhagyásoddal:**
+- **Kis doksi-PR:** a sikertelen első rekord esetén a visszakapcsolás leírása a `docs/EVIDENCE-SETUP.md`-be.
+- **S lépés:** shard-kiegyenlítés és eszköz-cache, külön PR. Az időkorlát marad, a küszöbök nem változnak. Ez nem vár az App beállítására.
+- **C0, majd C:** a Go mutant-id megvalósíthatósági vizsgálata, utána a stabil mutant-id-k. Ez az S után jön.
+
+**Amit magamról is tudni érdemes:**
+- A B2 kódja `main`-en van, de élesben semmi nem futott. A ruleset, az environment és az attestáció-kötés csak tesztekkel és struktúra-ellenőrzéssel van lefedve, valódi GitHub ellen nem.
+- A `probe-isolation.sh`-t csak szintaktikailag ellenőriztem, nem futtattam.
+- A #31 fuzz-hibája azt mutatja, hogy a 60 másodperces véletlen fuzz a parser pánikmentességét nem garantálja. Ha akarod, külön PR-ban alias-kulcs és hasonló bemeneteket veszek fel a parity-korpuszba.
+
+Melyikkel folytassam: S, a kis doksi-PR, vagy a parity-korpusz bővítése?
+~~~~~
+
+
+### 2026-10-20 13:17 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+Az S lépéssel folytasd. De mostantól ne sorosan dolgozzunk. Indítsunk mellette egy második, független munkaszálat is a parity-korpusz bővítésére.
+
+Pontosan ezt akartuk elérni a párhuzamos fejlesztési modellel: ne kelljen az egyik feladat teljes CI-ját és merge-jét kivárni ahhoz, hogy a következő elkezdődjön.
+Jóváhagyott munkák
+Munkaszál    Feladat    Döntés
+Worker S    Shard-kiegyensúlyozás, cache, CI-idő optimalizálása    INDULHAT
+Worker P    #31 regressziós esetek felvétele a parity- és fuzz-korpuszba    Párhuzamosan indulhat
+Worker C0    Go stabil mutant-ID megvalósíthatósági vizsgálat    S közben kutatható
+Dokumentáció    Sikertelen első evidence-futás esetén visszakapcsolás    Kis külön PR, nem blokkoló
+Az S lépés követelményei
+A jelenlegi FULL CI futásidejét szeretném érdemben csökkenteni, a bizonyítás erejének csökkentése nélkül.
+- Először mérje fel a jelenlegi shardok tényleges futásidejét.
+- A kiegyensúlyozás mérési adatokon alapuljon, ne egyszerűen egyenlő számú mutánson.
+- A Rust és Go tool-cache legyen reprodukálható, megfelelően kulcsolt.
+- Mutation timeout, coverage-küszöb, tesztkészlet, fail-closed viselkedés változatlan.
+- Legyen előtte–utána összehasonlítás: teljes CI-idő, leghosszabb shard, cache-hit és cache-miss futás.
+- A változtatásnak külön PR-ja legyen, saját negatív próbákkal, és a merge változatlanul HEAD-hez kötött.
+A parity munkaszál pedig tegye be az eredeti összeomlást kiváltó bemenetet és a közeli alias-kulcs eseteket állandó regressziós tesztként. Az elvárt eredmény szabályos elutasítás, soha nem panic.
+Ami az evidence aktiválását illeti
+A main védelme, a GitHub App és a tényleges GitHub-ellenpróbák továbbra is tulajdonosi adminisztrációs feladatok. A kód elkészült, de a kriptográfiai lánc éles működése még nincs bizonyítva. Az EVIDENCE_ENABLED=true engedélyét egyelőre nem adom meg.
+
+A fejlesztés viszont ettől függetlenül haladhat.
+
+És még egy szervezési döntés: ne legyen olyan, hogy a worker a CI elkészüléséig tétlenül vár. A CI-t külön integrációs folyamat figyelje. A worker adja át a PR-t és annak HEAD-jét, majd folytassa a következő, függőség nélküli feladatot.
+
+Tehát: S most, parity vele párhuzamosan, C0 kutatás a szabad kapacitáson. A merge-sorrendet továbbra is kontrolláljuk, de a fejlesztést nem sorosítjuk.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-20 13:18 — Claude
+
+~~~~~
+Worker P elindult. Én az S-sel folytatom: először a shardok tényleges futásidejét mérem a legutóbbi main futásokon.
+~~~~~
+
+
+### 2026-10-20 13:21 — Claude
+
+~~~~~
+S lépés: megírtam a mért költségű shard-tervezőt (`tools/shard_plan.py`). Most a költségtáblát generálom a valódi CI adatból, és valódi cargo-mutants ellen ellenőrzöm a regexet.
+~~~~~
+
+
+---
+**▶ PR cic-primitive-forms#32** — 2026-10-20 13:24 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/32
+---
+
+
+---
+**▶ PR cic-primitive-forms#33** — 2026-10-20 13:25 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/33
+---
+
+
+### 2026-10-20 13:25 — Claude
+
+~~~~~
+Három szál fut: a #33 (S) CI-ját most figyelem, a #32 (P) kész, a C0 vizsgálat külön munkaszálon indult. A #33 CI-ját háttérben várom, hogy a gyors "cache-miss" futás mérhető legyen.
+~~~~~
+
+
+### 2026-10-20 13:26 — Claude
+
+~~~~~
+Három munkaszál fut párhuzamosan:
+
+- **S (én): PR #33**, HEAD `5385c58ad66b4ff3d6c05014657fd9cf7a23701a`. A CI most fut rajta; ez lesz a cache-miss mérés.
+  - **Mérés a változtatás előtt (10 `p1` futás):** a wall idő 22–27 perc. A kritikus út a Rust mutation shard 1 (19–22 perc, 7 timeoutoló mutánssal) és utána a `quality` (3–5 perc). A többi Rust shard 5–12 perc, a Go shardok 3–6 perc. Az eszközök fordítása Rust jobonként 58–68 mp, a `quality` jobban 148 mp.
+  - **Változtatás:** a 467 Rust mutáns 6 shardra osztva, mért költség szerint (`tools/shard_plan.py`, `tools/mutation-costs.json`). A jósolt terhelés shardonként 6,5 perc. Új `cached-tool` action a négy pinelt eszközbinárisra, kulcsa: verzió, fordító, runner image és CPU.
+  - **Változatlan:** `--timeout 120`, a tesztek, a mutánsok, a küszöbök és a fail-closed gate.
+  - **Ellenőrzés:** a regex-kiválasztás valódi cargo-mutants ellen pontosan egyezik, az egyes shardokra 66+90+90+88+66+67=467. Lokálisan 17 teszt és 12 szándékos tervezői hiba zöld, a többi lokális ellenőrzés is.
+  - **Még hátravan:** az előtte–utána összehasonlítás. A cache-miss futás után újraindítom ugyanazt a HEAD-et a cache-hit mérésért.
+
+- **P: PR #32**, HEAD `437b3805294fb29ff8267894e8f664cd9814209c`. A Worker P 29 új alias-kulcs esetet vett fel a parity-korpuszba, plusz fuzz-seedeket Rust és Go oldalra. A #31 javítás visszavonásakor a korpusz-teszt valóban pánikol, a parity compare változatlan (new 0, changed 0). A CI-ja még nem futott le, nem mergeltem.
+
+- **C0:** a Go stabil mutáns-azonosító megvalósíthatósági vizsgálata külön worktree-ben indult, eredmény még nincs.
+
+Merge-engedélyt egyik PR-ra sem kértem és nem is kaptam. A #32-re és a #33-ra a pontos HEAD-hez kötött parancs kell, miután a CI zöld.
+
+Egy dolog, amit érdemes tudni: a main checkout most a `perf/balanced-shards-tool-cache` ágon áll. A munkaszálak saját worktree-ben dolgoznak, ezért nem ütköznek.
+~~~~~
+
+
+---
+**▶ PR cic-primitive-forms#34** — 2026-10-20 13:35 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/34
+---
+
+
+### 2026-10-20 13:36 — Claude
+
+~~~~~
+A C0 vizsgálat kész: **PR #34**, HEAD `30851c8096da06ba12e73e5e6db3304531044604`, bázis `main`. A CI-ja még nem futott le, nem mergeltem. Az állításokat a worker jelentéséből idézem, magam nem futtattam újra a méréseket.
+
+**Verdikt:** a Go mutánsnak lehet stabil id-ja, de önmagában nem elég a verdikt átvitelére.
+- 824 mutánsból 824 egyedi id jön ki, determinisztikusan. A felsorolás tesztfuttatás nélkül 8,9 mp, az id-számítás 0,4 mp.
+- Komment, sorcsúszás, új független függvény vagy másik fájl szerkesztése után az id-k és a függvénytörzs-digestek változatlanok maradnak. A mostani id (a teljes mutált fájl digestje) egy `parse.go`-szerkesztésre mind a 475 mutánsát érvényteleníti.
+- Az id mellé kötni kell a hívási zárlatot, a csomagszintű állapotot, a teszteket és a korpuszt, valamint a toolchaint és a mérési paramétereket. Callee szerkesztése után a hívók id-ja nem mozdult, miközben a verdiktjük már nem biztos.
+- Ennek alapján a Go mutáció csak elérhetőségi szabállyal (D/E lépés) hagyhatja el a FULL-t. A hívási zárlat szabállyal egy szerkesztett függvény mediánban 52 mutáns (6,3%) verdiktjét érintheti, átlagban 123-at, legrosszabb esetben 560-at a 824-ből.
+
+**Amit nem mértek:**
+- A verdikt tényleges megfordulásának arányát callee- vagy tesztszerkesztés után.
+- A flaky és timeout-közeli mutánsokat.
+- A csomagszintű deklarációkat. Név alapú hívásgráfot használtak `go/types` nélkül, ezért a számok alsó korlátok.
+- Csak egy csomagot, egy commitot és egy gépet néztek.
+
+A munkát a worker a forms repo egy külön worktree-jében végezte, az eredeti fát nem módosította.
+
+**Állás a három PR-ra:** a #32, #33 és #34 mindegyike nyitott és CI-re vár. A #33 (S) figyelője fut, utána jön a cache-hit mérés ugyanazon a HEAD-en. Merge-engedélyt egyikre sem kértem; mindegyikre a pontos HEAD-hez kötött parancs kell, a CI zöld állapota után.
+~~~~~
+
+
+### 2026-10-20 13:43 — Claude
+
+~~~~~
+A #33 CI-ja zöld (23/23). Mérem a cache-miss futást, aztán újraindítom ugyanazt a HEAD-et a cache-hit mérésért.
+~~~~~
+
+
+### 2026-10-20 13:45 — Claude
+
+~~~~~
+A #33 cache-miss futása kész és zöld (23/23, HEAD `5385c58a…`). A cache-hit mérés (második futás ugyanazon a HEAD-en) még fut, a háttérfigyelő jelzi, ha vége.
+
+**Előtte–utána, eddig:**
+
+| | Előtte (10 futás) | Utána, cache-miss |
+|---|---|---|
+| Wall idő | 22–27 perc | 17,6 perc |
+| Leghosszabb Rust shard | 19–22 perc | 9,0 perc |
+| Rust shardok | 4 db, 5–22 perc | 6 db, 7,4–9,0 perc |
+
+A kritikus út most a `fuzz` (9,1 perc) és a Rust mutation shardok (~9 perc). A shardok kiegyensúlyozottak, de a 9 perc magasabb a jósolt 6,5-nél: ebből 46–72 mp a cargo-mutants fordítása, amit a cache-hit futás hivatott kiváltani.
+
+A cache-hit szám nélkül az S-et még nem tekintem lezártnak. Ha az is megvan, kiírom a teljes összehasonlítást a PR-ra, és kérem a #33 merge-engedélyét a pontos HEAD-re. Addig sem a #33-at, sem a #32-t és #34-et nem mergelem.
+~~~~~
+
+
+### 2026-10-20 13:57 — Claude
+
+~~~~~
+A #33 mostani állása:
+
+- **Cache-hit futás (a javítás előtt):** 11,3 perc wall idő, a leghosszabb job ~8 perc. A cargo-mutants, a cargo-fuzz és a go-mutesting fordítása 0–1 mp-re esett, a `quality` job eszközlépései 148 mp-ről kb. 46 mp-re. A 46 mp azért maradt, mert a `cargo-llvm-cov` találatát hibásan újrafordította.
+- **Javítás:** a cache-ellenőrzés most úgy futtatja a binárist, ahogy a cargo (`cargo +stable llvm-cov --help`). Új HEAD: `96c00025c805547ff583273909fc5902756352f2`. A korábbi zöld CI erre már nem érvényes.
+- **Most:** az új HEAD CI-ját várom. Mivel a cache-ek már megvannak, ez egyben tiszta cache-hit mérés.
+
+| | Előtte | Cache-miss | Cache-hit (javítás előtt) |
+|---|---|---|---|
+| Wall idő | 22–27 perc | 17,6 perc | 11,3 perc |
+| Leghosszabb job | ~22 perc (Rust shard) | 9,1 perc | ~8 perc |
+
+Amint a CI lefutott, kiírom a végső számokat a PR-ra, és kérem a #33 merge-engedélyét a pontos HEAD-re.
+~~~~~
+
+
+### 2026-10-20 14:09 — Claude
+
+~~~~~
+The task output file is read-only, so I can read it with the Read tool instead of Bash.
+~~~~~
+
+
+### 2026-10-20 14:09 — Claude
+
+~~~~~
+A #33 CI-ja a javított változaton lefutott: **23/23 check zöld**, a teljes cache-hit futás **12,0 perc** wall idő (run `39434816686`). Ez a futás a cache-hitre épített kód utolsó pusha után indult. A futás `head_sha`-ját viszont nem tudtam a PR HEAD-jével összevetni, mert a Bash-ellenőrzés most nem ad választ. A HEAD-egyezést ezért nem tekintem igazoltnak, amíg le nem kérdezem.
+
+**Előtte–utána (a PR-hoz tartozó mérések):**
+
+| | Előtte (10 futás) | Cache-miss | Cache-hit |
+|---|---|---|---|
+| Wall idő | 22–27 perc | 17,6 perc | 12,0 perc |
+| Leghosszabb Rust shard | 19–22 perc | 9,0 perc | 8,3 perc |
+| Tool-fordítás Rust shardonként | 58–68 mp | 46–72 mp | 1–3 mp |
+| `quality` job, eszközlépések | 148 mp | nincs külön mérésem | `from the cache` mindháromnál |
+
+A kritikus út a ~8 perces Rust shardokra és a ~7,4 perces `fuzz`-ra szűkült. A 6,5 perces jósolttól a shardok azért maradnak el, mert a mért idő tartalmazza a cargo-mutants baseline-buildjét és tesztjét (~1,5 perc). A mutációs időkorlát, a tesztek, a mutánsok és a küszöbök változatlanok.
+
+**Amit nem mértem:** a Go shardok és a `quality` job saját szakaszai nem javultak (a Go shardok 3–6 perces sávban maradnak). A cache-hit szám egyetlen futásból van, nem átlag. A cache csak a PR ágán él, a `main`-en az első futás cache-miss lesz.
+
+**A #33 HEAD-je** a `96c00025c805547ff583273909fc5902756352f2`, mergelhető. Mielőtt a merge-parancsot megadod, lekérem újra a PR HEAD-jét és a futás SHA-ját. Merge-engedélyt erre a SHA-ra kérek.
+
+**Nyitott PR-ok:**
+- **#32** (parity, HEAD `437b3805294fb29ff8267894e8f664cd9814209c`): CI-ja még nem néztem meg.
+- **#34** (C0 vizsgálat, HEAD `30851c8096da06ba12e73e5e6db3304531044604`): CI-ját szintén nem néztem meg.
+
+A kis doksi-PR (a sikertelen első evidence-futás utáni visszakapcsolás) még nincs megírva.
+~~~~~
+
+
+### 2026-10-20 14:24 — Claude
+
+~~~~~
+Leállt egy régi háttérfigyelő (`bxnm0lt2c`, "Wait for Rust mutation to finish"), mert a gép kritikusan kevés memóriával futott. Ez a session elejéről megmaradt, helyi Rust mutációs futásra váró figyelő volt. Nem hiba, nem indítom újra, és semmi mást nem érint: a CI-ok GitHubon futnak, a #33 mérései és a három PR állapota változatlan.
+
+A korábbi Bash-ellenőrzési hiba után még nyitva van két ellenőrzés a #33-ra: a PR HEAD-je és a mért futás (`39434816686`) SHA-ja egyezik-e. Most újra lekérdezem.
+~~~~~
+
+
+### 2026-10-20 14:24 — Claude
+
+~~~~~
+Mindhárom PR zöld, a HEAD-ek egyeznek, és egyiket sem mergeltem.
+
+**#33 (S, shard-kiegyenlítés és tool-cache)**
+- A mért futás (`39434816686`) és a PR HEAD ugyanaz: `96c00025c805547ff583273909fc5902756352f2`.
+- Az eredmény sikeres, a PR mergelhető. Az előtte–utána számok az előző üzenetben vannak: wall idő 22–27 percről 12,0 percre (cache-hit).
+
+**#32 (P, alias-kulcs regressziós esetek)**
+- HEAD `437b3805294fb29ff8267894e8f664cd9814209c`, 21/21 check zöld.
+- Mielőtt a merge-parancsot megadod, érdemes tudni: a #32 a #33 előtti `main`-re épült, de a két PR más fájlokat érint, ezért ütközést nem várok. Ezt nem ellenőriztem, csak a GitHub jelzi mergelhetőnek, amikor rákérdezek.
+
+**#34 (C0, Go mutáns-id vizsgálat)**
+- HEAD `30851c8096da06ba12e73e5e6db3304531044604`, egyetlen check van rajta, az zöld.
+- Ez csak dokumentum és prototípus, a verdikt: a stabil id kivitelezhető, de a verdikt átvitelére önmagában nem elég.
+
+**Merge-engedély:** mindhárom PR-ra a pontos HEAD-hez kötött parancs kell tőled. A javasolt sorrend #32, #33, #34, mert a #33 módosítja a `p1`-et, és a két másik utána rebase nélkül is tiszta marad.
+
+A kis doksi-PR (a sikertelen első evidence-futás utáni visszakapcsolás) még nincs megírva. Ha jóváhagyod, megírom, miközben a merge-ekre vársz.
+~~~~~
+
+
+### 2026-10-21 04:51 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+Három párhuzamos munkaszál — merge-review
+A GitHubon mindhárom PR még nyitott, és a megadott HEAD-ek egyeznek a tényleges állapottal. A main továbbra is 8f19f4df.
+
+A #33-hoz tartozó mért CI-futás valóban sikeres volt a 96c00025… HEAD-en: 12 perc 2 másodperc a teljes workflow időtartama. Ez már mérhető gyorsulás a korábbi 22–27 perces futásokhoz képest, nem pusztán várakozás.
+
+A leállított helyi háttérfigyelőt nem indítanám újra. A GitHub CI ettől független, a helyi memória pedig fontosabb a párhuzamos munkaszálaknak.
+Merge-döntések
+PR    CI    Döntés
+#32 — Parity regresszió    21/21    APPROVED
+#33 — Shard és cache    23/23    Javítást kérek
+#34 — C0 tanulmány    1/1    CI-kiegészítést kérek
+#32 — Merge engedélyezve
+A 29 új regressziós eset, a Rust/Go parity-ellenőrzés és a fuzz seedek megfelelően fedik a #31-ben talált hibacsaládot. A PR zöld és konfliktusmentes.
+gh pr merge 32 \
+  --repo CentralInfraCore/cic-primitive-forms \
+  --squash \
+  --match-head-commit 437b3805294fb29ff8267894e8f664cd9814209c
+
+
+#33 — Két célzott javítás szükséges
+A gyorsulás valós, a 467 mutáns mindegyike bekerült pontosan egy shardba, és a végső quality gate sikeres.
+
+Viszont:
+1. Az új tools/shard_plan.py, tools/test_shard_plan.py és tools/mutation-costs.json hiányzik a P1 workflow pull_request.paths szűrőjéből. Egy későbbi, kizárólag ezeket módosító PR megkerülhetné a kötelező P1-teszteket. Ezeket fel kell venni.
+2. A cached-tool/action.yml Go cache-hit ága csak az executable bitet vizsgálja (-x), nem ellenőrzi, hogy a visszaállított bináris valóban működik. Ez ellentmond a deklarált cache-validációs szerződésnek. Javítsa és tesztelje a cache-hit hibás bináris → újraépítés esetet.
+Ezek után új HEAD, új CI és ismételt review. Az optimalizáció koncepcióját elfogadom, de ezt a két ellenőrzési rést nem vinném be a main-be.
+#34 — Jó kutatási eredmény, hiányzó CI
+A C0 következtetése szakmailag fontos: a stabil mutánsazonosító szükséges, de önmagában nem elegendő a korábbi mutációs verdiktek biztonságos újrafelhasználására.
+
+Azonban a 815 soros tanulmány/prototípus PR-en csak a corpus check futott. A külön Go modul tesztjeit nem ellenőrizte a GitHub CI.
+
+Kérek egy önálló c0-selftest workflow-t a tools/c0/** módosításaira, amely a modul könyvtárából végrehajtja a go test ./... parancsot. A reprodukciós dokumentációban is javítani kell a gyökérből kiadott go build ./tools/c0/mutid és go test ./tools/c0/mutid parancsokat, mert a prototípusnak saját go.mod fájlja van, a repository gyökerében pedig nincs Go modul.
+
+A C0 maradjon kutatás: DELTA-verdict reuse-ot még nem engedélyezünk.
+Párhuzamos folytatás
+A #32 most mergelhető. A #33 és #34 javításai egymástól függetlenül, párhuzamosan mehetnek. Nem kell egyik CI-jára várni a másik fejlesztésével.
+
+A kis dokumentációs PR-t is jóváhagyom, külön worktree-ben: sikertelen első evidence-futás esetén az EVIDENCE_ENABLED=false visszaállítását és az ellenőrzött helyreállítási eljárást dokumentálja. Éles GitHub-beállítást továbbra se módosítson.
+
+A kívánt működési modell tehát már most érvényesül: három PR, külön munkaszálak, párhuzamos CI, de a merge-nél változatlanul szigorú bizonyítási kapuk.
+
+A #33-mal különösen érdemes foglalkozni: a 12 perces FULL komoly előrelépés. Éppen ezért fontos, hogy ezt a gyorsulást az ellenőrzési lefedettség elvesztése nélkül őrizzük meg.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-21 04:52 — Claude
+
+~~~~~
+Közben én a #33 két javításával haladok. Először megnézem a P1 workflow `paths` szűrőjét és a Go binárisok build-infóját.
+~~~~~
+
+
+### 2026-10-21 04:56 — Claude
+
+~~~~~
+API Error: The response stopped arriving. The response above may be incomplete.
+~~~~~
+
+
+### 2026-10-21 04:57 — Claude
+
+~~~~~
+Háttérben vár a #33 és a #34 új HEAD-jeinek CI-ja. Közben összefoglalom, hol tartunk.
+
+**Merge-elve:** a **#32** (alias-kulcs regressziós esetek) squash-merge-ölve `main`-be, `ee4f791578a8bda44de33cec681206ed8a40da49`, a jóváhagyott HEAD-en (`437b3805…`). A `main` CI-ját ezen a commiton még nem néztem meg.
+
+**#33 (shard + cache), a két kért javítással:** új HEAD `60c0a3390ce316c561c78cbb29548015a61cf183`, CI fut.
+- **`pull_request.paths`:** felvettem a `tools/shard_plan.py`, `tools/test_shard_plan.py`, `tools/test_cached_tool.py`, `tools/mutation-costs.json` és `tools/requirements.txt` fájlokat. A `tools/requirements.txt` a te listádon nem szerepelt; a `p1` `pip install -r`-rel olvassa, ezért vettem fel. Egy teszt azt is ellenőrzi, hogy a `p1` által használt minden fájl benne van a `paths`-ban (kommentek kivételével). Bizonyítottam, hogy elbukik, ha kiveszek egy útvonalat.
+- **Go cache-hit ellenőrzés:** az ellenőrzést kiemeltem az `install.sh` scriptbe. Egy Go bináris cache-hitként csak akkor elfogadott, ha a build-infója a rögzített csomagot és modulverziót tartalmazza (`go version -m`), és el is indul (kilépési kód < 126). Az `-x` bit önmagában nem elég. Az egyetlen valódi go-mutesting és cargo-mutants binárison lefuttatva a hit-ág elfogadja őket.
+- **Teszt a kért esetre:** `tools/test_cached_tool.py`, 14 teszt, köztük hibás/idegen bináris cache-hit után újraépítés, másik verzió, másik csomag, másik modul, nem induló bináris, hibás friss build. A 10 szándékos hiba mindegyike elbukik a teszteken.
+- **Amit nem tudok:** a shimes tesztek a script döntési logikáját fedik, a valódi `go install` hálózati ágát nem. Az első CI-futáson (cache-hit) az "from the cache" sorokat kell viszontlátni.
+
+**#34 (C0), a kért javításokkal:** új HEAD `ebc463ca732419cc14464f183cefb5a0b7016d0f`, a CI fut. A worker jelentése szerint van önálló `c0-selftest.yml` (`go vet`, `go test`, `go build` a modul könyvtárából), a reprodukciós parancsok javítva, és a doksi kimondja, hogy a DELTA-verdikt újrahasználata nincs engedélyezve. Ezt még nem néztem át: a diffet nem olvastam, a workflow-t nem futtatták GitHubon.
+
+**Doksi-PR** (sikertelen első evidence-futás, `EVIDENCE_ENABLED=false`, ellenőrzött helyreállítás): külön worktree-ben, a Worker P írja, csak dokumentáció, GitHub-beállításhoz nem nyúl. Még nem jelentett.
+
+Merge-engedélyt a #33-ra és a #34-re a CI zöld állapota után, a pontos HEAD-hez kötve várok tőled.
+~~~~~
+
+
+---
+**▶ PR cic-primitive-forms#35** — 2026-10-21 04:57 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/35
+---
+
+
+### 2026-10-21 04:57 — Claude
+
+~~~~~
+Az előző figyelő korán kilépett, ezért a #33 CI-ja még fut (22 check függőben). Új figyelő indult. Eredmény:
+
+- **#33** HEAD `60c0a3390ce316c561c78cbb29548015a61cf183`: CI fut, még nincs eredmény.
+- **#34** HEAD `ebc463ca732419cc14464f183cefb5a0b7016d0f`: mergelhető, 2 check zöld; a `c0-selftest` az új workflow, de azt, hogy lefutott-e, még nem ellenőriztem.
+- **Doksi-PR:** a Worker P még nem jelentett.
+
+Nem mergeltem semmit. A #33 és #34 merge-engedélyét a pontos HEAD-hez kötve, a zöld CI után kérem.
+~~~~~
+
+
+### 2026-10-21 04:57 — Claude
+
+~~~~~
+A Worker P megtalálta, hogy a B2 watchdogom hibásan kezeli a hibát: a watchdog egy nem verifikálódó rekord miatt slot nélküli futást kér. Ez az én B2 kódom hibája, ezért külön PR-ban javítom. Előbb megnézem a kódot.
+~~~~~
+
+
+---
+**▶ PR cic-primitive-forms#36** — 2026-10-21 05:13 UTC — https://github.com/CentralInfraCore/cic-primitive-forms/pull/36
+---
+
+
+### 2026-10-21 05:13 — Claude
+
+~~~~~
+A #33 új HEAD-je zöld, és a watchdog-hibát külön PR-ban javítottam. Most a #33 cache-hit ágait ellenőrzöm a futás logjában.
+~~~~~
+
+
+### 2026-10-21 05:13 — Claude
+
+~~~~~
+Négy PR áll nyitva, és kettő már merge-re kész:
+
+**#33 (shard + cache)** — HEAD `60c0a3390ce316c561c78cbb29548015a61cf183`, 23/23 zöld, mergelhető. A kért javítások bent vannak, és a CI igazolta őket:
+- **Go cache-hit ellenőrzés:** a valódi CI-ban a go-mutesting a build-infó ellenőrzésén átment ("from the cache"), a `quality` jobban mindhárom eszköz cache-ből jött.
+- **`pull_request.paths`:** lefedi az új fájlokat, és a lefedettséget teszt védi.
+- **Mérés:** a teljes workflow 12,2 perc a korábbi 22–27 perc helyett. Az eredeti, cache-miss 17,6 perces mérés is megvan.
+- **Amit nem mértem:** a shimes teszt a script döntési logikáját fedi, a valódi `go install` hálózati ágát nem.
+
+**#34 (C0 tanulmány)** — HEAD `ebc463ca732419cc14464f183cefb5a0b7016d0f`, mergelhető, de csak 2 check van rajta. A tanulmány új `c0-selftest` workflow-ja még nem látszik futónak. Vagy hiányzik a trigger, vagy késik. A merge előtt ezt még meg kell nézni, ezért a #34-re egyelőre nem kérek engedélyt.
+
+**#35 (doksi: sikertelen evidence-futás)** — HEAD `e3eb33dda96f6b7ce8c826a49d8bc0e4db95fb7c`, 1 check zöld. Csak dokumentáció, GitHub-beállításhoz nem nyúl. A worker szerint a doksi egy kódbeli hibát rögzít "known gap"-ként, amit a #36 javít. A #36 merge-e után ezt a mondatot frissíteni kell, ezért a #35-öt a #36 után érdemes mergelni.
+
+**#36 (watchdog-javítás)** — HEAD `c67da68069755d6ed935abd27a3cfc50d95e1c87`, a CI fut (19 függőben).
+- **A hiba:** az én B2 kódom volt hibás. Egy nem verifikálódó, listázott rekordnál az `evidence.py watch` a "nincs rekord" kilépési kódját (3) adta, és a watchdog slot nélkül kért új futást.
+- **A javítás:** a nem eldönthető eset kilépési kódja 4, a futás kérése csak 3-asra és egy `slot YYYY-MM-DD: has no record` sorra történik, minden más hiba elbuktatja a jobot.
+- **Tesztek:** a parancsra és a workflow-lépésre is van teszt, a 97 szándékos hiba mind elbukik.
+- **Éles hatás:** nincs, az evidence kikapcsolt.
+
+**Merge-engedélyt várok:**
+- #33: a fenti HEAD-re.
+- #36: a CI zöld állapota után.
+- #35: a #36 után.
+- #34: miután a `c0-selftest` futása látszik.
+~~~~~
+
+
+### 2026-10-21 05:27 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+## Merge-review — négy PR
+
+A GitHubon ellenőriztem a négy pontos HEAD-et és a hozzájuk tartozó check-runokat. A munkaszálak valóban külön haladnak, és a #33-nál a kért két javítás is bekerült.
+
+### #33 — S optimalizáció: APPROVED FOR MERGE
+
+23/23 CI sikeres, konfliktusmentes
+
+Engedélyezett HEAD: `60c0a3390ce316c561c78cbb29548015a61cf183`
+
+A javított `pull_request.paths` már lefedi az új shard- és cache-teszteket. A Go cache-hit ellenőrzés a bináris build-információit és elindíthatóságát is vizsgálja; a hibás cache kezeléséhez külön teszt készült.
+
+A mérés alapján a FULL P1 körülbelül 22–27 percről 12,2 percre rövidült cache-hit esetén. A cache-miss eredmény 17,6 perc. Ez nem a tesztkészlet csökkentésével történt: a mutánsok teljességét továbbra is ellenőrzi a quality gate, a 120 másodperces mutáns-timeout és a küszöbök változatlanok.
+
+A konkrét HEAD-re engedélyezem a squash-merge-et:
+
+```
+gh pr merge 33 \
+  --repo CentralInfraCore/cic-primitive-forms \
+  --squash \
+  --match-head-commit 60c0a3390ce316c561c78cbb29548015a61cf183
+```
+
+A parancs előtt a merge-automatizmus még ellenőrizze, hogy a célág nem változott-e váratlanul; ha igen, új mergeability- és CI-ellenőrzés szükséges.
+
+### #34 — C0 tanulmány: APPROVED FOR MERGE
+
+A hiányzó ellenőrzés időközben megjelent, és sikeresen lefutott.
+
+| Ellenőrzés     | Eredmény                                   |
+| -------------- | ------------------------------------------ |
+| `corpus`       | Sikeres                                    |
+| `c0-selftest`  | Sikeres                                    |
+| Futtatott HEAD | `ebc463ca732419cc14464f183cefb5a0b7016d0f` |
+
+Az új workflow `go vet`, `go test -count=1` és `go build` lépéseket futtat a prototípus saját Go-moduljában. A reprodukciós parancsok is javítva vannak.
+
+A C0 kutatási eredményét elfogadom: a stabil mutáns-ID megvalósítható, de a korábbi verdiktek újrafelhasználásához még szükséges a függőségek és a mérési környezet konzervatív kötése.
+
+```
+gh pr merge 34 \
+  --repo CentralInfraCore/cic-primitive-forms \
+  --squash \
+  --match-head-commit ebc463ca732419cc14464f183cefb5a0b7016d0f
+```
+
+A #33 és #34 egymástól függetlenül mergelhető, az aktuális HEAD- és célág-ellenőrzés megtartásával.
+
+### #36 — Watchdog-javítás: még egy célzott javítást kérek
+
+HEAD: `c67da68069755d6ed935abd27a3cfc50d95e1c87` · CI: 19/20 sikeres, egy Rust-mutation shard még fut.
+
+A fő hibát jól javította: az ellenőrizhetetlen rekord nem válthat ki automatikusan új FULL-futást, és a workflow már megköveteli a konkrét, nem üres dátumot.
+
+Viszont az exit-code szerződésben maradt egy rés.
+
+A `cmd_watch()` jelenleg csak ezt kezeli:
+
+```
+except pipeline.PipelineError as e:    return WATCH_UNDECIDED  # 4
+```
+
+A `publish.entries_for()` azonban hibás index esetén `publish.PublishError("BAD_INDEX", ...)` kivételt dobhat. Ez kikerül a `cmd_watch()`-ból, majd a felső szintű hibakezelő 3-as kóddal tér vissza.
+
+A workflow ezt jelenleg biztonságosan megállítja, mert nem kap érvényes `slot ... has no record` sort. Tehát nem látok bizonyított hibás dispatch-et, de a deklarált „3 = nincs rekord, 4 = nem eldönthető” szerződés nem teljesül minden esetben.
+
+Kérek egy minimális javítást: a `PublishError` és a kezelendő fájlolvasási hibák is kapjanak 4-es kódot a `watch` útvonalon, regressziós teszttel. Utána új HEAD és teljes CI szükséges a merge-engedélyhez.
+
+### #35 — Dokumentáció: #36 után
+
+A #35 jelenleg helyesen dokumentálja a B2 eredeti watchdog-hibáját, de ezt a #36 javítása után nem szabad változatlanul mergelni.
+
+A „known gap” részt frissíteni kell a ténylegesen megvalósított viselkedésre, és a hibakezelési táblázatnak is a javított exit-kódokat kell tükröznie. A #35 erre a célzott módosításra várjon, majd új HEAD-del ellenőrizhető.
+
+## Javasolt integrációs sorrend
+
+\#33 → #34 → javított #36 → frissített #35.
+
+A #33 és #34 megkapta a HEAD-hez kötött merge-engedélyt. A #36 és #35 nincs elutasítva koncepcionálisan; két kis konzisztenciajavítás hiányzik.
+
+Ezután folytatható a C lépés a stabil mutánsazonosítókkal, de a DELTA továbbra is csak ellenőrzött, shadow módban haladhat. Az éles evidence-rendszer aktiválása változatlanul külön tulajdonosi döntés.
+</pasted_content id="1805">
+~~~~~
+
+
+### 2026-10-21 05:34 — Claude
+
+~~~~~
+Hálózati kiesés volt (nem elérhető a github.com), ezért a verifikáció és a merge sem futhatott le. Előbb megnézem, hogy a #33 tényleg nincs-e mergelve, és csak utána próbálom újra.
+~~~~~
+
+
+### 2026-10-21 05:34 — Claude
+
+~~~~~
+A hálózat visszajött, a #33 még nyitott, a HEAD egyezik. Most a célág ellenőrzése és a merge a megadott paranccsal.
+~~~~~
+
+
+### 2026-10-21 05:34 — Claude
+
+~~~~~
+Mindkét PR mergelve. Most a #36 kért javítása: a `watch` útvonalon a `PublishError` és a fájlolvasási hibák is 4-es kódot kapjanak.
+~~~~~
+
+
+### 2026-10-21 05:42 — Claude
+
+~~~~~
+Értettem: a #36 marad a `c67da68…` HEAD-en, nem tolom rá a kiegészítő exit-kód munkát. Amit addig csináltam, külön lokális ágra teszem későbbi karbantartásnak, és nem pusholom.
+~~~~~
+
+
+### 2026-10-21 05:43 — Claude
+
+~~~~~
+A #36 teljesen zöld (21/21) a megnevezett `c67da68…` HEAD-en, ezért a döntésed szerint mergelem.
+~~~~~
+
+
+### 2026-10-21 05:43 — Claude
+
+~~~~~
+Három PR mergelve a `main`-be, a megadott feltételekkel:
+
+| PR | Merge commit | Megjegyzés |
+|---|---|---|
+| #33 (shard + cache) | `fb00d66be741c89e45de12bba631b24d94f448a5` | HEAD `60c0a339…`, 23/23 zöld, a célág (`ee4f791`) nem változott |
+| #34 (C0 tanulmány) | `4e8ee0b4bcbbe7b50b225a043d335d520f799efe` | HEAD `ebc463ca…`; a `corpus` és a `mutid` (a `c0-selftest` workflow jobja) is zöld |
+| #36 (watchdog) | `7158eaf0004a471d58c223a6d8b82e662d669224` | az eredeti HEAD `c67da680…`, 21/21 zöld |
+
+A #36-hoz készült kiegészítő exit-kód munkát (a `PublishError` és a rossz indexek 4-es kóddal) nem toltam a PR-ra. A lokális `chore/watch-exit-contract` ágra tettem, nincs pusholva. Később karbantartásként előveszem. Egy szándékos hibájának szövege még javításra szorul: a `return WATCH_UNDECIDED` kétszer szerepel a fájlban.
+
+Az első `gh` hívások egy hálózati kiesés miatt elbuktak (nem érte el a github.com-ot). Újrapróbálás előtt ellenőriztem, hogy a #33 még nyitott és ugyanaz a HEAD, utána mergeltem.
+
+A #35 szövegét a Worker P frissíti a megvalósult viselkedésre (3 = nincs rekord, 4 = nem eldönthető), új review-kör nélkül. Az új HEAD-et jelzem, a merge-hez arra kérek engedélyt.
+
+A `main` CI a három merge után még nem ért véget. Amint megvan, zöldnek csak akkor mondom, ha a `headSha` egyezik (`7158eaf`), és frissítem a `theads/` naplót.
+
+A C lépés (stabil mutáns-id-k) a tervben a következő. Ehhez a #34 tanulmány szerint a Go oldalon nem az id az egyetlen feltétel, hanem a hívási zárlat, a tesztek és a mérési környezet kötése is. Egy konkrét, shadow módú C-tervet tudok írni; szólj, ha ezt kéred, vagy ha mást szeretnél előre venni.
+~~~~~
+
+
+### 2026-10-21 05:44 — Claude
+
+~~~~~
+A #35 frissítve, de még nem mergelhető. Új HEAD: `dcbb82c2372f6d326267d45eb8302685f20ee150`, bázis `main`, a GitHub mergelhetőnek jelzi. A CI-ja még nem futott le, és nem mergeltem.
+
+- **Rebase:** a #36 már átírta a `watch` mondatát az `EVIDENCE-PUBLISHING.md`-ben. A Worker P azt a szöveget tartotta meg, és csak a hivatkozást fűzte hozzá.
+- **A "known gap" helyett** az `EVIDENCE-SETUP.md` 5.3-ban a megvalósult viselkedés áll: 0 = van rekord, 3 = nincs rekord (az egyetlen válasz, ami futást kér, csak a pontos `slot YYYY-MM-DD: has no record` sorral és nem üres dátummal), 4 = nem eldönthető. Minden más kilépés hibával állítja le a jobot.
+- **A maradék részlet** karbantartási lehetőségként szerepel: a `PublishError` és az olvasási hibák nincsenek 4-re képezve, de a job így is biztonságosan leáll.
+
+A `main` CI-ja a három merge után (`7158eaf`) még nem ért véget. Utána zöldnek csak a `headSha` egyeztetésével mondom, és frissítem a `theads/` naplót.
+
+Merge-engedélyt a #35-re a CI zöld állapota után, a `dcbb82c2…` HEAD-hez kötve kérek. Ez a PR csak dokumentáció.
+~~~~~
+
+
+### 2026-10-21 05:56 — Felhasználó
+
+~~~~~
+<pasted_content id="1805">
+## #35 — Merge engedélyezve
+
+A GitHubon visszaigazoltam, hogy a #33, #34 és #36 pontosan a megadott commitokkal bekerült a `main`-be.
+
+A [#35 dokumentációs PR](https://github.com/CentralInfraCore/cic-primitive-forms/pull/35?utm_source=chatgpt.com) állapota:
+
+APPROVED
+
+1/1 check sikeres · konfliktusmentes
+
+- HEAD: `dcbb82c2372f6d326267d45eb8302685f20ee150`
+- Célág: `main`, jelenleg `7158eaf0004a471d58c223a6d8b82e662d669224`
+- Csak a két evidence-dokumentációs fájlt módosítja.
+- A #36-ban javított viselkedést írja le, és a maradék exit-kód eltérést nem titkolja el.
+
+Nem kérek újabb módosítást. A dokumentáció és a megvalósítás összhangban van.
+
+```
+gh pr merge 35 \
+  --repo CentralInfraCore/cic-primitive-forms \
+  --squash \
+  --match-head-commit dcbb82c2372f6d326267d45eb8302685f20ee150
+```
+
+A parancs előtt maradjon meg az aktuális HEAD és mergeability ellenőrzése.
+
+A `main` CI-ja a `7158eaf` commiton az ellenőrzésemkor még futott: 20 sikeres check, két folyamatban lévő, valamint két szándékosan kihagyott evidence job. A #35 dokumentációs merge-jét nem kötném a korábbi main-futás befejezéséhez.
+
+## Következő feladat: C — stabil mutánsazonosítók
+
+Kérem a konkrét C implementációs tervet, és jóváhagyom az előkészítését külön munkaszálon.
+
+A #34 C0-tanulmány alapján a feladatot két részre választanám.
+
+C1 — Stable Mutant Identity. A stabil Go mutant-ID bekerülhet a tényleges mérési folyamatba, de kezdetben a meglévő azonosítók mellett. Minden FULL-futás előállítja mindkettőt, és ellenőrizzük az egyértelműséget, a determinisztikusságot és a teljességet. Ezen a ponton még semmilyen korábbi mutációs eredményt nem használunk újra.
+
+C2 — Shadow validation. A módosított és változatlan kódon összehasonlítjuk az azonosítók stabilitását. Ha eltérés, duplikáció vagy hiány van, azt mérjük és jelentjük. A FULL eredményét nem helyettesíthetjük korábbi verdikttel.
+
+A hívási zárlat, a package-szintű függőségek, a tesztek és a toolchain bizonyítható kötése a későbbi D/E lépések előfeltétele legyen. Ezek megvalósítását nem kell belepréselni a C-be.
+
+Az új működési szabályunk marad: az agent ne várakozzon a CI-ra, de a merge-et továbbra is pontos HEAD és tényleges ellenőrzési eredmény alapján végezzük.
+
+Az evidence aktiválása pedig továbbra is külön tulajdonosi döntés.
+
+Most már van egy gyorsabb FULL CI-nk, dokumentált helyreállításunk és egy használható C0-tanulmányunk. Erre érdemes építeni, nem újranyitni a lezárt feladatokat.
+</pasted_content id="1805">
+~~~~~
