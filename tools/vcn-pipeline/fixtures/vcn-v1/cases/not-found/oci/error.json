@@ -1,0 +1,5 @@
+{
+  "code": "NotAuthorizedOrNotFound",
+  "kind": "http",
+  "status": 404
+}

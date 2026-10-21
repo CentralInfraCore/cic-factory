@@ -1,0 +1,10 @@
+{
+  "coverage": {
+    "/cidrBlocks": "unknown",
+    "/dnsLabel": "unknown",
+    "/freeformTags": "unknown",
+    "/isIpv6Enabled": "unknown"
+  },
+  "effective_config": {},
+  "state": {}
+}

@@ -1,0 +1,22 @@
+{
+  "coverage": {
+    "/cidrBlocks": "observed",
+    "/dnsLabel": "observed",
+    "/freeformTags": "observed",
+    "/isIpv6Enabled": "unobserved"
+  },
+  "effective_config": {
+    "cidrBlocks": [
+      "10.0.0.0/16"
+    ],
+    "dnsLabel": "prod",
+    "freeformTags": {
+      "env": "prod",
+      "owner": "net"
+    }
+  },
+  "state": {
+    "id": "ocid1.vcn.oc1.eu-frankfurt-1.aaaaaaaaexample",
+    "lifecycleState": "AVAILABLE"
+  }
+}

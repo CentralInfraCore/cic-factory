@@ -1,0 +1,8 @@
+{
+  "conformance_claimed": false,
+  "drift_paths": [],
+  "object": "INCOMPLETE",
+  "unobserved_paths": [
+    "/cidr_block"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "config": {},
+  "coverage": {
+    "/cidr_block": "unknown",
+    "/dns_label": "unknown",
+    "/ipv6_enabled": "unknown",
+    "/tags/{key=env}/value": "unknown",
+    "/tags/{key=owner}/value": "unknown"
+  },
+  "state": {}
+}
