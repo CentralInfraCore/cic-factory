@@ -22,10 +22,11 @@ python3 tools/ci-gate.py land OWNER/REPO#N \
 
 ## Szabályok (nem alkudhatók)
 
-- **A jóváhagyást nem te adod.** A `land` GitHubról olvassa: egy `APPROVED` review a HEAD-re, vagy `merge-approved: <teljes sha>` hozzászólás
-  a tulajdonostól. Ha nincs, a script vár; te szólsz a tulajdonosnak a pontos HEAD-del. Ha a tulajdonos a chatben mondta ki, és kéri a
-  rögzítést, írhatod `merge-approved: <sha>` sorral, alatta megjelölve: „a tulajdonos chat-utasításából rögzítve". A „zöld" vagy
-  „lefutott" megállapítás nem engedély, és a reviewer szakmai GO-ja sem.
+- **A jóváhagyást nem te adod, és nem is te rögzíted.** A `land` kizárólag GitHubon már rögzített jóváhagyást fogad el: egy `APPROVED`
+  review a HEAD-re, vagy `merge-approved: <teljes sha>` hozzászólás a tulajdonostól, **általa írva**. Ha nincs, a script vár; te szólsz a
+  tulajdonosnak a pontos HEAD-del, és megvárod, hogy ő rögzítse. Chatben kimondott engedélyből te nem írsz jóváhagyó hozzászólást, a
+  tulajdonos fiókjával sem: a merge-eszköz végrehajtó, nem állít elő jóváhagyást. A „zöld" vagy „lefutott" megállapítás nem
+  engedély, és a reviewer szakmai GO-ja sem.
 - Új HEAD (push, `--keep-current` frissítés) = új jóváhagyás. Ne feltételezd, hogy átvihető.
 - Konfliktusnál, piros CI-nál és lezárt függőségnél a script megáll: nem újrafuttatod vakon, hanem megmondod, mi a hiba, és ha javítás kell,
   azt külön kéred, új HEAD-del.

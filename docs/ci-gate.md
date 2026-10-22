@@ -85,9 +85,9 @@ Kilépési kód: 0 mergelve (és a post-merge készlet sikeres), 1 elutasítva v
 olvasható. A `--dry-run` semmit nem ír (sem merge-et, sem `update-branch`-et). Az egyetlen írás a `gh pr merge --match-head-commit` és az
 `update-branch` (`expected_head_sha`-val).
 
-**Nem tesz:** nem ír jóváhagyást, nem kerüli meg az approver-ellenőrzést, nem old fel konfliktust, nem ismétel piros CI-t.
-Aki a koordinátor szerepében hívja, a jóváhagyást a tulajdonostól kapja (GitHub-review, `merge-approved: <sha>` hozzászólás, vagy a chatben
-kimondott engedély, amit a tulajdonos kérésére a `merge-approved:` sorral rögzít, a forrás megjelölésével).
+**Nem tesz:** nem ír jóváhagyást (sem a saját döntéseként, sem chatben kimondott engedély átírásaként, a tulajdonos fiókjával sem),
+nem kerüli meg az approver-ellenőrzést, nem old fel konfliktust, nem ismétel piros CI-t. Aki a koordinátor szerepében hívja, a
+jóváhagyást a tulajdonostól várja: azt a tulajdonos rögzíti GitHubon (review vagy `merge-approved: <sha>` hozzászólás).
 
 **Nyitott, a tulajdonosé:** az `update-branch` után a jóváhagyás újra kell. Egy `merge-approved: <sha> base-merges-ok` forma, amely a
 célág beleolvasztásán átvihető, ellenőrizhető lenne (a két HEAD közti commitok mind merge commitok, amelyek második szülője a célágon van), de
