@@ -1,6 +1,6 @@
 # Thread-napló — 2026-10-21 (Forms P1–P3, ci-gate)
 
-Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-22T06:34:55Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl` (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
+Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-22T10:34:51Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl` (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
 
 
 ### 2026-10-21 05:57 — Claude
@@ -5355,4 +5355,374 @@ Ezután sorban: #45, majd #48 (`742bee73…`, az eddigi engedélyed szerint), a 
 
 ~~~~~
 mehet a #45 a b3b6dab9 HEAD-re
+~~~~~
+
+
+### 2026-10-22 06:35 — Claude
+
+~~~~~
+A három PR mergelve, a napló frissítve és commitolva, a #45 és #48 post-merge ellenőrzése még fut.
+
+- **#47:** `65adb6991b9f5604e9b1b249071a0105d3bf85d8`, az engedélyezett `1e7cc2e7…` HEAD-en.
+- **#45:** `7f376a739d5377a3d58d969451b93e1f238c7b61`, az engedélyezett `b3b6dab9…` HEAD-en. Előtte újra ellenőriztem: 23/23 zöld, a HEAD változatlan, mergelhető.
+- **#48:** `271f371c38edf86451c06650859d61645d27b515`, az engedélyezett `742bee73…` HEAD-en, a #45 után. Docs-only, a `corpus` check sikeres volt.
+- **#46 issue:** a #47 automatikusan lezárta. Lezáró kommentet írtam: mit javított, a seed, az ADR 0007 mondat és a dokumentált korlát.
+- **Napló:** a Factory `main`-ben a `0740848` commit, ami a #44 post-merge eredményét is tartalmazza (`8be61b68…`: 25 check, 23 sikeres, 0 hibás, 0 hiányzó kötelező).
+- **Post-merge:** a `7f376a73…` és a `271f371c…` commit post-merge ellenőrzése fut a háttérben. Az eredményt jelentem, és a következő napló-frissítésbe veszem.
+
+**Mielőtt a harmadik egység kódja indul**, egy dolog a tiéd. A #48 tervének 6. szakasza négy tulajdonosi döntést nevez meg, és a #48 mergelése ezeket nem mondja ki egyértelműen:
+1. a sorrend: előbb `Expand`, utána az alapértékek beszúrása;
+2. a `value_origin` külön oldaltérkép a P2 provenance mellett;
+3. a `denormalize` publikus, szerződésben rögzített inverz;
+4. az `ApplyDefaults` marad rövid formára korlátozva, a vegyes dokumentumokat a `normalize` kezeli.
+
+Ha mind a négyet elfogadod, indítom a `normalize` Rust–Go implementációját a #48 szerint. Ha valamelyikről másként döntesz, írd meg, és a terv ahhoz igazodik.
+~~~~~
+
+
+### 2026-10-22 06:41 — Felhasználó
+
+~~~~~
+kérnék egy olyan skill-t összerakni mely elindít egy scriptet mely fogad egy PR url-t illetve dependency PR url-eket és ha minden zöld akkor indítja a PR merge részt (esetleg a cél ágat visszamergeli a branchre hogy a merge problémák előjöjjenek vagy megoldódjanak értelem szerüen ekkor megint visszaáll figyelőbe.... hab a tortán ha jól tudom a github jelzi ha kell ez az ág azaz szerintem nem is egészen zöldig kell megvárni a merget hanem a jelzésnél ... mi a véleményed?)
+~~~~~
+
+
+### 2026-10-22 06:46 — Claude
+
+~~~~~
+A skill (`/land-pr`) és a mögötte lévő script elkészült, **cic-factory #41** néven, nem mergelve. A kérdésedre a véleményem lent van.
+
+## Mi készült
+- **`tools/ci-gate.py land`:** ez a script. Egy PR-t követ a mergeig, a függőség PR-okat (`--after`) is.
+- **HEAD nélkül indul:** mindig a PR aktuális HEAD-jét követi, és a GitHubról olvasott, HEAD-hez kötött jóváhagyás dönti el, melyik commit mergelhető.
+- **Körönként** ellenőrzi sorban:
+  1. a függőségek mergelve vannak-e;
+  2. van-e konfliktus (az megállítja, mert azt ember oldja fel);
+  3. elmaradt-e a HEAD a célágtól;
+  4. a CI állapota (pending vár, piros megáll);
+  5. van-e jóváhagyás erre a HEAD-re (ha nincs, vár);
+  6. végül a már meglévő `merge` fut két olvasással.
+- **Merge után:** opcionálisan megvárja a post-merge készletet.
+- **`--keep-current`:** ha a HEAD elmaradt a célágtól, beleolvasztja a célágat a PR ágába (`update-branch`). Ezután a HEAD új, a CI újraindul, a figyelő pedig visszaáll.
+- **`--dry-run`:** semmit nem ír, `update-branch`-et sem.
+- **`/land-pr`:** a hozzá tartozó parancsfájl (`.claude/commands/land-pr.md`), ami az URL-ekből indítja a scriptet, szabályokkal.
+- **Tesztek:** 15 új teszt egy időben változó fake GitHubbal. A `land` hét szándékos hibáját (mutánsát) mind elkapják. Valódi GitHubon egy mergelt PR-ra és a post-merge készletre is kipróbáltam.
+
+## A véleményem
+A megérzésed jó irányba mutat, de pontosítanám:
+
+- **A zöld egy elavult alapon nem bizonyíték.** Éppen ez történt a #47/#45 párossal: szövegszinten tiszta merge, a kombinált fa viszont nem fordult. Ezért a `land` előbb a naprakészséget ellenőrzi, és csak utána ítéli meg a CI-t.
+- **A GitHub jelzése csak félig megbízható.** A `mergeable_state: behind` csak akkor jön, ha a célágon kötelező az up-to-date ág. Nálunk (védetlen `main`) ez sosem jelez, ezért a script maga méri a távolságot a `compare` API-val.
+- **A jelzés alapján mergelni a naprakészség jelzésénél hasznos, a zöld helyett nem.** A merge nem történhet zöld nélkül. De a naprakésszé tétel azonnal indítható, és nem kell közben végigvárni egy olyan CI-t, ami úgyis elavul. A scriptben ez így működik.
+- **Az `update-branch` és a HEAD-hez kötött jóváhagyás ütközik.** Frissítés után új HEAD van, tehát új jóváhagyás kell. Ez most így is van megvalósítva (biztonságos, de egy plusz körrel jár).
+- **A hosszabb távú megoldás a GitHub merge queue** lenne: a merge eredményét teszteli a merge előtt, és a jóváhagyás nem veszik el a frissítéssel. Ehhez viszont branch protection kell a `main`-en, ami tudatosan halasztott döntés.
+
+## Két döntés a tiéd
+1. **Átvihető-e a jóváhagyás egy tiszta célág-beolvasztáson?** Például egy `merge-approved: <sha> base-merges-ok` sorral. Ellenőrizhető lenne (a két HEAD közötti commitok mind merge commitok, amelyek második szülője a célágon van), de egy kézzel feloldott merge tartalmát nem nézi. Ezért nincs megvalósítva.
+2. **Hol éljen hosszú távon?** A `tools/` és a `.claude/commands/` a core-ból átvett útvonal. Új fájlt egy átvétel nem ír felül, de az eszköz otthona hosszú távon a `cic-factory-core`.
+
+Közben a #45 post-merge ellenőrzése (`7f376a73…`) még fut: 24 check, 16 sikeres, 6 függő, a `quality` még nem jelent meg. A harmadik egység `normalize` kódját a #48 négy döntéséről szóló válaszod után indítom.
+~~~~~
+
+
+### 2026-10-22 07:05 — Claude
+
+~~~~~
+A #45 és a #48 post-merge ellenőrzése lezárult, és mindkettő sikeres:
+
+- **`7f376a739d53`** (#45, `ApplyDefaults`): 25 check, 23 sikeres, 0 függő, 0 hibás, 0 hiányzó kötelező.
+- **`271f371c38ed`** (#48, a harmadik egység terve): ugyanez, 25 check, 23 sikeres, 0 hibás, kilépési kód 0.
+
+A másik kettő mindkét commiton a szándékosan kihagyott `record` és `watch` evidence-job. A #44, a #45 és a #48 ezzel formálisan lezárható.
+
+Ezt az eredményt a következő napló-frissítésbe veszem fel. Nyitott maradt a cic-factory #41 merge-engedélye, és a #48 négy döntéséről a válaszod, amit a `normalize` implementációja előtt várok.
+~~~~~
+
+
+### 2026-10-22 08:21 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+A Factory #41 és a Forms #48 tervezett megoldásait az alábbi szakmai döntésekkel támogatom.
+
+**Factory #41 – `/land-pr`**
+
+1. Új HEAD esetén mindig új, HEAD-hez kötött jóváhagyás szükséges. Jóváhagyást egyelőre nem viszünk át automatikus célág-beolvasztás után.
+2. Az eszköz hosszú távú tulajdonosa a `cic-factory-core`; a Factoryban a CIC-specifikus konfigurációk maradjanak.
+3. A végső merge előtt ismét ellenőrizni kell a célághoz viszonyított naprakészséget, célzott regressziós teszttel.
+4. A `/land-pr` nem hozhat létre tulajdonosi jóváhagyást. Csak hitelesített, GitHubon rögzített engedély alapján járhat el.
+
+**Forms P3 – harmadik egység**
+
+1. Elfogadott feldolgozási sorrend: `Expand → ApplyDefaults`.
+2. A `value_origin` külön oldaltérkép a `NormalizationResult` részeként.
+3. A `denormalize` legyen publikus szerződéses művelet; a round-trip és idempotencia tulajdonságokat Rustban és Go-ban is bizonyítani kell.
+4. Az `ApplyDefaults` maradjon rövid formára korlátozva, a vegyes és hosszú dokumentumokat a `normalize` kezelje.
+
+A P3 implementáció kis, külön tesztelhető egységként haladjon. A Factory #41 technikai javításai és teljes CI-ja után külön merge-döntés következzen.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-22 08:25 — Claude
+
+~~~~~
+Status: Go `Normalize`, `Renormalize` and `Denormalize` pass all 11 subtests against the hand-derived expectations. Now the Rust port of the same walker.
+~~~~~
+
+
+### 2026-10-22 08:50 — Claude
+
+~~~~~
+Now the matching Rust tests, then rerun both mutation tools.
+~~~~~
+
+
+### 2026-10-22 09:05 — Claude
+
+~~~~~
+A harmadik P3-egység kész: **Forms #49**, HEAD `97ff47f…`, nincs mergelve. A CI most indult.
+
+A #48 négy döntését a terv szerint, elfogadottként vettem át: a #48 a te engedélyeddel lett mergelve, a reviewer pedig mind a négyet támogatta. Ha valamelyiket másképp látod, a PR változtatható.
+
+**Mit csinál** (Rust és Go, `normalize`, `renormalize`, `denormalize`):
+- **Sorrend:** előbb `Expand`, utána az alapértékek beszúrása a kibontott fába. Ezt a P2 bejárójának két opcionális módjával oldottam meg, a sima `expand` és `collapse` változatlan.
+- **Beszúrt érték:** ugyanolyan Access-atom, mint bármelyik pozíció: szimbolikus policy, `default_injection: null`. A default sehova nem kerül a `default_injection`-be. Nincs P2 provenance-e, és alatta semmi nem lesz szerzői vagy alapértékes.
+- **`value_origins`:** külön oldaltérkép (`authored` vagy `default`), ott keletkezik, ahol a default beszúrásra kerül, és az objektummal együtt utazik. Soha nem következtetem ki az értékekből.
+- **`denormalize`:** a `default` eredetű értékeket eltávolítja, utána a provenance-szel összehajt. A `denormalize(normalize(x)) == x` értékként teljesül minden dokumentumra, amit az `Expand` elfogad: rövid, kibontott, vegyes, explicit policyvel, `null`-lal, és az alapértékkel egyező szerzői értékkel is (ez `authored` marad).
+- **Idempotencia:** a `renormalize` az objektum és az eredettérkép párjára igaz. A puszta objektum újranormalizálása minden beszúrt értéket `authored`-nak jelez, mert onnantól le van írva benne.
+
+**Bizonyíték:**
+- **Közös esetek:** `testdata/p1/normalize.json`, a hozzá tartozó Go és Rust tesztekkel (9 teszt Rustban). A fájl lefedi az 1-es és 2-es grammatikát, az összetett mezőt, a lista elemeit identitás szerint, az átrendezett listát és egy materializált dokumentumot attesztált pozícióval.
+- **Property:** véletlen sémákon és dokumentumokon, vegyes alakú változattal is, mindkét nyelven.
+- **Seeded defect:** 10 új hiba, mind elbukik.
+- **Ág-lefedettség:** Rust 94,87%, Go 96,54%.
+- **Mutáció:** a Rust viable mutánsait mind elkapja a teszt, a Go `normalize.go` 100%.
+- **Fuzz:** `FuzzNormalize` és `normalize` canary-vel, 40 s tiszta futás (0,55 M és 1,4 M futás).
+- **Helyi teljes futás:** Rust 115 teszt, Go zöld.
+
+A szokásos P2-határ marad: a `normalize` nem validálja a kötelező mezők meglétét, ahogy az `expand` sem.
+
+Nyitott kérdések:
+- **#49 merge:** pontos HEAD-re szóló engedélyed kell, miután a CI lefutott.
+- **Factory #41:** a reviewer technikai kérésére a `merge` mostantól az elmaradt HEAD-et is elutasítja mindkét olvasásban, regressziós teszttel (`7274581…`). A CI-ja és a merge-engedélyed még hiányzik.
+~~~~~
+
+
+### 2026-10-22 09:52 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+## Forms #49 – a harmadik P3-egység értékelése
+
+Megnéztem a [Forms #49](https://github.com/CentralInfraCore/cic-primitive-forms/pull/49?utm_source=chatgpt.com) új Rust- és Go-implementációját, nemcsak a PR leírását.
+
+A megvalósítás fő irányát elfogadom. Az elfogadott P3-terv négy döntése valóban megjelenik a kódban.
+
+| Követelmény                              | Értékelésem                   |
+| ---------------------------------------- | ----------------------------- |
+| `Expand → ApplyDefaults`                 | Megvalósítva                  |
+| `value_origins` külön az értékfától      | Megvalósítva                  |
+| Publikus `denormalize`                   | Megvalósítva                  |
+| `renormalize` eredetmegőrzéssel          | Megvalósítva                  |
+| P2 Expand/Collapse működésének megőrzése | A korábbi útvonal külön marad |
+| Rust–Go közös tesztek                    | Bekerültek                    |
+| Végleges CI                              | Még igazolandó                |
+
+[image](https://www.google.com/s2/favicons?domain=https://raw.githubusercontent.com\&sz=32)
+
+GitHub
+
++2
+
+A legfontosabb eredménynek azt tartom, hogy a rendszer az alapértékek beillesztése után is meg tudja különböztetni a szerző által megadott értékeket a normalizálás által létrehozottaktól.
+
+Ez nem csupán jó dokumentációs döntés: a kódban az `NormalizationResult` ténylegesen együtt hordozza az objektumot, a P2 provenance-et és a P3 value origin információt.
+
+A saját helyi mérési eredményeidet – Rust 94,87%, Go 96,54% áglefedettség, sikeres mutációs és fuzztesztek – pozitív bizonyítéknak tekintem, de helyben nem futtattam újra.
+
+## Két célzott észrevételem van
+
+### 1. Forms #49 – egy útvonalkezelési peremfeltételt javítanék
+
+A kódban találtam egy lehetséges Rust–Go eltérést.
+
+A sémafordító nem utasít el minden olyan nem üres mezőnevet, amelynek később nem állítható elő kanonikus logikai útvonala. Ilyen például egy vezérlőkaraktert tartalmazó mezőnév.
+
+Ha egy ilyen mező opcionális, deklarált defaultja van, és hiányzik a dokumentumból:
+
+- A Rust `normalize` beszúrhatja az alapértéket, miközben az eredettérképben az írhatatlan útvonal üres sztringgé alakul.
+- A Rust `denormalize` később nem feltétlenül tudja ezt a beszúrt pozíciót eltávolítani, ezért hibával végződhet.
+- A Go eltérően kezeli az üres útvonalkulcsot, így a két nyelv viselkedése szétválhat.
+
+Ez a forráskódból levezethető peremfeltétel, nem általam lefuttatott hibareprodukció.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://raw.githubusercontent.com\&sz=32)
+
+GitHub
+
++4
+
+
+
+Egyetlen közös regressziós esetet kérnék, amely ezt bizonyítja vagy cáfolja. Ha tényleg fennáll, a normalizálónak mindkét nyelven egységesen és adatvesztés nélkül kell elutasítania a nem reprezentálható eredetútvonalat.
+
+Nem indítanék emiatt új architekturális kört.
+
+### 2. Factory #41 – a jóváhagyás rögzítésének határa
+
+A `7274581` commiton a `ci-gate.py` már mindkét ellenőrzésben elutasítja a célágtól elmaradt HEAD-et. Ez a korábbi kifogásomat kezeli, és a Factory `gate` ellenőrzés is sikeres.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://raw.githubusercontent.com\&sz=32)
+
+GitHub
+
++1
+
+
+
+Viszont a `/land-pr` parancs dokumentációja még megengedi, hogy az agent chatutasítás alapján, a tulajdonos GitHub-fiókjával jóváhagyó hozzászólást hozzon létre.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+Én ezt kivenném. A merge-eszköz maradjon végrehajtó: a már GitHubon rögzített jóváhagyást ellenőrizze, ne ő állítsa elő.
+
+## Aktuális szakmai döntésem
+
+| PR                       | Álláspont                                                                         |
+| ------------------------ | --------------------------------------------------------------------------------- |
+| Forms #49 – `97ff47f…`   | Jó architektúra; egy célzott útvonalteszt, majd teljes CI                         |
+| Factory #41 – `7274581…` | A naprakészségi hiba javítva; a chatből történő jóváhagyás-rögzítést még kivenném |
+
+A Factory #41-nél a `gate` sikeres. A Forms #49-nél több ellenőrzés már elindult és részben sikeres, de a teljes kötelező készlet lezárását még nem igazoltam.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
++1
+
+
+
+A #49-hez nem kérek újabb tervezési fázist. A harmadik P3-egység működése a vizsgált forrás alapján érdemben összeállt. A két konkrét peremfeltétel tisztázása után, teljes CI mellett szakmailag támogathatónak tartom az összevonást. A tényleges merge-felhatalmazás továbbra is a repository jogosult döntéshozójáé.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-22 09:53 — Claude
+
+~~~~~
+Fix is in both languages. Adding the shared regression case (one control-character field name, built in code, run in both languages for `Normalize` and `ApplyDefaults`).
+~~~~~
+
+
+### 2026-10-22 09:58 — Claude
+
+~~~~~
+Three Rust seeded-defect texts went stale after the signature change; updating them.
+~~~~~
+
+
+### 2026-10-22 10:02 — Claude
+
+~~~~~
+A reviewer két észrevételét kezeltem, a merge-ekhez viszont továbbra sincs engedélyed, ezért egyik PR-t sem mergeltem.
+
+**Forms #49: az útvonalkezelési peremfeltétel valós volt.** Reprodukáltam mindkét nyelven, egy vezérlőkaraktert tartalmazó mezőnévvel, amely opcionális és hiányzik a dokumentumból:
+- **Rust:** a `normalize` beszúrta az alapértéket üres útvonal-kulccsal, a `denormalize` pedig hibával végződött (`Unsupported`).
+- **Go:** ugyanez sikerült, mert az üres kulccsal eltávolította a beszúrt értéket, vagyis a két nyelv eltért.
+- **Az `ApplyDefaults` (#45) ugyanígy beszúrt** üres útvonalú eredettel.
+
+**A javítás** mindhárom helyen (`Normalize`, `ApplyDefaults`, Rust és Go): olyan pozícióba, amelynek logikai útvonala nem írható le, nem kerül default. Mindkét nyelv ugyanazt az `Unsupported` hibát adja, mint a P2 `expand` egy leírt, írhatatlan nevű mezőre, adatvesztés nélkül. Ehhez egy közös regressziós teszt tartozik mindkét nyelvben (a vezérlőkaraktert kódból építem, nem írom a forrásba), és 2 új seeded defect (mind elbukik). Új HEAD: `8d62edb1958c4f1a01c58eb337f0157ed3890492`.
+
+Helyi gate-ek: Rust 116 teszt, clippy és fmt tiszta, Go zöld, ág-lefedettség Rust 95,15%, Go 97,00%. A #49 CI-ja újraindult.
+
+**Factory #41: a chatből történő jóváhagyás-rögzítést kivettem.**
+- A `/land-pr` parancs és a `docs/ci-gate.md` most kimondja, hogy az eszköz sosem ír jóváhagyást, még a tulajdonos chat-utasításából sem, és a tulajdonos fiókjával sem.
+- A tulajdonosnak kell GitHubon rögzítenie (review vagy `merge-approved: <sha>`).
+- A `check-docs` GO. Új HEAD: `ede7092…`, a CI újraindul.
+
+**Egy következmény:** az eddigi gyakorlatom (a tulajdonos chatben kimondott engedélye alapján futtatni a `gh pr merge --match-head-commit` parancsot) az eszközön kívül, kézzel marad. A `land` eszköz maga viszont ezt nem fogja tudni átvenni, csak GitHubon rögzített jóváhagyást fogad el.
+
+**Merge-engedély:**
+- **Forms #49** (`8d62edb1958c4f1a01c58eb337f0157ed3890492`) a CI után.
+- **Factory #41** (`ede7092…`) szintén a CI után.
+
+Mindkettőre pontos HEAD-re szóló engedélyed kell.
+~~~~~
+
+
+### 2026-10-22 10:33 — Felhasználó
+
+~~~~~
+ha a review azt mondja hogy megrére érett akkor mergeld be!:
+
+<pasted_content id="d623">
+## Forms #49 és Factory #41 – javítások elfogadva
+
+Mindkét korábbi kifogásomat lezártnak tekintem. A javításokat a GitHubon is ellenőriztem, és nem látok okot újabb kódjavítási kör indítására.
+
+| PR                                                                                                  | Szakmai döntésem               |
+| --------------------------------------------------------------------------------------------------- | ------------------------------ |
+| [Forms #49](https://github.com/CentralInfraCore/cic-primitive-forms/pull/49?utm_source=chatgpt.com) | Feltételes GO – teljes CI után |
+| [Factory #41](https://github.com/CentralInfraCore/cic-factory/pull/41?utm_source=chatgpt.com)       | Feltételes GO – teljes CI után |
+
+### Forms #49
+
+Az `8d62edb1958c4f1a01c58eb337f0157ed3890492` commitban a Rust és Go implementáció már ellenőrzi, hogy a default beszúrási pozíciójához előállítható-e logikai útvonal. A közös regressziós eset is bekerült.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+Ez valódi hiba javítása: megszünteti a Rust–Go eltérést és megvédi a `denormalize` adatmegőrzési szerződését.
+
+### Factory #41
+
+Az `ede7092…` commitban a `/land-pr` dokumentációja már egyértelműen tiltja a jóváhagyó hozzászólás létrehozását az agent számára, még tulajdonosi chatutasítás alapján is.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+Ez a helyes bizalmi határ: a végrehajtó eszköz olvassa a jogosult személy jóváhagyását, de nem állítja azt elő.
+
+## A CI is befejeződött
+
+A friss GitHub Actions-futások alapján:
+
+Forms #49: `p1 #80` és `corpus #144` sikeres az `8d62edb…` HEAD-en.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
++1
+
+
+
+Factory #41: `gate #52` sikeres az `ede7092…` HEAD-en.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+A két PR-ra tehát megadom a végleges szakmai GO-t. Az ismert technikai kifogások rendezve vannak; újabb javítást nem kérek.
+
+A merge előtt már csak a PR aktuális HEAD-jét, mergelhetőségét, teljes kötelező kapukészletét és a jogosult tulajdonosi jóváhagyást kell ellenőrizni. A szakmai GO-m ez utóbbit nem helyettesíti.
+
+A merge után a teljes post-merge ellenőrzés következzen. A Factory `/land-pr` eszközének későbbi Core-ba költöztetése külön feladat maradhat.
+
+Ezzel a felülvizsgálati kört lezártnak tekintem. A P3 harmadik egysége és a PR-lezáró automatizáció is eljutott az összevonásra szakmailag alkalmas állapotba.
+</pasted_content id="d623">
 ~~~~~
