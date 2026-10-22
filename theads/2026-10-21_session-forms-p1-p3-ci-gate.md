@@ -1,6 +1,6 @@
 # Thread-napló — 2026-10-21 (Forms P1–P3, ci-gate)
 
-Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-21T21:51:56Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl` (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
+Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-22T06:34:55Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl` (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
 
 
 ### 2026-10-21 05:57 — Claude
@@ -5043,4 +5043,316 @@ Más korábban lezárt feladatot ne nyiss újra.
 
 ~~~~~
 GREEN, 23/23, HEAD unchanged, mergeable. Merging with the head bound.
+~~~~~
+
+
+### 2026-10-21 21:54 — Claude
+
+~~~~~
+Status: #44 merged, #45 retargeted, #47 (ordering fix) and #48 (unit 3 design) opened. Now checking the post-merge result and the CI of #45/#47/#48.
+~~~~~
+
+
+### 2026-10-21 21:55 — Claude
+
+~~~~~
+#44 mergelve, a hozzá kért teendők közül a CI-függők még futnak.
+
+**#44** mergelve `8be61b685e75d67cf07d82d3990b5f41d96cb69d` néven, a megadott HEAD-en. Előtte újraellenőriztem: 23/23 zöld, a HEAD változatlan, a PR mergelhető volt.
+
+**Kész:**
+- **Napló:** frissítve és commitolva a Factory `main`-be (`5245b83`), a #43-mal, a #44 mergével, a #45-tel és a #46 issue-val.
+- **#45:** átállítva `main` célágra, rebase-eltem a mergelt #44-re (új HEAD `f38ee82cb20ae7537efd3356e9a167f4d1e12a5d`). Az új HEAD fája bájtra azonos a korábban ellenőrzöttel (a két commit közti diff üres), tehát a diff változatlan. A CI újraindult, a merge-hez külön jóváhagyást kérek.
+- **#46 javítása:** **#47** (`102fb182…`), külön PR a #45-től függetlenül. A Rust property-oracle a Go-pár mintájára csak a leírt útvonalú hibák sorrendjét ellenőrzi. A leírás nélküli hiba sorrendjét külön, fix teszt rögzíti az ADR 0007 szerint (`$.<<` az üres nevű hiba előtt). A seed bekerült `rust/tests/properties.proptest-regressions` néven: a régi oracle-lal elbukik, az újjal átmegy. Az ADR 0007 egy mondatot kapott erről a szabályról.
+- **Harmadik egység:** a terv **#48** (docs-only, `ee46ae91…`). Döntés: előbb `Expand`, utána az alapértékek beszúrása a kibontott fába, így a beszúrt pozíciónak nincs hamis szerzői provenance-e. A `value_origin` oldaltérképként utazik az objektummal, és a `denormalize(normalize(x)) == x` bizonyítja az eredet megőrzését. A tervben négy tulajdonosi döntés van (6. szakasz).
+
+**Függőben:**
+- **Post-merge ellenőrzés** a `8be61b68…` commiton: a háttérfigyelő még fut, a GitHub runnerei most mindhárom PR-t és a `main`-t egyszerre sorban tartják. Az eredményt jelentem, amint lezárult.
+- **CI:** #45, #47 és #48 sorban áll vagy fut, még nincs eredmény.
+
+**Engedélyek:** a #45, #47 és #48 merge-éhez külön, pontos HEAD-re szóló jóváhagyás kell. A #48 azt is kéri, hogy előbb a #45 legyen mergelve.
+~~~~~
+
+
+### 2026-10-21 21:57 — Felhasználó
+
+~~~~~
+csináld:
+~~~~~
+
+
+### 2026-10-21 21:58 — Felhasználó
+
+~~~~~
+csináld:
+
+<pasted_content id="d623">
+## Forms P3 – #44 lezárva, a következő három PR értékelése
+
+A [Forms #48](https://github.com/CentralInfraCore/cic-primitive-forms/pull/48?utm_source=chatgpt.com) teljes, 87 soros tervét átnéztem, és a #45, #47 változtatásait is összevetettem a korábbi döntésekkel.
+
+A fejlesztés jó irányban halad. A legfontosabb eredmény most az, hogy a normalizálás tervezése már nemcsak az alapértékek beszúrásáról szól, hanem arról is, hogyan lehet bizonyítani, hogy a rendszer nem módosította a felhasználó eredeti szándékát.
+
+A #44-et a közölt, `8be61b685e75d67cf07d82d3990b5f41d96cb69d` merge-committal lezártnak tekintem. A teljes post-merge CI bizonyítéka külön még szükséges.
+
+| PR                                                                                                                          | Szakmai álláspontom                                     |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [Forms #45 – ApplyDefaults](https://github.com/CentralInfraCore/cic-primitive-forms/pull/45?utm_source=chatgpt.com)         | Megfelelő implementációs irány; új HEAD CI-ja még döntő |
+| [Forms #47 – rendezési oracle](https://github.com/CentralInfraCore/cic-primitive-forms/pull/47?utm_source=chatgpt.com)      | Célzott javítás, szakmailag támogatható                 |
+| [Forms #48 – harmadik egység terve](https://github.com/CentralInfraCore/cic-primitive-forms/pull/48?utm_source=chatgpt.com) | A négy döntésre alább konkrét javaslatot adok           |
+
+A #47 különválasztása helyes volt, és nem keverném a #45 default-implementációjával.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
++2
+
+
+
+## A #48 négy architekturális döntése
+
+A teljes terv alapján mind a négy javasolt megoldást támogatnám.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+| Kérdés                    | Szakmai javaslatom                                                                                                                             |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Műveleti sorrend       | `Expand → ApplyDefaults`. A szerzői eredetet előbb kell rögzíteni, és csak utána létrehozni az alapértékeket.                                  |
+| 2. ValueOrigin tárolása   | Külön oldaltérkép a `NormalizationResult` részeként. Az `authored` és `default` nem kerülhet a P2 provenance vagy a hatkulcsos atom belsejébe. |
+| 3. Denormalize            | Legyen a publikus, szerződésben rögzített inverz művelet, ne csak tesztsegéd.                                                                  |
+| 4. ApplyDefaults bemenete | Maradjon rövid formára korlátozott. A vegyes és kibővített dokumentumokat a `normalize` kezelje.                                               |
+
+Mind a négyet jó architekturális választásnak tartom. Az előző fázisok szemantikáját így nem kell felborítani.
+
+Egy további követelményt kiemelnék: a `denormalize(normalize(x)) == x` tulajdonságot ellenőrizzék explicit defaulttal egyező szerzői értékkel, vegyes rövid/hosszú formával és átrendezett listaelemekkel is. Az idempotencia pedig az objektum és a hozzá tartozó eredettérkép együttesére vonatkozzon.
+
+## #47 – egy tudatos tesztkompromisszum
+
+A konkrét diffben látható, hogy az oracle már csak az írható útvonalú hibák egymáshoz viszonyított sorrendjét ellenőrzi property-tesztben. A nem írható útvonal esetére külön regressziós teszt került be.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+Ez elfogadható célzott javítás. Ugyanakkor szűkebb bizonyíték, mint egy teljes, szegmensalapú oracle lenne. Ezt nem tenném új blokkolóvá, de a két garanciaszint különbségét megőrizném a dokumentációban.
+
+## Következő merge-sorrend
+
+\#44 – mergelve
+
+\#45 – teljes CI, majd külön merge-döntés
+
+\#47 – független javítás, külön is összevonható
+
+\#48 – a #45 után, a négy döntés elfogadásával
+
+A három nyitott PR esetében a végleges CI-eredményeket még nem igazoltam. A #48-nál a négy döntés szakmai támogatása nem jelenti automatikusan a normatív terv tulajdonosi elfogadását, és egyik PR-hoz sem adok más nevében merge-felhatalmazást.
+
+Most a #45 a kritikus út. Ha annak új HEAD-je teljesíti az ellenőrzéseket, utána a P3 harmadik egysége már tiszta, két nyelven tesztelhető szerződésből indulhat, a korábbi eredetinformáció elvesztése nélkül.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-21 21:58 — Claude
+
+~~~~~
+Megcsináltam a reviewer kérte dokumentációs kiegészítéseket a #47-en és a #48-on, de a merge-ekhez nincs engedélyed, ezért egyik PR-t sem mergeltem.
+
+**#47** (új HEAD `1e7cc2e753e4dc600ac491342e721a823c820f13`):
+- **Két garanciaszint:** a `docs/P1-SUPPORTED-SUBSET.md` új, 9. pontja kimondja, hogy a property-teszt az írható útvonalú hibák sorrendjét teljesen ellenőrzi. A leírhatatlan útvonalú hiba helyét egy fix eset és a visszajátszott seed rögzíti.
+- **Miért szűkebb:** egy teljes szegmens-oracle-hoz a válasznak szegmenseket kellene hordoznia, amit a szerződés nem ad. A szűkebb garancia szándékos, nem szabad szélesebbnek olvasni.
+
+**#48** (új HEAD `742bee739c88b289b547bc1cab905581645069dd`): az 5. szakasz 2. pontja előírja, hogy a `denormalize(normalize(x)) == x` tulajdonság a következőkre is menjen:
+- az alapértékkel egyező szerzői érték (marad `authored`, nem esik ki);
+- vegyes rövid és hosszú alakú dokumentum;
+- átrendezett listaelemek.
+
+Az idempotencia az objektum és az eredettérkép **párjára** vonatkozik.
+
+**A #45** (HEAD `f38ee82cb20ae7537efd3356e9a167f4d1e12a5d`) CI-ja még fut: 4 sikeres, 5 fut, 35 sorban áll. A GitHub runnerei most a `main` post-merge futásával, a #45-tel, a #47-tel és a #48-cal együtt telítettek. A #44 post-merge eredménye (`8be61b68…`) még nincs meg, a háttérfigyelő várja, és jelzem, amint lezárul.
+
+Merge-sorrend a reviewer szerint: #45 (teljes CI után, külön jóváhagyással), a #47 tőle függetlenül, a #48 a #45 után. Mindháromhoz pontos HEAD-re szóló engedély kell. Ha egy mondatban megírod, melyikre mehet, a CI zöldülése után mergelem.
+~~~~~
+
+
+### 2026-10-21 22:02 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+## Forms P3 – #44 lezárva, a következő három PR értékelése
+
+A [Forms #48](https://github.com/CentralInfraCore/cic-primitive-forms/pull/48?utm_source=chatgpt.com) teljes, 87 soros tervét átnéztem, és a #45, #47 változtatásait is összevetettem a korábbi döntésekkel.
+
+A fejlesztés jó irányban halad. A legfontosabb eredmény most az, hogy a normalizálás tervezése már nemcsak az alapértékek beszúrásáról szól, hanem arról is, hogyan lehet bizonyítani, hogy a rendszer nem módosította a felhasználó eredeti szándékát.
+
+A #44-et a közölt, `8be61b685e75d67cf07d82d3990b5f41d96cb69d` merge-committal lezártnak tekintem. A teljes post-merge CI bizonyítéka külön még szükséges.
+
+| PR                                                                                                                          | Szakmai álláspontom                                     |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [Forms #45 – ApplyDefaults](https://github.com/CentralInfraCore/cic-primitive-forms/pull/45?utm_source=chatgpt.com)         | Megfelelő implementációs irány; új HEAD CI-ja még döntő |
+| [Forms #47 – rendezési oracle](https://github.com/CentralInfraCore/cic-primitive-forms/pull/47?utm_source=chatgpt.com)      | Célzott javítás, szakmailag támogatható                 |
+| [Forms #48 – harmadik egység terve](https://github.com/CentralInfraCore/cic-primitive-forms/pull/48?utm_source=chatgpt.com) | A négy döntésre alább konkrét javaslatot adok           |
+
+A #47 különválasztása helyes volt, és nem keverném a #45 default-implementációjával.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
++2
+
+
+
+## A #48 négy architekturális döntése
+
+A teljes terv alapján mind a négy javasolt megoldást támogatnám.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+| Kérdés                    | Szakmai javaslatom                                                                                                                             |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Műveleti sorrend       | `Expand → ApplyDefaults`. A szerzői eredetet előbb kell rögzíteni, és csak utána létrehozni az alapértékeket.                                  |
+| 2. ValueOrigin tárolása   | Külön oldaltérkép a `NormalizationResult` részeként. Az `authored` és `default` nem kerülhet a P2 provenance vagy a hatkulcsos atom belsejébe. |
+| 3. Denormalize            | Legyen a publikus, szerződésben rögzített inverz művelet, ne csak tesztsegéd.                                                                  |
+| 4. ApplyDefaults bemenete | Maradjon rövid formára korlátozott. A vegyes és kibővített dokumentumokat a `normalize` kezelje.                                               |
+
+Mind a négyet jó architekturális választásnak tartom. Az előző fázisok szemantikáját így nem kell felborítani.
+
+Egy további követelményt kiemelnék: a `denormalize(normalize(x)) == x` tulajdonságot ellenőrizzék explicit defaulttal egyező szerzői értékkel, vegyes rövid/hosszú formával és átrendezett listaelemekkel is. Az idempotencia pedig az objektum és a hozzá tartozó eredettérkép együttesére vonatkozzon.
+
+## #47 – egy tudatos tesztkompromisszum
+
+A konkrét diffben látható, hogy az oracle már csak az írható útvonalú hibák egymáshoz viszonyított sorrendjét ellenőrzi property-tesztben. A nem írható útvonal esetére külön regressziós teszt került be.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+Ez elfogadható célzott javítás. Ugyanakkor szűkebb bizonyíték, mint egy teljes, szegmensalapú oracle lenne. Ezt nem tenném új blokkolóvá, de a két garanciaszint különbségét megőrizném a dokumentációban.
+
+## Következő merge-sorrend
+
+\#44 – mergelve
+
+\#45 – teljes CI, majd külön merge-döntés
+
+\#47 – független javítás, külön is összevonható
+
+\#48 – a #45 után, a négy döntés elfogadásával
+
+A három nyitott PR esetében a végleges CI-eredményeket még nem igazoltam. A #48-nál a négy döntés szakmai támogatása nem jelenti automatikusan a normatív terv tulajdonosi elfogadását, és egyik PR-hoz sem adok más nevében merge-felhatalmazást.
+
+Most a #45 a kritikus út. Ha annak új HEAD-je teljesíti az ellenőrzéseket, utána a P3 harmadik egysége már tiszta, két nyelven tesztelhető szerződésből indulhat, a korábbi eredetinformáció elvesztése nélkül.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-21 22:02 — Claude
+
+~~~~~
+Ez a review szó szerint megegyezik az előzővel, és új kérést nem tartalmaz. A kért kiegészítések a #47-en és a #48-on már megvannak, ezért nem csináltam újra semmit.
+
+A CI most:
+- **#45** (`f38ee82c…`): 5 sikeres, 5 fut, 34 sorban áll. A runnerek telítettek, még nem döntő.
+- **#47** (`1e7cc2e7…`): 22 check sorban áll, még egy sem indult.
+- **#48** (`742bee73…`): docs-only, 1/1 sikeres, tiszta. Az ő merge-e a #45 után esedékes.
+- **A #44 post-merge** (`8be61b68…`): a háttérfigyelő még vár, a `main` futása is sorban áll.
+
+A reviewer ismét nem adott tulajdonosi engedélyt, ezért egyik PR-t sem mergeltem. Ha mondod, hogy mehet, a #47-et és a #48-at (a #48-at a #45 után) a zöld CI és a pontos HEAD ellenőrzése után mergelem, a #45-re külön engedély kell.
+~~~~~
+
+
+### 2026-10-21 22:19 — Claude
+
+~~~~~
+A #44 post-merge ellenőrzése lezárult, és sikeres: a `8be61b685e75d67cf07d82d3990b5f41d96cb69d` commiton 25 check van, ebből 23 sikeres, 0 függő, 0 hibás, 0 hiányzó kötelező, a kilépési kód 0. A másik kettő a szándékosan kihagyott `record` és `watch` evidence-job.
+
+A #44 ezzel formálisan lezárható. A #45, #47 és #48 állapota nem változott: a CI-juk fut vagy sorban áll, merge-engedély egyikre sincs.
+
+Ezt az eredményt a következő napló-frissítésbe veszem fel, a #45 vagy a #47 lezárásakor.
+~~~~~
+
+
+### 2026-10-22 04:30 — Felhasználó
+
+~~~~~
+na megvan mind a 3 pipeline zöld
+~~~~~
+
+
+### 2026-10-22 04:31 — Claude
+
+~~~~~
+Ellenőriztem, és igazad van, mindhárom zöld:
+- **#45** (`f38ee82cb20ae7537efd3356e9a167f4d1e12a5d`): 23/23, mergelható, `main` célágon.
+- **#47** (`1e7cc2e753e4dc600ac491342e721a823c820f13`): 23/23, mergelható.
+- **#48** (`742bee739c88b289b547bc1cab905581645069dd`): docs-only, `corpus` sikeres, tiszta.
+
+Nem mergeltem őket, mert az üzenetedben a zöld állapotról írsz, merge-engedélyt viszont nem adsz. A #45 egy valódi értéktranszformáció, a #48 pedig normatív terv, ezért a nem egyértelmű mondatot nem veszem engedélynek. Ez a korábbi auditjegyzet tanulsága is.
+
+Elég egy mondat, például: „mergeld a #45-öt, #47-et és #48-at ezekre a HEAD-ekre". Ha azt írod, a sorrend ez lesz: #47, majd #45, majd #48. Utána futtatom a post-merge ellenőrzést, frissítem és commitolom a naplót, és elindítom a harmadik egységet.
+~~~~~
+
+
+### 2026-10-22 04:48 — Felhasználó
+
+~~~~~
+előzőekben leírtak alapján mehet a merge
+~~~~~
+
+
+### 2026-10-22 04:49 — Claude
+
+~~~~~
+#47 mergelve, a #45 viszont egy kisebb javítás miatt új HEAD-et kapott, ezért arra új engedély kell.
+
+**#47:** mergelve `65adb6991b9f5604e9b1b249071a0105d3bf85d8` néven, az engedélyezett `1e7cc2e7…` HEAD-en, előtte 23/23 zölddel ellenőrizve.
+
+**#45 új HEAD-je: `b3b6dab91b73518192bd71319ea22d39486c5dc6`.**
+- **Mi történt:** a #47 mergelése után a #45 textuálisan tiszta maradt, de a kombinált fa nem fordult. A #47 új tesztje `Shape`-et épít, amiből a #45 miatt kötelező lett a `default` mező. Ha így mergelem, a `main` `properties` tesztje nem fordul.
+- **A javítás:** egyetlen sor, `default: None` a #47 tesztjében, a #45 commitjába olvasztva. A diff a `main`-hez képest ugyanaz az egység, a Rust (105 teszt), a clippy, a fmt és a Go helyben zöld.
+- **CI:** az új HEAD-en újraindult, a runnerek nyilván még sorban tartják.
+
+**Következő:** az új HEAD-re (`b3b6dab9…`) kérem a megerősítést, vagy ha az eddigi „előzőekben leírtak alapján" mondatod ezt is fedi, írd ki. A zöld CI után mergelem a #45-öt, utána a #48-at (`742bee73…`, ami változatlanul tiszta és zöld). Közben a post-merge ellenőrzést futtatom, a naplót frissítem és commitolom, és indul a harmadik egység.
+~~~~~
+
+
+### 2026-10-22 06:24 — Felhasználó
+
+~~~~~
+45 ugy látom lefutott
+~~~~~
+
+
+### 2026-10-22 06:25 — Claude
+
+~~~~~
+Igazad van: a #45 új HEAD-je (`b3b6dab91b73518192bd71319ea22d39486c5dc6`) 23/23 zöld, mergelható és a HEAD változatlan.
+
+A merge-hez azt a mondatot hiányolom, hogy az új HEAD-re is mehet. A „lefutott" megállapítás, nem engedély. A #45 HEAD-je azóta változott, hogy az engedélyt adtad. A módosítás egyetlen sor, `default: None` a #47 tesztjében, de ezt a korábbi engedély nem fedte.
+
+Elég ennyi: „mehet a #45 a `b3b6dab9…` HEAD-re".
+
+Ezután sorban: #45, majd #48 (`742bee73…`, az eddigi engedélyed szerint), a post-merge ellenőrzés a `main` új commitján, a napló frissítése és commitolása, és a harmadik egység kezdése.
+~~~~~
+
+
+### 2026-10-22 06:33 — Felhasználó
+
+~~~~~
+mehet a #45 a b3b6dab9 HEAD-re
 ~~~~~
