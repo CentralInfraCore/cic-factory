@@ -53,8 +53,8 @@ class Fake:
         raise AssertionError(path)
 
 
-def approved(head=H, login="owner"):
-    return {"user": {"login": login}, "state": "APPROVED", "commit_id": head, "submitted_at": "2026-10-21T10:00:00Z"}
+def approved(head=H, login="owner", at="2026-10-21T10:00:00Z"):
+    return {"user": {"login": login}, "state": "APPROVED", "commit_id": head, "submitted_at": at}
 
 
 def comment(body, login="owner", at="2026-10-21T10:00:00Z"):
@@ -67,7 +67,7 @@ class Gh:
 
     def __call__(self, args):
         self.calls.append(args)
-        if self.merges:
+        if self.merges and args[:2] == ["pr", "merge"]:
             self.fake.merged = True
         return self.code, "gh said"
 
@@ -349,6 +349,165 @@ class LateAdvisory(unittest.TestCase):
 
     def test_only_the_advisory_checks_are_reported(self):
         self.assertEqual(self.late([run("build", "failure"), run("mut (0)")])[0], 0)
+
+
+class LandFake(Fake):
+    """The fake of one PR that is also followed over time: `script` is a list of functions, one called per sleep, that change
+    the state the way the world does between two looks (CI finishes, an approval is written, the base moves, a dependency merges)."""
+
+    def __init__(self, behind=0, deps=None, script=(), **kw):
+        super().__init__(**kw)
+        self.behind, self.deps, self.script = behind, deps or {}, list(script)
+
+    def __call__(self, path):
+        if path.startswith("repos/o/r/compare/"):
+            return {"behind_by": self.behind}
+        for k, v in self.deps.items():
+            if path.startswith(k):
+                return v
+        return super().__call__(path)
+
+    def tick(self, _seconds):
+        if self.script:
+            self.script.pop(0)(self)
+
+
+class Clock:
+    def __init__(self):
+        self.t = 0
+
+    def sleep(self, s):
+        self.t += s
+
+    def now(self):
+        return self.t
+
+
+def land(fake, gh=None, required=REQ, approvers=("owner",), **kw):
+    gh = gh or Gh(fake)
+    clock = Clock()
+    lines = []
+
+    def sleep(s):
+        clock.sleep(s)
+        fake.tick(s)
+
+    code = cg.land(fake, R, N, required, set(approvers), gh=gh, sleep=sleep, now=clock.now, say=lines.append, interval=10,
+                   max_wait=kw.pop("max_wait", 100), **kw)
+    return code, gh, lines
+
+
+def approve(f):
+    f.reviews = [approved()]
+
+
+class Landing(unittest.TestCase):
+    def test_it_waits_for_ci_then_for_the_approval_and_merges_exactly_that_head(self):
+        f = LandFake(runs=[run("build"), run("test", status="queued"), run("lint")],
+                     script=[lambda f: setattr(f, "runs", ALL_OK), approve])
+        code, gh, lines = land(f)
+        self.assertEqual(code, 0, lines)
+        self.assertEqual(gh.calls, [["pr", "merge", "7", "--repo", R, "--squash", "--match-head-commit", H]])
+        self.assertTrue(any("waiting" in l and "running: test" in l for l in lines), lines)
+        self.assertTrue(any("waiting" in l and "approval" in l for l in lines), lines)
+
+    def test_a_red_head_stops_and_merges_nothing(self):
+        code, gh, lines = land(LandFake(runs=[run("build", "failure"), run("test"), run("lint")], reviews=[approved()]))
+        self.assertEqual((code, gh.calls), (1, []))
+        self.assertIn("STOPPED: the head %s is RED" % H[:12], lines)
+
+    def test_green_without_an_approval_waits_until_it_runs_out_and_merges_nothing(self):
+        code, gh, lines = land(LandFake(), max_wait=30)
+        self.assertEqual((code, gh.calls), (4, []))
+        self.assertTrue(lines[-1].startswith("TIMED OUT"), lines)
+
+    def test_the_approval_of_another_head_is_not_enough(self):
+        code, gh, _ = land(LandFake(reviews=[approved(H2)]), max_wait=30)
+        self.assertEqual((code, gh.calls), (4, []))
+
+    def test_a_dependency_must_be_merged_first(self):
+        dep = {"repos/o/other/pulls/3": {"state": "open", "merged": False}}
+        f = LandFake(reviews=[approved()], deps=dep, script=[lambda f: f.deps.update({"repos/o/other/pulls/3": {"state": "closed", "merged": True}})])
+        code, gh, lines = land(f, after=[("o/other", 3)])
+        self.assertEqual(code, 0, lines)
+        self.assertTrue(any("dependency o/other#3 is not merged yet" in l for l in lines), lines)
+        self.assertEqual(len(gh.calls), 1)
+
+    def test_a_dependency_closed_without_merge_stops_it(self):
+        dep = {"repos/o/other/pulls/3": {"state": "closed", "merged": False}}
+        code, gh, lines = land(LandFake(reviews=[approved()], deps=dep), after=[("o/other", 3)])
+        self.assertEqual((code, gh.calls), (1, []))
+        self.assertIn("without being merged", lines[-1])
+
+    def test_a_conflict_stops_it(self):
+        code, gh, lines = land(LandFake(mergeable=False, reviews=[approved()]))
+        self.assertEqual((code, gh.calls), (1, []))
+        self.assertIn("conflict", lines[-1])
+
+    def test_a_closed_pr_stops_it_and_a_merged_one_is_done(self):
+        self.assertEqual(land(LandFake(state="closed"))[0], 1)
+        self.assertEqual(land(LandFake(merged=True, state="closed"))[0], 0)
+
+    def test_a_head_behind_its_base_is_refused_without_keep_current(self):
+        code, gh, lines = land(LandFake(behind=2, reviews=[approved()]))
+        self.assertEqual((code, gh.calls), (1, []))
+        self.assertIn("2 commit(s) behind main", lines[-1])
+
+    def test_keep_current_merges_the_base_in_and_the_old_approval_does_not_carry_over(self):
+        def moved(f):  # what update-branch does: a new head, the base now contained, CI starts over, the review is of the old head
+            f.head, f.behind, f.runs = H2, 0, [run("build", status="queued")]
+        f = LandFake(behind=1, reviews=[approved(H)], script=[moved])
+        code, gh, lines = land(f, keep_current=True, max_wait=40)
+        self.assertEqual(code, 4, lines)
+        self.assertEqual(gh.calls, [["api", "-X", "PUT", "repos/o/r/pulls/7/update-branch", "-f", "expected_head_sha=" + H]])
+        self.assertTrue(any("updated" in l for l in lines), lines)
+
+    def test_after_the_update_a_new_approval_of_the_new_head_lets_it_merge(self):
+        def moved(f):
+            f.head, f.behind, f.runs = H2, 0, ALL_OK
+        f = LandFake(behind=1, reviews=[approved(H)], script=[moved, lambda f: setattr(f, "reviews", [approved(H), approved(H2, at="2026-10-21T11:00:00Z")])])
+        code, gh, lines = land(f, keep_current=True)
+        self.assertEqual(code, 0, lines)
+        self.assertEqual(gh.calls[-1][-1], H2)
+
+    def test_it_does_not_update_the_branch_while_a_dependency_is_still_open(self):
+        dep = {"repos/o/other/pulls/3": {"state": "open", "merged": False}}
+        code, gh, _ = land(LandFake(behind=1, deps=dep), after=[("o/other", 3)], keep_current=True, max_wait=20)
+        self.assertEqual((code, gh.calls), (4, []))
+
+    def test_a_refused_update_is_a_stop(self):
+        code, gh, lines = land(LandFake(behind=1), Gh(LandFake(), code=1, merges=False), keep_current=True)
+        self.assertEqual(code, 1)
+        self.assertIn("update-branch refused", lines[-1])
+
+    def test_dry_run_writes_nothing(self):
+        code, gh, lines = land(LandFake(behind=1), keep_current=True, dry_run=True)
+        self.assertEqual((code, gh.calls), (0, []))
+        code, gh, lines = land(LandFake(reviews=[approved()]), dry_run=True)
+        self.assertEqual((code, gh.calls), (0, []))
+        self.assertTrue(any("DRY RUN" in l for l in lines))
+
+    def test_the_post_merge_set_decides_the_end(self):
+        f = LandFake(reviews=[approved()])
+        orig = f.__call__
+
+        def get(path):
+            if path.endswith("/status") and "/commits/" + "m" * 40 in path:
+                return {"statuses": []}
+            if "/commits/" + "m" * 40 + "/check-runs" in path:
+                return {"check_runs": [run("main-build"), run("main-test", "failure")]}
+            return orig(path)
+        f.__call__ = get  # noqa
+        clock, lines, gh = Clock(), [], Gh(f)
+        code = cg.land(get, R, N, REQ, {"owner"}, post_merge_required=["main-build", "main-test"], gh=gh, sleep=clock.sleep,
+                       now=clock.now, say=lines.append, interval=10, max_wait=100)
+        self.assertEqual(code, 1, lines)
+
+    def test_it_writes_only_through_merge_and_update_branch(self):
+        f = LandFake(behind=1, reviews=[approved(H2)], script=[lambda f: (setattr(f, "head", H2), setattr(f, "behind", 0))])
+        _, gh, _ = land(f, keep_current=True)
+        for c in gh.calls:
+            self.assertTrue(c[:2] == ["pr", "merge"] or c[:4] == ["api", "-X", "PUT", "repos/o/r/pulls/7/update-branch"], c)
 
 
 if __name__ == "__main__":
