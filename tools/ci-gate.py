@@ -6,6 +6,8 @@
     ci-gate.py check OWNER/REPO#N --head SHA --require-from FILE            one reading: GREEN, RED, PENDING or HEAD-MOVED
     ci-gate.py watch OWNER/REPO#N --head SHA --require-from FILE [--interval S]
     ci-gate.py merge OWNER/REPO#N --head SHA --require-from FILE --approver LOGIN... [--dry-run]
+    ci-gate.py land OWNER/REPO#N --require-from FILE --approver LOGIN... [--after OWNER/REPO#M]... [--keep-current]
+               [--post-merge-from FILE] [--interval S] [--max-wait S] [--dry-run]    follow one PR to its merge (see `land`)
     ci-gate.py post-merge OWNER/REPO --sha SHA --require-from FILE           the CI of the merge commit, against its own named set
     ci-gate.py late-advisory OWNER/REPO --head SHA --require-from FILE       what the checks not waited for said in the end
 
@@ -99,6 +101,8 @@ def read(get, repo, n, head, required, advisory=()):
     out = {"head_now": now, "state": pr.get("state"), "base": pr["base"]["ref"], "draft": bool(pr.get("draft")),
            "mergeable": {True: "yes", False: "no", None: "unknown"}[pr.get("mergeable")],
            "base_sha": get("repos/%s/git/ref/heads/%s" % (repo, pr["base"]["ref"]))["object"]["sha"]}
+    # how far the head is behind its base: a CI that ran on a stale base says nothing about the merge result
+    out["behind"] = get("repos/%s/compare/%s...%s" % (repo, pr["base"]["ref"], now)).get("behind_by", 0)
     if now != head:
         out["verdict"] = "HEAD-MOVED"
         return out
@@ -190,7 +194,7 @@ def watch(get, repo, n, head, required, interval, max_wait, advisory=(), sleep=t
         sleep(interval)
 
 
-SNAPSHOT = ("head_now", "state", "base", "base_sha", "draft", "mergeable", "verdict", "failing", "waiting")
+SNAPSHOT = ("head_now", "state", "base", "base_sha", "behind", "draft", "mergeable", "verdict", "failing", "waiting")
 
 
 def merge(get, repo, n, head, required, approvers, dry_run=False, gh=run_gh, say=print, advisory=()):
@@ -210,6 +214,9 @@ def merge(get, repo, n, head, required, approvers, dry_run=False, gh=run_gh, say
         return 1
     if r["mergeable"] != "yes":
         say("REFUSED: GitHub says mergeable=%s" % r["mergeable"])
+        return 1
+    if r["behind"]:
+        say("REFUSED: the head is %d commit(s) behind %s; its CI does not describe the merge result" % (r["behind"], r["base"]))
         return 1
     # the last look, as close to the merge as it goes: the whole environment must be the one that was judged
     again = read(get, repo, n, head, required, advisory)
@@ -235,6 +242,112 @@ def merge(get, repo, n, head, required, approvers, dry_run=False, gh=run_gh, say
     after = get("repos/%s/pulls/%d" % (repo, n))
     say("MERGED %s" % (after.get("merge_commit_sha") or "?"))
     return 0 if after.get("merged") else 1
+
+
+def land(get, repo, n, required, approvers, after=(), keep_current=False, post_merge_required=None, interval=60, max_wait=14400,
+         advisory=(), dry_run=False, gh=run_gh, sleep=time.sleep, now=time.monotonic, say=print):
+    """Follow one PR to its merge, as far as the policy allows, and stop where it does not. No head is given: it follows the head
+    the PR has, and the approval (head-bound, read from GitHub) is what pins the commit that may be merged. Each round:
+
+    1. the PR merged: done (then the post-merge set, when given). Closed unmerged: stop.
+    2. every `after` PR (a dependency, possibly in another repository) must be merged first; one closed unmerged stops it.
+    3. a head GitHub cannot merge (conflicts) stops it: a person or an agent resolves that, nothing is guessed.
+    4. a head that is behind its base is not judged: a green on a stale base says nothing about the merge result (a clean text merge
+       can still break the build). With `keep_current` the base is merged into the PR branch (`update-branch`, once the
+       dependencies are in); the head moves, the CI starts over and the approval of the old head does not carry over. Without it
+       the PR is refused as behind. GitHub's own `mergeable_state` says "behind" only when the base requires up-to-date branches,
+       so the distance is measured here.
+    5. CI of the head: PENDING waits, RED stops, GREEN goes on.
+    6. the approval of this very head: none waits (and says so once), then the same `merge` as above runs, with its two readings.
+
+    Exit status: 0 landed (and the post-merge set passed, when given), 1 refused or stopped, 4 still waiting when `max_wait` ran out."""
+    start, last = now(), [None]
+
+    def wait(why):
+        if why != last[0]:
+            say("waiting: " + why)
+            last[0] = why
+        if now() - start >= max_wait:
+            say("TIMED OUT while waiting: " + why)
+            return 4
+        sleep(interval)
+        return None
+
+    while True:
+        pr = get("repos/%s/pulls/%d" % (repo, n))
+        if pr.get("merged"):
+            return _after_merge(get, repo, pr.get("merge_commit_sha"), post_merge_required, interval, max_wait, sleep, now, say)
+        if pr.get("state") != "open":
+            say("STOPPED: the PR is %s without being merged" % pr.get("state"))
+            return 1
+        pending_dep = None
+        for drepo, dn in after:
+            dep = get("repos/%s/pulls/%d" % (drepo, dn))
+            if dep.get("merged"):
+                continue
+            if dep.get("state") != "open":
+                say("STOPPED: the dependency %s#%d was %s without being merged" % (drepo, dn, dep.get("state")))
+                return 1
+            pending_dep = "the dependency %s#%d is not merged yet" % (drepo, dn)
+        head, base = pr["head"]["sha"], pr["base"]["ref"]
+        if pr.get("mergeable") is False:
+            say("STOPPED: GitHub cannot merge %s into %s (conflict): resolve it, then land again" % (head[:12], base))
+            return 1
+        behind = get("repos/%s/compare/%s...%s" % (repo, base, head)).get("behind_by", 0)  # also read() and merge() look at it
+        if behind and not pending_dep:
+            if not keep_current:
+                say("REFUSED: the head %s is %d commit(s) behind %s; its CI does not describe the merge result (use --keep-current)" % (head[:12], behind, base))
+                return 1
+            if dry_run:
+                say("DRY RUN: would merge %s into the PR branch (update-branch, expected head %s)" % (base, head[:12]))
+                return 0
+            code, out = gh(["api", "-X", "PUT", "repos/%s/pulls/%d/update-branch" % (repo, n), "-f", "expected_head_sha=" + head])
+            if code != 0:
+                say("STOPPED: update-branch refused (conflict or the head moved): %s" % out)
+                return 1
+            say("updated: %s merged into the PR branch; the head moves, its CI and its approval start over" % base)
+            last[0] = None
+            stop = wait("the new head of the updated branch")
+            if stop is not None:
+                return stop
+            continue
+        if pending_dep:
+            stop = wait(pending_dep)
+            if stop is not None:
+                return stop
+            continue
+        r = read(get, repo, n, head, required, advisory)
+        if r["verdict"] == "RED":
+            say(describe(r))
+            say("STOPPED: the head %s is RED" % head[:12])
+            return 1
+        if r["verdict"] != "GREEN":  # PENDING, or HEAD-MOVED between the two reads: look again
+            stop = wait("CI of %s: %s" % (head[:12], "; ".join(r.get("waiting", [r["verdict"]]))[:120]))
+            if stop is not None:
+                return stop
+            continue
+        ok, why = approval(get, repo, n, head, approvers)
+        if not ok:
+            stop = wait("%s is green; %s" % (head[:12], why))
+            if stop is not None:
+                return stop
+            continue
+        code = merge(get, repo, n, head, required, approvers, dry_run, gh, say, advisory)
+        if code != 0 or dry_run:
+            return code
+        merged = get("repos/%s/pulls/%d" % (repo, n))
+        return _after_merge(get, repo, merged.get("merge_commit_sha"), post_merge_required, interval, max_wait, sleep, now, say)
+
+
+def _after_merge(get, repo, sha, required, interval, max_wait, sleep, now, say):
+    if not required:
+        return 0
+    start = now()
+    while True:
+        code = post_merge(get, repo, sha, required, say)
+        if code != 4 or now() - start >= max_wait:
+            return code
+        sleep(interval)
 
 
 def post_merge(get, repo, sha, required, say=print):
@@ -294,6 +407,16 @@ def main(argv=None, get=ps.gh_get, gh=run_gh, sleep=time.sleep):
         if name == "merge":
             p.add_argument("--approver", action="append", required=True, help="GitHub login whose approval of this head counts")
             p.add_argument("--dry-run", action="store_true")
+    p = sub.add_parser("land")
+    p.add_argument("pr")
+    p.add_argument("--require-from", required=True, help="file with the name of every check that must pass")
+    p.add_argument("--approver", action="append", required=True, help="GitHub login whose approval of the head counts")
+    p.add_argument("--after", action="append", default=[], metavar="OWNER/REPO#M", help="a PR that must be merged first")
+    p.add_argument("--keep-current", action="store_true", help="merge the base into the PR branch when it is behind (the head moves)")
+    p.add_argument("--post-merge-from", help="the post-merge profile: after the merge, wait for it on the merge commit")
+    p.add_argument("--interval", type=int, default=60)
+    p.add_argument("--max-wait", type=int, default=14400)
+    p.add_argument("--dry-run", action="store_true")
     p = sub.add_parser("post-merge")
     p.add_argument("repo")
     p.add_argument("--sha", required=True)
@@ -310,6 +433,10 @@ def main(argv=None, get=ps.gh_get, gh=run_gh, sleep=time.sleep):
             return late_advisory(get, a.repo, a.head, load_required(a.require_from)[1])
         repo, n = target(a.pr)
         required, advisory = load_required(a.require_from)
+        if a.cmd == "land":
+            return land(get, repo, n, required, set(a.approver), [target(x) for x in a.after], a.keep_current,
+                        load_required(a.post_merge_from)[0] if a.post_merge_from else None, a.interval, a.max_wait, advisory,
+                        a.dry_run, gh, sleep)
         if a.cmd == "merge":
             return merge(get, repo, n, a.head, required, set(a.approver), a.dry_run, gh, advisory=advisory)
         r = (watch(get, repo, n, a.head, required, a.interval, a.max_wait, advisory, sleep) if a.cmd == "watch"
