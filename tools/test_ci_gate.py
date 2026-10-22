@@ -559,5 +559,94 @@ class Freshness(unittest.TestCase):
         self.assertEqual((code, len(gh.calls)), (0, 1))
 
 
+class FreshnessOfAHead(unittest.TestCase):
+    """`fresh`: the check a chain makes before every merge (tools/land-chain.sh): the head is the one judged, the PR is mergeable, and its base has not moved under it."""
+
+    def fresh(self, fake, **kw):
+        lines = []
+        code = cg.fresh(fake, R, N, kw.pop("head", H), say=lines.append, **kw)
+        return code, lines
+
+    def test_an_up_to_date_head_is_fresh(self):
+        code, lines = self.fresh(Fake())
+        self.assertEqual(code, 0)
+        self.assertIn("up to date", lines[-1])
+
+    def test_a_head_behind_its_base_is_stale_and_names_how_far(self):
+        code, lines = self.fresh(Fake(behind=3))
+        self.assertEqual(code, 1)
+        self.assertIn("3 commit(s) behind main", lines[-1])
+        self.assertIn("STALE", lines[-1])
+
+    def test_a_head_behind_its_base_is_fresh_only_when_the_owner_allows_it_and_says_so(self):
+        code, lines = self.fresh(Fake(behind=3), allow_behind=True)
+        self.assertEqual(code, 0)
+        self.assertIn("3 behind main, allowed by the owner", lines[-1])
+
+    def test_a_moved_head_is_stale_whatever_is_allowed(self):
+        code, lines = self.fresh(Fake(head=H2), allow_behind=True)
+        self.assertEqual(code, 3)
+        self.assertIn("STALE", lines[-1])
+
+    def test_allowing_behind_never_overrides_the_other_refusals(self):
+        for fake in (Fake(state="closed", behind=1), Fake(draft=True, behind=1), Fake(mergeable=False, behind=1), Fake(mergeable=None, behind=1)):
+            code, lines = self.fresh(fake, allow_behind=True)
+            self.assertEqual(code, 1, lines)
+            self.assertIn("REFUSED", lines[-1])
+
+    def test_it_asks_how_far_behind_only_for_the_head_it_was_given(self):
+        f = Fake(head=H2)
+        self.fresh(f)
+        self.assertFalse([p for p in f.asked if "/compare/" in p], "a moved head is refused before anything else is read")
+
+    def test_the_command_line_has_the_same_answers(self):
+        out = []
+        import io
+        import contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = cg.main(["fresh", "o/r#7", "--head", H], get=Fake(behind=2))
+            code2 = cg.main(["fresh", "o/r#7", "--head", H, "--allow-behind"], get=Fake(behind=2))
+        self.assertEqual((code, code2), (1, 0))
+
+
+class OnlyNamed(unittest.TestCase):
+    """A profile with `option: only-named` judges a commit by its own names; the checks of another run of the same commit do not count."""
+
+    def states(self, runs, only):
+        lines = []
+        code = cg.post_merge(Fake(runs=runs), R, H, ["p1 / build", "p1 / test"], say=lines.append, only_named=only)
+        return code, lines
+
+    def test_a_cancelled_run_of_another_name_is_a_failure_unless_the_profile_is_only_named(self):
+        runs = [run("p1 / build"), run("p1 / test"), run("build", "cancelled"), run("fuzz", "failure")]
+        code, lines = self.states(runs, only=False)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("fuzz (failure)" in l for l in lines))
+        code, lines = self.states(runs, only=True)
+        self.assertEqual(code, 0, lines)
+
+    def test_a_required_name_that_failed_is_still_red_when_only_named(self):
+        code, _ = self.states([run("p1 / build"), run("p1 / test", "failure")], only=True)
+        self.assertEqual(code, 1)
+
+    def test_a_required_name_that_is_missing_or_skipped_or_running_is_not_green_when_only_named(self):
+        self.assertEqual(self.states([run("p1 / build")], only=True)[0], 4)
+        self.assertEqual(self.states([run("p1 / build"), run("p1 / test", "skipped")], only=True)[0], 1)
+        self.assertEqual(self.states([run("p1 / build"), run("p1 / test", status="in_progress")], only=True)[0], 4)
+
+    def test_the_options_of_a_profile_are_read_and_an_unknown_one_is_refused(self):
+        with tempfile.TemporaryDirectory() as d:
+            ok, bad = os.path.join(d, "a"), os.path.join(d, "b")
+            with open(ok, "w") as fh:
+                fh.write("option: only-named\nbuild\n")
+            with open(bad, "w") as fh:
+                fh.write("option: nonsense\nbuild\n")
+            self.assertEqual(cg.load_options(ok), {"only-named"})
+            self.assertEqual(cg.load_required(ok)[0], ["build"])
+            with self.assertRaises(SystemExit):
+                cg.load_options(bad)
+
+
 if __name__ == "__main__":
     unittest.main()

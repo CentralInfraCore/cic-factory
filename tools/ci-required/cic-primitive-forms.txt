@@ -1,6 +1,11 @@
-# The checks that must have run and passed on a head of CentralInfraCore/cic-primitive-forms (workflows p1 and corpus).
-# The long mutation shards are not waited for (owner's decision): they never keep a head pending, a cancelled one is a warning,
-# a real failure of one still blocks. The aggregate gate 'quality' waits for them, so it is not required either.
+# The checks that must have run and passed on a head of CentralInfraCore/cic-primitive-forms before it is merged (workflows p1 and corpus, on a pull request).
+# `scope` decides how the mutation is measured (docs/DELTA-DIFF-GATE.md of that repository): the mutants of the lines the change touches (diff) or all of them
+# (full, when a test line is weakened or the way the gate measures changes). `quality` is the gate that judges the line coverage and the mutation of
+# that scope in both modes, so it is required: a land tool cannot go round it. In `full` mode it waits for the shards, in `diff` mode it is quick.
+# The diff-mutation-* jobs run only in diff mode and the quality-mutation-* shards only in full mode, so neither is a fixed requirement (a skipped job is not
+# the gate having run); a real failure of any of them is still RED. The shards stay advisory: they are not waited for on their own, `quality` waits for them.
+# A pull request that touches only documentation does not start workflow p1 (its paths filter), so these checks never report for it and `land` does not land it:
+# that kind of pull request is merged by the owner by hand, as before.
 advisory: quality-mutation-
 branch-coverage
 corpus
@@ -8,7 +13,9 @@ evidence-selftest
 fuzz
 go
 parity
+quality
 quality-gate-selftest
 quality-lines
 rust
+scope
 seeded-defects

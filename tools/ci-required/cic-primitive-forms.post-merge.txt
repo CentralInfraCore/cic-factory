@@ -1,25 +1,13 @@
-# The checks that must have succeeded on a MERGE COMMIT of CentralInfraCore/cic-primitive-forms main: the full set, the mutation shards
-# and the aggregate gate included. This is where the advisory (not waited for) checks of the pre-merge profile become binding.
+# The checks that must have succeeded on a MERGE COMMIT of CentralInfraCore/cic-primitive-forms main: the LIGHT set that a push to main runs
+# (docs/DELTA-DIFF-GATE.md, 4.1, in that repository): the unit tests, the corpus, the coverage and the parity. A push to main does not run the mutation, the fuzz,
+# the seeded defects or the evidence self-test; those are skipped there, and a skipped job is not a pass. So this profile does NOT prove the mutation
+# score or the fuzz of the merge commit. They are proved by the nightly FULL, a separate piece of evidence with its own profile:
+# cic-primitive-forms.nightly.txt. Do not read a green here as the same thing as a green there.
 branch-coverage
 corpus
-evidence-selftest
-fuzz
 go
 parity
 quality-gate-selftest
 quality-lines
-quality-mutation-go (0)
-quality-mutation-go (1)
-quality-mutation-go (2)
-quality-mutation-go (3)
-quality-mutation-go (4)
-quality-mutation-go (5)
-quality-mutation-rust (0)
-quality-mutation-rust (1)
-quality-mutation-rust (2)
-quality-mutation-rust (3)
-quality-mutation-rust (4)
-quality-mutation-rust (5)
 rust
-seeded-defects
-quality
+scope

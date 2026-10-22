@@ -1,0 +1,32 @@
+# The checks that must have succeeded on the commit a NIGHTLY FULL ran on (workflow nightly of CentralInfraCore/cic-primitive-forms, which runs p1 and corpus
+# as reusable workflows: their jobs are named `p1 / <job>` and `corpus / corpus`). This is the evidence of the whole gate on main: every mutant, both languages, the
+# fuzz, the seeded defects, the evidence self-test. Use it with `tools/ci-gate.py post-merge OWNER/REPO --sha <the sha the nightly ran on> --require-from <this file>`.
+# `option: only-named`: only these names count; the commit also carries the checks of its push run (a cancelled one, when the queue was cleared), which are not the nightly's.
+# It is not the post-merge profile of a merge: a merge commit is checked against cic-primitive-forms.post-merge.txt (the light set). The diff-mutation-* jobs are skipped in a
+# full run and are not listed. The names were read from a real run (39855232817, on 73be2a3).
+option: only-named
+changed
+corpus / corpus
+p1 / branch-coverage
+p1 / evidence-selftest
+p1 / fuzz
+p1 / go
+p1 / parity
+p1 / quality
+p1 / quality-gate-selftest
+p1 / quality-lines
+p1 / quality-mutation-go (0)
+p1 / quality-mutation-go (1)
+p1 / quality-mutation-go (2)
+p1 / quality-mutation-go (3)
+p1 / quality-mutation-go (4)
+p1 / quality-mutation-go (5)
+p1 / quality-mutation-rust (0)
+p1 / quality-mutation-rust (1)
+p1 / quality-mutation-rust (2)
+p1 / quality-mutation-rust (3)
+p1 / quality-mutation-rust (4)
+p1 / quality-mutation-rust (5)
+p1 / rust
+p1 / scope
+p1 / seeded-defects

@@ -8,6 +8,7 @@
     ci-gate.py merge OWNER/REPO#N --head SHA --require-from FILE --approver LOGIN... [--dry-run]
     ci-gate.py land OWNER/REPO#N --require-from FILE --approver LOGIN... [--after OWNER/REPO#M]... [--keep-current]
                [--post-merge-from FILE] [--interval S] [--max-wait S] [--dry-run]    follow one PR to its merge (see `land`)
+    ci-gate.py fresh OWNER/REPO#N --head SHA [--allow-behind]                 exit 0 if the head is still SHA, open, mergeable and not behind its base
     ci-gate.py post-merge OWNER/REPO --sha SHA --require-from FILE           the CI of the merge commit, against its own named set
     ci-gate.py late-advisory OWNER/REPO --head SHA --require-from FILE       what the checks not waited for said in the end
 
@@ -87,11 +88,28 @@ def load_required(path):
             l = l.split("#")[0].strip()
             if l.startswith("advisory:"):
                 advisory.append(l[len("advisory:"):].strip())
+            elif l.startswith("option:"):
+                continue
             elif l:
                 required.append(l)
     if not required:
         raise SystemExit("%s names no check: an empty required set would make every head green" % path)
     return required, advisory
+
+
+def load_options(path):
+    """The `option: NAME` lines of a profile. Known: `only-named` - only the checks the profile names count (the commit may carry the checks of other
+    runs, a nightly FULL beside the push run of the same commit, and a cancelled push run is not a failure of the nightly)."""
+    opts = set()
+    with open(path, encoding="utf-8") as f:
+        for l in f:
+            l = l.split("#")[0].strip()
+            if l.startswith("option:"):
+                opts.add(l[len("option:"):].strip())
+    unknown = opts - {"only-named"}
+    if unknown:
+        raise SystemExit("%s: unknown option(s) %s" % (path, sorted(unknown)))
+    return opts
 
 
 def read(get, repo, n, head, required, advisory=()):
@@ -148,6 +166,30 @@ def describe(r):
 
 
 EXIT = {"GREEN": 0, "RED": 1, "HEAD-MOVED": 3, "PENDING": 4}
+
+
+def fresh(get, repo, n, head, allow_behind=False, say=print):
+    """Is this PR still the thing that was judged, on a base that has not moved under it? Returns 0 (fresh), 3 (the head moved) or 1 (refused:
+    not open, a draft, not mergeable, or behind its base). A green on a head that is behind its base says nothing about the merge result;
+    `allow_behind` is the owner's explicit choice to merge such a head anyway (a chain of independent PRs from the same base is behind after the
+    first merge), and it never overrides the other refusals."""
+    pr = get("repos/%s/pulls/%d" % (repo, n))
+    now = pr["head"]["sha"]
+    if now != head:
+        say("STALE: the head of #%d is %s, not %s" % (n, now[:12], head[:12]))
+        return 3
+    if pr.get("state") != "open" or pr.get("draft"):
+        say("REFUSED: #%d is %s%s" % (n, pr.get("state"), " (draft)" if pr.get("draft") else ""))
+        return 1
+    if pr.get("mergeable") is not True:
+        say("REFUSED: GitHub says #%d is not mergeable (mergeable=%s)" % (n, pr.get("mergeable")))
+        return 1
+    behind = get("repos/%s/compare/%s...%s" % (repo, pr["base"]["ref"], now)).get("behind_by", 0)
+    if behind and not allow_behind:
+        say("STALE: the head %s of #%d is %d commit(s) behind %s; its CI does not describe the merge result" % (now[:12], n, behind, pr["base"]["ref"]))
+        return 1
+    say("FRESH: #%d head %s%s" % (n, now[:12], (" (%d behind %s, allowed by the owner)" % (behind, pr["base"]["ref"])) if behind else ", up to date"))
+    return 0
 
 
 def approval(get, repo, n, head, approvers):
@@ -350,10 +392,14 @@ def _after_merge(get, repo, sha, required, interval, max_wait, sleep, now, say):
         sleep(interval)
 
 
-def post_merge(get, repo, sha, required, say=print):
+def post_merge(get, repo, sha, required, say=print, only_named=False):
     """The CI of the merge commit on the target branch against its own named set (`post-merge` profile): 0 only when every
-    required check is present and succeeded; a missing one is pending (4), a failure or a skipped required one is 1."""
+    required check is present and succeeded; a missing one is pending (4), a failure or a skipped required one is 1. With
+    `only_named` (the profile says `option: only-named`) the other checks of the commit are not looked at at all: a nightly FULL is judged by
+    its own named jobs, not by the cancelled push run of the same commit."""
     states = check_states(get, repo, sha)
+    if only_named:
+        states = {k: v for k, v in states.items() if k in required}
     failing = ["%s (%s)" % (k, v[5:]) for k, v in sorted(states.items()) if v.startswith("fail")]
     failing += ["%s (skipped)" % r for r in required if states.get(r) == "skip"]
     missing = [r for r in required if r not in states]
@@ -407,6 +453,10 @@ def main(argv=None, get=ps.gh_get, gh=run_gh, sleep=time.sleep):
         if name == "merge":
             p.add_argument("--approver", action="append", required=True, help="GitHub login whose approval of this head counts")
             p.add_argument("--dry-run", action="store_true")
+    p = sub.add_parser("fresh")
+    p.add_argument("pr")
+    p.add_argument("--head", required=True)
+    p.add_argument("--allow-behind", action="store_true", help="merge a head that is behind its base (the owner's explicit choice)")
     p = sub.add_parser("land")
     p.add_argument("pr")
     p.add_argument("--require-from", required=True, help="file with the name of every check that must pass")
@@ -428,9 +478,12 @@ def main(argv=None, get=ps.gh_get, gh=run_gh, sleep=time.sleep):
     a = ap.parse_args(argv)
     try:
         if a.cmd == "post-merge":
-            return post_merge(get, a.repo, a.sha, load_required(a.require_from)[0])
+            return post_merge(get, a.repo, a.sha, load_required(a.require_from)[0], only_named="only-named" in load_options(a.require_from))
         if a.cmd == "late-advisory":
             return late_advisory(get, a.repo, a.head, load_required(a.require_from)[1])
+        if a.cmd == "fresh":
+            repo, n = target(a.pr)
+            return fresh(get, repo, n, a.head, a.allow_behind)
         repo, n = target(a.pr)
         required, advisory = load_required(a.require_from)
         if a.cmd == "land":
