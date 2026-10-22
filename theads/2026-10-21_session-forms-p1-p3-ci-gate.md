@@ -1,6 +1,6 @@
 # Thread-napló — 2026-10-21 (Forms P1–P3, ci-gate)
 
-Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-22T10:34:51Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl` (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
+Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-22T15:11:42Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl` (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
 
 
 ### 2026-10-21 05:57 — Claude
@@ -5725,4 +5725,895 @@ A merge után a teljes post-merge ellenőrzés következzen. A Factory `/land-pr
 
 Ezzel a felülvizsgálati kört lezártnak tekintem. A P3 harmadik egysége és a PR-lezáró automatizáció is eljutott az összevonásra szakmailag alkalmas állapotba.
 </pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-22 10:35 — Claude
+
+~~~~~
+Mindkét PR mergelve, a napló frissítve; a post-merge ellenőrzésük még fut. A merge-et az „ha a review szerint megért, mergeld" utasításod alapján futtattam, miután a HEAD-ek és a CI megfeleltek a review-ban szereplőknek.
+
+- **Forms #49:** `3b76ed482ea12a85ae694d38114953c9684de07a`, a reviewelt `8d62edb1…` HEAD-en. Előtte újra ellenőriztem: 23/23 zöld, a HEAD változatlan, mergelhető.
+- **Factory #41:** `ccb599209b642b459f6af242f8dbf1407981906a`, a reviewelt `ede7092a…` HEAD-en. A `gate` sikeres, tiszta.
+- **Napló:** a Factory `main`-ben a `4ee4091` commit. Emellett rögzíti a #45 és #48 post-merge eredményét is, mindkettő 25 check, 23 sikeres, 0 hibás.
+- **Post-merge a két új merge commitra:** a háttérfigyelő fut, a Factory `gate`-re és a Forms teljes 23-as készletére. Az eredményt jelentem, és a következő napló-frissítésbe veszem.
+
+A P3 három egysége (policy-olvasás, alapérték-alkalmazás, normalize/denormalize) és a PR-lezáró eszköz így mind a `main`-ben van.
+
+**Következő a P3-ban:** a `PolicyResolution`, vagyis az effektív szabály kiszámítása az öröklés szerint, az érték-eredet megőrzése mellett. Ennek a tervét írom meg előbb, kódot nem, ahogy a korábbiakat. Szólj, ha mást szeretnél előbbre venni.
+~~~~~
+
+
+### 2026-10-22 10:51 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+Igen, a `PolicyResolution` legyen a következő P3-egység. Nem vennék előre más fejlesztést.
+
+A Forms #49 és a Factory #41 összevonásával fontos szakasz zárult le: a három elkészült P3-egység és a PR-lezáró automatizáció már a `main` ágon van.
+
+A következő sorrendet tartom helyesnek:
+
+1. A két merge commit teljes post-merge ellenőrzésének lezárása.
+2. A `PolicyResolution` részletes szemantikai tervének elkészítése.
+3. A terv külön felülvizsgálata, különösen az öröklés és a `reset` határeseteinél.
+4. Csak utána Rust–Go implementáció, közös tesztekkel.
+
+A PolicyResolution lesz az a rész, amely a normalizált konfiguráció minden releváns útvonaláról megmondja, melyik hozzáférési és módosítási szabály érvényes rá, honnan származik, és melyik rétegben keletkezett.
+
+Továbbra sem hoz tényleges allow/deny döntést. Ez a Relay feladata marad.
+
+## Mit rögzítsen a PolicyResolution terve?
+
+A meglévő [P3 szerződés](https://github.com/CentralInfraCore/cic-primitive-forms/blob/main/docs/P3-NORMALIZE-DESIGN.md?utm_source=chatgpt.com) alapján ezekre koncentrálnék.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+| Terület            | Követelmény                                                                                              |
+| ------------------ | -------------------------------------------------------------------------------------------------------- |
+| Elsőbbségi sorrend | Explicit mezőszabály → surface rule → objektum-default → carrier-öröklés → ősi policy → rendszer-default |
+| `inherit`          | Az alkalmazható szülői szabály továbbadása                                                               |
+| `no-inherit`       | A megfelelő öröklési lánc megszakítása                                                                   |
+| `reset`            | Öröklési gát; helyi szabály nélkül `none`                                                                |
+| `unknown`          | Ismeretlen kontextusból tilos megengedő szabályt feltételezni                                            |
+| Explicit `[]`      | Végleges szabály, nincs fallback                                                                         |
+| Listaelemek        | Logikai identitás alapján; a sorrend és a testvérelemek nem befolyásolhatják egymást                     |
+| Eredetmegőrzés     | A meglévő P2 provenance és P3 `value_origins` változatlan                                                |
+
+Külön figyelnék arra, hogy a `no-inherit` és `reset` különbsége mind a hordozó, mind az objektum szintjén egyértelmű legyen. A meglévő `access_policy.py` és `access-vectors/` referencia alapján készüljenek a közös Rust–Go tesztek.
+
+Az effektív szabályt továbbra is külön `policy_resolution` adatszerkezetben tárolnám, `rule`, `layer` és `source_path` mezőkkel.
+
+### Fejlesztési kapu
+
+A tervezéshez nem kell megvárni a post-merge CI végét. Az implementáció viszont külön, elfogadott tervből induljon, és ne módosítsa visszamenőleg a már működő `normalize`/`denormalize` szerződést.
+
+Döntésem: PolicyResolution tervezés GO. Más fejlesztést nem vennék előre.
+
+Ez a P3 utolsó nagy szemantikai eleme. Ha elkészül és Rustban, valamint Go-ban ugyanazt a feloldást adja, a Forms normalizálási fázisa már közel kerülhet a teljes lezáráshoz.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-22 10:54 — Claude
+
+~~~~~
+A `PolicyResolution` terve megvan: **Forms #50**, `docs/P3-UNIT4-POLICY-RESOLUTION.md`, docs-only, nincs mergelve. A kód a terv felülvizsgálata és elfogadása után indul.
+
+**Post-merge eredmények** (mindkét merge commit):
+- **Factory #41** (`ccb599209b64`): 1 kötelező check (`gate`), sikeres, 0 hibás.
+- **Forms #49** (`3b76ed482ea1`): a teljes 23-as post-merge készlet még fut, az eredményt jelentem.
+
+**A terv lényege:**
+- **Nem döntés, hanem adat:** a referencia `resolve` portja a `_decide` lépés előtt. Minden pozícióhoz megadja az `access` és `modify` effektív szabályát `rule`, `layer`, `source_path` mezőkkel. A `rule` lehet lista, `open`, `owner`, `none` vagy `unknown`.
+- **A leképezés:** az objektum a gyökér, egy összetett pozíció értéke vagy egy listaelem. A hordozó (carrier) a szülő mező Access-burka, a listaelemnél a lista mezőé. A séma policy-ja csak a gyökéren van, a többi objektumé `absent`.
+- **Az algoritmus hat rétegben** a referencia szerint: explicit mezőszabály, surface rule, objektum-default, hordozótól örökölt, ősi policy, rendszer-default. A `reset`-gát (barrier) szabályai pontosan rögzítve vannak.
+- **A `no-inherit` és a `reset` különbsége** a hordozó és az objektum szintjén is külön szerepel. A `no-inherit` megszakítja az átadott szabályt, de a policy-lánc él. A `reset` mindent levág, helyi szabály nélkül `none` lesz.
+- **Garanciák:**
+  - a megtalált lista (az üres `[]` is) végleges;
+  - a `none` és az `unknown` sosem megengedő;
+  - a helyi rétegeket a `reset` sem vágja le;
+  - az eredmény független a listaelemek és bejegyzések sorrendjétől;
+  - a `ValueOrigins` és a P2 provenance érintetlen marad.
+- **Teszt:** a referencia aranyvektorai a kereszt-ellenőrzés. A vektor kérése alapján egy kizárólag tesztkódban élő `_decide`-port hozza az allow/deny kimenetet, ennek egyeznie kell a vektor elvárásával. Így a szemantika végponttól végpontig ellenőrzött, a könyvtár pedig továbbra sem dönt.
+
+**Egy lelet, ami döntésedet kéri:** a referencia modell (`access_policy.py`) és az aranyvektorok a pinelt commiton (`73ae469`) megvannak, de nincsenek a pin fájlkészletében, tehát nincsenek digesthez kötve. A használatukhoz a pint ki kell bővíteni: a pin neve változik, és minden `grammar:` hivatkozást tudatosan át kell vezetni (ez külön, csak-pin PR lenne).
+
+A terv 9. szakasza összesen öt tulajdonosi döntést kér:
+1. a pin bővítése;
+2. a listaelem hordozója a lista mező burka legyen;
+3. célpont minden deklarált pozíció legyen, az összetettek és listák is;
+4. az `unknown` hívói bemenet legyen;
+5. a rétegek elnevezése.
+
+A felülvizsgálat után indul az implementáció, a #50 mergelése pontos HEAD-re szóló engedélyt kér.
+~~~~~
+
+
+### 2026-10-22 10:59 — Claude
+
+~~~~~
+Mindkét post-merge ellenőrzés lezárult, és sikeres:
+
+- **Factory #41** (`ccb599209b64`): 1 kötelező check, sikeres, 0 hibás.
+- **Forms #49** (`3b76ed482ea1`, a harmadik P3-egység): 25 check, 23 sikeres, 0 függő, 0 hibás, 0 hiányzó kötelező. A másik kettő a szándékosan kihagyott `record` és `watch` evidence-job.
+
+A harmadik P3-egység és a PR-lezáró eszköz ezzel formálisan lezárható. Az eredményt a következő napló-frissítésbe veszem. A #50 (PolicyResolution terve) a felülvizsgálatra vár, és öt tulajdonosi döntést kér a 9. szakaszában.
+~~~~~
+
+
+### 2026-10-22 12:07 — Felhasználó
+
+~~~~~
+ne feledd a readme-ben is frissíteni az állapotott illetve ahol kell :P
+~~~~~
+
+
+### 2026-10-22 12:09 — Claude
+
+~~~~~
+Now the Factory side: its README, the tool docs and the ecosystem map.
+~~~~~
+
+
+### 2026-10-22 12:10 — Claude
+
+~~~~~
+Frissítettem az állapotot a README-ben és ott is, ahol kellett. Két docs-only PR van fent, egyik sincs mergelve.
+
+**Forms #51** (`docs/status-p3-units`, `cic-primitive-forms`):
+- **README:** a státusz még azt mondta, hogy „P0 accepted, P1 first slice". Mostanra: P0–P2 kész, a P3 folyamatban. A képességlista jelöli, mi implementált (validáció, `expand`/`collapse`, `normalize`/`denormalize`), mi csak terv (`PolicyResolution`), és mi van hátra.
+- **`docs/PHASES.md`:** új **State** oszlop minden fázishoz. A P3 sorában szerepelnek a mergelt egységek (#44, #45, #49) és a #50 terv.
+- **`docs/P1-SUPPORTED-SUBSET.md`:** a fejléc státusza és a függvénytábla három hiányzó sora (`expand`/`collapse`, alapértékek, `normalize`).
+- **`docs/P2-EXPAND-COLLAPSE.md`:** a határokat leíró mondat már nem állítja, hogy az alapértékek és a normalize hiányoznak.
+- A #50 tervére útvonallal hivatkozik, link nélkül, hogy ne függjön a merge-étől.
+
+**Factory #42** (`docs/status-tools`, `cic-factory`, magyarul a nyelvi szabály szerint):
+- **`docs/ecosystem-map.md`:** nem volt sora a `cic-primitive-forms`, a `cic-primitive-engine` és a `cic-module-oracle-cloud` repónak. Most mindhárom benne van az aktuális állapottal.
+- **`CLAUDE.md`:** megnevezi a PR-lezáró eszközöket, amelyek itt készültek és nem a magban (`ci-gate`, `pr-status`, `vcn-pipeline`, `/land-pr`). Azt is rögzíti, hogy az átvétel nem írja felül őket, hogy a hosszú távú otthonuk a `cic-factory-core`, és hogy a `land` nem ír jóváhagyást.
+
+A `check-docs` GO, és a Forms `make corpus` is lefutott. Az élő workdirt visszaállítottam a `main` ágra, hogy a naplóblokkok oda mennek.
+
+Mindkét PR-hoz pontos HEAD-re szóló merge-engedély kell, a CI lefutása után. Ahol további helyen is kell állapotot frissíteni (például a Relay vagy a registry README-je), jelezd, melyik az.
+~~~~~
+
+
+### 2026-10-22 12:11 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+## Forms #50 – PolicyResolution tervreview
+
+Átnéztem a [Forms #50 teljes tervét](https://github.com/CentralInfraCore/cic-primitive-forms/pull/50?utm_source=chatgpt.com), valamint a `cic-primitives` rögzített referencia-grammatikáját és a `access_policy.py` modellt.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://raw.githubusercontent.com\&sz=32)
+
+GitHub
+
++2
+
+
+
+A terv fő iránya szakmailag megfelelő. A hatrétegű feloldási sorrend, a `reset` és `no-inherit` különválasztása, az üres `[]` végleges szabályként kezelése és a Relay döntési határának megőrzése mind helyes.
+
+A közölt post-merge eredmények alapján a Forms #49 és a Factory #41 ellenőrzési köre is sikeresen lezárult. A Forms esetében a 25 checkből 23 sikeres, kettő szándékosan kihagyott; nincs hiba vagy függő kötelező ellenőrzés.
+
+### Az öt döntésre a javaslatom
+
+| # | Kérdés                                         | Szakmai döntésem                                                                                 |
+| - | ---------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| 1 | Referenciamodell és vektorok felvétele a pinbe | Igen, külön pin-only PR-ban                                                                      |
+| 2 | Listaelem hordozója                            | Igen, a lista mezőjének Access-burka                                                             |
+| 3 | Feloldási célpontok                            | Igen, minden ténylegesen létrejött deklarált pozíció, beleértve az összetett és lista pozíciókat |
+| 4 | `unknown` eredete                              | Igen, explicit hívói kontextus, nem értékekből kikövetkeztetve                                   |
+| 5 | Réteg-elnevezések                              | Igen, a P3 nevei, dokumentált megfeleltetéssel                                                   |
+
+Az öt döntést tehát támogatnám, de a tervben három pontosítást még rögzítenék az implementáció előtt.
+
+## Három pontosítás az implementáció előtt
+
+1\. A pin bővítése nem pusztán `pins.yaml`-módosítás.
+
+A jelenlegi `grammar_identity.py` rögzített `GRAMMAR_FILES` készletet használ, és a fájlkészlet módosítását ADR-hez köti.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://raw.githubusercontent.com\&sz=32)
+
+GitHub
+
+
+
+A külön PR-ban ezért együtt kérem kezelni:
+
+- a referenciamodell és a szükséges aranyvektorok tételes, SHA-256-tal kötött fájllistáját;
+- a `GRAMMAR_FILES`, az ADR és a pin-manifest módosítását;
+- minden érintett `grammar:` hivatkozás tudatos átvezetését;
+- a teljes corpus és a pin-verifikáció újbóli futtatását.
+
+Az upstream Python referenciamodell ne váljon a Forms runtime-függőségévé.
+
+2\. A `source_path` jelentése legyen teljesen pontos.
+
+A terv 3. szakaszában a `field_inherited` forrását a pozícióhoz kapcsolja, a 4. szakasz viszont helyesen a szabályt átadó carrierre hivatkozik.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://raw.githubusercontent.com\&sz=32)
+
+GitHub
+
+
+
+Az utóbbi legyen a szerződés:
+
+- `field`: a célmező útvonala;
+- `field_inherited`: a szabályt ténylegesen adó carrier útvonala;
+- `surface_rule`, `object_default`, `policy_inherited`: a szabályt deklaráló objektum útvonala;
+- `system`, `none`, `unknown`: a tervben választott `layer: none` és üres `source_path` konvenció legyen kifejezetten dokumentálva, ahol alkalmazandó.
+
+Ez fontos, mert a `source_path` később auditálható magyarázatot ad arra, miért az adott szabály érvényes.
+
+3\. A célpontok felsorolása ne függjön az eredettérképtől.
+
+A 2. szakasz a `value_origins` alapján azonosítja a pozíciókat, miközben a 3. szakasz kimondja, hogy a feloldás nem olvassa ezt az oldaltérképet.
+
+Ezt feloldanám: a pozíciókat a normalizált értékfából és a fordított sémából kell bejárni. A `value_origins` legfeljebb konzisztenciaellenőrzésként szerepeljen.
+
+Ez a már elfogadott P3-határt is megőrzi: nem kell mesterségesen létrehozni egy hiányzó kötelező mezőt csak azért, hogy policy-feloldást kapjon.
+
+A tesztekben külön szerepeljen az az eset is, amikor egy korábbi explicit szabály miatt a feloldás nem éri el az `unknown` őst; ilyenkor a referencia szerint az ismert szabály marad érvényes.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://raw.githubusercontent.com\&sz=32)
+
+GitHub
+
+
+
+## A #50 állapota és a továbblépés
+
+A GitHubon a #50 jelenlegi `35eeef0…` commitján a docs-only `corpus` ellenőrzés sikeres.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+Szakmai GO a tervre, a három dokumentációs pontosítás átvezetésével. Új architekturális döntési kört nem tartok szükségesnek.
+
+A további sorrend: a terv pontosítása, külön pin-bővítési PR, majd Rust–Go PolicyResolution-implementáció a referencia-aranyvektorokkal.
+
+A #50 tényleges merge-jéhez továbbra is külön, aktuális HEAD-re szóló tulajdonosi jóváhagyás szükséges. Az öt döntésre adott szakmai támogatásom nem helyettesíti ezt.
+
+A következő fejlesztési egység tehát indulhat az elfogadott terv alapján, amint a jogosult döntéshozó azt rögzítette. A Forms továbbra is effektív szabályt számoljon, ne hozzáférési döntést.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-22 12:12 — Claude
+
+~~~~~
+A reviewer három pontosítását átvezettem a **Forms #50** tervbe, új HEAD: `e76addc2384453d993d875b6437694bf7c21cee3`. Nincs mergelve, a CI újraindult.
+
+1. **Pin-bővítés:** a terv most kimondja, hogy ez külön **csak-pin PR**, és több mint a `pins.yaml` szerkesztése. Együtt jár vele:
+   - a referenciamodell és pontosan a használt vektorok tételes, SHA-256-tal kötött fájllistája;
+   - a `GRAMMAR_FILES` módosítása, hozzá egy ADR-kiegészítés és az új pin-manifest (a pin neve megváltozik);
+   - minden `grammar:` hivatkozás tudatos átvezetése;
+   - a teljes corpus-ellenőrzés és a pin-verifikáció az upstream commit ellen.
+
+   A Python referenciamodell teszt-adat marad, sosem lesz futásidejű függőség.
+2. **`source_path` pontos szerződése:** `field`: a célmező útvonala. `field_inherited`: a szabályt átadó **carrier** útvonala, a céltól különbözik. `surface_rule`, `object_default` és `policy_inherited`: a deklaráló objektum útvonala (`$` a gyökér). `system`, `none` és `unknown`: üres `source_path`, a `none` és `unknown` esetében `layer: none`, ez külön, kifejezetten dokumentált megállapodás. Egy táblázat rögzíti.
+3. **A célpontok a normalizált értékfából és a sémából jönnek, nem a `value_origins`-ból.** A feloldás nem olvassa azt, legfeljebb egy teszt hasonlítja össze konzisztencia-ellenőrzésként. Így semmi nem jön létre csak azért, hogy feloldják: hiányzó kötelező vagy opcionális mezőhöz nincs bejegyzés. A tesztlistába felvettem két új esetet is: egy korábbi rétegben megtalált szabály az `unknown` ős elé érve érvényes marad (a referencia szerint), és a célpontok egyeznek az értékfával.
+
+Az öt tulajdonosi döntést a terv „javasolt" állapotban tartja, a reviewer mind az ötöt támogatja, de a tiéd kimondani.
+
+**Függőben, mindegyik pontos HEAD-re szóló engedélyedet kéri:**
+- **Forms #50** (`e76addc2…`): a PolicyResolution terve.
+- **Forms #51** (docs-only állapotfrissítés: README, PHASES, supported-subset).
+- **Factory #42** (docs-only: ecosystem map és `CLAUDE.md`).
+
+A #50 elfogadása után a következő lépés a csak-pin PR, majd a Rust–Go PolicyResolution a referencia aranyvektoraival.
+~~~~~
+
+
+### 2026-10-22 12:41 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+## Forms #50, #51 és Factory #42 – szakmai review
+
+Átnéztem a [Forms #50](https://github.com/CentralInfraCore/cic-primitive-forms/pull/50?utm_source=chatgpt.com) módosított tervét, ezúttal kifejezetten az `e76addc2384453d993d875b6437694bf7c21cee3` commiton. A korábban kért három pontosítás valóban bekerült.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+A #50 tervét szakmailag elfogadhatónak tartom. Újabb tervezési vagy javítási kört nem kérek.
+
+### Az öt architekturális döntés
+
+| # | Kérdés                                             | Szakmai álláspont                                                           |
+| - | -------------------------------------------------- | --------------------------------------------------------------------------- |
+| 1 | Referenciamodell és aranyvektorok bevonása a pinbe | Igen. Külön pin-only PR, teljes digest- és grammar-hivatkozás-frissítéssel. |
+| 2 | Listaelem hordozója a lista mezőjének Access-burka | Igen. Egyértelmű, determinisztikus öröklési modell.                         |
+| 3 | Minden létező deklarált pozíció célpont            | Igen. Az összetett mezők és listák is; hiányzó mezőhöz nincs bejegyzés.     |
+| 4 | `unknown` explicit hívói bemenet                   | Igen. Nem következtethető ki a dokumentum értékeiből vagy a provenance-ből. |
+| 5 | P3-as réteg-elnevezések                            | Igen. A referenciamodell neveivel dokumentált megfeleltetéssel.             |
+
+Mind az öt döntést támogatnám a terv 9. szakaszában megfogalmazott formában.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://raw.githubusercontent.com\&sz=32)
+
+GitHub
+
+
+
+A javított `source_path`-szerződés megfelelő, különösen a `field_inherited` esetében, ahol most már a szabályt átadó carrier útvonalát jelöli. Az is helyes, hogy a célpontokat a normalizált értékfa és a fordított séma határozza meg, nem a `value_origins`.
+
+### A másik két PR
+
+| PR                                                                                                  | Ellenőrzés                                                     | Értékelés  |
+| --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ---------- |
+| [Forms #51](https://github.com/CentralInfraCore/cic-primitive-forms/pull/51?utm_source=chatgpt.com) | README, PHASES, supported-subset, P2 státusz; `corpus` sikeres | Szakmai GO |
+| [Factory #42](https://github.com/CentralInfraCore/cic-factory/pull/42?utm_source=chatgpt.com)       | Ökoszisztéma-térkép és `CLAUDE.md`; `gate` sikeres             | Szakmai GO |
+
+A #51 megfelelően különválasztja a már implementált P3-egységeket a még csak megtervezett `PolicyResolution`-től. A Factory #42 pedig helyesen dokumentálja a `/land-pr` jóváhagyási határát és a későbbi Core-migrációt.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
++3
+
+
+
+A #50 GitHub Checks-oldala a lekérdezésemkor még a korábbi `35eeef0` commit eredményét mutatta, ezért az `e76addc2…` HEAD CI-jának sikerét nem tekintem függetlenül igazoltnak.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+### Javasolt következő sorrend
+
+1. A jogosult tulajdonos külön fogadja el az öt architekturális döntést és adja meg a három PR szükséges, aktuális HEAD-re kötött merge-engedélyét.
+2. A #50 elfogadása után készüljön el a külön referencia-pin PR, teljes corpus- és pin-verifikációval.
+3. Csak az új pin rögzítése után induljon a Rust–Go `PolicyResolution` implementáció.
+4. A referencia `_decide` továbbra is kizárólag a tesztkörnyezetben szerepeljen.
+
+Összegzés: #50, #51 és Factory #42 szakmai GO. Az ismert tervezési kifogások rendezettek; további review-javítást nem kérek. Ez azonban nem tulajdonosi ratifikáció és nem merge-felhatalmazás – azt a jogosult döntéshozónak külön kell rögzítenie.
+
+A PolicyResolution következő lépése már nem újabb architekturális vita, hanem a reprodukálható referencia-pin előállítása.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-22 12:42 — Claude
+
+~~~~~
+Now the reference-pin PR. First the pin machinery and everywhere the pin name is used.
+~~~~~
+
+
+### 2026-10-22 12:50 — Claude
+
+~~~~~
+A #50, a #51 és a Factory #42 mergelve, és elkészült a csak-pin PR is (**Forms #52**, CI-ra vár). Közben a Factory #42 post-merge ellenőrzése sikeres.
+
+**Mergelve** (az „ha a review szerint megért, mergeld" utasításod alapján, miután a HEAD-ek, a mergelhetőség és a CI egyezett):
+- **Forms #50** (PolicyResolution terve): `48b7cc73f7717c502202e2c670c8ca881b7a2875`, a reviewelt `e76addc2…` HEAD-en.
+- **Forms #51** (állapotfrissítés: README, PHASES, supported-subset): `d9aea562d272b8358db48778c64aeb0eba5cd2d0`.
+- **Factory #42** (ecosystem map, `CLAUDE.md`): `f152b094556c03f41716712b07cc5be19613fb0d`. Post-merge: 1 check, sikeres, 0 hibás.
+- A Forms `main` post-merge ellenőrzése (`d9aea562…`) még fut, az eredményt jelentem.
+
+**Forms #52**, a csak-pin PR (`chore/pin-access-reference`, HEAD `4ed7753b6b43…`): nincs viselkedésváltozás.
+- **Mi változik:** a gyökér ADR szerinti elfogadott fájlkészlet tízről **tizenkettőre** nő, ugyanazon pinelt commitról (`73ae469…`): `access_policy.py` (a referenciamodell) és `access-vectors/resolution.yaml` (az aranyvektorok), SHA-256-tal kötve. A pin új neve `cic-primitives-73ae469-6a188078`.
+- **ADR 0002 2. kiegészítése:** kimondja, hogy ez a két fájl teszt-adat. A könyvtár nem futtatja a Pythont, és nincs futásidejű függősége. A többi P0.4 vektor (reading, expansion, migration) a készleten kívül marad.
+- **Tudatos átvezetés:** minden `grammar:` hivatkozás (corpus, közös tesztadat, a két séma-olvasó profilkulcsa), a `grammar` manifest-vektorok (a „hiányzó / extra / megváltozott fájl" esetek megőrzik a jelentésüket, a rossz-sorrendű digest újraszámolva) és a `pin-files-sorted-as-lines-not-paths` seeded fault. A régi pint megnevező történeti ADR-sorok érintetlenek.
+- **Helyben ellenőrizve:** a pin-verifikáció az upstream commit ellen mind a tizenkét fájlra és a manifestre, a verifikátor önellenőrzése (7/7), `make corpus` (347 eset, 0 hiba, 164 seeded fault mind elkapva), Rust (116 teszt, clippy) és Go (vet, tesztek) az új pinen.
+
+**Mi a következő:** a #52 CI-ja és pontos HEAD-re szóló merge-engedélye után indulhat a Rust–Go `PolicyResolution` az aranyvektorok kereszt-ellenőrzésével, a tervben rögzített módon.
+~~~~~
+
+
+### 2026-10-22 13:00 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+## Forms #52 – referencia-pin szakmai review
+
+Átnéztem a [Forms #52 PR-t](https://github.com/CentralInfraCore/cic-primitive-forms/pull/52?utm_source=chatgpt.com) és a módosított fájlokat.
+
+A pin-bővítést szakmailag támogatom. Nem látok újabb architekturális akadályt. A PR teljesíti a #50 tervében rögzített előfeltételt: a PolicyResolution referenciaadatai immár konkrét upstream commitra és fájldigestekre vannak kötve.
+
+A diff alapján:
+
+| Ellenőrzési pont                                           | Eredmény                          |
+| ---------------------------------------------------------- | --------------------------------- |
+| Referencia-commit változatlan: `73ae469…`                  | Rendben                           |
+| Elfogadott fájlkészlet: 10 → 12                            | Rendben                           |
+| `access_policy.py` és `resolution.yaml` SHA-256-tal kötve  | Rendben                           |
+| Új pin: `cic-primitives-73ae469-6a188078`                  | Rendben                           |
+| `GRAMMAR_FILES` és ADR 0002 átvezetése                     | Rendben                           |
+| Rust és Go profilkulcsok frissítése                        | Rendben                           |
+| Corpus-, manifest- és seeded-fault-hivatkozások átvezetése | Rendben                           |
+| Python referencia kizárólag tesztadat                      | A dokumentált szerződés megfelelő |
+
+A korábbi pin történeti hivatkozásainak megtartása is helyes.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
++2
+
+
+
+Egy pontos megfogalmazást azért javaslok: a „nincs viselkedésváltozás” az algoritmusokra igaz, de a nyilvános grammar-azonosító megváltozása szándékos kompatibilitási változás. A régi pinhez kötött bemeneteket az új profil már nem fogadja el. Ez nem hiba, hanem az ADR szerinti explicit verziókötés következménye.
+
+## Aktuális CI-állapot
+
+A `4ed7753…` HEAD-hez tartozó GitHub-futások közül:
+
+`corpus`: sikeres
+
+`branchcov`: sikeres
+
+`p1 #84`: még `queued`; a teljes kötelező készlet nem zárult le
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
++2
+
+A #52-re feltételes szakmai GO-t adok: a teljes P1-készlet sikeres lezárása, változatlan HEAD és konfliktusmentes, naprakész ág mellett nem kérek további javítást.
+
+A tényleges merge-hez ettől függetlenül szükséges a jogosult tulajdonos külön jóváhagyása. A korábbi szakmai ajánlásaimat nem lehet tulajdonosi meghatalmazásként értelmezni.
+
+## Mi következzen utána?
+
+A #52 sikeres lezárása után a következő fejlesztési egység egyértelműen a Rust–Go PolicyResolution.
+
+Az implementációban a most rögzített referencia-aranyvektorok legyenek a szemantikai ellenőrzés alapjai. A `normalize` továbbra is az effektív szabályt és annak eredetét szolgáltassa, tényleges allow/deny döntést ne hozzon. A tesztkódban megengedett `_decide`-port pedig maradjon elkülönítve a könyvtár publikus API-jától.
+
+Összességében a #52 jól zárja le a tervezés és az implementáció közötti bizonyítási láncot: most már nem pusztán hivatkoztok a referenciamodellre, hanem annak pontos bájtjait is ellenőrizhetően rögzítitek.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-22 13:04 — Claude
+
+~~~~~
+A #52 pin-PR-on elbukott a `parity` kapu, ezért javítanom kellett. A javítás új HEAD-et adott, ezért a reviewer GO-ja a régi commitra szólt, és nem mergeltem.
+
+**Mi bukott, és miért.** A parity-teszt a corpus-vektorok szövegéből generál mintákat. A pin átnevezése átírta ezeknek a szövegeknek a `grammar:` soraiból a pin nevét, ezért a fix-seedű véletlen szerkesztések más szövegeket húztak. Ez ugyanaz a hatás, mint a #39-nél. Helyben reprodukáltam, két új és egy elavult allow-lista sort kaptam:
+1. **A korábbi divergencia átnevezett párja:** egy `?` karakter egy flow-mapping sima skalárjában, a már dokumentált nyitott osztály. A régi pin nevét tartalmazó változat már nem generálódik, helyette a megfelelője jelent meg ugyanazzal a viselkedéssel. A régi allow-sort töröltem, az újat felvettem.
+2. **Egy másik, új nyitott osztály:** ` {aa:}`, vagyis egy kettőspont közvetlenül egy flow-mapping záró kapcsos zárójele előtt. A Rust (saphyr) a kettőspontot értékjelzőnek olvassa, ahogy a YAML 1.2 is (kulcs `aa`, üres érték). A Go (yaml.v3) a kulcsban tartja (`aa:`). Ez a két YAML-könyvtár viselkedésbeli különbsége, nem parser-változás.
+
+**A javítás** a megszokott eljárás szerint ment, nem lazítottam a kaput: a két bemenet bekerült az allow-listába az outcome-jaival, és a `docs/P1-SUPPORTED-SUBSET.md` parity-szakasza leírja az okot és az új osztályt. Ellenőriztem, hogy a többi 287 engedélyezett divergencia változatlan (`changed: 0`, `new: 0`, összesen 289 engedélyezett), és a parity önellenőrzése („minden törés pirosra vált") lefut. A `make corpus` is zöld.
+
+**Új HEAD: `483598e65054d1160f1d59e802b3e5640713e921`.** A CI újraindult, a #52 PR szövege is pontosabb: nincs algoritmusváltozás, de a nyilvános grammar-azonosító szándékosan változik.
+
+**Merge-engedély:** a reviewer feltételes GO-ja a `4ed7753…` HEAD-re szólt, az új HEAD-re új kell. Ha a review az új HEAD-re is kimondja, vagy te kimondod, mergelem, amint a teljes készlet zöld.
+
+A Factory #42 post-merge eredménye sikeres, a Forms `main` (`d9aea562…`) post-merge futása még nem zárult le.
+~~~~~
+
+
+### 2026-10-22 13:17 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+## Forms #52 – új HEAD felülvizsgálata
+
+A `483598e65054d1160f1d59e802b3e5640713e921` commitra is megadom a feltételes szakmai GO-t. A parity-javítás indokolt, és a vizsgált változtatások alapján nem látok újabb kódjavítási akadályt.
+
+A [konkrét commit diffjét](https://github.com/CentralInfraCore/cic-primitive-forms/commit/483598e65054d1160f1d59e802b3e5640713e921?utm_source=chatgpt.com) ellenőriztem: kizárólag két fájl változott, a `parity-known.txt` és a `P1-SUPPORTED-SUBSET.md`. Nem módosult sem a parser, sem a pin tartalma, sem az összehasonlító algoritmus.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+A két eltérés kezelését elfogadom:
+
+- A korábbi, már ismert `?`-es eltéréshez tartozó elavult bemenet lecserélése helyes. A megváltozott grammar-azonosító miatt más minták keletkeznek.
+- A `{aa:}` újonnan felfedezett parsereltérést indokolt külön dokumentálni. A YAML 1.2.2 szabályai valóban alátámasztják, hogy flow-környezetben a `:}` nem maradhat egyszerűen egy plain scalar része.&#x20;
+
+  [image](https://www.google.com/s2/favicons?domain=https://yaml.org\&sz=32)
+
+  YAML
+
+
+
+A közölt `287` változatlan eltérés, `changed: 0`, `new: 0`, valamint a `289` pontosan nyilvántartott kivétel megfelelő bizonyítási irány. Ezeket helyben nem futtattam újra.
+
+## CI és merge-feltételek
+
+A GitHubon az új HEAD-hez kapcsolódó `p1 #85` futás még `queued` állapotban látszik. A korábbi `p1 #84` futás folyamatban van, de annak eredménye nem helyettesítheti az új commit ellenőrzését.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+A #52 szakmai lezárásához ezt a négy feltételt tartanám meg:
+
+1. A `483598e65054d1160f1d59e802b3e5640713e921` maradjon az aktuális HEAD.
+2. A teljes kötelező CI, beleértve a parity kaput, legyen sikeres.
+3. Az ág legyen naprakész, konfliktusmentes és mergelhető.
+4. A jogosult tulajdonos külön rögzítse a merge-engedélyt.
+
+Egy későbbi fejlesztési ötlet: érdemes lenne a parity-generátor mintaválasztását függetleníteni a `grammar:` sorban szereplő pin nevétől. Így egy későbbi pinváltás nem rendezné át véletlenül a fix-seedű mintákat. Ezt külön feladatként kezelném, nem blokkolnám vele a #52-t.
+
+Végső szakmai álláspontom: #52, HEAD `483598e…` – feltételes GO, újabb javítási kérés nélkül. A korábban jelzett parity-hiba kezelése megfelelő. Ez a reviewer véleménye, nem tulajdonosi merge-felhatalmazás.
+
+A sikeres összevonás és post-merge ellenőrzés után indulhat a Rust–Go `PolicyResolution` implementáció a most rögzített referenciavektorokra építve.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-22 13:23 — Claude
+
+~~~~~
+Now the Rust graph resolver (`resolve.rs`) and the normalized-object walker (`policyresolution.rs`).
+~~~~~
+
+
+### 2026-10-22 13:25 — Claude
+
+~~~~~
+Rust PolicyResolution builds and is clippy-clean; Forms #52 merged (009ee5d). Next I'm writing the Rust shared-case test.
+~~~~~
+
+
+### 2026-10-22 13:26 — Claude
+
+~~~~~
+Still on the Rust golden-vector test (porting the Go one); the shared-case tests already pass.
+~~~~~
+
+
+### 2026-10-22 13:27 — Claude
+
+~~~~~
+Both ports are written and committed locally on `feat/p3-policy-resolution` (`3a33e60`). I haven't pushed the branch or opened a PR yet, because the quality gates below aren't done.
+
+- **Forms #52:** merged as `009ee5d`. The post-merge CI check (23/23 expected) hasn't been run, and the thread log for #52 hasn't been regenerated or committed yet.
+- **Go:** the 86 golden vectors pass against the pinned `resolution.yaml`, and so do the 22 shared-case subtests.
+- **Rust:** `resolve.rs` and `policyresolution.rs` are in and exported. The same 86 vectors pass, and `rust/tests/resolution.rs` passes 3 tests (the shared cases from `testdata/p1/resolution.json`, order-independence of list elements, and the refusals).
+- **Lint and tests:** the full Rust test suite is green, with clippy `-D warnings` clean. Go `vet` and tests are green and `gofmt` reports nothing.
+- **Reference decision:** it exists only in the test code (`resolve_vectors.rs`, `resolve_vectors_test.go`). The library returns the effective rule as data and decides nothing.
+- **Tooling change:** I made `path_text` and `entry` in `expand.rs` `pub(crate)` so the new walker can reuse them.
+
+Still to do before the PR:
+- properties
+- fuzz target with canary seed, wired into `p1.yml`
+- seeded defects in both languages
+- branch coverage
+- mutation runs (cargo-mutants, go-mutesting)
+- status docs (`docs/P1-SUPPORTED-SUBSET.md` and the unit-4 design doc)
+
+After that I'll push the branch and open the PR against `main`.
+~~~~~
+
+
+### 2026-10-22 13:35 — Felhasználó
+
+~~~~~
+MAGYARUl drágám nem vagyok én olyan jó angolos (főleg 3x6 órás alvás után)
+~~~~~
+
+
+### 2026-10-22 13:36 — Claude
+
+~~~~~
+Rendben, magyarul, röviden.
+
+**Állapot:**
+- **Forms #52:** mergelve (`009ee5d`). A merge utáni CI-ellenőrzést (23/23) és a szál-napló frissítését még nem futtattam le.
+- **PolicyResolution (P3 4. egység):** Go és Rust oldalon is megvan, és helyben commitolva a `feat/p3-policy-resolution` ágon (`3a33e60`). Még nem pusholtam, PR sincs.
+- **Tesztek:**
+  - Mind a 86 aranyvektor átmegy mindkét nyelven.
+  - A közös esetek (Rust 3 teszt, Go 22 al-teszt) zöldek.
+  - Teljes Rust- és Go-tesztkészlet zöld.
+  - A clippy, a go vet és a gofmt tiszta.
+- **Döntés:** a könyvtár csak adatot ad vissza (melyik szabály él az adott pozíción). Az engedélyez/tilt döntés a Relay dolga, a referencia-döntés csak tesztkódban van.
+
+**Hátra van a PR előtt:**
+1. tulajdonság-tesztek
+2. fuzz célpont
+3. seeded defect tesztek
+4. ágfedettség
+5. mutációs futtatások
+6. állapot-dokumentumok (README-k, P1-SUPPORTED-SUBSET, 4. egység terv)
+
+Ezután pusholom az ágot, és nyitom a PR-t. A #52 merge utáni ellenőrzését és a napló commitját is pótolom.
+
+Pihenj, ebből a sorból semmi nem sürgős. Mehetek tovább a fenti listával?
+~~~~~
+
+
+### 2026-10-22 13:37 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+## Forms P3 Unit 4 – implementációs állapot
+
+Jó irány, és helyes, hogy a `3a33e60` commitot még nem nyitottad PR-ként. A 86 referencia-aranyvektor Rustban és Go-ban is sikeres, a közös esetek átmennek, a könyvtár pedig továbbra sem hoz hozzáférési döntést. Ez már erős funkcionális alap.
+
+A két nyelv implementációjának elkészülte azonban még nem jelenti a negyedik egység minőségi lezárását. A property-, fuzz-, mutációs és lefedettségi ellenőrzések itt különösen fontosak, mert az öröklési algoritmus hibái sokszor csak szokatlanul egymásba ágyazott policy-knál jelentkeznek.
+
+A #52 esetében van egy külön lezárandó tétel is: a `009ee5d` merge commit teljes post-merge ellenőrzése és a fejlesztési napló frissítése. Ezt a Unit 4 munkától elkülönítve kezelném.
+
+## Mit ellenőriznék még a PR megnyitása előtt?
+
+A [Unit 4 elfogadott terve](https://github.com/CentralInfraCore/cic-primitive-forms/blob/main/docs/P3-UNIT4-POLICY-RESOLUTION.md?utm_source=chatgpt.com) alapján négy területet emelnék ki.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+- Öröklési tulajdonságok: `reset`, `no-inherit`, explicit `[]`, hiányzó policy és `unknown` esetén is a helyes réteg nyerjen. A korábban megtalált helyi szabályt egy későbbi ismeretlen ős ne írja felül.
+- Sorrendfüggetlenség: listaelemek és mapping-bejegyzések átrendezésekor a teljes eredmény egyezzen, beleértve a `layer` és `source_path` mezőket, nem csak a `rule` értékét.
+- Nem módosító működés: a PolicyResolution ne változtassa meg sem a normalizált objektumot, sem a `value_origins` oldaltérképet, sem a P2 provenance-et. A `denormalize` round-trip maradjon változatlan.
+- Hibás vagy hiányos kontextus: ciklusok, ismeretlen objektumok és hibás burkok kezelése legyen determinisztikus. Az `unknown` és `none` soha ne alakuljon implicit `open` vagy `owner` szabállyá.
+
+A `path_text` és `entry` `pub(crate)` láthatósága elfogadható belső újrafelhasználás, amennyiben nem változtatja meg a publikus API-t.
+
+A javasolt sorrendem: #52 post-merge gate indítása és naplózása; aztán Unit 4 property-tesztek, fuzz és seeded defects, lefedettség, mutációs tesztek; végül státuszdokumentáció és PR-nyitás.
+
+A `3a33e60` helyi commit forrását még nem tudtam önállóan átnézni, mert az ág nincs publikálva. Ezért most folytatási GO-t adok a minőségi kapuk befejezésére, nem végleges kódreview-t vagy merge-GO-t.
+
+A negyedik P3-egység eddigi eredménye alapján nincs szükség újabb architekturális döntési körre.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-22 14:03 — Claude
+
+~~~~~
+Glob scope, so the new files are included automatically. Running the coverage measurement.
+~~~~~
+
+
+### 2026-10-22 14:05 — Claude
+
+~~~~~
+Both mutation runs are going in the background. While they run, I'll update the docs.
+~~~~~
+
+
+### 2026-10-22 14:05 — Claude
+
+~~~~~
+Now the subset bullet, inserted before "What is refused".
+~~~~~
+
+
+### 2026-10-22 14:19 — Claude
+
+~~~~~
+Most Unit 4 gates are green; the mutation run found surviving mutants, and I'm adding refusal tests to kill them.
+
+**Where things stand:**
+- **Forms #52:** merged as `009ee5d`, and the post-merge check passed (26 checks, 24 passing, 0 failing).
+- **Committed on `feat/p3-policy-resolution`:** the Go and Rust code, properties, fuzz targets with canary wiring, and the seeded defects. All seeded defects are caught.
+- **Branch coverage gate:** passes (Rust 94.19%, Go 96.10%).
+- **Docs:** README, PHASES, the unit-4 design doc and the supported-subset doc are edited but not yet committed.
+- **Mutation:**
+  - Rust: 2 missed and 1 timeout out of 50.
+  - Go: about 28 survivors, mostly in the walker's refusal branches. Examples are a list value that isn't a list, an element that isn't a record, an element with no identity, and errors from nested positions.
+  - Two of them are the same cycle guard and the `inherit_policy_declared` flag.
+
+**Now:** I'm writing refusal tests for those branches in both languages, plus a cyclic-graph test and an "undeclared inherit_policy is ignored" property. Then I'll re-run mutation, commit, push and open the PR.
+~~~~~
+
+
+### 2026-10-22 14:21 — Claude
+
+~~~~~
+Now the Rust peers.
+~~~~~
+
+
+### 2026-10-22 14:22 — Claude
+
+~~~~~
+The import list was reformatted before my replace, so the names didn't get added. Fixing the import.
+~~~~~
+
+
+### 2026-10-22 14:22 — Claude
+
+~~~~~
+Re-running both mutation passes against the new tests.
+~~~~~
+
+
+### 2026-10-22 14:29 — Claude
+
+~~~~~
+**Hol tartok (Unit 4, PolicyResolution):**
+
+- **Kész és commitolva** a `feat/p3-policy-resolution` ágon (helyben, még nincs pusholva):
+  - Go és Rust kód, mind a 86 aranyvektor zöld
+  - tulajdonság-tesztek, fuzz célpontok kanárival, a CI-be kötve
+  - seeded defect tesztek, mind elkapva
+  - ágfedettség átmegy (Rust 94,19%, Go 96,10%)
+- **Forms #52:** mergelve, a merge utáni ellenőrzés zöld. A szál-naplót még nem frissítettem hozzá.
+- **Most fut:** a mutációs teszt újrafuttatása. Az első körben 2 Rust és kb. 28 Go túlélő maradt, főleg a hibaágakban. Erre írtam új hibateszteket (ciklus, hiányzó szülő, hibás szerkezetek, nem deklarált `inherit_policy`) mindkét nyelven. Ezek helyben zöldek, de még nincsenek commitolva.
+- **Még hátra van:**
+  1. A mutációs eredmény átnézése, és ha marad túlélő, további tesztek.
+  2. A dokumentáció (README, PHASES, SUBSET, 4. egység terve) szerkesztve van, de nincs commitolva.
+  3. Teljes tesztkészlet és lint újra, aztán push és PR.
+  4. A szál-napló frissítése és commitolása a cic-factory `main`-re.
+
+A PR még nem nyílt meg. A reviewer csak a folytatásra adott GO-t, a merge-hez új, a konkrét HEAD-hez kötött jóváhagyás kell.
+~~~~~
+
+
+### 2026-10-22 14:30 — Felhasználó
+
+~~~~~
+kb mennyi kódsor és összesen hány kódsor megy bele a repoba ezzel
+~~~~~
+
+
+### 2026-10-22 14:30 — Claude
+
+~~~~~
+Kerekítve:
+
+**Ez az ág hozzáad:** kb. **4100 sort** (+4113, −72, 42 fájl, a még nem commitolt tesztekkel együtt).
+
+| Kategória | Hozzáadott sor |
+|---|---|
+| Termékkód (Go + Rust forrás, fuzz célpontok) | kb. 1165 |
+| Teszt (Go + Rust) | kb. 1530 |
+| Testdata (`resolution.json`, 19 eset) | kb. 1290 |
+| CI és tooling (seeded defects, `p1.yml`) | kb. 50 |
+| Doksi (README, PHASES, SUBSET, terv) | kb. 45 |
+| Egyéb | kb. 30 |
+
+A `resolution.json` nagy része beágyazott séma- és YAML-szöveg, nem logika. Valódi új logika kb. 1165 sor termékkód, 1530 sor teszt.
+
+**Összesen a repóban Go + Rust kód (forrás, teszt, fuzz) ezzel együtt:** kb. **21 500 nem üres sor**. A testdata, a doksi és a tooling ebben nincs benne.
+
+A számok a worktree-ből vannak, nem szűrtem le az aláírási metaadatot vagy az üres sorokat a diffből.
+~~~~~
+
+
+### 2026-10-22 14:31 — Claude
+
+~~~~~
+**Fuzz célpontok** olyan programrészek, amelyeket a fuzzer véletlenszerű, mutált bemenetekkel bombáz, és azt nézi, hogy összeomlik-e, vagy sérül-e egy tulajdonság. A reposban már 6 volt (`parse`, `validate`, `access`, `expand`, `defaults`, `normalize`), én egy újat adtam hozzá: **`resolve`**.
+
+- **Go:** `FuzzResolvePolicy` (`go/fuzz_test.go`), natív Go fuzzing.
+- **Rust:** `rust/fuzz/fuzz_targets/resolve.rs`, cargo-fuzz.
+
+**Mit csinál a `resolve` célpont:** a véletlen bemenetet YAML-ként beolvassa, `normalize`-olja, majd ráfuttatja a `resolve_policy`-t. Ha a bemenet nem értelmezhető, eldobja. Ellenőrzései:
+- nem panikol;
+- nem módosítja a normalizált objektumot;
+- ha a gyökér policy-ja ismeretlen, ugyanazok a pozíciók jönnek ki;
+- ismeretlen gyökérnél soha nem lesz `open` vagy `owner` rendszer-szabály.
+
+**Kanári:** mindegyik célponthoz tartozik egy kanári-bemenet (`CANARY`). Ha be van kapcsolva a `CIC_FUZZ_CANARY`, a célpontnak szándékosan buknia kell. Így a CI bizonyítja, hogy a fuzz-lépés tud pirosra váltani. Mindkét nyelven kipróbáltam: kapcsolóval bukik, kapcsoló nélkül átmegy. A `p1.yml`-be kötöttem, a CI-ban 60 másodpercet fut célpontonként. Helyben 20–30 másodpercig futtattam hibátlanul.
+
+**Mutáció, közben:** a Rust-oldalon 0 túlélő maradt, a 2 timeout a körkörösség-védelem kiütése miatti végtelen ciklus. A Go-ban 16 túlélő maradt. Az ok, hogy a hibateszteim csak azt nézik, hogy hiba jön, azt nem, hogy melyik. Ezért az egyes esetekhez a konkrét hibaüzenetet is ellenőrizni fogom, aztán újrafuttatom.
+~~~~~
+
+
+### 2026-10-22 14:32 — Felhasználó
+
+~~~~~
+a fejlesztés melyik pontján van ez a commit
+~~~~~
+
+
+### 2026-10-22 14:32 — Claude
+
+~~~~~
+**A P3 fázis negyedik, utolsó egységénél tart.** Ez a `feat/p3-policy-resolution` ág (helyben, nincs pusholva).
+
+**A sor eddig:**
+1. P1: parse, validate, emit (kész)
+2. P2: expand és collapse (kész)
+3. P3 1. egység: `policy_surface` és `identity.base` (#44, mergelve)
+4. P3 2. egység: Role és sémaalapértékek (#45, mergelve)
+5. P3 3. egység: `normalize` / `denormalize` (#49, mergelve)
+6. P3 4. egység: **PolicyResolution**. A terv mergelve (#50). A pin-bővítés mergelve (#52, `009ee5d`). A kód Go-ban és Rustban megvan, a minőségi kapuk nagy része zöld, de PR még nincs.
+
+**Ezen belül a 4. egység állapota:**
+- kész: kód, aranyvektorok, közös esetek, tulajdonság-tesztek, fuzz, seeded defects, ágfedettség;
+- folyamatban: a mutációs tesztek utolsó köre (a Rust tiszta, a Gone még finomítom a hibatesztjeimet);
+- hátra: doksi commit, teljes tesztkészlet újra, push, PR, review, merge.
+
+**Mi jön utána:** a P3 ezzel lezárul. A Forms tervezett következő lépése a P3 záró dokumentáció, majd az integrációs interfész a Relay felé (a prioritáslista szerint: Forms P1 lezárás, P2, P3, integráció). A VCN mint első fogyasztó közben le van fagyasztva.
+
+Ha nem erre a commitra gondoltál (például a `3a33e60`-ra vagy a szál-napló commitra), szólj, és arra válaszolok.
+~~~~~
+
+
+### 2026-10-22 14:42 — Felhasználó
+
+~~~~~
+akkor most hol tartunk még mindig mutálsz
+~~~~~
+
+
+### 2026-10-22 14:42 — Claude
+
+~~~~~
+Igen, még mutációs körben vagyok. A Go-oldalon 16 túlélő maradt, ezeket most zárom le: pontosabb hibaellenőrzés a tesztekben, utána egy utolsó futtatás.
+~~~~~
+
+
+### 2026-10-22 14:43 — Claude
+
+~~~~~
+Still on the mutation survivors. The Rust test edit didn't apply because `cargo fmt` had reformatted the block, so I'm looking at its current shape.
+~~~~~
+
+
+### 2026-10-22 14:43 — Claude
+
+~~~~~
+Debug formatting escapes the quotes. Matching on the unescaped part instead.
+~~~~~
+
+
+### 2026-10-22 14:46 — Claude
+
+~~~~~
+Reference confirms: deny / RESET_NO_LOCAL_RULE. Adding the scenario to both languages and cleaning up the dead conditions.
+~~~~~
+
+
+### 2026-10-22 15:05 — Claude
+
+~~~~~
+Still finishing the last Go mutation numbers. About 78 killed and 5 survivors so far (roughly 94%).
+~~~~~
+
+
+### 2026-10-22 15:06 — Claude
+
+~~~~~
+**Hol tartunk:** a mutációs kör végén, utána jön a lezárás.
+
+**Mutáció:**
+- Rust: 0 túlélő. A 2 timeout a körkörösség-védelem kiütése miatti végtelen ciklus, a kapu ezt elkapottnak számolja.
+- Go: 78 megölt, 5 túlélő (kb. 94%). Még fut az utolsó néhány mutáns, a végső szám ezután jön.
+- A túlélők zöme egyenértékű mutáns vagy elérhetetlen ág, például egy nem kötelezően visszatérő hibaág. Ezekből kettőt kódegyszerűsítéssel megszüntettem. A kapu küszöbe 90% fölött van, így átmegy.
+
+**Már kész és zöld:**
+- a Go és Rust kód, a 86 aranyvektor és a közös esetek;
+- a tulajdonság-tesztek, a fuzz és a kanári;
+- a seeded defect tesztek, mind elkapva;
+- az ágfedettség (Rust 94,19%, Go 96,10%, a legutóbbi mérés).
+
+**Hátra van:**
+1. A Go mutáció végeredménye.
+2. Új ágfedettség-mérés, mert a kód kicsit változott.
+3. Teljes teszt és lint, utána commit.
+4. Push, PR nyitása, a #52 szál-naplójának commitolása.
+
+Szerintem a következő ~15–20 perc, és a PR nyitásánál tartunk.
+~~~~~
+
+
+### 2026-10-22 15:11 — Claude
+
+~~~~~
+A PR megnyílt (#53). Most a #52 lezárása utáni napló-frissítést csinálom, a cic-factory `main`-re.
 ~~~~~
