@@ -34,6 +34,13 @@ van a hiba, ott javítsd — a `cic-factory-core` issue-i között.
 Kivétel: `tools/relay-build-test.sh` — CIC-Relay buildet hajt, szándékosan nem
 került a magba.
 
+Kivétel még: a PR-lezáró eszközök itt készültek, nem a magban — `tools/ci-gate.py`
+(`check`, `watch`, `merge`, `land`, `post-merge`, `late-advisory`; [`docs/ci-gate.md`](docs/ci-gate.md)),
+`tools/pr-status.py` ([`docs/pr-status.md`](docs/pr-status.md)), a `tools/vcn-pipeline/`
+([`docs/vcn-pipeline.md`](docs/vcn-pipeline.md)) és a `.claude/commands/land-pr.md`. Új fájlok, ezért
+az átvétel nem írja felül őket; hosszú távú otthonuk a `cic-factory-core` (külön feladat). A `land` /
+`/land-pr` **nem ír jóváhagyást**: csak GitHubon, a tulajdonos által rögzítettet fogad el.
+
 ---
 
 ## Session-napló (thread log)

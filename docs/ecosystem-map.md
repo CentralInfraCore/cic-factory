@@ -22,6 +22,9 @@ Forrás: `jobs/map-private-source`, `jobs/deep-inspect-private-repos` output-ok 
 | `cic-network` | *(archivált)* | `cic-network.git` | **Archivált 2026-09-09** — tartalma migrálva: `cic-schema-registry/general/network/` |
 | `cic-storage` | *(archivált)* | `cic-storage.git` | **Archivált 2026-09-09** — tartalma migrálva: `cic-schema-registry/general/storage/` |
 | `cic-yang` | *(archivált)* | `cic-yang.git` | **Archivált 2026-09-09** — tartalma migrálva: `cic-schema-registry/standards/yang/` |
+| `cic-primitive-forms` | `.../CentralInfraCore/cic-primitive-forms` | `cic-primitive-forms.git` | Séma-vezérelt primitív-feldolgozó könyvtár (Rust + Go, egy közös corpus). **Állapot (2026-10-22):** P0–P2 kész (parse, emit, séma-kötött validáció, `expand`/`collapse`); P3-ból az egységek 1–3 mergelve (`policy_surface`, Role és alapértékek, `normalize`/`denormalize`, az érték eredetével); a `PolicyResolution` terv (#50), kód nincs; diff/patch, referencia-feloldás és materializáció nincs elkezdve. Nem hoz jogosultsági döntést, nem második engine |
+| `cic-primitive-engine` | `.../CentralInfraCore/cic-primitive-engine` | `cic-primitive-engine.git` | Conformance, drift, digest és receipt-ellenőrzés (Rust + Go); a Forms eredményét nem értelmezi újra |
+| `cic-module-oracle-cloud` | `.../CentralInfraCore/cic-module-oracle-cloud` | `cic-module-oracle-cloud.git` | OCI provider-modul (WASM); a read-only observed-state normalizálás implementált, az `Observe`-ba nincs bekötve (scaffold) |
 | `base-repo` | `.../base` | `base-repo.git` | Sablon repo: Makefile, CI, docs struktúra |
 | `ois-github` | `.../OpenIntentSign/github` | `OpenIntentSign/.github.git` | OIS trust modell spec (nem implementáció) |
 | `cic-factory` | `${CIC_WORKDIR}` | `cic-factory.git` | Agent factory (ez a repo) |
