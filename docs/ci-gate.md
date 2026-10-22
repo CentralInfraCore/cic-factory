@@ -92,3 +92,25 @@ jóváhagyást a tulajdonostól várja: azt a tulajdonos rögzíti GitHubon (rev
 **Nyitott, a tulajdonosé:** az `update-branch` után a jóváhagyás újra kell. Egy `merge-approved: <sha> base-merges-ok` forma, amely a
 célág beleolvasztásán átvihető, ellenőrizhető lenne (a két HEAD közti commitok mind merge commitok, amelyek második szülője a célágon van), de
 nem ellenőrzi, mit tartalmaz egy kézzel feloldott merge; ezért nincs megvalósítva, amíg a tulajdonos nem dönt róla.
+
+## `land-chain.sh` - függőségi sorrendű lezárás a tulajdonos saját utasításával
+
+`tools/land-chain.sh [--dry-run] OWNER/REPO REQUIRE_FILE POSTMERGE_FILE N:TELJES_SHA [N:TELJES_SHA ...]`
+
+Az a változat, amikor nincs GitHubon rögzített jóváhagyás, hanem a **tulajdonos maga adja az utasítást**: a lista (sorrendben, teljes
+40 karakteres HEAD-ekkel) az utasítás. A tulajdonos futtatja (`! tools/land-chain.sh ...` a Claude Code promptban, vagy terminálban);
+a szkript nem ír jóváhagyást GitHubra, és csak a listán szereplő PR-t mergeli. Minden elemre, sorban:
+
+1. a PR HEAD-je még a megadott SHA-e (mozdult = új utasítás kell, megáll);
+2. kivárja (`ci-gate.py watch`), hogy a `REQUIRE_FILE` minden ellenőrzése sikeres legyen azon a HEAD-en (piros vagy lejárat: megáll);
+3. a PR nyitott, nem draft, nem ütközik;
+4. `gh pr merge --squash --match-head-commit SHA`;
+5. kivárja a `POSTMERGE_FILE` készletet a merge-commiton. Ha nem zöld, a lánc megáll: a következő PR nem kerül egy olyan `main`-re, amit
+   az előző elrontott. A lánc együttes működését ez a merge-commit ellenőrzés bizonyítja, elemről elemre.
+
+Az első problémánál megáll és kimondja, melyik elem és miért; a már mergelt elemek maradnak (semmit nem von vissza). A `--dry-run`
+csak olvas és jelent (HEAD, mergelhetőség, az ellenőrzések állapota). Kilépési kód: 2 hibás hívás, 3 mozdult a HEAD, 4 nem zöld, 5 nem
+mergelhető, 6 a merge elbukott, 7 a post-merge nem zöld.
+
+Függőség (a `ci-gate.py land --after` párja, jóváhagyás nélkül): a sorrend a lista sorrendje. Ha a lista egyik PR-ja a másik után
+ütközne, azt előre fel kell oldani (új HEAD, új utasítás); a szkript nem old fel konfliktust és nem frissíti az ágat.
