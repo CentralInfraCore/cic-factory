@@ -26,17 +26,20 @@ ALL_OK = [run(n) for n in REQ]
 
 class Fake:
     def __init__(self, runs=None, head=H, mergeable=True, state="open", draft=False, statuses=None, merged=False,
-                 reviews=None, comments=None, base=("main", "base0")):
+                 reviews=None, comments=None, base=("main", "base0"), behind=0):
         self.runs = ALL_OK if runs is None else runs
         self.head, self.mergeable, self.state, self.draft = head, mergeable, state, draft
         self.statuses, self.merged = statuses or [], merged
         self.reviews = [] if reviews is None else reviews
         self.comments = [] if comments is None else comments
         self.base = list(base)
+        self.behind = behind
         self.asked = []
 
     def __call__(self, path):
         self.asked.append(path)
+        if path.startswith("repos/o/r/compare/"):
+            return {"behind_by": self.behind}
         if path.startswith("repos/o/r/pulls/7/reviews"):
             return self.reviews
         if path.startswith("repos/o/r/issues/7/comments"):
@@ -355,13 +358,11 @@ class LandFake(Fake):
     """The fake of one PR that is also followed over time: `script` is a list of functions, one called per sleep, that change
     the state the way the world does between two looks (CI finishes, an approval is written, the base moves, a dependency merges)."""
 
-    def __init__(self, behind=0, deps=None, script=(), **kw):
+    def __init__(self, deps=None, script=(), **kw):
         super().__init__(**kw)
-        self.behind, self.deps, self.script = behind, deps or {}, list(script)
+        self.deps, self.script = deps or {}, list(script)
 
     def __call__(self, path):
-        if path.startswith("repos/o/r/compare/"):
-            return {"behind_by": self.behind}
         for k, v in self.deps.items():
             if path.startswith(k):
                 return v
@@ -508,6 +509,54 @@ class Landing(unittest.TestCase):
         _, gh, _ = land(f, keep_current=True)
         for c in gh.calls:
             self.assertTrue(c[:2] == ["pr", "merge"] or c[:4] == ["api", "-X", "PUT", "repos/o/r/pulls/7/update-branch"], c)
+
+
+class Freshness(unittest.TestCase):
+    """The last look before a merge also asks how far the head is behind its base (the CI of a stale base is not the merge result)."""
+
+    def merge(self, fake):
+        gh = Gh(fake)
+        lines = []
+        return cg.merge(fake, R, N, H, REQ, {"owner"}, gh=gh, say=lines.append), gh, lines
+
+    def test_a_head_behind_its_base_is_never_merged_even_when_green_and_approved(self):
+        code, gh, lines = self.merge(Fake(behind=3, reviews=[approved()]))
+        self.assertEqual((code, gh.calls), (1, []))
+        self.assertIn("3 commit(s) behind main", lines[-1])
+
+    def test_a_head_that_falls_behind_between_the_two_readings_is_not_merged(self):
+        f = Fake(reviews=[approved()])
+        reads = []
+        orig = f.__call__
+
+        def get(path):
+            if path.startswith("repos/o/r/compare/"):
+                reads.append(path)
+                return {"behind_by": 0 if len(reads) == 1 else 1}  # the base moved after the first look
+            return orig(path)
+        gh, lines = Gh(f), []
+        code = cg.merge(get, R, N, H, REQ, {"owner"}, gh=gh, say=lines.append)
+        self.assertEqual((code, gh.calls), (1, []))
+        self.assertIn("behind", lines[-1])
+
+    def test_land_does_not_merge_a_head_that_fell_behind_after_it_was_judged_green(self):
+        f = LandFake(reviews=[approved()])
+        seen = []
+        orig = f.__call__
+
+        def get(path):
+            if path.startswith("repos/o/r/compare/"):
+                seen.append(1)
+                return {"behind_by": 0 if len(seen) == 1 else 2}  # fresh when land looked, behind at the last look
+            return orig(path)
+        gh, lines, clock = Gh(f), [], Clock()
+        code = cg.land(get, R, N, REQ, {"owner"}, gh=gh, sleep=clock.sleep, now=clock.now, say=lines.append, interval=10, max_wait=50)
+        self.assertEqual((code, gh.calls), (1, []))
+        self.assertIn("behind", lines[-1])
+
+    def test_a_fresh_head_still_merges(self):
+        code, gh, _ = self.merge(Fake(reviews=[approved()]))
+        self.assertEqual((code, len(gh.calls)), (0, 1))
 
 
 if __name__ == "__main__":

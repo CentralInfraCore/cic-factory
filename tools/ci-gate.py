@@ -101,6 +101,8 @@ def read(get, repo, n, head, required, advisory=()):
     out = {"head_now": now, "state": pr.get("state"), "base": pr["base"]["ref"], "draft": bool(pr.get("draft")),
            "mergeable": {True: "yes", False: "no", None: "unknown"}[pr.get("mergeable")],
            "base_sha": get("repos/%s/git/ref/heads/%s" % (repo, pr["base"]["ref"]))["object"]["sha"]}
+    # how far the head is behind its base: a CI that ran on a stale base says nothing about the merge result
+    out["behind"] = get("repos/%s/compare/%s...%s" % (repo, pr["base"]["ref"], now)).get("behind_by", 0)
     if now != head:
         out["verdict"] = "HEAD-MOVED"
         return out
@@ -192,7 +194,7 @@ def watch(get, repo, n, head, required, interval, max_wait, advisory=(), sleep=t
         sleep(interval)
 
 
-SNAPSHOT = ("head_now", "state", "base", "base_sha", "draft", "mergeable", "verdict", "failing", "waiting")
+SNAPSHOT = ("head_now", "state", "base", "base_sha", "behind", "draft", "mergeable", "verdict", "failing", "waiting")
 
 
 def merge(get, repo, n, head, required, approvers, dry_run=False, gh=run_gh, say=print, advisory=()):
@@ -212,6 +214,9 @@ def merge(get, repo, n, head, required, approvers, dry_run=False, gh=run_gh, say
         return 1
     if r["mergeable"] != "yes":
         say("REFUSED: GitHub says mergeable=%s" % r["mergeable"])
+        return 1
+    if r["behind"]:
+        say("REFUSED: the head is %d commit(s) behind %s; its CI does not describe the merge result" % (r["behind"], r["base"]))
         return 1
     # the last look, as close to the merge as it goes: the whole environment must be the one that was judged
     again = read(get, repo, n, head, required, advisory)
@@ -288,7 +293,7 @@ def land(get, repo, n, required, approvers, after=(), keep_current=False, post_m
         if pr.get("mergeable") is False:
             say("STOPPED: GitHub cannot merge %s into %s (conflict): resolve it, then land again" % (head[:12], base))
             return 1
-        behind = get("repos/%s/compare/%s...%s" % (repo, base, head)).get("behind_by", 0)
+        behind = get("repos/%s/compare/%s...%s" % (repo, base, head)).get("behind_by", 0)  # also read() and merge() look at it
         if behind and not pending_dep:
             if not keep_current:
                 say("REFUSED: the head %s is %d commit(s) behind %s; its CI does not describe the merge result (use --keep-current)" % (head[:12], behind, base))

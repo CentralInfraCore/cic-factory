@@ -78,7 +78,8 @@ commitot pedig a (HEAD-hez kötött, GitHubról olvasott) jóváhagyás rögzít
    jóváhagyása **nem** vihető át, az új HEAD új jóváhagyást kér. Nélküle elutasít. A GitHub saját `mergeable_state: behind` jelzése
    csak akkor jön, ha a célágon kötelező az up-to-date ág, ezért a távolságot az eszköz maga méri (`compare`);
 5. CI: PENDING vár, RED megáll, GREEN megy tovább (az advisory kapuk nem tartják fel, mint eddig);
-6. jóváhagyás erre a HEAD-re: ha nincs, vár (egyszer kiírja, mire), ha van, ugyanaz a `merge` fut két olvasással.
+6. jóváhagyás erre a HEAD-re (a `merge` — a `land` és a külön hívott `merge` is — az utolsó két olvasásban újra megméri a célághoz képesti
+   elmaradást, és elmaradt HEAD-et nem mergel, bármilyen zöld és jóváhagyott; ha közben mozdult a célág, a két olvasás eltér és elutasít): ha nincs, vár (egyszer kiírja, mire), ha van, ugyanaz a `merge` fut két olvasással.
 
 Kilépési kód: 0 mergelve (és a post-merge készlet sikeres), 1 elutasítva vagy megállt, 4 lejárt a `--max-wait`, miközben még várt, 2 nem
 olvasható. A `--dry-run` semmit nem ír (sem merge-et, sem `update-branch`-et). Az egyetlen írás a `gh pr merge --match-head-commit` és az
