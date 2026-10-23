@@ -1,6 +1,6 @@
 # Thread-napló — 2026-10-21 (Forms P1–P3, ci-gate)
 
-Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T13:15:03Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl` (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
+Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T16:14:36Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl` (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
 
 
 ### 2026-10-21 05:57 — Claude
@@ -10420,4 +10420,892 @@ Melyik legyen? Alapértelmezésben, ha a parancsot lefuttatod, az E2 az ma zöld
 
 ~~~~~
 A PR #72 beolvadt: `92aea31`. Következik az utómunka: a main post-merge CI-ja és a szálnapló frissítése (állandó szabály).
+~~~~~
+
+
+### 2026-10-23 13:15 — Claude
+
+~~~~~
+A szálnapló commitolva és pusholva (`cecfa13`). Most a Go-mérés eredményét nézem, mert a követő PR ettől függ.
+~~~~~
+
+
+### 2026-10-23 13:15 — Claude
+
+~~~~~
+Az E2 beolvadt és a napló kész. A Go-mérés még fut a javított kóddal.
+
+- **Merge:** a PR #72 `92aea31`-ként van a `main`-en. Az utólagos CI (`corpus`, `p1`) éppen fut, az eredményt jelentem.
+- **Szálnapló:** commitolva és pusholva a cic-factory `main`-re (`cecfa13`).
+- **Követő PR:** ez viszi a szkript hibajavítását (a tree-másolat `corpus/`-a és az alapvonal-ellenőrzés), az egyszerűsítéseket, az új teszteket és a Rust paritásos esetet. A Go diff-pontszámot csak a mostani mérés után tudom, 87,1%-ról kell a 90% fölé jutnia.
+- **Gyorsítók (3 db):** ugyanebbe a körbe tartoznak, a `feat/mutation-dev-loop` ágat az új `main`-re rebase-elem, és külön PR-ban küldöm.
+~~~~~
+
+
+### 2026-10-23 13:16 — Felhasználó
+
+~~~~~
+illetve 10p nagyobb folyamatok sardolását legálább helyi szinten
+~~~~~
+
+
+### 2026-10-23 13:16 — Claude
+
+~~~~~
+Rendben, a >10 perces folyamatok helyi shardolását belevezetem a gyorsítók közé. A legnagyobb helyi tétel a seeded defects (CI-ban 10 perc, helyben egymás után, defektenként teljes suite). Ezt valósítom meg először, a többit a doksiba írom.
+~~~~~
+
+
+### 2026-10-23 13:16 — Claude
+
+~~~~~
+The szöveg ott van, csak a sortörés miatt nem találta a minta (a `sub` assertje állt meg, semmi nem íródott). Újrafuttatom pontos mintával.
+~~~~~
+
+
+### 2026-10-23 13:16 — Claude
+
+~~~~~
+Most a doksiba is felveszem, mit shardolunk helyben, aztán megnézem a Go-mérést.
+~~~~~
+
+
+### 2026-10-23 13:17 — Claude
+
+~~~~~
+Megvan a seeded defects helyi shardolása: `--shard K/N`, a `prepush.sh` alapból 3 folyamatot indít, és ellenőriztem, hogy a shardok mindkét nyelvnél pontosan egyszer fedik le az összes defektet. A doksiba új 9.3 szakasz került: mit, mivel és mekkora shardolással futtatunk helyben.
+
+- **Mutáció:** Rustban már megvan a `--jobs`, a Go fájlonként külön folyamat. A ~100 mutánsnál nagyobb fájl vágása a 9.2 terv.
+- **Fuzz:** célonként külön folyamat tervben van, de a `prepush` nem fuzzol.
+- **Teljes mutáció:** helyben nem fut. A CI-s `shard_plan.py` ugyanezt a tervet adná párhuzamos helyi folyamatokban, ha kell.
+- **Korlát:** a shardok számát a memória korlátozza, nem a magok. Minden folyamat saját fa- és target-másolatot tart.
+
+A Go-mérés még fut a javított kódon és tesztekkel. Amint kész, jelentem az új Go diff-pontszámot.
+~~~~~
+
+
+### 2026-10-23 13:17 — Felhasználó
+
+~~~~~
+bocsi lehet hogy többszállusítás miegymás
+~~~~~
+
+
+### 2026-10-23 13:17 — Claude
+
+~~~~~
+Semmi baj. A többszálúsítás jó irány volt, ez már be is került. A Go-mérés lassúságáért nem te vagy a felelős: a javított szkript egy fájlra egy folyamatot indít, és közben ugyanazon a gépen fut más is. Megnézem, hol tart.
+~~~~~
+
+
+### 2026-10-23 13:17 — Claude
+
+~~~~~
+Jól halad: eddig 109 mutánst ölt meg a tesztkészlet, 1 túlélő, 9 a diffen kívül. A terhelés ~11,6 a 12 magon, ezért lassabb, de elfér a memóriában. A végén megnézem a túlélőt és a pontszámot.
+~~~~~
+
+
+### 2026-10-23 13:17 — Felhasználó
+
+~~~~~
+fuzz is fent eléggé lassu volt :P
+~~~~~
+
+
+### 2026-10-23 13:17 — Claude
+
+~~~~~
+Igen, a CI-ban a `fuzz` job 17 perc 44 mp volt a PR #72-nél, a második leghosszabb lépés a mutáció mögött. Ez egy lépésben, sorban fut: Go 8 cél × 60 mp, utána Rust 8 cél × 60 mp és a build.
+
+A tervben (9.2) a javítás: célonként egy matrix-job, hogy a célok egymás mellett fussanak. Az idő így a leghosszabb cél ideje lenne (60 mp fuzz + build), kb. 3-4 perc, 17 helyett. A fuzz-idő célonként nem rövidül, és a hibás cél nevén jelenik meg.
+
+Ezt negyedik elemként felveszem a gyorsítók sorába, külön PR-ban a másik három után, mert a `p1.yml`-t érinti (`full` módú CI-futást von maga után). A canary-bizonyítás is célonként marad.
+
+Közben az E2 Go-mérése még fut, jelentem, ha kész.
+~~~~~
+
+
+### 2026-10-23 13:28 — Claude
+
+~~~~~
+A követő PR ellenőrzése fut. Az eredménye alapján commitolom és nyitom a PR-t, az elején említett Go-pontszámmal (99,23%, egy megnevezett túlélő).
+~~~~~
+
+
+### 2026-10-23 13:28 — Felhasználó
+
+~~~~~
+hol tart az ellenőrzés?
+~~~~~
+
+
+### 2026-10-23 13:29 — Claude
+
+~~~~~
+A `--stale-only` mód nincs a `main`-en (az a gyorsító-ágon van), ezért ez a parancs a teljes seeded defects futást indította el, és 1 hibával jött vissza. Megnézem, melyik.
+~~~~~
+
+
+### 2026-10-23 13:29 — Claude
+
+~~~~~
+A Rust-hiba a megosztott `CARGO_TARGET_DIR` miatt volt (egy másik munkafa fordítása). A saját target-mappával minden Rust-teszt zöld. Ez a helyi környezet álriasztása volt, nem a kód hibája.
+
+A kérdésedre: igen, a külső CI pont ezeket hozza elő, és az E2-nél elő is hozta. A PR #72 teljes mutációs, coverage-, seeded-defect- és fuzz-kapui mind zölden mentek, a helyi diff-mérésem nélkül is. A helyi gép három dolgot adott, amit a CI nem:
+- **Gyorsabb visszajelzés:** a CI-kör ~30 perc, helyben a célzott mérés pár perc.
+- **A diff-szabály korai ismerete:** a diff-kapu 90%-os küszöbe az éles CI-ben jön majd, ezt jó előre látni.
+- **Elkapott saját hibák:** a 87%-os Go-szám valódi volt, és a javítás tényleg javított rajta.
+
+Az ára is látszik: a helyi eszköz egyszer hamis 100%-ot adott, ma pedig álriasztást. Ezért a javaslatom:
+- **Tartsam meg:** a gyors, célzott részt (`WORKTREE=1` + `TESTS`, `--stale-only`, `--shard`), mert az pár perc, és nem akar a CI lenni.
+- **Ne építsek:** teljes CI-másolatot (`make prepush` a coverage-gel és a teljes suite-tal). Azt a CI jobban és megbízhatóbban csinálja, ezért a `prepush`-t lecsupaszítom a stale-ellenőrzésre és a célzott diff-mutációra.
+- **Hagyjam a CI-re** a lassú és környezetfüggő lépéseket, és közben dolgozzak másik PR-on, nem várjak rá.
+
+Ha egyetértesz, a gyorsítók PR-ja ennek megfelelően szűkebb lesz. A követő PR-t pedig most csak a olcsó helyi ellenőrzéssel küldöm, a többit a CI mondja meg.
+~~~~~
+
+
+### 2026-10-23 13:31 — Felhasználó
+
+~~~~~
+csináld
+~~~~~
+
+
+### 2026-10-23 13:31 — Claude
+
+~~~~~
+Elsőként a követő PR. Csak az olcsó ellenőrzés kell hozzá: a seeded-defect szövegek illeszkedése a módosított Go-kódra.
+~~~~~
+
+
+### 2026-10-23 13:31 — Claude
+
+~~~~~
+Egy seeded-defect szöveg elavult: a lapos `p != nil` feltétel eltűnt a flow-ellenőrzésből. Javítom, aztán commit, push, PR.
+~~~~~
+
+
+### 2026-10-23 13:32 — Claude
+
+~~~~~
+A PR #73 megnyílt: https://github.com/CentralInfraCore/cic-primitive-forms/pull/73. Elindítom a CI figyelését, közben a gyorsítók szűkített változatát készítem el.
+~~~~~
+
+
+### 2026-10-23 13:33 — Claude
+
+~~~~~
+Megnézem, miért lett a PR #73 is `full`.
+~~~~~
+
+
+### 2026-10-23 13:33 — Claude
+
+~~~~~
+A scope most `mode=diff`. Commitolom és pusholom az új HEAD-et (ez lecseréli a futó `full` CI-t), majd megnézem a gyorsító-próba eredményét.
+~~~~~
+
+
+### 2026-10-23 13:34 — Claude
+
+~~~~~
+**Miért lett `full`:** három új sort tettem meglévő tesztfüggvények belsejébe (Go belső teszt, Go edge-case teszt, Rust edge-case teszt). A diff-kapu osztályozója csak teljesen új, felső szintű tesztfüggvényt fogad el tiszta bővítésnek, mást `full`-nak vesz (`corpus_test.go:1270`, `sourcespan_internal_test.go:30`, `corpus.rs:1544`). Ez a te szabályod, én szegtem meg.
+
+**Mit tettem:**
+- Az új eseteket új, önálló tesztfüggvényekbe vittem (Go: 2, Rust: 1), a viselkedés ugyanaz.
+- Helyben ellenőriztem a `diff_gate.py scope`-pal: `mode=diff`. Ezt előbb kellett volna futtatnom, másodpercekbe kerül.
+- Az új HEAD `73fab0b`, pusholva. A CI-t figyelem, most már diff módban kell futnia.
+
+**Gyorsító-ág:** a `make quick` próbája működik. Az ideiglenes, tesztelés nélküli függvény mutánsait túlélőként jelezte, tehát tud bukni. A célzott szűrő miatt más mutánsok is túlélőnek látszottak, ez a doksiban leírt viselkedés (alsó becslés). A gyorsítók PR-ja még nincs nyitva, a #73 merge után rebase-elem.
+~~~~~
+
+
+### 2026-10-23 13:34 — Claude
+
+~~~~~
+Megnézem, mi van a #73 diff-mutációs jobjában, hol jön ki a 166.
+~~~~~
+
+
+### 2026-10-23 13:35 — Claude
+
+~~~~~
+A változott Go-sorok csak 7 kis tartomány (~17 sor), ehhez viszont ~100+ mutáns nem illik. Megnézem, mit tekint a kapu "a diffben lévőnek".
+~~~~~
+
+
+### 2026-10-23 13:35 — Claude
+
+~~~~~
+Futtatom a #73 valódi diffjére, hogy lássam: a 166 az összes felsorolt mutáns, vagy tényleg ennyi esik a változott sorokra. Ha tényleg ennyi, az hiba a sorszintű szabályban, és javítani kell. A számot jelentem, ha kész.
+~~~~~
+
+
+### 2026-10-23 13:35 — Felhasználó
+
+~~~~~
+Run # The exit status of cargo-mutants says whether mutants survived; the gate decides that.
+Found 166 mutants to test
+ok       Unmutated baseline in 11s build + 6s test
+~~~~~
+
+
+### 2026-10-23 13:35 — Claude
+
+~~~~~
+Ez a cargo-mutants (Rust) naplója: "Found 166 mutants to test". A #73-nál a Rust-diff üres (`rust ranges=0`), tehát ott 0 mutánsnak kellene lennie. Megnézem, melyik job írta ezt a CI-ban.
+~~~~~
+
+
+### 2026-10-23 13:36 — Claude
+
+~~~~~
+Most diff módban fut a #73. A 166 a `diff-mutation-rust` jobból jön. Ellenőrzöm, hogyan kezeli az üres Rust-patch-et a workflow.
+~~~~~
+
+
+### 2026-10-23 13:36 — Claude
+
+~~~~~
+Ez a 166 nem a diff-mutációból jön. A #73 Rust-diff jobja ezt írta: `Diff file is empty`, `mutants in the diff: 0`, vagyis a diff-kapu jól működik. A felmásolt `Found 166 mutants to test` egy **full módú shard** naplója: a PR #72 és a #73 előző HEAD-jének `quality-mutation-rust (n)` jobjai, amelyek között az egyik a te beillesztett sorod.
+
+**Mi a helyzet a #73 diff módjában (helyben mérve):**
+- Rust: 0 mutáns, mert nincs változott Rust-sor.
+- Go: 14/14 elkapva (100%), 117 mutáns a diffen kívül esik.
+- A CI-ben a `quality-mutation-*` jobok `skipping`, a `diff-mutation-*` futnak. Tehát a diff-mód már él.
+
+**A te kérdésed lényege, hogy a full shardok túl nagyok.** Egy Rust-shard 166 mutánst visz, a célunk pedig ~100. Hat shardnál ez ~1000 Rust-mutánst jelent összesen. A javítás a shardszám emelése úgy, hogy egy shardra legfeljebb ~100 mutáns jusson (Rust ~10, a Go-nál hasonlóan a méret szerint), és a kapu teljességi ellenőrzése a shardok összegét továbbra is a teljes ellen vizsgálja. Ez a `p1.yml` mátrixát és a `shard_plan.py` terhelés-tervét érinti, ezért külön PR, és az is full futást von maga után.
+
+Ezt felveszem a gyorsítók sorába a fuzz-mátrix mellé (ugyanaz a ~100-as egységelv). Jöhet ez a sorrend: #73 merge, majd shardméret + fuzz-mátrix egy PR-ban, végül a `make quick`?
+~~~~~
+
+
+### 2026-10-23 13:37 — Felhasználó
+
+~~~~~
+nem azt mondtam hogy ~100 legyen egy shard-ba és 10p ne fuson tovább lehetőleg egy rész?
+~~~~~
+
+
+### 2026-10-23 13:37 — Claude
+
+~~~~~
+Igen, két korlátot mondtál: **legfeljebb ~100 mutáns egy shardban, és egy rész ne fusson 10 percnél tovább.** A tervemben csak az elsőt írtam le, a másodikat elejtettem. A két korlát külön is számít: a CI-ben a Rust-shardok 16–25 percesek, a Go-shardok 10–17 percesek, tehát most mindkettő sérül. Megnézem a tényleges költségadatokat, hogy a számot ne becsüljem.
+~~~~~
+
+
+### 2026-10-23 13:38 — Claude
+
+~~~~~
+A tervfejezetben (`docs/DELTA-DIFF-GATE.md`, `wt-loop2`) mostantól mindkét korlát szerepel. A számolt shardszám a mérési adatokkal együtt le van írva. Nincs commitolva, mert az a gyorsítók PR-jának része.
+
+Közben a #73 diff-módú CI-je fut. Ha zöld, jön a merge-parancs a pontos HEAD-del.
+~~~~~
+
+
+### 2026-10-23 13:38 — Felhasználó
+
+~~~~~
+faszom tedd bele azokat a javításokat a 73-ba ne húzd az időt
+~~~~~
+
+
+### 2026-10-23 13:39 — Claude
+
+~~~~~
+Átveszem a gyorsítókat a #73-ba. Előbb helyben ellenőrzöm a scope-ot, hogy ne legyen megint `full`.
+~~~~~
+
+
+### 2026-10-23 13:39 — Claude
+
+~~~~~
+Mind bekerül, a `mutation_diff_exec.sh` is, bár az `full` módot von maga után (a kapu mérését érinti, így ez jogos). Commit és push.
+~~~~~
+
+
+### 2026-10-23 13:39 — Felhasználó
+
+~~~~~
+[Request interrupted by user for tool use]
+~~~~~
+
+
+### 2026-10-23 13:39 — Felhasználó
+
+~~~~~
+akkor azt ne full az menjen külön
+~~~~~
+
+
+### 2026-10-23 13:39 — Claude
+
+~~~~~
+Értem: a kaput érintő `mutation_diff_exec.sh` külön PR-ba megy, a #73 marad diff módban. Kiveszem onnan, és ellenőrzöm a scope-ot.
+~~~~~
+
+
+### 2026-10-23 13:40 — Claude
+
+~~~~~
+Most a PR leírása és a külön PR a végrehajtó módosításhoz. A leírást a REST API-n át frissítem, a másik változtatást külön ágon, a `main`-ről indítom.
+~~~~~
+
+
+### 2026-10-23 13:40 — Claude
+
+~~~~~
+Mindent átvettem a #73-ba, kivéve a kaput érintő végrehajtó-módosítást, ami külön PR lett.
+
+- **#73:** a HEAD `5e7d11e`, a scope helyben és a push után is `mode=diff`. Tartalma:
+  - a Go-másolat javítása és az alapvonal-ellenőrzés,
+  - a `source_span` egyszerűsítései és a tesztek,
+  - `make quick`, `WORKTREE`, `TESTS`, `RUST_TESTS`, `ONLY`,
+  - `--stale-only`, `--match`, `--shard`,
+  - a doksi 9. fejezete (a ~100 mutáns/10 perc tervvel együtt).
+  A leírás frissítve, a CI figyelve.
+- **#74:** a `mutation_diff_exec.sh` egysoros módosítása (`CIC_MUTATION_TEST_RUN`). Ez `full` módban fut, ahogy a szabály előírja. Amíg nincs bent, a `TESTS=` a Go-oldalon nem hat, csak lassabb, hibát nem okoz. A doksi ezt kimondja.
+
+Egy hibámat is be kell vallanom: az előző, megszakított parancs a megszakítás ellenére lefutott a pushig, így a #73-ra rövid időre `full`-t kiváltó HEAD került (`7de3017`). Új commitban javítottam, a hibás HEAD-hez tartozó futás helyére az új jön.
+
+A #73 merge-parancsát a CI zöldje után adom, a pontos HEAD-del.
+~~~~~
+
+
+### 2026-10-23 13:44 — Felhasználó
+
+~~~~~
+meg a jó édes anyád nézd meg a 73 megint full
+~~~~~
+
+
+### 2026-10-23 13:44 — Claude
+
+~~~~~
+A #73 jelenlegi HEAD-je (`5e7d11e`) **diff módban fut**, nem full. A "full" a korábbi `7de3017` HEAD futása volt, ami már le is állt (`cancelled`). A `73fab0b` futás leállítását kértem, az még zárul.
+
+- **Ami fut:** `diff-mutation-go` és `diff-mutation-rust`, a `quality-mutation-*` shardok `skipping`.
+- **Miért maradt full-futás:** a push nem szakítja meg a régi futásokat, ezért a régi HEAD-ek futásai élnek tovább.
+- **Zárt jobok:** `scope`, `go`, `corpus`, `quality-gate-selftest` zöld.
+- **Eredményre várok:** a seeded defects, a fuzz és az evidence-selftest még tart. Az utóbbi kettő nem mutáció, ezért fut diff módban is.
+
+Ha zöld, jön a merge-parancs az `5e7d11e`-hez kötve.
+~~~~~
+
+
+### 2026-10-23 13:46 — Felhasználó
+
+~~~~~
+nétd meg a fuzz csoport tuti hogy nem a diffre fut
+~~~~~
+
+
+### 2026-10-23 13:46 — Claude
+
+~~~~~
+Igazad lehet: a fuzz-job feltételét megnézem a workflow-ban.
+~~~~~
+
+
+### 2026-10-23 13:47 — Claude
+
+~~~~~
+Igazad van: a `fuzz` job **nem a diffre fut**. A feltétele csak `mode != 'light'`, vagyis diff és full módban is lefut mind a 8 Go-cél és mind a 8 Rust-cél, 60-60 mp-cel, egymás után. Ez a #73-nál is így megy, pedig a Rust-oldalon egy sor se változott. Ezért 17–18 perces job minden PR-on.
+
+Ugyanez igaz a `seeded-defects` jobra (~10 perc, minden defekt, a diffre való tekintet nélkül) és az `evidence-selftest`-re (~8 perc). Ezek sem a diff szerint választanak.
+
+Pontosan ezt rögzítettem a doksi 9.2–9.3 szakaszában tervként:
+- **Fuzz:** diff módban csak azok a célok futnak, amelyek elérik a megváltozott kódot. Ehhez egy cél→forrás táblát tartok a repóban, és egy teszt ellenőrzi, nem találgatás. A többi cél az éjszakai FULL-ban fut. A nem futott cél "not run", nem "passed".
+- **Seeded defects:** diff módban csak a diffben érintett fájlok defektjei.
+
+A #73-at ez nem blokkolja, az a mostani szabályok szerint helyes. A sor a #73 merge után: shardméret-terv, majd ez a diff-vezérelt fuzz/seeded-defects (egy `p1.yml` PR-ban, a fuzz-mátrixszal együtt). Ha előrébb kell hozni, szólj.
+~~~~~
+
+
+### 2026-10-23 13:47 — Felhasználó
+
+~~~~~
+viszont tedd bele a feltételt
+~~~~~
+
+
+### 2026-10-23 13:47 — Claude
+
+~~~~~
+Beleteszem a feltételt, külön PR-ban (a `p1.yml` változtatás `full` módot von maga után, és a #73-at nem akarom elrontani). Megnézem a scope-lépés kimeneteit és a fuzz-job szerkezetét.
+~~~~~
+
+
+### 2026-10-23 13:47 — Claude
+
+~~~~~
+Értem: diff-vezérelt fuzz. Megnézem a teljes fuzz-jobot, hogy a lépésekre pontos feltételt tegyek.
+~~~~~
+
+
+### 2026-10-23 13:48 — Felhasználó
+
+~~~~~
+[Request interrupted by user]
+~~~~~
+
+
+### 2026-10-23 13:48 — Felhasználó
+
+~~~~~
+ne ne rotsd el a 73-at de szerintem a p1.yml szerkesztése éjszakára kiadja a full modot nem?
+~~~~~
+
+
+### 2026-10-23 13:49 — Claude
+
+~~~~~
+Igen, a `p1.yml` bármilyen módosítása `full` módot ad. Ez a kapu szabálya (a workflow-fájl változása a mérés módját érinti), és nem kerülhető meg. A #73-hoz nem nyúlok. A fuzz-feltétel külön ágon (`feat/fuzz-by-diff`) készül, helyben, és nem pusholom, amíg a #73 be nem megy.
+
+- **Mikor megy fel:** a #73 merge után, vagy éjszakára, ahogy javaslod. A PR full futása így nem zavar semmit, mert külön PR.
+- **Bizonyítás:** a diff-mód működését nem a full futás mutatja meg. Ehhez két próba-PR kell, mint korábban a #62/#63: egy csak-Go változás, ahol csak a Go fuzz fut, és egy csak-doksi változás, ahol egyik sem. Ezek `diff` módban futnak, és tudnak bukni.
+- **A feltétel tartalma:** a scope-lépés két kimenetet ad (`fuzz_go`, `fuzz_rust`). Full módban mindkettő igaz, light módban hamis, diff módban az igaz, amelyik nyelvi kódja vagy fuzz-célja változott. A nem futott fuzz-lépés a futás összegzésében "not run" lesz, nem zöld.
+
+Folytatom a helyi előkészítést, és szólok, ha kész a push előtti állapot.
+~~~~~
+
+
+### 2026-10-23 13:50 — Felhasználó
+
+~~~~~
+de kérdés ha a mérés szabályát modosítom full ra meg hát legyen az a szabály hogy indítson el a háttérben egy full ellenőrzést vagy a postja legyen full ne a befogadó
+~~~~~
+
+
+### 2026-10-23 13:50 — Claude
+
+~~~~~
+Működhet, de a kettő közül nem mindegy, hogy mit szabad a befogadóra tolni. A jelenlegi `full` a mérési szabály módosításánál nem büntetés, hanem biztosíték: ha a PR a mérést gyengíti, a diff-mód nem venné észre, mert a gyengített mérővel mér.
+
+**A két változat:**
+
+| | Háttér-full a PR-on | Post-merge full a `main`-en |
+|---|---|---|
+| Mit ad | A PR ellenőrzései gyorsan zöldek, a full közben fut | A merge a diff-módú zöldre megy, a full a merge után indul (a push eseményre, ha kapu-fájl változott) |
+| Kockázat | Ha a merge nem vár rá, ugyanaz, mint a post-merge. Ha vár, nincs nyereség. | Egy gyengítő változtatás bent van a `main`-en, amíg a full lefut (~30 perc). Bukás esetén visszavonás kell. |
+| Nyereség | Kevés | Valódi, a merge nem vár a fullra |
+
+**Ajánlásom a post-merge változatra, két feltétellel:**
+1. A PR-on a **gyors, bukni tudó önellenőrzések** futnak kötelezően (`quality-gate-selftest`, seeded proof, `scope`). Ezek már ott vannak, és pár perc alatt megmondják, ha a kapu nem tud bukni.
+2. A `push` a `main`-re **full-ot indít, ha kapu- vagy workflow-fájl változott** (nem light-ot), és bukás esetén ugyanúgy nyit hibajelzést, mint az éjszakai futás. Ez nem ütközik a "nincs nehéz post-merge" döntéseddel, mert csak a mérést érintő merge-eknél indul, nem minden push-nál.
+
+A két fájlkört szét kell választani: a `quality_gate.py`, `diff_gate.py`, a `mutation_*_exec.sh` és a küszöbök gyengíthetik a mérést. A `p1.yml` ugyanígy, de abban a fuzz-feltétel jellegű változások a gyakoriak. A besorolás automatikusan nem tudja megkülönböztetni őket, ezért az ajánlásom egy lépésben mindkettőre a post-merge full.
+
+Ez a te döntésed, mert a "bent van a `main`-en, amíg a full fut" kockázatot csak te vállalhatod. Ha igen, a szabályt a doksiba és a scope-ba írom, külön PR-ban. Melyik legyen?
+~~~~~
+
+
+### 2026-10-23 13:52 — Felhasználó
+
+~~~~~
+ok p1.yaml változik inuljon el a háttérbe egy full amit kézzel is lehet indítani -> ha bukik PR :P
+~~~~~
+
+
+### 2026-10-23 13:52 — Claude
+
+~~~~~
+Rendben: `p1.yml` változása a PR-on nem megy full-ba, hanem a háttérben elindul egy teljes futás, amit kézzel is lehet indítani, és bukás esetén PR nyílik. Ehhez a meglévő éjszakai futás infrastruktúrát használom újra. Megnézem, hogyan épül fel.
+~~~~~
+
+
+### 2026-10-23 13:53 — Claude
+
+~~~~~
+Beírom a doksiba is (4.2), és a README/állapot-hivatkozásokat egyeztetem. Aztán commit, de a pusholást a #73 merge utánra hagyom.
+~~~~~
+
+
+### 2026-10-23 13:53 — Claude
+
+~~~~~
+Elkészült, helyben commitolva a `feat/p1-change-background-full` ágon (a `wt-exec` munkafában), pusholás nélkül. A #73-hoz nem nyúltam.
+
+**Mit csinál:**
+- A `p1.yml` változása a PR-on **nem full**: diff módban fut, a kapu önellenőrzései továbbra is kötelezőek.
+- A `nightly.yml` mostantól `main`-re történő push-ra is elindul, ha a `p1.yml` változott. Teljes (full) futást indít, a `p1.yml` új `full` bemenetével, különben a push-t light-nak olvasná.
+- Kézzel is indítható: `gh workflow run nightly.yml -f force=true`.
+- Bukáskor PR nyílik (ha a repo beállítása tiltja, issue), és a jelentés megnevezi a fajtát: "FULL after a change of the gate workflow", "Nightly FULL" vagy "FULL (by hand)".
+- A doksiban új 4.2 szakasz rögzíti a döntést és a költséget: amíg a full fut, a `main` olyan kapuváltozást tart, amit még nem bizonyítottunk minden mutánson.
+
+**Ellenőrizve:** a `test_diff_gate.py` 22 tesztje zöld. Az új teszt a régi kódon bukna, mert az `p1.yml`-t full-nak vette. A két workflow YAML-je érvényes.
+
+**Amit még nem láttam működni:** az új push-triggerelt futást éles CI-ben. A bizonyításhoz kell majd a `report_test` próba, mint az éjszakai futásnál, vagy egy `force=true` kézi indítás a merge után.
+
+**Ez a PR maga `full` lesz**, mert a `diff_gate.py` is változik, ami a mérést érinti. Ez a megmaradó szabály szerint rendben van.
+
+A pusholás a #73 merge után jön. Ha előbb kell, szólj.
+~~~~~
+
+
+### 2026-10-23 13:54 — Felhasználó
+
+~~~~~
+akkor az összes eddig be nem tett javítás belemehet a p1-be -> sardolás ~100 meg ami kimaradt
+~~~~~
+
+
+### 2026-10-23 13:54 — Claude
+
+~~~~~
+Mind bekerülhet, mert ez a PR úgyis `full`. Először megnézem, hogyan épül a Rust- és Go-shard-mátrix, hogy a shardszám számolását pontosan oda tudjam kötni.
+~~~~~
+
+
+### 2026-10-23 13:54 — Claude
+
+~~~~~
+Valós adatokból számolok. Letöltöm a #72 teljes futásának Go-ledgereit és Rust-outcomes fájljait, hogy a shardszám-számítás konstansai ne becslések legyenek.
+~~~~~
+
+
+### 2026-10-23 13:56 — Claude
+
+~~~~~
+Most a `fuzz_matrix.py` a cél→forrás táblával és egy teszttel, ami a táblát a kóddal veti össze (ezt ígértem a doksiban). Majd a seeded-defect szűrés.
+~~~~~
+
+
+### 2026-10-23 13:59 — Claude
+
+~~~~~
+Az összes tools-teszt zöld (72 + 147). Frissítem a doksit (mi van kész a 9.2-ből), átnevezem az ágat, és commitolom.
+~~~~~
+
+
+### 2026-10-23 14:00 — Claude
+
+~~~~~
+Mindkét PR állapota:
+
+**#73** (HEAD `5e7d11e`, diff módban): minden ellenőrzés zöld, egyedül a `fuzz` fut még. `seeded-defects` 15 perc, ez is a diffre nem szűkített régi lépés. `diff-mutation-go` 1 perc 4 mp, `diff-mutation-rust` 19 mp. A merge-parancsot a `fuzz` zöldje után adom.
+
+**p1-es PR** (`feat/p1-gate-speed`, helyben commitolva, nincs pusholva): 
+- A shardszám most számolt (`plan` job, `shard_count.py`): a #72 adataival Rust 16, Go 21 shard.
+- A fuzz célonként külön job, és csak a diff által érintett nyelvé fut. A kötelező `fuzz` néven egy összegző job marad, ami "not run"-t mond, ha nem kellett célt futtatni.
+- A seeded defects diff módban csak az érintett fájlok defektjeit futtatja.
+- A `p1.yml` változása után a háttérben full fut a `main`-en, kézzel is indítható.
+- Ellenőrizve helyben: 72 + 147 eszköz- és workflow-teszt zöld, a YAML-ek érvényesek. Éles CI-ben még nem láttam futni, a `full` futás lesz az első próba.
+
+**Amit tudnod kell:**
+- **A 37 párhuzamos job** (16 + 21) sok lehet a futtatók korlátjához képest. A `max_shards` és a `max_mutants_per_shard` két szám a `shard_budget.json`-ban, ha csökkenteni kell.
+- **A cic-factory profil** a nightly listában rögzített shardneveket (`quality-mutation-go (0..5)`) tartalmaz. A p1 PR merge előtt ezeket tanácsadó prefixre cserélem, különben a post-merge ellenőrzés hiányzó neveket jelezne. A te finomításodat (az előző futás elfogadása, ha a PR tartalma egyezik a beolvadttal) szintén ott építem meg, külön PR-ban.
+- **A doksi 9.4 szakasza** a #73 merge után kerül be rebase-szel.
+
+Mi legyen a sorrend: megvárjam a #73 `fuzz`-ját, és utána pusholjam a p1-es PR-t?
+~~~~~
+
+
+### 2026-10-23 14:01 — Felhasználó
+
+~~~~~
+pishold
+~~~~~
+
+
+### 2026-10-23 14:01 — Claude
+
+~~~~~
+Pusholom, és megnyitom a PR-t.
+~~~~~
+
+
+### 2026-10-23 14:01 — Claude
+
+~~~~~
+A p1-es PR megnyílt: https://github.com/CentralInfraCore/cic-primitive-forms/pull/75
+
+- **Mód:** `full` fut (a `diff_gate.py` változik). Ez az első éles futása a `plan` jobnak és a fuzz-mátrixnak, itt derül ki, hogy a számolt shardok és a lista jó-e.
+- **Nyitott pontok** a PR szövegében:
+  - A cic-factory nightly profilja rögzített shardneveket tart (`(0..5)`), ezeket merge előtt tanácsadó prefixre cserélem.
+  - A doksi 9.4 szakasza a #73 merge után jön.
+- **Figyelem:** a 37 párhuzamos job meghaladhatja a futtatók korlátját. Ha a CI sorban áll, a `shard_budget.json` két száma csökkenthető.
+
+A #73 `fuzz`-a még fut. Mikor az zöld, jön a merge-parancsa. Közben ellenőrzöm a #75 `plan` jobját, mert az a leginkább új dolog.
+~~~~~
+
+
+### 2026-10-23 14:10 — Felhasználó
+
+~~~~~
+74 elakadt
+~~~~~
+
+
+### 2026-10-23 14:11 — Claude
+
+~~~~~
+A #74 `p1` futása `cancelled` állapotú (minden job a 2:33-nál állt le egyszerre), tehát nem valódi hiba, hanem megszakadt futás. Újraindítom.
+~~~~~
+
+
+### 2026-10-23 14:11 — Claude
+
+~~~~~
+A #74 `p1` futása újraindult (`queued`). A korábbi futást megszakították, nem valódi hiba volt: az összes job egyszerre állt le 2:33-nál, és egyik lépés sem bukott.
+
+Valószínűleg a futtatók sorba állása miatt vagy a korábbi futások leállítása közben történt: a #73 régi HEAD-jeinek futásait kérésemre leállítottam, és ezek a #74-gyel egy időben futottak. A pontos okot nem tudom. Ha ismétlődik, nézem tovább.
+
+Mivel a #74 `full`, ~30 perc. A #73 `fuzz` jobja közben is fut. A #75 a futtatók korlátja miatt várhat is.
+~~~~~
+
+
+### 2026-10-23 14:30 — Felhasználó
+
+~~~~~
+mi a véleményed 75 bemergelése a main-re és azt visszavezetni a 74-re?
+~~~~~
+
+
+### 2026-10-23 14:30 — Claude
+
+~~~~~
+Szerintem nem érdemes így, a sorrend legyen fordított.
+
+**Miért nem #75 előre, majd vissza a #74-re:**
+- **A #75 még bizonyítatlan.** A `plan` job, a számolt shardok és a fuzz-mátrix még egyszer sem futottak éles CI-ben. A saját `full` futása a próbája. Ha előbb a `main`-re kerül, és hibás, azzal elrontja a többi PR CI-ját is.
+- **A #74 így sem lesz gyorsabb.** A `mutation_diff_exec.sh` kapu-fájl, ezért a #74 a #75 után is `full` marad. A rebase új HEAD-et jelent, tehát az eddigi futás (jelenleg épp fut) kárba megy. A nyereség a 37 párhuzamos shard lenne, de azt a #75 még nem bizonyította.
+- **A két PR független.** A #74 csak a `mutation_diff_exec.sh`-hoz nyúl, a #75 a `p1.yml`-hez és új eszközökhöz. Nincs ütközés, egyik sem várja a másikat.
+
+**Amit javaslok:**
+1. **#73** merge, ha a `fuzz` zöld (diff mód, ez van legközelebb).
+2. **#74** merge, ha a most újraindított `full` futása zöld.
+3. **#75** merge, ha a saját `full` futása zöld, ez bizonyítja a `plan` jobot és a mátrixot.
+4. A doksi 9.4 szakasza és a cic-factory profilmódosítás ezek után jön.
+
+Ha a #75 `full` futása bukik, a javítás a #75-ben marad, és nincs hatása a másik kettőre.
+~~~~~
+
+
+### 2026-10-23 14:30 — Felhasználó
+
+~~~~~
+na nézd meg légyszíves
+~~~~~
+
+
+### 2026-10-23 14:31 — Claude
+
+~~~~~
+A #73 és a #75 minden ellenőrzése zöld. A #74 viszont megint piros. Megnézem, valódi hiba vagy ismét megszakítás.
+~~~~~
+
+
+### 2026-10-23 14:31 — Felhasználó
+
+~~~~~
+[Request interrupted by user]
+~~~~~
+
+
+### 2026-10-23 14:31 — Felhasználó
+
+~~~~~
+75 -> main -> 74
+~~~~~
+
+
+### 2026-10-23 14:31 — Claude
+
+~~~~~
+Rendben: #75 → `main` → #74. A #75 minden ellenőrzése zöld (66 pass), a sorrendet követem. A merge-parancsot a pontos HEAD-hez kötöm:
+~~~~~
+
+
+### 2026-10-23 14:32 — Claude
+
+~~~~~
+A #75 `CLEAN` és `MERGEABLE`, a HEAD `bc7928373ed45ce23e6c6c533f445c1583685e26`, és a CI zöld. A `fuzz-target` matrix lefutott (egy-egy cél 1,5–1,7 perc), a `fuzz` összegző zöld.
+
+Merge-parancs, a HEAD-hez kötve:
+
+```
+! gh pr merge 75 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit bc7928373ed45ce23e6c6c533f445c1583685e26
+```
+
+Mielőtt lefuttatod: a merge a `p1.yml` változása miatt háttér-FULL-t indít a `main`-en (a `nightly.yml` push-trigger). Ez a #75 első éles próbája a `main`-en. Ha bukik, PR vagy issue jelzi.
+
+Merge után:
+- **#74:** rebase az új `main`-re, push, új futás.
+- **cic-factory profil:** a nightly profil shardneveit tanácsadó prefixre cserélem, mert a számolt shardszám átnevezi őket.
+- **#73:** a #75 előtt is mergelhető (diff mód, zöld, `5e7d11e`), a parancsot külön adom, ha kéred.
+
+(A #74 `p1` futása megint megszakítottnak látszik, nem valódi hiba. A rebase után újraindul, ott nézem tovább.)
+~~~~~
+
+
+### 2026-10-23 14:32 — Felhasználó
+
+~~~~~
+75 bemergelve tedd ár a 73-ra
+~~~~~
+
+
+### 2026-10-23 14:32 — Claude
+
+~~~~~
+Átteszem a #73-ra: rebase az új `main`-re (a #75-tel), konfliktusfeloldással.
+~~~~~
+
+
+### 2026-10-23 14:33 — Claude
+
+~~~~~
+Rebase kész. Most pótolom a doksi 9.4 szakaszát (mi van kész a 9.2-ből), és lefuttatom a teszteket.
+~~~~~
+
+
+### 2026-10-23 14:33 — Claude
+
+~~~~~
+A scope a rebase után is `diff`, a tesztek zöldek. A rebase átírja a #73 ág történetét, ezért `--force-with-lease`-szel pusholom (csak a saját PR-ágamat).
+~~~~~
+
+
+### 2026-10-23 14:34 — Claude
+
+~~~~~
+A #73 átkerült a #75 fölé: rebase, konfliktusfeloldás (a `seeded_defects.py` két opciókészletét összeolvasztottam), a doksi 9.4 szakasza pótolva. A tesztek zöldek, a scope `diff`. A `--force-with-lease` push most fut a háttérben, az új HEAD-ről és CI-ről jelentek.
+
+A #74-et ezután rebase-elem ugyanerre a `main`-re, ahogy kérted (75 → main → 74).
+~~~~~
+
+
+### 2026-10-23 14:34 — Felhasználó
+
+~~~~~
+mi van pontosan a 73 ban?
+~~~~~
+
+
+### 2026-10-23 14:34 — Claude
+
+~~~~~
+A #73 jelenlegi HEAD-je `8274828`, a `main` (a #75-tel) fölött 5 commit, 9 fájl, +296/−19 sor.
+
+**1. A Go diff-mutáció javítása**
+- `tools/diff-mutation-local.sh`: a Go-másolatba bekerül a `corpus/` és a `testdata/`, és a mutálatlan másolat tesztjének át kell mennie. Ennek hiánya miatt volt üres a 100%-os mérésem.
+- `ONLY=go|rust` egy nyelv mérésére.
+
+**2. A `source_span` egyszerűsítése és tesztjei** (viselkedés nem változik)
+- `go/sourcespan.go`: `locate` és `readBack` egyszerűbb, a mezőkeresés külön `fieldShape` függvény.
+- Új tesztek mindkét nyelven, mind teljesen új felső szintű tesztfüggvény: CR a `\` után és a sorvégen, üres `""` és `''`, `'a'''`, escape-elt backslash a záró idézőjel előtt, üres érték mint nem skalár cél.
+
+**3. A fejlesztői ciklus eszközei**
+- `make quick` / `tools/quick-check.sh`: a seeded-defect szövegek ellenőrzése, majd a munkafa saját mutánsai.
+- `diff-mutation-local.sh`: `WORKTREE=1`, `TESTS=`, `RUST_TESTS=`, `JOBS=`.
+- `tools/seeded_defects.py`: `--stale-only`, `--match`, `--shard K/N`, a #75 `--changed-from` kapcsolójával összeolvasztva.
+- Egy seeded-defect szöveg az új flow-sorhoz igazítva.
+
+**4. Doksi**
+- `docs/DELTA-DIFF-GATE.md`: a 9. fejezet (a ciklus, az írási szabályok, a 100 mutáns/10 perc terv, a helyi shardolás) és a 9.4 (mi van meg belőle).
+
+**Ami nincs benne:** a `mutation_diff_exec.sh` módosítás (az a #74), és a `p1.yml`/shard/fuzz munka (az a már beolvadt #75).
+
+Az új HEAD CI-je most fut. Várhatóan `diff` módban.
+~~~~~
+
+
+### 2026-10-23 14:35 — Felhasználó
+
+~~~~~
+-> irány a main majd a 74 nem?
+~~~~~
+
+
+### 2026-10-23 14:35 — Claude
+
+~~~~~
+Igen: #73 → `main`, utána a #74. Megnézem, zöld-e már az új HEAD.
+~~~~~
+
+
+### 2026-10-23 14:36 — Claude
+
+~~~~~
+Igen, a sorrend: #73 → `main`, utána #74. A #73 új HEAD-je (`8274828`) diff módban fut, ami jó jel: a `plan` és a `quality-mutation-*` `skipping`, csak a Go fuzz-célok futnak (a Rust-oldal nem, mert nincs változott Rust-kód). Ez a #75 diff-vezérelt fuzzának első éles bizonyítéka.
+
+Még nincs kész, 16 job fut. A merge-parancsot a zöld után adom, a pontos HEAD-del:
+
+`gh pr merge 73 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 82748283214a7c1f09c87e92ebfcd81d8168f915`
+
+Utána jön a #74 rebase-e az új `main`-re.
+~~~~~
+
+
+### 2026-10-23 14:41 — Felhasználó
+
+~~~~~
+mehet e main a 74-re
+~~~~~
+
+
+### 2026-10-23 14:41 — Claude
+
+~~~~~
+Igen, a `main` már a #73-mal és a #75-tel együtt áll (a #73 `faebfe7`-ként beolvadt). A #74-et rebase-eltem rá és pusholtam.
+
+- **#74 új HEAD:** `f39d67ba54ffe294c8945a2c7569792c4f1c459a`, egyetlen fájl, `tools/mutation_diff_exec.sh` (+3/−1).
+- **Mód:** `full` (kapu-fájl). Ez most már az új `p1.yml`-en fut: számolt shardokkal és célonkénti fuzzal, tehát a #75 `full` ágának második éles próbája.
+- **CI:** az új HEAD-en indul. A merge-parancsot a zöld után adom.
+
+Két függő dolog maradt:
+- **cic-factory profil:** a nightly profil shardneveit tanácsadó prefixre cserélem, mert a számolt shardszám átnevezi őket.
+- **A #75 háttér-FULL-ja:** a `p1.yml` merge-e elindíthatta a `main`-en. Megnézem, lefutott-e, és mit mondott.
+~~~~~
+
+
+### 2026-10-23 14:41 — Felhasználó
+
+~~~~~
+és nézd meg az előző 74 miért bukott el
+~~~~~
+
+
+### 2026-10-23 14:42 — Claude
+
+~~~~~
+A régi #74 futás **nem bukott el, hanem le lett állítva**: a GitHub annotációja szó szerint ezt mondja: `The run was canceled by @sinkog.` Egyetlen lépés sem bukott benne.
+
+- **A futás:** `39963210477`, a `8b0e986` HEAD-en, 2. kísérlet (a rerun). Az 1. kísérletet is leállították ugyanígy, az első "cancelled" állapot is ez volt.
+- **Mikor:** a jobok 14:19–14:21 UTC között álltak le, a 2. kísérlet 14:13-kor indult.
+- **Ki állította le:** a te fiókod nevében történt. Én `gh run cancel`-t csak két másik, a #73 régi HEAD-jeihez tartozó futásra adtam ki, nem erre. Valószínűleg te állítottad le kézzel, amikor elakadtnak láttad (a sorban állás miatt a 2. kísérlet csak 14:13-kor indult el), vagy a #75 merge-e után takarítottál.
+- **Következmény:** a lementett piros jelek (`quality`, `fuzz`, `quality-mutation-*` mind `fail`) a leállítás utóhatásai, nem a kód hibái. A `quality` is csak azért piros, mert a leállított jobokra várt.
+
+A #74 új HEAD-je (`f39d67b`) friss futást indított, ott már nincs ilyen előzmény. Ha ezt is leállítod, újra kell indítani. Mindjárt megnézem, hol tart, és a #75 háttér-FULL-ját is.
+~~~~~
+
+
+### 2026-10-23 16:13 — Felhasználó
+
+~~~~~
+tévedek: 
+
+<pasted_content id="d623">
+Következő fejlesztési egység: P3b E3
+Az elfogadott ADR 0012 alapján most az edit_scalar megvalósítása következik.
+
+A feladat határai:
+- Egy meglévő YAML skalár cseréje, a többi forrásbyte változatlanul hagyásával.
+- A meglévő idézési stílus megőrzése és a teljes no-op byteazonossága.
+- A 44 előre megírt edit vektor tényleges futtatása Rustban és Go-ban, bytepontos eredményellenőrzéssel.
+- A hat szerződéses garancia futásidejű ellenőrzése, az ADR-ben meghatározott hibaprioritással.
+- Nem bővítjük észrevétlenül a támogatott YAML-részhalmazt, és nem kezdjük el a P4 diff/patch motort.
+A folytatás munkarendje marad: implementáció → push → PR → review → CI-bizonyíték → tulajdonosi felhatalmazás → merge → post-merge ellenőrzés.
+
+Innen tudjuk folytatni a tényleges fejlesztési munkát. A P3 lezárt szerződéseit nem nyitjuk újra, az E3-at pedig az elfogadott ADR 0012 és a már mergelt E1/E2 bizonyítékaira építjük.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-23 16:14 — Claude
+
+~~~~~
+Értettem, akkor a leállítás a tiéd volt, a #74 új futása rendben van. Elkezdem az E3-at (`edit_scalar`): az ADR 0012-re és az E1/E2 bizonyítékokra építve, külön ágon. Előbb a #74 és a #75 háttér-FULL állapotát nézem meg egy pillantásra, aztán olvasom az ADR-t és a vektorokat.
 ~~~~~
