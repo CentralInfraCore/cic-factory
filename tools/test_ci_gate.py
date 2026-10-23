@@ -594,6 +594,24 @@ class FreshnessOfAHead(unittest.TestCase):
             self.assertEqual(code, 1, lines)
             self.assertIn("REFUSED", lines[-1])
 
+    def test_a_comparison_without_a_usable_behind_by_fails_closed(self):
+        """A missing, null, negative, boolean or non-integer behind_by is no answer: the head is not shown to be fresh, also with --allow-behind."""
+        class NoCount(Fake):
+            def __init__(self, value, **kw):
+                super().__init__(**kw)
+                self.value = value
+
+            def __call__(self, path):
+                if path.startswith("repos/o/r/compare/"):
+                    return {} if self.value == "absent" else {"behind_by": self.value}
+                return super().__call__(path)
+
+        for value in ("absent", None, -1, True, "0", 1.5):
+            for allow in (False, True):
+                code, lines = self.fresh(NoCount(value), allow_behind=allow)
+                self.assertEqual(code, 1, (value, allow, lines))
+                self.assertIn("no usable behind_by", lines[-1])
+
     def test_it_asks_how_far_behind_only_for_the_head_it_was_given(self):
         f = Fake(head=H2)
         self.fresh(f)

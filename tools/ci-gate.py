@@ -184,7 +184,11 @@ def fresh(get, repo, n, head, allow_behind=False, say=print):
     if pr.get("mergeable") is not True:
         say("REFUSED: GitHub says #%d is not mergeable (mergeable=%s)" % (n, pr.get("mergeable")))
         return 1
-    behind = get("repos/%s/compare/%s...%s" % (repo, pr["base"]["ref"], now)).get("behind_by", 0)
+    behind = get("repos/%s/compare/%s...%s" % (repo, pr["base"]["ref"], now)).get("behind_by")
+    if not isinstance(behind, int) or isinstance(behind, bool) or behind < 0:
+        # a merge guard fails closed: a comparison without a usable behind_by is not "0 behind", it is no answer at all, and --allow-behind does not cover it
+        say("REFUSED: the comparison of #%d with %s has no usable behind_by (%r); the freshness cannot be shown" % (n, pr["base"]["ref"], behind))
+        return 1
     if behind and not allow_behind:
         say("STALE: the head %s of #%d is %d commit(s) behind %s; its CI does not describe the merge result" % (now[:12], n, behind, pr["base"]["ref"]))
         return 1
