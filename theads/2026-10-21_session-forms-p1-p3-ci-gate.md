@@ -1,6 +1,6 @@
 # Thread-napló — 2026-10-21 (Forms P1–P3, ci-gate)
 
-Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T17:39:29Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl` (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
+Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T19:08:59Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl` (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
 
 
 ### 2026-10-21 05:57 — Claude
@@ -11828,4 +11828,464 @@ A #76 beolvadt `9c68a38` néven, a pontos HEAD-del. Megnézem, hogy a merge pill
 
 ~~~~~
 A #76 zöld `p1` (full) és `corpus` futással ment be a pontos HEAD-en. A `main` utólagos (light) futásai most tartanak. Közben a szálnapló és a memória (lezárt PR után).
+~~~~~
+
+
+### 2026-10-23 17:39 — Claude
+
+~~~~~
+A #76 beolvadt `9c68a38` néven, ahogy kérted, a pontos HEAD-del. Az E3 ezzel kész.
+
+- **CI a merge pillanatában:** az `87687af` HEAD-en a `p1` (full) és a `corpus` is `success` volt.
+- **A `main` utólagos futása** (`9c68a38`, light): a `p1` és a `corpus` még fut. Ha lefutott, megnézem, és szólok, ha bármi piros.
+- **Szálnapló:** commitolva és pusholva (`8080d48`, titokmentes).
+- **Memória:** frissítve (E3 mergelve, a következő az E4).
+
+**Nyitva maradt:**
+- **cic-factory #44** (a nightly profil nem nevez fix shardokat): a te merge-edre vár. Ha megvárom a main light futását, a parancsot a pontos HEAD-del adom.
+- **E4:** az `EDIT_SPAN_MISMATCH` belső ellenőrzés bizonyítása beültetett hibákkal. Ez a következő lépés (nem a P4), és csak a te "mehet" után kezdem.
+- **A számlálás számainak kiszervezése** a tesztekből, hogy egy új suite ne kényszerítsen fullt (a #76 tanulsága): külön, kis PR.
+~~~~~
+
+
+### 2026-10-23 17:51 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+Következő lépés: P3b E4
+Most már nem az edit_scalar megvalósítása, hanem a bizonyításának lezárása következik.
+
+Az E4-nél különösen három dolgot tartok fontosnak:
+1. Az EDIT_SPAN_MISMATCH belső assertion bizonyítása seeded defecttel, mindkét nyelven.
+2. A hat garancia teljes, differenciális Rust–Go ellenőrzése.
+3. Annak bizonyítása, hogy az E4 tesztjei ténylegesen el tudják buktatni a rendszert, nem pusztán zöld eredményt termelnek.
+Az E3-at lezártnak tekinthetjük. A P3b egésze még nincs lezárva.
+
+És itt már tényleg a CIC egyik alapelve válik kézzelfoghatóvá: nem elég, hogy a művelet helyesen működik; a hibás működés felismerésének képességét is bizonyítani kell.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-23 17:51 — Claude
+
+~~~~~
+Az E4 megkezdése: a rendelkezésre álló Rust–Go különbözeti (differenciális) eszközt keresem, amelyre építhetek, és új ágat indítok az `origin/main`-ről.
+~~~~~
+
+
+### 2026-10-23 17:53 — Claude
+
+~~~~~
+Megírom a két dumpert (Rust és Go), ugyanazzal a JSON-kimenettel.
+~~~~~
+
+
+### 2026-10-23 17:54 — Claude
+
+~~~~~
+Az első futás 3000 esetre 0 eltérést ad. Ez önmagában nem bizonyíték: előbb meg kell nézni, mit fed le valójában (hány sikeres, mely hibakódok fordulnak elő).
+~~~~~
+
+
+### 2026-10-23 17:55 — Claude
+
+~~~~~
+A különbözeti vizsgálat zöld, az önálló garancia-ellenőrzésekkel együtt. Következik az, ami az E4 lényege: bizonyítani, hogy tud bukni. Az öntesztet írom meg.
+~~~~~
+
+
+### 2026-10-23 17:57 — Claude
+
+~~~~~
+Egy hibára működik. Elindítom az összeset (Go és Rust külön folyamatban, a háttérben).
+~~~~~
+
+
+### 2026-10-23 17:57 — Claude
+
+~~~~~
+Közben az E4 első pontja: a belső ellenőrzés (`verify_edit`) minden feltételére seeded defect. Előbb a pontos sorok.
+~~~~~
+
+
+### 2026-10-23 17:58 — Claude
+
+~~~~~
+Új lelet: két esetben az elfogadott szerkesztés nem szerkeszthető vissza. Megnézem, valódi hiba-e.
+~~~~~
+
+
+### 2026-10-23 17:59 — Claude
+
+~~~~~
+A vizsgálat zöld, az öntesztje 18/18. Újrafuttatom a bizonyítást a korábban nem látott hibára.
+~~~~~
+
+
+### 2026-10-23 18:01 — Claude
+
+~~~~~
+A fa-ellenőrzéssel is zöld. Az öntesztet kiegészítem a 3. és 4. garancia töréseivel.
+~~~~~
+
+
+### 2026-10-23 18:01 — Claude
+
+~~~~~
+22 törés mind pirosat ad. Most az E4 első pontja: a belső ellenőrzés feltételeinek seeded defectjei az egységtesztekkel.
+~~~~~
+
+
+### 2026-10-23 18:05 — Claude
+
+~~~~~
+Mind a 10 E4 assertion-defect elkapott. Most a doksik (a hat garancia × bizonyíték mátrix), aztán a teljes ellenőrzés.
+~~~~~
+
+
+### 2026-10-23 18:08 — Claude
+
+~~~~~
+A `full` mód oka itt a #76 `verify_edit` tesztjeinek szándékos megerősítése (a felfedezett fedési hiba miatt). Commit, push, PR.
+~~~~~
+
+
+### 2026-10-23 18:09 — Claude
+
+~~~~~
+Az E4 PR megnyílt: https://github.com/CentralInfraCore/cic-primitive-forms/pull/79 (HEAD `de1e47a`). A CI fut, és figyelem. Az a PR `full` módban fut, mert a #76 `verify_edit` tesztjeit szándékosan megerősítettem.
+
+**A három követelményed teljesítése:**
+1. **Az `EDIT_SPAN_MISMATCH` belső ellenőrzése, mindkét nyelven:** a `verify_edit` minden feltételét kivettem egyesével (a span előtti és utáni bájtok, parse és validálás, a fák összevetése, a várt fa skalárválasztása). Összesen 10 seeded defect, mind elkapva.
+2. **A hat garancia Rust–Go differenciális ellenőrzése:** 3000 generált bemenet, 0 eltérés. A vizsgálat az 1., 2., 3., 4., 5. és 6. garanciát önállóan ellenőrzi, az 5. a két nyelv bájt szerinti egyezése, a 3–4. az elemzett fák összevetése.
+3. **A tesztek tudnak bukni:** 22 szándékos törés mind pirosra váltja az összehasonlítót, és 20 valódi, beültetett kódhiba (10-10 nyelvenként) is pirosra váltja.
+
+**A bizonyítás saját leletei** (mind javítva a PR-ban), ez volt az E4 haszna:
+- A 22-ből egy törés zölden maradt, mert a dump nem hordozta az eredeti stílust.
+- A "kettős idézőjeles escape" hibát egyik nyelven sem láttuk: a generált dokumentumok szinte soha nem tartalmaztak idézőjeles skalárt és idézőjelet együtt.
+- A szuffix-ellenőrzés közvetlen tesztjét a fa-összehasonlítás elfedte: az ellenőrzés kihagyása **egyik nyelven sem bukott**. A tesztesetek most egy feltételben térnek el.
+
+A merge-parancsot a zöld CI után adom, a pontos HEAD-del. A cic-factory #44 is a te döntésedre vár.
+~~~~~
+
+
+### 2026-10-23 18:21 — Felhasználó
+
+~~~~~
+én állítottam le a futást
+~~~~~
+
+
+### 2026-10-23 18:21 — Felhasználó
+
+~~~~~
+[Request interrupted by user for tool use]
+~~~~~
+
+
+### 2026-10-23 18:39 — Felhasználó
+
+~~~~~
+mergeld rá a main-t a PR-ra hogy friss legyen
+~~~~~
+
+
+### 2026-10-23 18:39 — Claude
+
+~~~~~
+Rendben, frissítem a PR-ágat a `main`-nel. Megnézem, mennyivel van lemaradva.
+~~~~~
+
+
+### 2026-10-23 18:39 — Claude
+
+~~~~~
+A `main` egy commitot kapott (`33bc6a8`, a `quality_gate` változott, nem tőlem). Rebase-elem rá, ellenőrzöm, hogy nem sért semmit, és pusholom.
+~~~~~
+
+
+### 2026-10-23 18:40 — Claude
+
+~~~~~
+A CI-figyelés újraindult a frissített HEAD-en. Amikor lefut, jelentem az eredményt.
+~~~~~
+
+
+### 2026-10-23 18:46 — Felhasználó
+
+~~~~~
+ez alapján el tudjuk kezdeni a P4-et: 
+
+<pasted_content id="d623">
+Igen, szerintem is eljutottunk a merge → következő fejlesztési egység pontra. De a CIC saját szabályai szerint a sorrendet most sem cserélném fel.
+
+### PR #79 — friss állapot
+
+FULL CI még fut
+
+HEAD: c704933b05b0
+
+A legutóbbi ellenőrzésnél a 30 látható CI-jobból:
+
+- 28 sikeresen lefutott, köztük a Rust, Go, parity, mindkét `edit-proof` és az összes látható fuzz-cél.
+- 2 még futott: `seeded-defects` és `evidence-selftest`.
+- Nem volt hibás job.
+
+A merge előtt ezek sikeres lezárása és az összesített workflow eredménye is szükséges. A pontos HEAD-et pedig a merge pillanatában újra ellenőrizni kell.
+
+### Mit kezdjünk fejleszteni?
+
+A javaslatom: a #79 merge után a P3b első szerkesztési egységének formális lezárása, majd a P4 Diff & Patch elindítása.
+
+Nem kezdeném újra a már bizonyított mechanizmusokat. Erre a láncra építkeznék:
+
+P3 — Normalize
+
+Lezárva
+
+P3b — Source-preserving scalar edit
+
+E1–E3 merged, E4 merge előtt
+
+P4 — Semantic Diff & Patch
+
+Következő fejlesztési irány
+
+A P4 első egységét szűkre venném: két validált állapot különbségének determinisztikus előállítása, egyetlen meglévő skalár `value_change` eseményének alkalmazása, régi értékre vonatkozó konfliktusellenőrzéssel. A többi változást egyelőre explicit módon visszautasítanánk.
+
+Itt van egy fontos architekturális döntés is: a `patch(A, diff(A,B)) = B` esetén szemantikai vagy byte szerinti azonosságot követelünk? A P3b forrásmegőrző működésével ezt össze kell hangolni, mielőtt implementálunk.
+
+A P3b teljes lezárását sem jelenteném ki automatikusan: az első skalárszerkesztési egység készül el, miközben az anchorok, beszúrások, törlések és további szerkesztési típusok még kívül vannak a támogatott részhalmazon.
+
+Tehát az irányom: #79 zöld FULL CI → tulajdonosi merge → szűk P3b lezárási rekord → P4 szerződés és kézzel írt vektorok → Rust/Go implementáció.
+
+A legutolsó ellenőrzésnél a két hátralévő CI-job még futott, ezért a merge-et nem végeztem el. Viszont a következő fejlesztési egység határait már el tudjuk kezdeni rögzíteni anélkül, hogy a bizonyítási láncot megkerülnénk.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-23 18:46 — Claude
+
+~~~~~
+Elindítom a P4-et, a megszokott sorrendben: előbb a szerződés (tervdokumentum, a tulajdonosi döntésekkel), a kód csak utána. A #79 CI-je közben fut. Először azt nézem meg, mit rögzít már a repó a P4-ről.
+~~~~~
+
+
+### 2026-10-23 18:46 — Claude
+
+~~~~~
+Már van ADR 0008 ("deterministic diff contract") és `corpus/diff` vektorok. Ezek határozzák meg a P4 alapját, ezért elolvasom.
+~~~~~
+
+
+### 2026-10-23 18:48 — Claude
+
+~~~~~
+A P4 első lépése megvan: a tervdokumentum a #80 PR-ban (https://github.com/CentralInfraCore/cic-primitive-forms/pull/80). Csak dokumentáció, kód nincs benne.
+
+**Amit a repóban találtam:**
+- A diff szerződése már **elfogadott** (ADR 0008), 66 kézzel írt vektorral, de ezek egyik nyelven sem futnak, és `diff`/`patch` kód nincs. A P4 tehát két dolog: előbb a diff megvalósítása, aztán egy szűk patch.
+
+**A reviewer kérdésére (szemantikai vagy bájt szerinti azonosság) a válasz:** a bájtazonosság általában lehetetlen, mert az ADR 0008 szándékosan nem tekinti különbségnek a sorrendet, stílust, idézést, kommentet és a rövid/kibontott írásmódot. Két azonos logikai tartalmú szövegnek ugyanaz a diffje A-tól. Javasolt invariáns (S+):
+- a patch után a B elleni diff üres,
+- csak azok a bájtok mozdulnak, amelyeknek kellett (P3b-garancia),
+- a második alkalmazás konfliktus, a patch nem részleges.
+
+**Az első patch-egység:** `value_change` a meglévő skalárokon, `edit_scalar`-on át, típus-szigorú `previous` ellenőrzéssel (`PATCH_CONFLICT`). Minden más esemény névvel és kóddal elutasítva, az egész patch-et.
+
+**Az ADR 0013 és a vektorok** a te döntéseid után jönnek. A 9. szakaszban 7 döntés vár rád, ebből három nagy: az invariáns, a patch környezete (a hívó adja, a diff bájtjai nem változnak), és hogy egy nem támogatott esemény az egész patch-et elutasítja.
+
+**Közben a #79:** a CI futása a frissített HEAD-en (`c704933`) még tart, ahogy a reviewer is írta. A merge-parancsot a zöld után adom.
+~~~~~
+
+
+### 2026-10-23 19:05 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+## P4-0 — PR #80: architekturális review
+
+Feltételes szakmai GO
+
+PR #80 · HEAD f1e0e009
+
+Átolvastam a [#80 tervdokumentumát](https://github.com/CentralInfraCore/cic-primitive-forms/pull/80?utm_source=chatgpt.com), a ténylegesen elfogadott `docs/adr/0008-deterministic-diff-contract.md` szerződést és a `corpus/diff/vectors.yaml` állományt.
+
+A javasolt iránnyal egyetértek. Mind a hét döntésre alapvetően igen a válaszom, de két szerződéses pontosítást kötelezőnek tartok az ADR 0013 előtt.
+
+A legfontosabb: a diff nem utasítás. A patch sem válhat észrevétlenül felhatalmazási mechanizmussá.
+
+## A hét döntés
+
+| # | Döntés                                  | Szakmai álláspont                                               |
+| - | --------------------------------------- | --------------------------------------------------------------- |
+| 1 | S+ invariáns                            | Elfogadom, a scope pontosításával                               |
+| 2 | Hívó által adott `SchemaContext`        | Elfogadom, de a kontextuskötés bizonyíthatóságát tisztázni kell |
+| 3 | Atomikus, all-or-nothing patch          | Elfogadom                                                       |
+| 4 | Csak meglévő skalár `value_change`      | Elfogadom                                                       |
+| 5 | Diff megvalósítás előbb, patch utána    | Elfogadom                                                       |
+| 6 | Accounting kiszervezése adatfájlba      | Elfogadom, a minőségkapu változatlan szigorával                 |
+| 7 | P3b első egység lezárása, többi nyitott | Elfogadom, az E4 merge és bizonyíték után                       |
+
+### 1. Az S+ invariáns helyes, de egy dolgot tisztázzunk
+
+Az ADR 0008-ból valóban következik, hogy:
+
+`patch(A, diff(A, B)) == B`
+
+általánosan nem értelmezhető bájtazonosságként.
+
+Az ADR szándékosan figyelmen kívül hagyja a kommenteket, az idézési módot, a leképezések sorrendjét és más reprezentációs részleteket. Ráadásul a `conformance_basis` sem része a logikai egyenlőségnek.
+
+Ezért elfogadom az S+ változatot:
+
+\\[ \operatorname{diff}(\operatorname{patch}(A,d),B).\mathrm{changes}=\varnothing \\]
+
+ahol \\(d=\operatorname{diff}(A,B)\\).
+
+De ugyanazzal a `SchemaContext`-tel és összehasonlítási `Scope`-pal kell számolni.
+
+Ez különösen fontos, mert ADR 0008 szerint a scope nem csupán szűrő: a meg nem figyelt állapot nem azonos a hiányzó állapottal.
+
+Ha a diff csak `$.ip.gateway` területet hasonlít össze, az üres eredmény nem bizonyítja az egész B-vel való logikai egyenlőséget.
+
+Ez legyen az ADR 0013-ban kifejezetten leírva.
+
+A második alkalmazásra vonatkozó szabályt is pontosítanám: nem idempotenciának, hanem replay rejectionnek nevezném. Nem üres, tényleges változást tartalmazó patch másodszorra konfliktus. Üres `changes` esetén viszont a patch továbbra is byte-azonos no-op.
+
+### 2. A kontextuskötésnél van egy valódi bizalmi határ
+
+Ez a legfontosabb észrevételem.
+
+Az ADR 0008 kanonikus diffje:
+
+```
+{"changes":[],"representation":[],"version":1}
+```
+
+Nem tartalmazza a `SchemaContext` azonosítóját vagy digestjét.
+
+Ha a patch hívója átad egy `SchemaContext` objektumot, azzal ellenőrizhetjük, hogy A olvasható-e ebben a kontextusban.
+
+De ebből önmagában nem lehet bizonyítani, hogy maga a diff ugyanezen kontextus alatt keletkezett.
+
+Más szóval:
+
+- `Context supplied` nem ugyanaz, mint `Context verified`.
+- `Previous matches` nem ugyanaz, mint `Diff provenance verified`.
+
+Az én döntésem: a diff kanonikus bájtjai maradjanak változatlanok, de a kontextushoz kötést a hívó vagy egy külön, megbízható envelope biztosítsa. A patch az átadott kontextus alatt ellenőrizzen; ne állítsa, hogy ismeri a diff eredetét, ha annak nincs ellenőrizhető kötése.
+
+Ez tisztán illeszkedik a CIC gondolkodásmódjához: a leíró bizonyíték, a kontextus és a felhatalmazás külön entitás.
+
+### 3–5. Az alkalmazás határai és a sorrend
+
+A teljes patch elutasítása bármely nem támogatott eseménynél helyes. Egy `value_change` mellett megjelenő `policy_declaration_change` nem kerülhet féloldalasan alkalmazásra.
+
+A `PATCH_CONFLICT` típus-szigorú `previous` ellenőrzése ugyancsak helyes. Az új érték alkalmazását az E3-ban bizonyított `edit_scalar` végezze.
+
+Az első implementációból maradjon ki a listaelem identitásának módosítása, az opaque érték, a beszúrás és a törlés. Ezek a szerződés szerint külön fejlesztési egységek.
+
+Az atomikusságot konkrétan így rögzíteném: hiba esetén nincs visszaadott, részlegesen módosított szöveg, akkor sem, ha belső munkapéldányon már történt szerkesztés.
+
+A fejlesztési sorrenddel is egyetértek:
+
+P4-0 — Design + ADR 0013
+
+Tervezés
+
+Jelenlegi #80 és a jóváhagyott döntések normatív rögzítése
+
+P4-1 — Kézzel írt patch vektorok
+
+Előbb az elvárt eredmény és hibakód, utána a megvalósítás
+
+D1–D3 — Determinisztikus diff
+
+Mind a 66 meglévő vektor tényleges futtatása Rustban és Goban
+
+P4-2 — Szűk, atomikus patch
+
+Meglévő skalárértékek módosítása az E3 mechanizmusán keresztül
+
+P4-3 — Bizonyítás
+
+Property, parity, self-test, beültetett hibák és fuzz
+
+### 6–7. CI-költség és P3b lezárás
+
+A tesztszámok külön adatfájlba helyezésével egyetértek, de a számoknak továbbra is előre rögzített elvárásoknak kell maradniuk, nem a futásból automatikusan kiszámított, önigazoló értékeknek.
+
+A DELTA/FULL kiválasztás optimalizálhatja az erőforrás-felhasználást. A minőségi követelményt nem gyengítheti.
+
+A P3b első egysége valóban lezárható az E4 bizonyítékával, míg a további forrásmegőrző műveletek nyitottak maradnak.
+
+## Két kiegészítés az ADR 0013 előtt
+
+A fentiek alapján két módosítást kérnék a #80 designhoz:
+
+1. Az S+ egyenlőség terjedelme: teljes scope esetén logikai egyenlőség, részleges scope esetén kizárólag a megfigyelt tartomány egyenlősége. Az üres diff nem provenance- vagy authorization-bizonyíték.
+2. A kontextus bizonyíthatósága: külön rögzíteni, hogy a patch mit ellenőriz saját maga, és mit fogad el a hívó megbízható kontextuskötéseként. A `PATCH_CONTEXT_MISMATCH` nem ígérhet olyan ellenőrzést, amelyet a rendelkezésére álló bemenetekből nem tud elvégezni.
+
+Egy kisebb szövegezési pontosítás: az üres patch másodszori alkalmazása ne legyen `PATCH_CONFLICT`; a replay-elutasítás a tényleges, nem redundáns változásokat tartalmazó diffre vonatkozzon.
+
+## Végső álláspont
+
+A #80 terve szakmailag GO, ezekkel a pontosításokkal.
+
+Nem javaslom az ADR 0008 újranyitását. A 66 kézzel írt diff-vektor megmarad, a patch szerződése pedig külön ADR 0013-ban áll össze.
+
+A jelenlegi GitHub-ellenőrzés szerint a #80 még nyitott, és a #79 sincs mergelve. Ezért az E4 lezárását nem állítom be befejezett tényként.
+
+A fejlesztés következő konkrét lépése tehát a két szerződéses pontosítás és az ADR 0013 megírása, majd a patch-vektorok elkészítése.
+
+Ez jó irány a CIC számára: az eltérés bizonyítása továbbra sem jogosít fel annak végrehajtására. A patch ellenőrzötten alkalmaz, de a döntés és a felhatalmazás kívül marad rajta.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-23 19:05 — Claude
+
+~~~~~
+A reviewer feltételes GO-t adott a #80-ra, és két szerződéses pontosítást kér az ADR 0013 előtt (az S+ egyenlőség terjedelme és a kontextus bizonyíthatósága), plusz egy szövegezési javítást (replay-elutasítás, nem idempotencia). Ezeket a #80 tervbe építem, utána jön az ADR 0013 javaslata külön PR-ban.
+~~~~~
+
+
+### 2026-10-23 19:06 — Claude
+
+~~~~~
+Most az ADR 0013 javaslata (státusz: javasolt; az elfogadás a te merge-ed), külön ágon a `main`-ről.
+~~~~~
+
+
+### 2026-10-23 19:07 — Claude
+
+~~~~~
+A #79 teljesen zöld, és a merge-parancsot ehhez adom.
+
+**#79 (E4):** `CLEAN`, a HEAD `c704933b05b0bc11cd9837b2196af4a9d2f44a29`, 71 ellenőrzés zöld, 2 `skipping` (a diff-módú jobok full futásban), hibás egy sincs. Ebbe beletartozik a két `edit-proof` job, a `parity` (az új szerkesztési különbözeti lépéssel) és az összes fuzz-cél.
+
+Merge-parancs, a HEAD-hez kötve:
+
+`gh pr merge 79 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit c704933b05b0bc11cd9837b2196af4a9d2f44a29`
+
+**A P4 két PR-ja:**
+- **#80** (a terv): a reviewer két kért pontosítását beépítettem, az új HEAD `e9a9805`. A pontosítások: az S+ egyenlőség csak a diff kontextusán és scope-ján belül érvényes (részleges scope esetén csak a megfigyelt tartományra); a patch külön mondja, mit ellenőriz maga és mit fogad el a hívó megbízható kötéseként (`Context supplied` ≠ `Context verified`); a második alkalmazás nem idempotencia, hanem replay-elutasítás (üres diff továbbra is bájt-azonos no-op). Hozzátettem, hogy az üres diff nem provenance- vagy felhatalmazás-bizonyíték.
+- **#81** (ADR 0013, **javasolt** státuszban): a patch első egységének normatív szerződése a fenti pontosításokkal, a rögzített ellenőrzési sorrenddel és a `patch` fázis 4 kódjával. Elfogadása a te merge-ed.
+
+Mindkettő csak dokumentáció, ezért a `p1` CI nem indul rajtuk, a `corpus` ellenőrzés fut. A P3b-sor lezárási rekordja (`PHASES.md`) a #79 merge után jön.
+~~~~~
+
+
+### 2026-10-23 19:07 — Felhasználó
+
+~~~~~
+<bash-input>gh pr merge 79 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit c704933b05b0bc11cd9837b2196af4a9d2f44a29</bash-input>
+~~~~~
+
+
+### 2026-10-23 19:07 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
 ~~~~~
