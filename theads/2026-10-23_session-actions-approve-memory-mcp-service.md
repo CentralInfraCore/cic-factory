@@ -1,6 +1,6 @@
-# Thread-napló — 2026-10-23 (Actions PR-jóváhagyás, memória, on-demand MCP szolgáltatás, forms #77/#78, #85/#86, #84, #87)
+# Thread-napló — 2026-10-23 (Actions PR-jóváhagyás, memória, on-demand MCP szolgáltatás, forms #77/#78, #84, #85-#89)
 
-Interaktív session transcriptje: miért `false` a `can_approve_pull_request_reviews` a cic-primitive-forms repón (a beállítás org-szinten zárolt), a fejlesztőgép memória- és swap-foglalásának felmérése, egy privát KB-hoz tartozó stdio MCP szerver átalakítása systemd user socket-aktivált, tétlenség után magától leálló SSE szolgáltatássá, két külső review véleményezése és javításai (cic-primitive-forms #77 issue, #78 mergelve `33bc6a8`; #85 issue, #86 PR), a CI-sor és a job-prioritás kérdése, a #84 PR mergelése a tulajdonos rögzített jóváhagyásával (`c0ec550`, post-merge 8/8 zöld), és a #86 fuzz-hibája mögött talált, már a main-en meglévő read-back hiba (#87). Csak az interakció: a felhasználó üzenetei (beillesztett szöveggel, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `229b7e34-f3c1-4f6e-aeae-17e724711212.jsonl` (a helyi eredeti napló nem kerül a repóba); a `tools/session-transcript.py --private-repo <privát repó neve>` hívással generálva, majd utólag a privát ticket-azonosítók és a helyi scratchpad-útvonal kézzel `[MASKED:<típus>]` jelölővel kitakarva. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, kontextus-összefoglaló.
+Interaktív session transcriptje: miért `false` a `can_approve_pull_request_reviews` a cic-primitive-forms repón (a beállítás org-szinten zárolt), a fejlesztőgép memória- és swap-foglalásának felmérése, egy privát KB-hoz tartozó stdio MCP szerver átalakítása systemd user socket-aktivált, tétlenség után magától leálló SSE szolgáltatássá, három külső review véleményezése és javításai (cic-primitive-forms #77/#78 mergelve `33bc6a8`; #85 és a fuzz által talált #87 a #86-ban, mergelve `56e222d`, post-merge 8/8 zöld; #88 issue és #89 PR), a CI-sor és a job-prioritás kérdése, és a #84 PR mergelése a tulajdonos rögzített jóváhagyásával (`c0ec550`). Csak az interakció: a felhasználó üzenetei (beillesztett szöveggel, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `229b7e34-f3c1-4f6e-aeae-17e724711212.jsonl` (a helyi eredeti napló nem kerül a repóba); a `tools/session-transcript.py --private-repo <privát repó neve>` hívással generálva, majd utólag a privát ticket-azonosítók és a helyi scratchpad-útvonal kézzel `[MASKED:<típus>]` jelölővel kitakarva. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, kontextus-összefoglaló.
 
 
 ### 2026-10-23 10:42 — Felhasználó
@@ -1165,4 +1165,385 @@ A #86 elbukása nem a #86 hibája. A fuzz egy olyan hibát talált el véletlen�
 A #86-nál a fuzz-jobot újra is lehetne futtatni, valószínűleg átmenne, mert véletlen bemeneten fut. Csak ezt nem javaslom: egy ismert hibát takarna el.
 
 Mehet a #87 javítása külön PR-ben?
+~~~~~
+
+
+### 2026-10-23 20:27 — Claude
+
+~~~~~
+A #84 bent van. Frissítem a session-naplót, ahogy a lezárás előírja.
+~~~~~
+
+
+### 2026-10-23 20:28 — Felhasználó
+
+~~~~~
+[Request interrupted by user]
+~~~~~
+
+
+### 2026-10-23 20:28 — Felhasználó
+
+~~~~~
+87 az lefutott 86 nem ment be
+~~~~~
+
+
+### 2026-10-23 20:29 — Claude
+
+~~~~~
+Rebase a `main`-re, aztán a javítás.
+~~~~~
+
+
+### 2026-10-23 20:29 — Claude
+
+~~~~~
+A rebase tiszta. Most a Go `readBack`.
+~~~~~
+
+
+### 2026-10-23 20:29 — Claude
+
+~~~~~
+A #87 javításán dolgozom a #86 branchen. A kód kész mindkét nyelvben, most a regressziós teszteket írom.
+~~~~~
+
+
+### 2026-10-23 20:30 — Claude
+
+~~~~~
+The Rust seed's name matches the existing naming (the sha1 prefix). Next, the Go fuzz seed, then local tests in a container.
+~~~~~
+
+
+### 2026-10-23 20:35 — Claude
+
+~~~~~
+A PR HEAD-je még a régi (`c925a1c`). Megnézem, átment-e a push.
+~~~~~
+
+
+### 2026-10-23 20:35 — Claude
+
+~~~~~
+The push went through (the GitHub view had just lagged). Updating the PR description, then watching CI.
+~~~~~
+
+
+### 2026-10-23 20:35 — Claude
+
+~~~~~
+Előbb befejezem a PR leírását (a `gh pr edit` egy GitHub GraphQL-elavulás miatt hibát dobott, ezért REST-tel frissítem), utána ellenőrzöm az új review pontjait a kódban.
+~~~~~
+
+
+### 2026-10-23 20:35 — Claude
+
+~~~~~
+Most az új review 6–12. pontja a kódban.
+~~~~~
+
+
+### 2026-10-23 20:36 — Claude
+
+~~~~~
+A 8. pont már a grep alapján igaz: a `max_items`-et beolvassa és típusra ellenőrzi, de sehol nem tárolja. A 6., 7. és 12. pontra Go-próbát futtatok a `main`-en.
+~~~~~
+
+
+### 2026-10-23 20:37 — Claude
+
+~~~~~
+A 12. pont megerősítve: Go-ban nil pointer pánik, ha a kulcskészletből hiányzik az `access`. Gyors kódellenőrzés a 10., 11. és 9. pontra, valamint a Rust-oldali párra.
+~~~~~
+
+
+### 2026-10-23 20:37 — Claude
+
+~~~~~
+**A #86 PR állapota:** a #87 javítását beletettem, és rebase-eltem a `main`-re. A helyi futás mindkét nyelvben zöld, benne 45 másodperc `FuzzSourceSpan` és 30 másodperc `FuzzEditScalar`. A CI most fut újra: 19 sikeres, 50 még fut.
+
+**Az új review-ról:** ez a kör érdemi, és a súlyosabb pontjait futtatással is igazoltam. Az ítélete (NO-GO nem megbízható bemenetre és policy-kritikus használatra) szerintem jogos, a 6., 7. és 12. pont miatt.
+
+| # | Állítás | Ellenőrzés | Ítélet |
+|---|---|---|---|
+| 6 | A `Normalize` nem validál | Futtatva a `main`-en: `mtu: abc` esetén a `Validate` hibát ad (`a string value where integer is declared`), a `Normalize` és a `NormalizeWithPolicy` viszont **OK**-t | **Igaz, magas.** A `NormalizeWithPolicy` doc-kommentje ráadásul azt állítja, hogy a `Normalize` elutasítja a nem validáló dokumentumot. Ez téves. |
+| 7 | Duplikált listaazonosító összeütközik | Futtatva: a `Validate` `PATH_DUPLICATE_IDENTITY`-t ad, a normalizálás **OK**. Az eredményben 12 origin áll szemben 10 policy-bejegyzéssel, vagyis bejegyzések egymásra csúsztak | **Igaz, magas** |
+| 8 | `max_items` | A Go `schema.go:405` és a Rust `schema.rs:611` csak beolvassa a mezőt, nem tárolja, és a validátor nem nézi | **Igaz.** Vagy implementálni kell, vagy `UNSUPPORTED`-ként elutasítani |
+| 9 | Go parser: a korlátok késve érvényesülnek | A `yaml.v3` először felépíti a teljes AST-t, csak utána fut a mi walkerünk | **Részben.** Igaz, de az 1 MiB `MaxBytes` lineárisan korlátozza. Alacsony súlyosság, ugyanaz a helyzet, mint a Rust 2. pontnál |
+| 10 | Séma és grammar összekötése | A `CompiledSchema.Grammar` a pin, a `g` külön paraméter, és a `NormalizeWithPolicy` nem veti össze a kettőt | **Igaz, közepes.** API-döntés |
+| 11 | A `Denormalize` megbízik a `ValueOrigins`-ban | `normalize.go:96–100`: minden `default` eredetű útvonalat eltávolít | **Igaz, de terv szerinti.** Az eredmény egy pár, és csak tárolt vagy kívülről visszaolvasott eredménynél veszélyes. Közepes–alacsony |
+| 12 | Go pánik hiányos kulcskészletnél | Futtatva: `access` nélküli kulcskészlettel a `NormalizeWithPolicy` **nil pointer pánikot** dob, a Rust ugyanerre hibát ad vissza | **Igaz, magas.** Könyvtári pánik, és eltérés a két nyelv között |
+
+A review fő tanulságával egyetértek. Az egyes komponensek jól teszteltek, de a köztük lévő határokon (normalizálás, policy-feloldás) nem fut le ugyanaz a validáció. A 6. és a 7. pont ugyanannak a hiánynak két tünete.
+
+**Javaslat:**
+- **Most, egy issue és egy PR (a #86 után):**
+  - **6. és 7.:** a `Normalize` és a `NormalizeWithPolicy` elején lefut a teljes `Validate`, és hiba esetén nincs részleges eredmény. Ez a 7. pontot is lefedi, mert a `Validate` már ellenőrzi a duplikált identitást.
+  - **12.:** a Go `wrapper()` hiányzó tagra hibát ad, ahogy a Rust.
+  - **8.:** a `max_items` egyelőre `UNSUPPORTED`-ként elutasítva, mert az implementálás szerződésbővítés lenne.
+- **Neked kell eldöntened:**
+  - **10.:** a grammar kötése a `CompiledSchema`-hoz API-változás.
+  - **11.:** szükség van-e provenance-integritásra a tárolt eredményeknél.
+  - **9.:** a Go parser korlátainál mérés (benchmark) javasolt, nem kódváltozás.
+
+Mehet így?
+~~~~~
+
+
+### 2026-10-23 20:38 — Felhasználó
+
+~~~~~
+igen
+~~~~~
+
+
+### 2026-10-23 20:38 — Claude
+
+~~~~~
+Indulok: issue, branch a `main`-ről, aztán a négy javítás. Előbb két dolgot megnézek. Használja-e valódi séma a `max_items`-et, mert ha igen, az elutasítás eltörné. És mit csinál pontosan a Go `wrapper()` és az `editscalar` `refuseInvalid`-ja, amit újra tudnék használni.
+~~~~~
+
+
+### 2026-10-23 20:39 — Claude
+
+~~~~~
+A `testdata/p1` nincs benne az accountingban, így az új séma-vektor nem érinti. Megnyitom az issue-t.
+~~~~~
+
+
+### 2026-10-23 20:39 — Claude
+
+~~~~~
+Megvan a #88. Most a Go-oldal: a `Normalize`, a `ResolvePolicy`, a `wrapper` és a séma.
+~~~~~
+
+
+### 2026-10-23 20:40 — Claude
+
+~~~~~
+A Go-oldal kész (a `Normalize`/`ResolvePolicy` validálás, a `wrapper` és a `max_items`). Most a Rust párja jön, utána a tesztek.
+~~~~~
+
+
+### 2026-10-23 20:40 — Claude
+
+~~~~~
+Before writing the new tests, I'll run the existing suites in both languages to see whether validating first changes any expected refusal in the shared vectors.
+~~~~~
+
+
+### 2026-10-23 20:40 — Claude
+
+~~~~~
+Két teszt bukott, mindkettőt megnézem. Az egyik a Go `TestNormalizeNeverDefaultsAMandatoryFieldOrAbsentStructure`, a másik a Rust `composed.rs:64`.
+~~~~~
+
+
+### 2026-10-23 20:43 — Claude
+
+~~~~~
+Most a Rust párja a `composed.rs`-ben.
+~~~~~
+
+
+### 2026-10-23 20:43 — Claude
+
+~~~~~
+`Error` has no `Display` in Rust, so only `{e:?}` is used.
+~~~~~
+
+
+### 2026-10-23 20:43 — Claude
+
+~~~~~
+Jön a `max_items` közös vektora a `testdata/p1/schema.json`-ba. Előbb megnézem, van-e már olyan eset, amely érvényes `max_items`-szel sikeres fordítást vár.
+~~~~~
+
+
+### 2026-10-23 20:44 — Claude
+
+~~~~~
+A vektor bekerült. Frissítem a `P1-SUPPORTED-SUBSET.md` két érintett helyét is.
+~~~~~
+
+
+### 2026-10-23 20:46 — Claude
+
+~~~~~
+Now the `ResolvePolicy` branch of the tests uses the expanded object.
+~~~~~
+
+
+### 2026-10-23 20:48 — Claude
+
+~~~~~
+Fuzz is green too. Two commits: (1) validation at the boundaries plus the Go `wrapper` (6, 7, 12; they share files), (2) `max_items` (8).
+~~~~~
+
+
+### 2026-10-23 20:49 — Claude
+
+~~~~~
+Két PR van nyitva, mindkettőn fut a CI. A háttérben figyelem őket, és szólok, ha végeztek vagy ha valami elbukik. Még egyik sem mehet be: mindkettőhöz a te GitHubon rögzített jóváhagyásod kell.
+
+**[#86](https://github.com/CentralInfraCore/cic-primitive-forms/pull/86): a #85 javításai és a #87 hiba**
+- **Mi került bele:** egy új commit (`de488cc`, „closes #87”). A span-visszaolvasás mostantól mapping-értékként parse-olja a tokent (`k: <token>`), mindkét nyelvben. Ugyanez a hibás feltevés két fuzz-targetben és két property-tesztben is benne volt, azokat is javítottam. A hibát kiváltó bemenet regressziós teszt és fuzz-seed lett.
+- **Rebase:** a branchet rebase-eltem a friss `main`-re, ezért `--force-with-lease`-szel pusholtam.
+- **Helyben zöld:** a teljes Go- és Rust-tesztkészlet, valamint 45 másodperc `FuzzSourceSpan` (~600 ezer futás).
+- **CI:** 48 sikeres, 22 még fut.
+
+**[#89](https://github.com/CentralInfraCore/cic-primitive-forms/pull/89): a második review javításai (issue [#88](https://github.com/CentralInfraCore/cic-primitive-forms/issues/88))**
+- **6. és 7. pont:** a `Normalize`, és rajta keresztül a `NormalizeWithPolicy` meg a `Renormalize`, elején most lefut a teljes validálás. A `ResolvePolicy` a saját bejárása után, az eredmény előtt validál. A típushiba és a duplikált azonosító így elutasítás, és nem keletkezik részleges eredmény.
+- **12. pont:** ha a kulcskészletből hiányzik az `access`, a Go mostantól hibát ad pánik helyett, ahogy a Rust.
+- **8. pont:** egy érvényes `max_items` most `SCHEMA_SHAPE_UNSUPPORTED`, eddig csendben eldobódott. Ehhez új közös vektor került a tesztadatok közé.
+- **Helyben zöld:** a teljes Go- és Rust-tesztkészlet, valamint 3×30 másodperc Go fuzz.
+
+**Mit kell átnézned a #89-ben:** az új ellenőrzés két létező tesztet is elbuktatott, és mindkettő eleve érvénytelen dokumentumon dolgozott.
+- **Közös resolution-vektor:** egy esetből hiányzott a kötelező `type`. Most `type: t` van benne, és a `$.type` két várt sora is.
+- **Teszt kézzel épített alakzattal:** egy kötelező mezőt hiányzó dokumentumon normalizált, és eredményt várt. Most `MISSING_MANDATORY` hibát vár.
+
+Mindkettő a PR leírásában is szerepel.
+
+**Nyitva maradt, a te döntésed:**
+- **#85 issue:** a 3. pont (az edit wrapper-validálása) és az 5. pont (a no-op sorrendje).
+- **#88 issue:** a 10. pont (a grammar kötése a sémához), a 11. pont (provenance-integritás) és a 9. pont (Go parser benchmark).
+~~~~~
+
+
+### 2026-10-23 20:54 — Claude
+
+~~~~~
+A #89-en 58 check bukott, köztük szinte minden fuzz- és mutációs job. Ilyen tömeges bukás közös okra utal, nem 58 külön hibára. Megnézem egy job logját.
+~~~~~
+
+
+### 2026-10-23 20:55 — Claude
+
+~~~~~
+A job valójában `cancelled`, nem `failure`, csak a `gh pr checks` mindkettőt „fail”-ként listázza. Megnézem, melyik job bukott ténylegesen, és miért lett a többi megszakítva.
+~~~~~
+
+
+### 2026-10-23 20:55 — Claude
+
+~~~~~
+A #89 nem a kód miatt bukott el: a CI-futását 20:53-kor megszakították. A 72 jobból 60 `cancelled` állapotú, és a `gh pr checks` ezeket is „fail”-ként listázza. Ténylegesen csak a két összesítő job bukott (`quality` és `fuzz`), mert a bemenetükre váró mutációs és fuzz-jobok megszakadtak (`FULL_RUST: cancelled`, `FULL_GO: cancelled`). Teszthiba egyetlen jobban sem volt. Hogy ki szakította meg, azt az API nem mutatja. Lehet, hogy te, hogy a #86 előbb kapjon helyet a sorban.
+
+**A #86 majdnem kész:** 68 sikeres, és már csak 2 fut (`seeded-defects`, `quality-mutation-rust (11)`), hibás check egyelőre nincs.
+
+**Javaslat:** megvárom a #86 végét, és utána újraindítom a #89 megszakított futását (`gh run rerun 40022153530`). Így a kettő nem versenyez a 20 helyért. Ha te szakítottad meg, és később akarod futtatni, szólj, és addig nem indítom.
+~~~~~
+
+
+### 2026-10-23 21:03 — Felhasználó
+
+~~~~~
+86 végzett kérnék rá egy merge parancsot
+~~~~~
+
+
+### 2026-10-23 21:03 — Claude
+
+~~~~~
+A #86 kész a mergere: a CI zöld (71 sikeres, 2 a tervezett módon kimaradt), a branch mergelhető, ütközés nincs. A jóváhagyó parancs a mostani HEAD-re (`de488cc…`):
+
+```
+! gh pr comment 86 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: de488cca04bded2711f7bd8cd721e1285fb681da"
+```
+
+A háttérben már fut a `land`. Amint a jóváhagyást rögzíted, mergel, és végigköveti a post-merge CI-t. A merge lezárja a #87 issue-t is („closes #87”). Ha a #86 bent van, újraindítom a #89 megszakított CI-futását.
+~~~~~
+
+
+### 2026-10-23 21:03 — Felhasználó
+
+~~~~~
+<bash-input> gh pr comment 86 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: de488cca04bded2711f7bd8cd721e1285fb681da"</bash-input>
+~~~~~
+
+
+### 2026-10-23 21:03 — Felhasználó
+
+~~~~~
+<bash-stdout>https://github.com/CentralInfraCore/cic-primitive-forms/pull/86#issuecomment-6374694253</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-10-23 21:03 — Claude
+
+~~~~~
+Megvan a jóváhagyás. A `land` a következő körben mergeli a #86-ot, és végigköveti a post-merge CI-t. Ha végzett, jelzem az eredményt, utána újraindítom a #89 megszakított CI-futását.
+~~~~~
+
+
+### 2026-10-23 21:03 — Claude
+
+~~~~~
+Ez a #86 CI-jának régi figyelője volt, ami most ért véget. A CI zöld, ezt már tudtuk. A merge-et végző `land` még fut a háttérben, és szól, ha a #86 bent van és a post-merge is lefutott.
+~~~~~
+
+
+### 2026-10-23 21:04 — Felhasználó
+
+~~~~~
+ne #86 de nem mergelődött be
+~~~~~
+
+
+### 2026-10-23 21:05 — Claude
+
+~~~~~
+Rendben: a #86 bent van, és a #89 CI-ja is újraindult.
+
+- **#86:** mergelve `56e222d` commitként, és vele a #87 issue is lezárult. A `land` még a post-merge CI-t követi, a végén szól.
+- **#89:** a megszakított CI-futás újraindult (második kör, sorban áll). Ütközés nincs a mostani `main`-nel, a `gh` szerint mergelhető. Amikor lefut, jelzem az eredményt.
+~~~~~
+
+
+### 2026-10-23 21:06 — Felhasználó
+
+~~~~~
+89-re mergeld rá a friss maint
+~~~~~
+
+
+### 2026-10-23 21:06 — Claude
+
+~~~~~
+Helyben mergelem a friss `main`-t a #89 branchbe. Így a merge commit is átmegy az aláíró hookon, a GitHub `update-branch` gombja ezt nem csinálná meg. Az új push úgyis új CI-futást indít, ezért az épp újraindított régit leállítom, hogy ne foglaljon helyet.
+~~~~~
+
+
+### 2026-10-23 21:06 — Claude
+
+~~~~~
+A merge tiszta és aláírt. Pusholás előtt lefuttatom a két nyelv tesztjeit az összefésült állapoton.
+~~~~~
+
+
+### 2026-10-23 21:07 — Claude
+
+~~~~~
+Pusholtam: a #89 HEAD-je most `4fe998d`, a friss `main` (#86) bele van mergelve, és a merge commit aláírt. A régi, újraindított futást leállítottam, a push új CI-t indított. Mielőtt szóltál, az összefésült állapot helyben már átment a teszteken: a Go teljes készlete és a Rust 24/24 tesztbinárisa is zöld.
+~~~~~
+
+
+### 2026-10-23 21:07 — Felhasználó
+
+~~~~~
+ha akarod most már tesztelheted
+~~~~~
+
+
+### 2026-10-23 21:08 — Claude
+
+~~~~~
+Nem kell újra futtatnom: az összefésült állapotot a push előtt már lefuttattam, és mindkét nyelv zöld volt.
+
+- **Go:** `vet`, és a teljes `go test -race -rapid.checks=1000`.
+- **Rust:** `fmt`, `clippy -D warnings`, és 24/24 tesztbináris, 0 hiba.
+
+A #89 új CI-futása most fut a `4fe998d`-n. Ezt helyben nem tudom kiváltani: a mutációs, a fuzz-, a parity- és a branch coverage jobok csak ott futnak. A végét a háttérben figyelem, és szólok. A #86 post-merge CI-ját is követi még a `land`.
 ~~~~~
