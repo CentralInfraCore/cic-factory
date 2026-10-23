@@ -95,22 +95,35 @@ nem ellenőrzi, mit tartalmaz egy kézzel feloldott merge; ezért nincs megvaló
 
 ## `land-chain.sh` - függőségi sorrendű lezárás a tulajdonos saját utasításával
 
-`tools/land-chain.sh [--dry-run] OWNER/REPO REQUIRE_FILE POSTMERGE_FILE N:TELJES_SHA [N:TELJES_SHA ...]`
+`tools/land-chain.sh [--dry-run] [--allow-behind] OWNER/REPO REQUIRE_FILE POSTMERGE_FILE N:TELJES_SHA [N:TELJES_SHA ...]`
 
 Az a változat, amikor nincs GitHubon rögzített jóváhagyás, hanem a **tulajdonos maga adja az utasítást**: a lista (sorrendben, teljes
 40 karakteres HEAD-ekkel) az utasítás. A tulajdonos futtatja (`! tools/land-chain.sh ...` a Claude Code promptban, vagy terminálban);
 a szkript nem ír jóváhagyást GitHubra, és csak a listán szereplő PR-t mergeli. Minden elemre, sorban:
 
-1. a PR HEAD-je még a megadott SHA-e (mozdult = új utasítás kell, megáll);
+1. a PR **friss** (`ci-gate.py fresh`): a HEAD még a megadott SHA, a PR nyitott, nem draft, mergelhető, és **nem marad le a célágtól**. Egy HEAD, amely mögött a célág
+   továbbment, egy mára elavult alapon lett megítélve: a CI-ja nem a merge eredményét írja le. Ilyenkor a lánc **megáll** (8-as kilépési kód), és semmit nem mergel ehhez a PR-hoz;
 2. kivárja (`ci-gate.py watch`), hogy a `REQUIRE_FILE` minden ellenőrzése sikeres legyen azon a HEAD-en (piros vagy lejárat: megáll);
-3. a PR nyitott, nem draft, nem ütközik;
+3. újra **friss**, a merge-hez a lehető legközelebb (várakozás közben a célág mozdulhatott);
 4. `gh pr merge --squash --match-head-commit SHA`;
-5. kivárja a `POSTMERGE_FILE` készletet a merge-commiton. Ha nem zöld, a lánc megáll: a következő PR nem kerül egy olyan `main`-re, amit
-   az előző elrontott. A lánc együttes működését ez a merge-commit ellenőrzés bizonyítja, elemről elemre.
+5. kivárja a `POSTMERGE_FILE` készletet a merge-commiton. Ha nem zöld, a lánc megáll: a következő PR nem kerül egy olyan `main`-re, amit az előző elrontott.
 
-Az első problémánál megáll és kimondja, melyik elem és miért; a már mergelt elemek maradnak (semmit nem von vissza). A `--dry-run`
-csak olvas és jelent (HEAD, mergelhetőség, az ellenőrzések állapota). Kilépési kód: 2 hibás hívás, 3 mozdult a HEAD, 4 nem zöld, 5 nem
-mergelhető, 6 a merge elbukott, 7 a post-merge nem zöld.
+**`--allow-behind`:** a tulajdonos kifejezett döntése, hogy egy zöld, de a célághoz képest lemaradt HEAD-et is mergelni lehet. Egy közös alapról induló, egymástól független PR-okból
+álló láncban az első merge után az összes többi lemarad, tehát a láncokhoz ez vagy az ágak frissítése kell (új HEAD, új utasítás). A kapcsoló soha nem írja felül a mozdult HEAD-et, a lezárt vagy
+draft PR-t, és azt, amit a GitHub nem tart mergelhetőnek.
 
-Függőség (a `ci-gate.py land --after` párja, jóváhagyás nélkül): a sorrend a lista sorrendje. Ha a lista egyik PR-ja a másik után
-ütközne, azt előre fel kell oldani (új HEAD, új utasítás); a szkript nem old fel konfliktust és nem frissíti az ágat.
+Az első problémánál megáll és kimondja, melyik elem és miért; a már mergelt elemek maradnak (semmit nem von vissza). A `--dry-run` csak olvas és jelent. Kilépési kód: 2 hibás hívás,
+3 mozdult a HEAD, 4 nem zöld, 6 a merge elbukott, 7 a post-merge nem zöld, **8 nem friss** (lemaradt, nem mergelhető, lezárt, draft).
+
+Regressziós tesztek: `tools/test_land_chain.py` (a szkript igazi futtatása `gh` és `ci-gate.py` csonkokkal: nem mergel elavult PR-t, a várakozás közben elavulóra sem, a `--allow-behind` csak kérésre és csak a lemaradásra
+érvényes, piros és nem zöld post-merge megállítja a láncot) és a `fresh` tesztjei a `tools/test_ci_gate.py`-ban.
+
+## A `cic-primitive-forms` három profilja és mit bizonyítanak
+
+| Fájl | Mikor | Mit jelent a zöld |
+|---|---|---|
+| `cic-primitive-forms.txt` | egy PR HEAD-je merge előtt | a `scope` és a `quality` is kötelező: a `scope` dönt, hogy a mutációt a diff sorain (`diff`) vagy teljesen (`full`) mérjük, a `quality` mindkét módban a sorlefedettséget és az adott hatókör mutációját ítéli meg, tehát a land eszköz nem kerülheti meg. A `quality-mutation-` shardok tanácsadók (nem várjuk meg őket külön, a `quality` megvárja). Egy csak doksit érintő PR-on a `p1` nem indul (útvonalszűrő), ezért az ilyet a tulajdonos kézzel mergeli. |
+| `cic-primitive-forms.post-merge.txt` | egy merge-commit a `main`-en | **csak a könnyű készlet** (`scope`, `rust`, `go`, `branch-coverage`, `quality-lines`, `quality-gate-selftest`, `parity`, `corpus`), amit egy push a `main`-en futtat. **Nem** bizonyítja a mutációs pontszámot és a fuzzt. |
+| `cic-primitive-forms.nightly.txt` | az éjszakai FULL futása | a teljes kapu (minden mutáns, fuzz, seeded defects, evidence selftest) azon a commiton, amin a `nightly` futott; `option: only-named`: csak a felsorolt nevek számítanak (ugyanezen a commiton a push-futás ellenőrzései mások). Használat: `ci-gate.py post-merge OWNER/REPO --sha <a nightly commitja> --require-from tools/ci-required/cic-primitive-forms.nightly.txt`. |
+
+Egy könnyű post-merge zöld és egy nightly zöld **két külön bizonyíték**; az első nem állítja a másodikat. A nightly profil nevei egy valódi futásról (39855232817, a `73be2a3` commiton) vannak leolvasva, és a profil azon 25/25-ön zöldet ad.
