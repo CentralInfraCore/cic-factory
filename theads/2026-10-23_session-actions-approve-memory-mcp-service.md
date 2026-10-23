@@ -1,6 +1,6 @@
 # Thread-napló — 2026-10-23 (Actions PR-jóváhagyás, memória, on-demand MCP szolgáltatás, forms #77/#78, #84, #85-#89)
 
-Interaktív session transcriptje: miért `false` a `can_approve_pull_request_reviews` a cic-primitive-forms repón (a beállítás org-szinten zárolt), a fejlesztőgép memória- és swap-foglalásának felmérése, egy privát KB-hoz tartozó stdio MCP szerver átalakítása systemd user socket-aktivált, tétlenség után magától leálló SSE szolgáltatássá, három külső review véleményezése és javításai (cic-primitive-forms #77/#78 mergelve `33bc6a8`; #85 és a fuzz által talált #87 a #86-ban, mergelve `56e222d`, post-merge 8/8 zöld; #88 issue és #89 PR), a CI-sor és a job-prioritás kérdése, és a #84 PR mergelése a tulajdonos rögzített jóváhagyásával (`c0ec550`). Csak az interakció: a felhasználó üzenetei (beillesztett szöveggel, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `229b7e34-f3c1-4f6e-aeae-17e724711212.jsonl` (a helyi eredeti napló nem kerül a repóba); a `tools/session-transcript.py --private-repo <privát repó neve>` hívással generálva, majd utólag a privát ticket-azonosítók és a helyi scratchpad-útvonal kézzel `[MASKED:<típus>]` jelölővel kitakarva. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, kontextus-összefoglaló.
+Interaktív session transcriptje: miért `false` a `can_approve_pull_request_reviews` a cic-primitive-forms repón (a beállítás org-szinten zárolt), a fejlesztőgép memória- és swap-foglalásának felmérése, egy privát KB-hoz tartozó stdio MCP szerver átalakítása systemd user socket-aktivált, tétlenség után magától leálló SSE szolgáltatássá, három külső review véleményezése és javításai (cic-primitive-forms #77/#78 mergelve `33bc6a8`; #85 és a fuzz által talált #87 a #86-ban, mergelve `56e222d`; #88 pontjai a #89-ben, mergelve `ea6d8f2`, post-merge 8/8 zöld), a seeded-defects szerepe, a CI-sor és a job-prioritás kérdése, és a #84 PR mergelése a tulajdonos rögzített jóváhagyásával (`c0ec550`). Csak az interakció: a felhasználó üzenetei (beillesztett szöveggel, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `229b7e34-f3c1-4f6e-aeae-17e724711212.jsonl` (a helyi eredeti napló nem kerül a repóba); a `tools/session-transcript.py --private-repo <privát repó neve>` hívással generálva, majd utólag a privát ticket-azonosítók és a helyi scratchpad-útvonal kézzel `[MASKED:<típus>]` jelölővel kitakarva. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, kontextus-összefoglaló.
 
 
 ### 2026-10-23 10:42 — Felhasználó
@@ -1546,4 +1546,149 @@ Nem kell újra futtatnom: az összefésült állapotot a push előtt már lefutt
 - **Rust:** `fmt`, `clippy -D warnings`, és 24/24 tesztbináris, 0 hiba.
 
 A #89 új CI-futása most fut a `4fe998d`-n. Ezt helyben nem tudom kiváltani: a mutációs, a fuzz-, a parity- és a branch coverage jobok csak ott futnak. A végét a háttérben figyelem, és szólok. A #86 post-merge CI-ját is követi még a `land`.
+~~~~~
+
+
+### 2026-10-23 21:08 — Claude
+
+~~~~~
+A #86 post-merge is zöld: 21 check, 0 hiba, és minden kötelező check jelentett. A lezárás része a session-napló frissítése, ezt most megcsinálom, és elindítom a #89 figyelőjét.
+~~~~~
+
+
+### 2026-10-23 21:08 — Claude
+
+~~~~~
+A #86 lezárva. A post-merge CI zöld: 21 check, 0 hiba, és minden kötelező check jelentett. Ezzel lezárult a #87 issue, és a #85-ből az 1., 2. és 4. pont. A #85 issue nyitva marad a 3. és az 5. pont miatt, ezekről neked kell döntened.
+
+A session-naplót frissítettem és pusholtam a cic-factory `main`-re (`2c1907c`).
+
+A #89 CI-ja fut a `4fe998d`-n. A háttérben figyelem, és ha végzett, jelzem az eredményt.
+~~~~~
+
+
+### 2026-10-23 21:21 — Felhasználó
+
+~~~~~
+elbukott a 86
+~~~~~
+
+
+### 2026-10-23 21:22 — Claude
+
+~~~~~
+A #86 rendben van: a PR-on 71 check sikeres, a `main`-en a `56e222d` minden futása zöld. Elbukott viszont a #89-en a `seeded-defects`, valószínűleg ezt láttad. Megnézem.
+~~~~~
+
+
+### 2026-10-23 21:22 — Claude
+
+~~~~~
+Now the internal tests for the guard in both languages.
+~~~~~
+
+
+### 2026-10-23 21:23 — Claude
+
+~~~~~
+Ellenőrzöm, hogy a két új teszt átmegy, és hogy beültetett hibával mindkettő bukik. A hibát ideiglenesen kézzel teszem be, aztán visszaveszem.
+~~~~~
+
+
+### 2026-10-23 21:23 — Claude
+
+~~~~~
+A beültetett hibát mindkét nyelvben elkapja az új teszt, tiszta állapotban mindkettő zöld. Formázás, aztán commit és push.
+~~~~~
+
+
+### 2026-10-23 21:23 — Claude
+
+~~~~~
+Az előző HEAD (`4fe998d`) futása feleslegesen foglalja a CI-helyeket, ezért leállítom.
+~~~~~
+
+
+### 2026-10-23 21:23 — Claude
+
+~~~~~
+A #86 nem bukott el: a PR-on 71 check sikeres, és a `main`-en a merge commit (`56e222d`) minden futása zöld. A piros check a #89-en volt: a `seeded-defects` job bukott el, és ezt a #89 egyik változtatása okozta.
+
+**Mi történt:** a CI egyik beültetett hibája („a default is inserted for a field that is not optional”) Rustban és Go-ban is elkapatlan maradt. Ezt a hibát eddig csak a `Normalize` egy olyan tesztje fogta meg, amely egy kötelező mezőt hiányzó dokumentumot normalizált. Mivel most a `Normalize` előbb validál, ez a dokumentum el sem jut addig a kódrészig, ahol a beültetett hiba ül. A nyilvános API-n keresztül ez az ág már nem érhető el, de védelmi ágként maradjon tesztelve.
+
+**Javítás:** az `4f6c50a` commit mindkét nyelvben egy belső tesztet ad hozzá, amely közvetlenül, validálás nélkül hívja a bejáró kódot. Kézzel kipróbáltam: tisztán mindkét nyelvben zöld, a beültetett hibával mindkettő piros. A formázás és a clippy rendben.
+
+A #89-re pusholtam. A régi HEAD (`4fe998d`) még futó CI-ját leállítottam, hogy ne foglalja a helyeket. A #89 CI-ja most az új HEAD-en fut, és a háttérben figyelem.
+~~~~~
+
+
+### 2026-10-23 21:38 — Felhasználó
+
+~~~~~
+amugy ez a seeded-defects mire való?
+~~~~~
+
+
+### 2026-10-23 21:39 — Claude
+
+~~~~~
+A `seeded-defects` a tesztek tesztje: azt bizonyítja, hogy a tesztek egy szándékosan elrontott implementációnál tényleg pirosak lesznek.
+
+**Hogyan működik** (`tools/seeded_defects.py`):
+1. Van egy lista szándékos hibákról, nagyjából 200 bejegyzés, Rustra és Go-ra külön. Mindegyik egy pontos szövegcsere a termékkódban. Ilyen volt a mai is: `(Presence::Optional, Some(d)) …` → `(_, Some(d)) …`, vagyis „kötelező mezőt is default tölt ki”.
+2. Minden hibához a crate vagy modul egy ideiglenes másolatán:
+   - előbb ellenőrzi, hogy a módosítatlan másolat tesztjei zöldek;
+   - beteszi az egyetlen szándékos hibát;
+   - lefuttatja az érintett teszteket, és azt követeli, hogy **bukjanak**.
+3. Ha egy hibára zöld marad a tesztkészlet, az `NOT CAUGHT`, és a job piros. A repóban magában semmi nem változik.
+
+**Miért kell:** egy kapu, ami nem tud elbukni, nem bizonyít semmit. A sok zöld teszt még nem jelenti, hogy a fontos hibákat elkapnák. A lista azokat a helyeket célozza, ahol egy rossz implementáció a szokásos eseteken jónak látszik. Ilyenek:
+- az `inherit` grammar-1 szerinti írásmódja;
+- a pin-ellenőrzés;
+- a CertPattern beolvasása;
+- a parser-paritás (hibaprioritás, pozíciók).
+
+**Két beépített védelem:**
+- **Elavult bejegyzés:** a csereszövegnek pontosan egyszer kell előfordulnia a kódban. Ha egy refaktor után már nem illeszkedik, a bejegyzés hibát jelez, nem megy át csendben. A `--stale-only` ezt másodpercek alatt ellenőrzi.
+- **Csak a diff hibái:** a PR-okon (`--changed-from`) csak a módosított termékfájlok hibái futnak, a többi „not run”.
+
+**Miben más, mint a mutációs teszt:** a mutációs teszt gépi, véletlenszerű apró változtatásokat próbál. Ez a lista kézzel írt, értelmes hibákból áll, amelyek egy-egy konkrét szabályt sértenek meg.
+
+**Mit mutatott ma:** a #89 validálása miatt egy védelmi ágat már csak a `Normalize`-on keresztül teszteltünk, a validálás pedig elé került. A kódban nem volt hiba, de a teszt elvesztette a fedezetét. A `seeded-defects` pontosan ezt jelezte, és ezért került be a walkert közvetlenül tesztelő belső teszt.
+~~~~~
+
+
+### 2026-10-23 21:56 — Claude
+
+~~~~~
+A #89 CI-ja teljesen zöld az új HEAD-en (`4f6c50a`): 71 check sikeres, 2 a tervezett módon kimaradt. Ebben benne van a `seeded-defects` és a `quality` is, a beültetett hibát tehát most elkapja a teszt.
+
+Mergelhető. Ha mehet, ez a jóváhagyó parancs:
+
+```
+! gh pr comment 89 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: 4f6c50a65db07973b2b424c049b6cbbcf4ae06bc"
+```
+
+Ha rögzítetted, elindítom a `land`-et. Az mergel, és végigköveti a post-merge CI-t.
+~~~~~
+
+
+### 2026-10-23 21:59 — Felhasználó
+
+~~~~~
+<bash-input> gh pr comment 89 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: 4f6c50a65db07973b2b424c049b6cbbcf4ae06bc"</bash-input>
+~~~~~
+
+
+### 2026-10-23 21:59 — Felhasználó
+
+~~~~~
+<bash-stdout>https://github.com/CentralInfraCore/cic-primitive-forms/pull/89#issuecomment-6375576609</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-10-23 21:59 — Claude
+
+~~~~~
+Megvan a jóváhagyás, és elindítottam a #89 `land`-jét. Ellenőrzi a jóváhagyást a HEAD-re, mergel, és végigköveti a post-merge CI-t. Ha végzett, jelzem az eredményt, és frissítem a session-naplót.
 ~~~~~
