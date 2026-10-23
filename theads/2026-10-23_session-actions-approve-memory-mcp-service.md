@@ -1,6 +1,6 @@
-# Thread-napló — 2026-10-23 (Actions PR-jóváhagyás, memória, on-demand MCP szolgáltatás, forms #77/#78)
+# Thread-napló — 2026-10-23 (Actions PR-jóváhagyás, memória, on-demand MCP szolgáltatás, forms #77/#78, #85/#86, #84, #87)
 
-Interaktív session transcriptje: miért `false` a `can_approve_pull_request_reviews` a cic-primitive-forms repón (a beállítás org-szinten zárolt), a fejlesztőgép memória- és swap-foglalásának felmérése, egy privát KB-hoz tartozó stdio MCP szerver átalakítása systemd user socket-aktivált, tétlenség után magától leálló SSE szolgáltatássá, majd egy külső review véleményezése és az abban talált quality-gate hiba javítása (cic-primitive-forms #77 issue, #78 PR, mergelve `33bc6a8`, post-merge 8/8 zöld). Csak az interakció: a felhasználó üzenetei (beillesztett szöveggel, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `229b7e34-f3c1-4f6e-aeae-17e724711212.jsonl` (a helyi eredeti napló nem kerül a repóba); a `tools/session-transcript.py --private-repo <privát repó neve>` hívással generálva, majd utólag a privát ticket-azonosítók és a helyi scratchpad-útvonal kézzel `[MASKED:<típus>]` jelölővel kitakarva. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, kontextus-összefoglaló.
+Interaktív session transcriptje: miért `false` a `can_approve_pull_request_reviews` a cic-primitive-forms repón (a beállítás org-szinten zárolt), a fejlesztőgép memória- és swap-foglalásának felmérése, egy privát KB-hoz tartozó stdio MCP szerver átalakítása systemd user socket-aktivált, tétlenség után magától leálló SSE szolgáltatássá, két külső review véleményezése és javításai (cic-primitive-forms #77 issue, #78 mergelve `33bc6a8`; #85 issue, #86 PR), a CI-sor és a job-prioritás kérdése, a #84 PR mergelése a tulajdonos rögzített jóváhagyásával (`c0ec550`, post-merge 8/8 zöld), és a #86 fuzz-hibája mögött talált, már a main-en meglévő read-back hiba (#87). Csak az interakció: a felhasználó üzenetei (beillesztett szöveggel, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `229b7e34-f3c1-4f6e-aeae-17e724711212.jsonl` (a helyi eredeti napló nem kerül a repóba); a `tools/session-transcript.py --private-repo <privát repó neve>` hívással generálva, majd utólag a privát ticket-azonosítók és a helyi scratchpad-útvonal kézzel `[MASKED:<típus>]` jelölővel kitakarva. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, kontextus-összefoglaló.
 
 
 ### 2026-10-23 10:42 — Felhasználó
@@ -650,4 +650,519 @@ Kétféleképpen rögzítheted, a mostani HEAD-re (`2b14d4cbeef6e45f2cc877c2f574
   ```
 
 A háttérben már fut a `tools/ci-gate.py land … --approver sinkog`. Amint a jóváhagyás megjelenik, mergel, megvárja a post-merge CI-t, és szól. Ezután frissítem a session-naplót a `theads/` alatt, és commitolom.
+~~~~~
+
+
+### 2026-10-23 18:42 — Claude
+
+~~~~~
+Megvan a merge, a post-merge zöld. Most frissítem és commitolom a session-naplót, ahogy a lezárási szabály előírja.
+~~~~~
+
+
+### 2026-10-23 18:42 — Claude
+
+~~~~~
+A #78 PR mergelve lett, a post-merge CI zöld.
+
+- **Merge commit:** `33bc6a8a4c889bbf7703bec430a545d8ddd89059` a forms `main`-en, a #77 issue lezárva.
+- **Post-merge:** a futó `land` a merge után végigkövette a post-merge kört: 20 check, 0 pending, 0 hiba, és minden kötelező check jelentett.
+- **Ki mergelt:** GitHubon nincs rögzített jóváhagyás, sem review, sem `merge-approved:` hozzászólás. Az események szerint 18:39:05-kor te mergelted közvetlenül a GitHub felületén. A `land` nem mergelt, csak a post-merge kört követte.
+- **Session-napló:** commitolva és pusholva a cic-factory `main`-re (`07f4d0f`). A `theads/2026-10-23_session-actions-approve-memory-mcp-service.md` a mai teljes sessiont tartalmazza a merge-ig, a privát ticket-azonosítók és a helyi útvonalak kitakarva.
+~~~~~
+
+
+### 2026-10-23 19:11 — Felhasználó
+
+~~~~~
+lehet-e priorizálni a CI lépéseket ... látom karikát
+~~~~~
+
+
+### 2026-10-23 19:12 — Claude
+
+~~~~~
+Közvetlenül nem lehet: a GitHub Actionsben nincs job-prioritás. A sorrendet és a sor hosszát viszont lehet befolyásolni.
+
+## Mi okozza a karikákat
+Az org **Free** csomagon van, ott **egyszerre legfeljebb 20 job fut** az egész orgban, a többi sorban áll. A #78 utolsó full futása:
+- **70 job**, összesen **320 job-perc** futásidő. 20 párhuzamos hellyel ez elméletben ~16 perc, a valóságban **30 perc** lett.
+- **A sorban állás ~10–12 perc** a mutációs shardoknál.
+- **A leghosszabb lánc a Rust-mutáció:** a `quality-mutation-rust (2)` 12,4 percet várt, és csak utána futott 9,4 percet. A `quality` erre vár, ezért a teljes futás hossza nagyrészt sorban állás.
+- A 20 hely az **egész org** között oszlik meg, így egy cic-factory futás vagy egy másik PR is ugyanebből vesz el.
+
+## Mit lehet tenni (hatás szerinti sorrendben)
+1. **`concurrency` + `cancel-in-progress` a PR-futásokra.** A `p1.yml`-ben most nincs ilyen. Ha egy PR-ra újra pusholsz, a régi futás 70 jobja tovább foglalja a helyeket. Kicsi változtatás, kockázat nélkül.
+2. **A hosszú lánc induljon először.** Az olcsó és nem blokkoló jobok (például a `fuzz` összesítő, az advisory és evidence jellegű jobok) kapjanak `needs:`-t, hogy ne foglaljanak helyet, amíg a Rust-mutációs shardok el nem indultak. Ez gyakorlatilag kézi prioritás.
+3. **Kevesebb, hosszabb shard.** 22 Go-shard fut 4–6 percig, mindegyik külön setup-költséggel (checkout, toolchain, cache). 20 helyes korlátnál a kevesebb job kevesebb sorban állást jelent. Ezt a `tools/shard_budget.json` és a `shard_count.py` állítja (a #75 ~10 perc/shard célt tűzött ki), vagyis egy paraméter módosítása.
+4. **Több hely:** self-hosted runner vagy fizetős csomag. A self-hosted runner ezen a gépen most nem jó ötlet a memóriahelyzet miatt, és publikus repón biztonsági kérdéseket is felvet.
+
+Az 1-es pontot javaslom önálló kis PR-ként, a 2-es és 3-as pontot egy következő lépésben, mérés alapján. Megcsináljam az 1-est?
+~~~~~
+
+
+### 2026-10-23 19:57 — Felhasználó
+
+~~~~~
+más nagyon más nézd meg egyetértesz vele?
+~~~~~
+
+
+### 2026-10-23 19:57 — Felhasználó
+
+~~~~~
+más nagyon más nézd meg egyetértesz vele?
+
+<pasted_content id="2258">
+# Kritikus code review — cic-primitive-forms
+
+Feltételes GO — javításokkal
+
+Összkép: Ez egy átgondolt, a szokásosnál jóval fegyelmezettebb projekt. Az ADR-ek, a Rust–Go kettős implementáció, a közös konformanciakorpusz és a CI bizonyítékkezelése komoly mérnöki munkára utalnak.
+
+Ugyanakkor nem adnám még feltétel nélkül éles használatba olyan környezetben, ahol nem megbízható dokumentumok érkezhetnek, vagy a policy-feloldás eredményére biztonsági döntés épül.
+
+Nem egy nagy architekturális újraírást látok szükségesnek, hanem néhány pontosan körülhatárolható kockázat megszüntetését.
+
+## A legfontosabb megállapítások
+
+1\. Ismeretlen műveletnév permisszív policy-eredményt adhat
+
+P1 · Magas
+
+go/resolve.go:118–153, 242–249 · rust/src/resolve.rs:119, 271–279
+
+A `ResolveRule` egy egyszerű stringként fogadja az `op` paramétert. Kizárólag a `"modify"` értéket kezeli módosításként; minden más értéket olvasási műveletnek vesz.
+
+Emiatt egy elgépelés, például `"modfiy"`, alapértelmezett esetben `RuleOpen` eredményt adhat a `modify` művelethez tartozó `RuleOwner` helyett.
+
+Ez még nem közvetlen jogosultságadás — a library szabályokat számít, nem döntést hoz —, de veszélyes API-határ. Javaslat: zárt enum vagy validált művelettípus mindkét nyelvben, ismeretlen műveletnél explicit hibával.
+
+2\. Rust parser: az erőforráskorlát túllépése nem állítja le a faépítést
+
+P1 · Magas
+
+rust/src/parse.rs:268–303
+
+Az `open()` és a node-számlálás korláttúllépéskor `defer` segítségével eltárolja a hibát, de utána is létrehozza a következő frame-eket és node-okat. Tehát a `max_depth = 64` nem tényleges építési korlát.
+
+A legfeljebb 1 MiB-os bemenet is tartalmazhat több tízezer egymásba ágyazott konténert. Ez jelentős memóriafelhasználáshoz, illetve a mély fa felszabadításakor stack overflow kockázatához vezethet.
+
+Javaslat: korláttúllépés után a parser tovább ellenőrizheti a szintaxist, de ne építsen további fát. Külön regressziós teszt kell extrém mélységre és elemszámra.
+
+3\. A source-preserving edit nem ellenőrzi teljesen az Access wrapper tartalmát
+
+P2 · Közepes
+
+go/editscalar.go:114–153 · rust/src/editscalar.rs
+
+A `shortView` / `short_view` eltávolítja az expanded wrapper rétegét, és a sémával elsősorban a belső `value` értéket ellenőrzi.
+
+Így például egy expanded pozíció hibás `access` vagy `inherit` tagja mellett egy másik scalar módosítása sikeres lehet, mert a szerkesztési útvonal nem hívja meg a teljes policy-értékellenőrzést.
+
+Ez nem jelenti, hogy a szerkesztés elrontja a korábban helyes dokumentumot. Azt jelenti, hogy a sikeres szerkesztés nem bizonyítja a teljes dokumentum szemantikai érvényességét. Ezt az API szerződésében egyértelműsíteném, vagy hozzáadnám a kötött grammar szerinti wrapper-validációt.
+
+4\. Kvadratikus egyenlőségvizsgálat mindkét implementációban
+
+P2 · Közepes
+
+go/node.go:77–91 · rust/src/node.rs:73–80
+
+A `Same` / `same` minden mapping-bejegyzéshez lineárisan keres a másik mappingben. Nagy, lapos dokumentumoknál ez \\(O(n^2)\\) összehasonlítást eredményez.
+
+Az `EditScalar` minden sikeres módosítás után újraparszolja és összehasonlítja a teljes fát, így a költség felhasználói műveletekben is megjelenik.
+
+Javaslat: mapping-indexelés, illetve benchmark 100, 1 000 és 10 000 kulccsal. Nem feltétlenül funkcionális hiba, de nagy vagy külső bemenetnél erőforrás-kockázat.
+
+5\. Ellentmondás a no-op szerkesztési szerződésben
+
+P2 · Közepes
+
+go/editscalar.go:39–46 · rust/src/editscalar.rs:47–57 · ADR 0012 §3.6
+
+A szerkesztés előbb futtatja a `representable` ellenőrzést, és csak utána nézi meg, hogy az új érték azonos-e a régivel.
+
+Például a `n: "a\n"` YAML-szövegben a `\n` escape révén tárolt sortörést ugyanarra a stringértékre állítva `EDIT_VALUE_NOT_REPRESENTABLE` keletkezhet, noha a szerződés szerint egy azonos értékre történő módosításnak byte-pontos no-opnak kell lennie.
+
+Javaslat: a meglévő értékkel való azonosság ellenőrzését előrébb hozni, vagy a szerződésben kifejezetten definiálni ezt a kivételt.
+
+## Amit kifejezetten erősnek tartok
+
+A dokumentáció és az implementáció között jó a nyomon követhetőség. Az ADR 0006–0012 szerződései nem csupán magyarázó dokumentumok: konkrét tesztelési és hibakezelési elvárásokhoz kapcsolódnak. Különösen értékes az authored/default eredet megőrzése, a visszaalakítás szabályozása és a hibák strukturált reprezentációja.
+
+A közös konformanciakorpusz, a property-based tesztek, a fuzzing és a mutation gate együtt lényegesen erősebb minőségbiztosítási alapot adnak, mint egy átlagos könyvtár unit tesztjei. Egy fenntartásom van: a Rust–Go egyezés önmagában nem bizonyít helyességet, ha ugyanaz a logikai hiba mindkét implementációban jelen van. Emiatt fontosak a független referenciaeredmények és a határhelyzetekre írt negatív tesztek.
+
+## Mit sikerült ellenőrizni?
+
+| Ellenőrzés                                     | Eredmény                             |
+| ---------------------------------------------- | ------------------------------------ |
+| Korpusz strukturális vizsgálata                | 419 eset, 0 violation                |
+| Edit-vektorok generált állapotának ellenőrzése | Sikeres                              |
+| Grammar identity önellenőrzés                  | Sikeres                              |
+| Python evidence unit tesztek                   | 148-ból 147 sikeres                  |
+| Go implementációs tesztek                      | Nem futtathatók a helyi toolchainnel |
+| Rust implementációs tesztek                    | Rust toolchain hiányzik              |
+
+A Python tesztek egyetlen hibája a Go-alapú kanonikus JSON ellenőrzésnél jelentkezett: a szükséges Go 1.27 toolchain letöltését a környezet hálózati korlátozása megakadályozta. Ez nem bizonyított projekthiba.
+
+A fenti öt megállapítás statikus kódvizsgálaton alapul; a hibautakat nem tudtam mindkét implementáción futtatva reprodukálni.
+
+## Végső értékelés
+
+Az átvizsgálás alapján, nem teljes auditként
+
+Architektúra és szerződések
+
+9/10
+
+Dokumentáció és követhetőség
+
+9/10
+
+Tesztelési stratégia
+
+9/10
+
+Robusztusság a szélső bemeneteknél
+
+6/10
+
+Éles bevezetési készültség
+
+7/10
+
+A döntésem: feltételes GO. A meglevő architektúrát megtartanám. Elsőként a policy operation típusbiztonságát és a Rust parser tényleges erőforráskorlátait javítanám, majd a szerkesztési API szemantikai validálását és a no-op szerződését tenném egyértelművé.
+
+A projekt legnagyobb erőssége a következetesen szerződésvezérelt fejlesztés. A legnagyobb jelenlegi veszélye pedig éppen ebből következik: egy alaposan letesztelt, de túl szűken megfogalmazott szerződés hamis biztonságérzetet adhat a teljes rendszer viselkedéséről.
+</pasted_content id="2258">
+~~~~~
+
+
+### 2026-10-23 19:57 — Claude
+
+~~~~~
+Mind az öt konkrét állítást megnézem a kódban az `origin/main`-en, sorban.
+~~~~~
+
+
+### 2026-10-23 19:57 — Claude
+
+~~~~~
+Az 1. pont igaz mindkét nyelvben. Jön a 2.: a Rust parser korlátai.
+~~~~~
+
+
+### 2026-10-23 19:58 — Claude
+
+~~~~~
+Nagyrészt egyetértek: az öt pontból négy igaz a kódban. Az ötödik (a parser korlátai) részben igaz, de a súlyosságát eltúlozza. Mind az ötöt az `origin/main`-en ellenőriztem (`c73c5a2`), a kód alapján, futtatás nélkül, ahogy a review is.
+
+| # | Állítás | Ítélet | Súlyosság szerintem |
+|---|---|---|---|
+| 1 | Ismeretlen `op` → permisszív eredmény | **Egyetértek** | Magas, P1 |
+| 2 | A parser-korlát nem állítja meg a faépítést | **Részben** | Közepes, P2 |
+| 3 | Az edit nem validálja a wrapper tagjait | **Egyetértek** | Közepes |
+| 4 | Négyzetes `Same` | **Egyetértek** | Alacsony–közepes |
+| 5 | A no-op és a refusal-sorrend ütközik | **Egyetértek** | Az ADR-ben dönteni kell |
+
+**1. Igaz, mindkét nyelvben.** A `go/resolve.go` `localRule` függvénye és a layer-5 fallback csak `op == "modify"`-t vizsgál, minden más `access`-nek számít. Rustban ugyanez a helyzet (`is_modify`, `rust/src/resolve.rs:119`, `:272`). Egy elgépelt `"modfiy"` a rendszer-defaultnál `RuleOpen`-t ad `RuleOwner` helyett. A javítás egyszerű: zárt típus vagy explicit hiba mindkét nyelvben, és kell hozzá negatív vektor a korpuszba.
+
+**2. A mechanizmus igaz, a „stack overflow” nem.**
+- A `defer` után a parser tovább építi a fát (`rust/src/parse.rs:268–303`), tehát a `max_depth` és a `max_nodes` valóban nem építési korlát. Ez szándékos: a Go-paritás miatt egy későbbi szintaxishiba felülírja a korlát-hibát.
+- **A stack overflow-t viszont a meglévő teszt cáfolja.** A `deep_nesting_is_refused_not_overflowed` 100 000-es mélységgel fut, és hibát ad, nem overflow-t, mert a YAML-könyvtárnak saját mélységkorlátja is van.
+- **A memória az 1 MiB bemenettel lineárisan nő**, legfeljebb néhányszor tíz MB.
+- A javaslatát (korlát után csak szkennelés, építés nélkül) jónak tartom, de ez P2, nem P1.
+
+**3. Igaz.** A `refuseInvalid` a `shortView`-n validál. Ez az expanded wrappert akkor bontja ki, ha a `classify` szerint expanded, a `classify` pedig csak a kulcskészletet nézi (`go/recognize.go:255`). Egy `access: 42` vagy hibás `inherit` tag így átmegy, és egy másik scalar szerkesztése sikeres lesz. Ez a #76 PR 1. tulajdonosi pontjának mellékhatása. Ott az döntöttük el, hogy a wrappert a `value`-ként olvassuk, de így a tagjait semmi nem ellenőrzi. Dokumentálás helyett javítanám: a wrapper menjen át a `Recognize`-on.
+
+**4. Igaz.** A `go/node.go:77–91` és a `rust/src/node.rs:73–80` is lineáris keresést végez minden bejegyzésre, és az `EditScalar` minden sikeres hívás után összeveti a teljes fát. A `max_nodes` (100k) korlátozza, de egy 1 MiB-os lapos mappingnél ez másodperces nagyságrend lehet. A review javaslatát (index és benchmark) követném.
+
+**5. Igaz, és ez specifikációs ütközés, nem kódhiba.** Az ADR 0012 fix sorrendje szerint a 7. lépés, az `EDIT_VALUE_NOT_REPRESENTABLE`, a no-op vizsgálat előtt jön. A kód ezt követi. A P3b design 6. pontja szerint viszont az azonos értékre szerkesztés byte-pontos no-op. A kettő kifejezetten ütközik egy `"a\n"` tokennél, mert az ADR szerint a meglévő escape-elt vezérlőkaraktert olvassuk, de újat nem írunk. Ezt neked kell eldöntened az ADR-ben. Én a no-op elsőbbsége felé hajlok, mert összhangban van az „olvasás tágabb, mint az írás” elvével.
+
+**Az általános megjegyzésével is egyetértek:** a Rust–Go paritás nem bizonyít helyességet, ha ugyanaz a hiba mindkét nyelvben megvan. Az 1. és a 3. pont pontosan ilyen, mindkét nyelvben azonos rés.
+
+**Javaslat:** öt issue a forms repóban, és az 1. pont javítása rögtön PR-ban, mert az a legkisebb és a legfontosabb. Az 5. pont előtt kell a döntésed az ADR 0012 módosításáról. Mehet így?
+~~~~~
+
+
+### 2026-10-23 19:59 — Felhasználó
+
+~~~~~
+1 PRbe a javítás elfér? mert akkor 1 ISSUE és mehet a javítás
+~~~~~
+
+
+### 2026-10-23 20:00 — Claude
+
+~~~~~
+Mielőtt igent mondok, megnézem, van-e helyben Rust- és Go-eszközlánc. Ez az öt javítás mind termékkód, és nem szeretném vakon, csak a CI-n iterálva megírni.
+~~~~~
+
+
+### 2026-10-23 20:03 — Claude
+
+~~~~~
+Megírom az issue-t (az 1., 2. és 4. pont a hatókör, a 3. és az 5. szerződésdöntésként külön), aztán jön az implementáció.
+~~~~~
+
+
+### 2026-10-23 20:04 — Claude
+
+~~~~~
+Megvan a #85. Branch, aztán az 1. pont Go-ban.
+~~~~~
+
+
+### 2026-10-23 20:04 — Claude
+
+~~~~~
+Most az 1. pont tesztjei. Megnézem a meglévő `ResolveRule` teszteket, hogy ugyanabban a stílusban írjam.
+~~~~~
+
+
+### 2026-10-23 20:04 — Claude
+
+~~~~~
+Writing the Go and Rust tests for point 1.
+~~~~~
+
+
+### 2026-10-23 20:05 — Claude
+
+~~~~~
+Az 1. pont kész. Jön a 2.: a Rust parser `place` függvénye és a belső tesztmodul.
+~~~~~
+
+
+### 2026-10-23 20:06 — Claude
+
+~~~~~
+Egy viselkedési szintű teszt is kell: egy korlát átlépése után egy későbbi szintaxishiba továbbra is nyer, vagyis a frame-ek tovább futnak, és a Go-paritás megmarad.
+~~~~~
+
+
+### 2026-10-23 20:06 — Claude
+
+~~~~~
+Az 1. és a 2. pont kódja és tesztjei kész. Jön a 4.: a `Same` indexelése mindkét nyelvben, utána a futtatás Dockerben.
+~~~~~
+
+
+### 2026-10-23 20:06 — Claude
+
+~~~~~
+The existing tests already use a "fast at 100 000 keys" bound, so the new `Same` test follows the same pattern.
+~~~~~
+
+
+### 2026-10-23 20:07 — Claude
+
+~~~~~
+A repeated-key esetet mindkét nyelvben fedi már egy teszt. Csak a nagy, fordított sorrendű mapping időkorlátos tesztje kell.
+~~~~~
+
+
+### 2026-10-23 20:07 — Claude
+
+~~~~~
+A kód kész. Frissítem a doksiban a reason-kódok felsorolását, aztán futtatom Dockerben.
+~~~~~
+
+
+### 2026-10-23 20:07 — Claude
+
+~~~~~
+Most a Dockerben futtatás. Megnézem, pontosan milyen parancsokkal futtatja a CI a Rust- és a Go-teszteket.
+~~~~~
+
+
+### 2026-10-23 20:07 — Claude
+
+~~~~~
+A korpusz-tesztekhez kell a pinelt `cic-primitives` és `cic-schema-registry` is, ahogy a CI-ban. A scratchpadbe klónozom őket a pinelt commitokon.
+~~~~~
+
+
+### 2026-10-23 20:08 — Claude
+
+~~~~~
+Go-tesztek `golang:1.27.2` konténerben: először `gofmt`, `vet` és a célzott új tesztek, utána a teljes CI-parancs.
+~~~~~
+
+
+### 2026-10-23 20:08 — Claude
+
+~~~~~
+Az új Go-tesztek zöldek. A 100 000 kulcsos `Same` 0,32 s alatt fut le. A teljes Go-tesztkészletet a CI paramétereivel (`-race`, `-rapid.checks=1000`) a háttérben indítom, közben jön a Rust.
+~~~~~
+
+
+### 2026-10-23 20:08 — Claude
+
+~~~~~
+Mindkét futás a háttérben megy, és értesít, ha végzett.
+~~~~~
+
+
+### 2026-10-23 20:09 — Claude
+
+~~~~~
+A teljes Go-tesztkészlet zöld a CI paramétereivel (`-race -rapid.checks=1000`, 27,5 s). A Rust még fut.
+~~~~~
+
+
+### 2026-10-23 20:09 — Claude
+
+~~~~~
+A tesztek zöldek, de a kimenet elején egy `#[test]` sor látszik, ami `cargo fmt --check` diffre utal. Megnézem az elejét.
+~~~~~
+
+
+### 2026-10-23 20:09 — Claude
+
+~~~~~
+A `cargo fmt --check` eltérést jelzett, és mivel `&&`-sel volt fűzve, a clippy le sem futott. Lefuttatom a `cargo fmt`-t, utána a clippy-t és a teszteket.
+~~~~~
+
+
+### 2026-10-23 20:09 — Claude
+
+~~~~~
+A `rustfmt` komponens csak az előző konténerben volt telepítve. Ugyanabban a parancsban telepítem újra.
+~~~~~
+
+
+### 2026-10-23 20:10 — Claude
+
+~~~~~
+Három aláírt commit, a munkafa tiszta. Push és PR.
+~~~~~
+
+
+### 2026-10-23 20:11 — Claude
+
+~~~~~
+Megnyitottam az issue-t és a PR-t az 1., 2. és 4. pontra. A CI fut, a végén jelzek.
+
+- **Issue:** [#85](https://github.com/CentralInfraCore/cic-primitive-forms/issues/85). A 3. és az 5. pont nyitott szerződéskérdésként szerepel benne.
+- **PR:** [#86](https://github.com/CentralInfraCore/cic-primitive-forms/pull/86), pontonként egy aláírt commit:
+  1. **`3c85cc9`, resolve:** ha a művelet se nem `access`, se nem `modify`, az eredmény `unknown`, `UNKNOWN_OPERATION` okkal, és ezt a függvény minden más olvasás előtt vizsgálja. Egy elgépelt `"modfiy"` így már nem kap `open`-t. Mindkét nyelvben, a függvény-szignatúra nem változik.
+  2. **`26a99e7`, Rust parser:** egy félretett hiba után a parser csomópontot már nem fűz a fához, a frame-ek viszont maradnak. Így egy későbbi szintaxishiba, köztük az üres mapping-kulcs, továbbra is nyer, mint Go-ban.
+  3. **`c925a1c`, `Same`:** a másik mappinget egyszer indexeli, így az összevetés lineáris. Ismétlődő kulcsnál továbbra is az első bejegyzés dönt.
+
+**Helyben, konténerben futtatva:**
+- **Go 1.27.2:** `gofmt`, `vet`, és a teljes `go test -race -rapid.checks=1000`, mind zöld.
+- **Rust stable (1.99.1):** `fmt`, `clippy -D warnings`, és mind a 24 tesztbináris zöld.
+- **Új tesztek** mindkét nyelvben, egymás párjaként.
+- **Futási idő:** két 100 000 kulcsos, fordított sorrendű mapping összevetése 0,3 s.
+
+**Útközben két hibát javítottam a saját változtatásomban:**
+- Az első Rust-futásnál a `cargo fmt --check` eltérést talált, és emiatt a clippy le sem futott. Formázás után mindkettő zöld.
+- A meglévő alias-unit-teszt azt rögzítette, hogy egy félretett hiba után is lesz gyökér. A javítás után ez szándékosan nincs, ezért a tesztet is ehhez igazítottam.
+
+**Helyben nem futott** a mutáció, a fuzz, a parity és a branch coverage. Ezeket a CI futtatja a diffen.
+~~~~~
+
+
+### 2026-10-23 20:18 — Felhasználó
+
+~~~~~
+84 mehet amergeű
+~~~~~
+
+
+### 2026-10-23 20:18 — Claude
+
+~~~~~
+A #84-et még nem mergeltem: a jóváhagyásodra vár. A PR mergelhető (`CLEAN`), a CI zöld, de GitHubon még nincs rajta jóváhagyás. Ha itt a chatben írod, hogy „mehet”, az nem számít annak, és helyetted sem rögzíthetem.
+
+A háttérben már fut a `land`. Amint a mostani HEAD-re (`8a32d0fed152448256ad2dbab8323e7612196499`) rögzíted a jóváhagyást, mergel és végigköveti a post-merge CI-t. Kétféleképpen rögzítheted:
+- **Review:** a PR oldalán Approve.
+- **Hozzászólás** a PR-on, a saját fiókodból:
+  ```
+  merge-approved: 8a32d0fed152448256ad2dbab8323e7612196499
+  ```
+  A GitHub felületén közvetlenül is mergelheted, ahogy a #78-nál tetted.
+
+Ha a #86-ra gondoltál, szólj. Annak a CI-ja még fut, a végét a háttérben figyelem.
+~~~~~
+
+
+### 2026-10-23 20:19 — Felhasználó
+
+~~~~~
+mergeld be én felügyelem a repot és fejlesztem egyben
+~~~~~
+
+
+### 2026-10-23 20:19 — Claude
+
+~~~~~
+Ezt nem teszem meg, még a te kérésedre sem. A repó saját szabálya szerint (`CLAUDE.md`, `/land-pr`) a merge-eszköz csak végrehajt, jóváhagyást nem ír. Csak olyan jóváhagyást fogad el, amit te magad rögzítettél GitHubon, a chatben adott engedély nem elég. Ezt a szabályt azért állítottad be, hogy az auditnyomban mindig a te saját lépésed legyen a jóváhagyás. Ha egy ilyen kérésre megkerülném, a szabály értelmét vesztené.
+
+Neked viszont egyetlen parancs. A `!` előtaggal ebben a sessionben fut, de a te műveleted:
+
+```
+! gh pr comment 84 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: 8a32d0fed152448256ad2dbab8323e7612196499"
+```
+
+A háttérben futó `land` ezt a következő körben észleli, mergel, megvárja a post-merge CI-t, és szól.
+
+Ha a szabályt magát akarod lazítani, például hogy egy általad adott chat-utasítás elég legyen, azt a `CLAUDE.md`-ben és a `ci-gate` doksiban rögzítsük kifejezett döntésként. Ezt nem a mostani merge kedvéért csendben kellene kikerülni.
+~~~~~
+
+
+### 2026-10-23 20:20 — Felhasználó
+
+~~~~~
+<bash-input> gh pr comment 84 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: 8a32d0fed152448256ad2dbab8323e7612196499"</bash-input>
+~~~~~
+
+
+### 2026-10-23 20:20 — Felhasználó
+
+~~~~~
+<bash-stdout>https://github.com/CentralInfraCore/cic-primitive-forms/pull/84#issuecomment-6373935981</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-10-23 20:20 — Claude
+
+~~~~~
+Rögzítetted a jóváhagyást. A háttérben futó `land` a következő körben észleli, mergel, és végigköveti a post-merge CI-t. Ha végzett, jelzem az eredményt, és frissítem a session-naplót.
+~~~~~
+
+
+### 2026-10-23 20:24 — Felhasználó
+
+~~~~~
+86 elbukott
+~~~~~
+
+
+### 2026-10-23 20:25 — Claude
+
+~~~~~
+A hiba a `main`-en mindkét nyelvben megvan, Go-ban is `EDIT_SPAN_MISMATCH`. Ez egy már meglévő span-scanner hiba, a #86-tól független. Megkeresem a plain-scalar szkennert.
+~~~~~
+
+
+### 2026-10-23 20:26 — Claude
+
+~~~~~
+A #86 elbukása nem a #86 hibája. A fuzz egy olyan hibát talált el véletlenül, amely a `main`-en is megvan, mindkét nyelvben.
+
+**Mi bukott el:** a `fuzz-target (rust source_span)` check, és emiatt az ezeket összefogó `fuzz` check is. A CI többi része eddig zöld (53 sikeres, 15 még fut).
+
+**A hiba:** a fuzz által talált bemenet `a: --- ](e-+.(-f`. Ez érvényes dokumentum, `a` értéke a plain `--- ](e-+.(-f` szöveg. A span helyes, de a visszaolvasás a tokent önálló dokumentumként parse-olja. Ott a `--- ` dokumentumjelölő, így a visszaolvasás eltér, és `EDIT_SPAN_MISMATCH` lesz belőle. Az ADR 0012 szerint ez belső assertion, amit semmilyen bemenet nem válthatna ki. Ugyanez igaz a `... `-tal kezdődő értékekre.
+
+**Ellenőriztem:** a `main`-en (`c73c5a2`) Rustban és Go-ban is ugyanez az eredmény, tehát nem a #86 okozza. Felvettem issue-nak: [#87](https://github.com/CentralInfraCore/cic-primitive-forms/issues/87).
+
+**Javaslatom:**
+1. Külön kis PR a #87-re. A visszaolvasás abban a környezetben parse-olja a tokent, ahonnan jött (`k: <token>`, mapping-értékként), mindkét nyelvben. A bemenet regressziós teszt és fuzz-seed lesz.
+2. Ennek a mergelése után a #86-ot rebase-elem, és újrafut a CI.
+
+A #86-nál a fuzz-jobot újra is lehetne futtatni, valószínűleg átmenne, mert véletlen bemeneten fut. Csak ezt nem javaslom: egy ismert hibát takarna el.
+
+Mehet a #87 javítása külön PR-ben?
 ~~~~~
