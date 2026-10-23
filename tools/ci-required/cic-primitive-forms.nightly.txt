@@ -3,30 +3,25 @@
 # fuzz, the seeded defects, the evidence self-test. Use it with `tools/ci-gate.py post-merge OWNER/REPO --sha <the sha the nightly ran on> --require-from <this file>`.
 # `option: only-named`: only these names count; the commit also carries the checks of its push run (a cancelled one, when the queue was cleared), which are not the nightly's.
 # It is not the post-merge profile of a merge: a merge commit is checked against cic-primitive-forms.post-merge.txt (the light set). The diff-mutation-* jobs are skipped in a
-# full run and are not listed. The names were read from a real run (39855232817, on 73be2a3).
+# full run and are not listed. The names were read from a real run (39855232817, on 73be2a3). Since the shard count is computed (cic-primitive-forms #75: `p1 / plan`, at most
+# about 100 mutants and ten minutes per shard) the shard jobs (`p1 / quality-mutation-go (N)`, `p1 / quality-mutation-rust (N)`) and the fuzz targets (`p1 / fuzz-target (...)`) have no fixed
+# names; `p1 / quality` waits for every shard and checks that every mutant was tested by exactly one, and `p1 / fuzz` joins the targets, so those two are the evidence and are listed.
+# `p1 / edit-proof (go)` and `p1 / edit-proof (rust)` (cic-primitive-forms #79, the proof that the edit differential turns red on planted defects) have fixed names but `p1 / quality` does not wait
+# for them, so they are listed by name: without that a red `edit-proof` job would leave this profile green.
 option: only-named
 changed
 corpus / corpus
 p1 / branch-coverage
+p1 / edit-proof (go)
+p1 / edit-proof (rust)
 p1 / evidence-selftest
 p1 / fuzz
 p1 / go
+p1 / plan
 p1 / parity
 p1 / quality
 p1 / quality-gate-selftest
 p1 / quality-lines
-p1 / quality-mutation-go (0)
-p1 / quality-mutation-go (1)
-p1 / quality-mutation-go (2)
-p1 / quality-mutation-go (3)
-p1 / quality-mutation-go (4)
-p1 / quality-mutation-go (5)
-p1 / quality-mutation-rust (0)
-p1 / quality-mutation-rust (1)
-p1 / quality-mutation-rust (2)
-p1 / quality-mutation-rust (3)
-p1 / quality-mutation-rust (4)
-p1 / quality-mutation-rust (5)
 p1 / rust
 p1 / scope
 p1 / seeded-defects

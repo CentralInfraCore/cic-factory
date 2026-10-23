@@ -666,5 +666,40 @@ class OnlyNamed(unittest.TestCase):
                 cg.load_options(bad)
 
 
+class NightlyProfile(unittest.TestCase):
+    """The real nightly profile of cic-primitive-forms against made-up runs: a required job that is missing, red or skipped must never read as green.
+    The jobs a gate does not wait for (the edit proof) are exactly where a false green would hide, so each name is taken away, failed and skipped in turn."""
+
+    PROFILE = os.path.join(HERE, "ci-required", "cic-primitive-forms.nightly.txt")
+
+    def names(self):
+        return cg.load_required(self.PROFILE)[0]
+
+    def code(self, runs):
+        return cg.post_merge(Fake(runs=runs), R, H, self.names(), say=lambda line: None, only_named=True)
+
+    def test_every_named_job_green_is_green(self):
+        self.assertEqual(self.code([run(n) for n in self.names()]), 0)
+
+    def test_the_jobs_that_quality_does_not_wait_for_are_named(self):
+        names = self.names()
+        for must in ("p1 / edit-proof (rust)", "p1 / edit-proof (go)", "p1 / quality", "p1 / fuzz", "p1 / plan"):
+            self.assertIn(must, names)
+
+    def test_each_named_job_missing_red_or_skipped_is_not_green(self):
+        names = self.names()
+        for n in names:
+            others = [run(x) for x in names if x != n]
+            self.assertNotEqual(self.code(others), 0, "missing: " + n)
+            self.assertNotEqual(self.code(others + [run(n, "failure")]), 0, "red: " + n)
+            self.assertNotEqual(self.code(others + [run(n, "skipped")]), 0, "skipped: " + n)
+            self.assertNotEqual(self.code(others + [run(n, status="in_progress")]), 0, "running: " + n)
+
+    def test_the_profile_has_no_fixed_shard_name(self):
+        for n in self.names():
+            self.assertNotIn("quality-mutation-", n)
+            self.assertNotIn("fuzz-target", n)
+
+
 if __name__ == "__main__":
     unittest.main()
