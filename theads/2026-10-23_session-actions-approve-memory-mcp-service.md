@@ -1,6 +1,6 @@
 # Thread-napló — 2026-10-23/24 (Actions PR-jóváhagyás, memória, on-demand MCP szolgáltatás, forms #77-#93)
 
-Interaktív session transcriptje (2026-10-23 és 24): miért `false` a `can_approve_pull_request_reviews` a cic-primitive-forms repón (a beállítás org-szinten zárolt), a fejlesztőgép memória- és swap-foglalásának felmérése, egy privát KB-hoz tartozó stdio MCP szerver átalakítása systemd user socket-aktivált, tétlenség után magától leálló SSE szolgáltatássá, négy külső review véleményezése és javításai (cic-primitive-forms #78 `33bc6a8`, #86 `56e222d`, #89 `ea6d8f2`; #90/#91 folyamatban), a seeded-defects szerepe, a CI-sor és a diff gate: a módosított teszt lefedettség szerinti szűkítése és a shardolt diff-mutáció (#92, #93 mergelve `9e4bd2b`, post-merge 0 hiba), és a #84 PR mergelése (`c0ec550`). Csak az interakció: a felhasználó üzenetei (beillesztett szöveggel, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `229b7e34-f3c1-4f6e-aeae-17e724711212.jsonl` (a helyi eredeti napló nem kerül a repóba); a `tools/session-transcript.py --private-repo <privát repó neve>` hívással generálva, majd utólag a privát ticket-azonosítók és a helyi scratchpad-útvonal kézzel `[MASKED:<típus>]` jelölővel kitakarva. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, kontextus-összefoglaló.
+Interaktív session transcriptje (2026-10-23 és 24): miért `false` a `can_approve_pull_request_reviews` a cic-primitive-forms repón (a beállítás org-szinten zárolt), a fejlesztőgép memória- és swap-foglalásának felmérése, egy privát KB-hoz tartozó stdio MCP szerver átalakítása systemd user socket-aktivált, tétlenség után magától leálló SSE szolgáltatássá, négy külső review véleményezése és javításai (cic-primitive-forms #78 `33bc6a8`, #86 `56e222d`, #89 `ea6d8f2`, #91 `2a96304`), a seeded-defects szerepe, a CI-sor és a diff gate: a módosított teszt lefedettség szerinti szűkítése és a shardolt diff-mutáció (#92, #93 mergelve `9e4bd2b`; első éles futása a #91, diff módban), és a #84 PR mergelése (`c0ec550`). Csak az interakció: a felhasználó üzenetei (beillesztett szöveggel, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `229b7e34-f3c1-4f6e-aeae-17e724711212.jsonl` (a helyi eredeti napló nem kerül a repóba); a `tools/session-transcript.py --private-repo <privát repó neve>` hívással generálva, majd utólag a privát ticket-azonosítók és a helyi scratchpad-útvonal kézzel `[MASKED:<típus>]` jelölővel kitakarva. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, kontextus-összefoglaló.
 
 
 ### 2026-10-23 10:42 — Felhasználó
@@ -2353,4 +2353,63 @@ Most nincs új bukás. Az egyetlen bukott futás a #91 előző HEAD-jén (`89f34
 - **`main`:** a #93 utáni `p1` és `corpus` zöld. A háttérben a `nightly` (a FULL) még fut.
 
 A #91 futását a háttérben figyelem, és ha végez, megmondom, kiszedte-e az új teszt a túlélőt.
+~~~~~
+
+
+### 2026-10-24 10:18 — Claude
+
+~~~~~
+A #93 lezárva. A post-merge kör 98 checkje közül 80 sikeres, a többi a tervezett módon kimaradt, hiba nincs. Ebben a merge utáni háttér-FULL is benne van. Frissítem a session-naplót.
+~~~~~
+
+
+### 2026-10-24 10:18 — Claude
+
+~~~~~
+A #93 lezárult: a post-merge CI és a háttér-FULL is hiba nélkül futott le (98 check, 80 sikeres, a többi szándékosan kimaradt). A session-naplót frissítettem és pusholtam (`dbbef1d`). A titokkeresés tiszta.
+
+A #91 új futása (`ffe74fb`) még megy. Szólok, ha végzett.
+~~~~~
+
+
+### 2026-10-24 10:20 — Claude
+
+~~~~~
+A #91 CI-ja zöld `diff` módban, az új gate-tel: 38 check sikeres, 3 a tervezett módon kimaradt. Ugyanez a PR a régi gate alatt teljes mutációs futást kapott.
+
+```
+ok   rust mutation score    4/4 (fewer than 10 in the diff: all must be killed)
+ok   go mutation score      295/303 = 97.36% (in the diff)
+QUALITY GATE: PASS
+```
+
+- **Rust 4/4:** az új `Expand`-párteszt megöli az előző kör túlélőjét (`&&` → `||`).
+- **Go 295/303:** egy mutánssal több halt meg, mint előbb (294). Ez is az új Go-párteszt eredménye.
+- **Futásidő:** a CI a teljes mód ~30 perce helyett kb. 15 perc alatt végzett. Ebből 4 Go- és 1 Rust-diff-shard futott, nem a teljes futás ~38 shardja.
+
+A HEAD `ffe74fb`. Ha mehet a merge:
+```
+! gh pr comment 91 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: ffe74fb64b4d07596b12eda91e2f63a23b212c12"
+```
+~~~~~
+
+
+### 2026-10-24 10:20 — Felhasználó
+
+~~~~~
+<bash-input> gh pr comment 91 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: ffe74fb64b4d07596b12eda91e2f63a23b212c12"</bash-input>
+~~~~~
+
+
+### 2026-10-24 10:20 — Felhasználó
+
+~~~~~
+<bash-stdout>https://github.com/CentralInfraCore/cic-primitive-forms/pull/91#issuecomment-6383039289</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-10-24 10:21 — Claude
+
+~~~~~
+Megvan a jóváhagyás, és elindítottam a #91 `land`-jét: mergel, aztán végigköveti a post-merge CI-t. Ha végzett, jelzem az eredményt, és frissítem a session-naplót. A merge lezárja a #90 issue-t is.
 ~~~~~
