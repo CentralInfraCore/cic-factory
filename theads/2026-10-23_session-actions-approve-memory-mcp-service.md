@@ -1,6 +1,6 @@
-# Thread-napló — 2026-10-23 (Actions PR-jóváhagyás, memória, on-demand MCP szolgáltatás, forms #77/#78, #84, #85-#89)
+# Thread-napló — 2026-10-23/24 (Actions PR-jóváhagyás, memória, on-demand MCP szolgáltatás, forms #77-#93)
 
-Interaktív session transcriptje: miért `false` a `can_approve_pull_request_reviews` a cic-primitive-forms repón (a beállítás org-szinten zárolt), a fejlesztőgép memória- és swap-foglalásának felmérése, egy privát KB-hoz tartozó stdio MCP szerver átalakítása systemd user socket-aktivált, tétlenség után magától leálló SSE szolgáltatássá, három külső review véleményezése és javításai (cic-primitive-forms #77/#78 mergelve `33bc6a8`; #85 és a fuzz által talált #87 a #86-ban, mergelve `56e222d`; #88 pontjai a #89-ben, mergelve `ea6d8f2`, post-merge 8/8 zöld), a seeded-defects szerepe, a CI-sor és a job-prioritás kérdése, és a #84 PR mergelése a tulajdonos rögzített jóváhagyásával (`c0ec550`). Csak az interakció: a felhasználó üzenetei (beillesztett szöveggel, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `229b7e34-f3c1-4f6e-aeae-17e724711212.jsonl` (a helyi eredeti napló nem kerül a repóba); a `tools/session-transcript.py --private-repo <privát repó neve>` hívással generálva, majd utólag a privát ticket-azonosítók és a helyi scratchpad-útvonal kézzel `[MASKED:<típus>]` jelölővel kitakarva. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, kontextus-összefoglaló.
+Interaktív session transcriptje (2026-10-23 és 24): miért `false` a `can_approve_pull_request_reviews` a cic-primitive-forms repón (a beállítás org-szinten zárolt), a fejlesztőgép memória- és swap-foglalásának felmérése, egy privát KB-hoz tartozó stdio MCP szerver átalakítása systemd user socket-aktivált, tétlenség után magától leálló SSE szolgáltatássá, négy külső review véleményezése és javításai (cic-primitive-forms #78 `33bc6a8`, #86 `56e222d`, #89 `ea6d8f2`; #90/#91 folyamatban), a seeded-defects szerepe, a CI-sor és a diff gate: a módosított teszt lefedettség szerinti szűkítése és a shardolt diff-mutáció (#92, #93 mergelve `9e4bd2b`, post-merge 0 hiba), és a #84 PR mergelése (`c0ec550`). Csak az interakció: a felhasználó üzenetei (beillesztett szöveggel, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `229b7e34-f3c1-4f6e-aeae-17e724711212.jsonl` (a helyi eredeti napló nem kerül a repóba); a `tools/session-transcript.py --private-repo <privát repó neve>` hívással generálva, majd utólag a privát ticket-azonosítók és a helyi scratchpad-útvonal kézzel `[MASKED:<típus>]` jelölővel kitakarva. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, kontextus-összefoglaló.
 
 
 ### 2026-10-23 10:42 — Felhasználó
@@ -1691,4 +1691,666 @@ Ha rögzítetted, elindítom a `land`-et. Az mergel, és végigköveti a post-me
 
 ~~~~~
 Megvan a jóváhagyás, és elindítottam a #89 `land`-jét. Ellenőrzi a jóváhagyást a HEAD-re, mergel, és végigköveti a post-merge CI-t. Ha végzett, jelzem az eredményt, és frissítem a session-naplót.
+~~~~~
+
+
+### 2026-10-23 22:02 — Claude
+
+~~~~~
+A #89 bent van. Frissítem és commitolom a session-naplót.
+~~~~~
+
+
+### 2026-10-23 22:02 — Claude
+
+~~~~~
+A titokellenőrzés egy találatot jelzett. Megnézem, mi az, mielőtt bármit állítanék.
+~~~~~
+
+
+### 2026-10-23 22:03 — Claude
+
+~~~~~
+A #89 mergelve (`ea6d8f2`), a post-merge CI zöld: 21 check, 0 hiba, és minden kötelező check jelentett. A session-naplót frissítettem és pusholtam a cic-factory `main`-re (`e6f0633`). A titokellenőrzés egyetlen találata a napló saját sora, ami az ellenőrzést írja le, kiszivárgott adat nincs benne.
+
+**Ma bekerült a cic-primitive-forms `main`-be:**
+
+| PR | Tartalom | Merge commit |
+|---|---|---|
+| #78 | A mutációs gate már nem fogad el önellentmondó jelentést (#77) | `33bc6a8` |
+| #84 | A korpusz-accounting számai külön fájlba kerültek a tesztekből | `c0ec550` |
+| #86 | Ismeretlen `op` → `unknown`; a Rust parser nem épít fát a korlát után; lineáris `Same`; a span-visszaolvasás javítása (#85, #87) | `56e222d` |
+| #89 | Validálás a normalizálás és a policy-feloldás határán; nincs Go pánik hiányzó `access` mellett; a `max_items` elutasítva (#88) | `ea6d8f2` |
+
+**Nyitva maradt, ezekről neked kell döntened:**
+- **#85:** a 3. pont (az edit nem ellenőrzi a wrapper tagjait, ehhez grammar-paraméter kellene) és az 5. pont (a no-op és az `EDIT_VALUE_NOT_REPRESENTABLE` sorrendje az ADR 0012-ben).
+- **#88:** a 10. pont (a grammar kötése a lefordított sémához), a 11. pont (a tárolt normalizálási eredmények integritása) és a 9. pont (a Go parser erőforrásigényének mérése benchmarkkal).
+~~~~~
+
+
+### 2026-10-23 22:20 — Felhasználó
+
+~~~~~
+<pasted_content id="2258">
+# Új code review — cic-primitive-forms
+
+Előzetes értékelés: 8,5/10
+
+A korábbi ZIP helyett most a GitHubon található, `main`-be beolvasztott [`ea6d8f2`](https://github.com/CentralInfraCore/cic-primitive-forms/commit/ea6d8f2cf6a35a515f221eb8ce2cc18a7d90a738?utm_source=chatgpt.com)[ commitot](https://github.com/CentralInfraCore/cic-primitive-forms/commit/ea6d8f2cf6a35a515f221eb8ce2cc18a7d90a738?utm_source=chatgpt.com) vettem alapul. Az ellenőrzés a Go- és Rust-implementációra, a normalizálásra, a policy-feloldásra, a szerkesztésre és a dokumentált szerződésekre terjedt ki.
+
+A legfontosabb változás: a korábban talált súlyosabb hiányosságok többségét kijavítottad. Az új körben viszont találtam további konkrét inkonzisztenciákat. Ezeket most már nem keverem össze az egyszerű architekturális kompromisszumokkal.
+
+## 1. Azonos értékre történő szerkesztés megsértheti a no-op szerződést
+
+P2 · Közepes · Mindkét nyelv
+
+Forrás: [Go ](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/editscalar.go?utm_source=chatgpt.com#L36-L45)[`editscalar.go`](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/editscalar.go?utm_source=chatgpt.com#L36-L45)[ 36–45](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/editscalar.go?utm_source=chatgpt.com#L36-L45), [Rust ](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/rust/src/editscalar.rs?utm_source=chatgpt.com#L43-L55)[`editscalar.rs`](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/rust/src/editscalar.rs?utm_source=chatgpt.com#L43-L55)[ 43–55](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/rust/src/editscalar.rs?utm_source=chatgpt.com#L43-L55).
+
+Ez a korábbi review egyik megállapítása, amely továbbra is fennáll.
+
+Az ADR 0012 §3.6 szerint egy pozíciót a már meglévő értékére állítani byte-pontos no-op. A kód viszont először futtatja a `representable` ellenőrzést, és csak utána az értékazonosság vizsgálatát.
+
+Minimális regressziós teszteset
+
+```
+n: "a\nb"
+```
+
+A `$.n` új értéke ugyanaz a string, amelyet a YAML már tartalmaz: `a` + sortörés + `b`.
+
+| Elvárt                              | A kódból következő eredmény    |
+| ----------------------------------- | ------------------------------ |
+| Változatlan szöveg, `changed=false` | `EDIT_VALUE_NOT_REPRESENTABLE` |
+
+A parser az escape-elt sortörést elfogadja, de a `representable` elutasítja az új értéket még azelőtt, hogy az azonosságot ellenőrizné.
+
+Javítás: azonos típusú és értékű scalar esetén a no-op vizsgálat előzze meg az új token írhatóságának ellenőrzését. Ezt mindkét nyelvben tesztelném.
+
+Ez statikus kódút alapján megalapozott megállapítás, de a legfrissebb commiton még nem futtatott reprodukció.
+
+## 2. A mapping-egyenlőség nem szimmetrikus duplikált kulcsok mellett
+
+P3 · Alacsony · Mindkét nyelv
+
+Forrás: [Go ](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/node.go?utm_source=chatgpt.com#L72-L89)[`node.go`](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/node.go?utm_source=chatgpt.com#L72-L89)[ 72–89](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/node.go?utm_source=chatgpt.com#L72-L89), [Rust ](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/rust/src/node.rs?utm_source=chatgpt.com#L70-L82)[`node.rs`](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/rust/src/node.rs?utm_source=chatgpt.com#L70-L82)[ 70–82](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/rust/src/node.rs?utm_source=chatgpt.com#L70-L82).
+
+A korábbi kvadratikus algoritmust lineárisra javítottad, ami jó. De a hash map az ismétlődő kulcsoknál az első értéket tartja meg.
+
+Tekintsünk két, programból létrehozott node-ot:
+
+```
+A = [(x, 1), (x, 1)]
+B = [(x, 1), (x, 2)]
+```
+
+Az algoritmus eredménye:
+
+```
+Same(A, B) == true
+Same(B, A) == false
+```
+
+Ez megsérti az egyenlőség szimmetriáját.
+
+Fontos korlátozás: a parser eleve elutasítja a duplikált YAML mapping-kulcsokat, ezért ez nem a normál parse-útvonal hibája. A publikus `Node` típussal viszont ilyen érték előállítható.
+
+A javítás lehet a duplikált kulcsok elutasítása az összehasonlításban, vagy egy olyan algoritmus, amely megőrzi az egyenlőség szimmetriáját.
+
+Nem tenném merge-blokkolóvá, de egy `Same()` nevű publikus függvénynél ezt rendezendőnek tartom.
+
+## 3. A `Normalize` elfogadhat szemantikailag hibás Access wrappert
+
+P2 · Közepes · Mindkét nyelv
+
+Forrás: [Go ](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/normalize.go?utm_source=chatgpt.com#L33-L48)[`normalize.go`](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/normalize.go?utm_source=chatgpt.com#L33-L48)[ 33–48](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/normalize.go?utm_source=chatgpt.com#L33-L48), [Go ](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/editscalar.go?utm_source=chatgpt.com#L108-L117)[`editscalar.go`](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/editscalar.go?utm_source=chatgpt.com#L108-L117)[ 108–117 és 175–195](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/editscalar.go?utm_source=chatgpt.com#L108-L117).
+
+Ez az új review legfontosabb megállapítása.
+
+A #89-es javítás bevezette a `refuseInvalid` előellenőrzést. Ez valóban kiszűri például a rossz adattípusokat és a duplikált listaazonosítókat.
+
+Viszont az ellenőrzés a `shortView` segítségével eltávolítja az expanded wrapper policy-mezőit, mielőtt a sémával validálna.
+
+Például egy `n` nevű stringmezőhöz:
+
+```
+n:
+  value: hello
+  access: 123
+  modify: inherit
+  inherit: true
+  default_injection: null
+  conformance: implemented
+```
+
+Az `access: 123` nem érvényes Access-szabály; a `ReadRule` erre `INVALID_ACCESS_VALUE` hibát adna.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://raw.githubusercontent.com\&sz=32)
+
+GitHub
+
+
+
+A `Normalize` ellenőrzési útvonala viszont:
+
+`Normalize(doc)`
+
+`refuseInvalid` → `shortView`
+
+Csak a `value: hello` kerül a sémával összevetésre
+
+Az eredeti hibás `access` megmarad
+
+A külön meghívott `ResolvePolicy` már ellenőrzi az `access`, `modify` és `inherit` értékeit, ezért ezt nem nevezném igazolt jogosultsági bypassnak. A standalone normalizálás sikeres eredménye azonban nem garantálja a policy-mezők érvényességét.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://raw.githubusercontent.com\&sz=32)
+
+GitHub
+
+
+
+Javaslat: a `Normalize` validálja az expanded wrapper szabálymezőit is, vagy a publikus szerződés mondja ki egyértelműen, hogy a normalizálás csak a `value` rész sémabeli érvényességét garantálja.
+
+## 4. A hiányzó kötelező mezők kezelése ellentmond a dokumentált szerződésnek
+
+P2 · Közepes · Mindkét nyelv
+
+Forrás: [Go ](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/normalize.go?utm_source=chatgpt.com#L11-L42)[`normalize.go`](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/normalize.go?utm_source=chatgpt.com#L11-L42)[ 11–13 és 33–42](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/normalize.go?utm_source=chatgpt.com#L11-L42), [Rust ](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/rust/src/normalize.rs?utm_source=chatgpt.com#L11-L62)[`normalize.rs`](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/rust/src/normalize.rs?utm_source=chatgpt.com#L11-L62)[ 11–13 és 44–62](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/rust/src/normalize.rs?utm_source=chatgpt.com#L11-L62).
+
+Mindkét implementáció dokumentációja szerint a normalizálás nem jelenti hibának a hiányzó kötelező mezőt.
+
+A #89-es változtatás óta viszont meghívja a `refuseInvalid` függvényt, amely a teljes `Validate` eredményét érvényesíti, beleértve a `MISSING_MANDATORY` violationt.
+
+Ez bizonyítható eltérés a dokumentált és a kód szerinti viselkedés között.
+
+Lehetséges, hogy az új viselkedés a kívánatos. Ebben az esetben a szerződést kell frissíteni. Ha azonban a részleges dokumentum normalizálása támogatott, akkor az előellenőrzés jelenleg túl szigorú.
+
+## 5. A fordított séma és a grammar verziója továbbra is külön adható meg
+
+P3 · API-integritási kockázat
+
+Forrás: [Go ](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/normalizewithpolicy.go?utm_source=chatgpt.com#L11-L25)[`normalizewithpolicy.go`](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/normalizewithpolicy.go?utm_source=chatgpt.com#L11-L25)[ 11–25](https://github.com/CentralInfraCore/cic-primitive-forms/blob/ea6d8f2/go/normalizewithpolicy.go?utm_source=chatgpt.com#L11-L25).
+
+A `NormalizeWithPolicy` egy `CompiledSchema` objektumot kap, viszont külön fogadja az Access-kulcskészletet és a `Grammar` objektumot is.
+
+A meghívásnál nincs explicit ellenőrzés arra, hogy a feldolgozási grammar egyezik-e a séma fordításakor kötött verzióval.
+
+Ez nem bizonyított működési hiba a szabályosan összekötött API-k esetén, de egy olyan rendszerben, ahol a grammar verziója szerződéses elem, érdemes megszüntetni ezt a kétféle konfigurációs forrást.
+
+## Mit javítanék először?
+
+| Sorrend | Téma                                        | Indok                                       |
+| ------- | ------------------------------------------- | ------------------------------------------- |
+| 1       | Expanded wrapper teljes validációja         | A legerősebb megmaradt integritási kockázat |
+| 2       | No-op szerkesztési hiba                     | Konkrét szerződéssértési ellenpélda         |
+| 3       | Mandatory mezők szerződésének egységesítése | Dokumentáció és implementáció ellentmond    |
+| 4       | `Same` szimmetriája                         | Publikus függvény helyességi tulajdonsága   |
+| 5       | Grammar–schema összekötés                   | Megelőző API-keményítés                     |
+
+## Végső értékelés
+
+Architektúra
+
+9/10
+
+Specifikáció és dokumentáció
+
+9/10
+
+Tesztelési megközelítés
+
+9/10
+
+Implementációs helyességbe vetett bizalom
+
+7,5–8/10
+
+Összesített, statikus értékelés
+
+## 8,3/10
+
+A 8,3/10 nem mért iparági pontszám, hanem az ellenőrzött forrás alapján adott szakmai értékelésem. A korábbi 8,5-ös előzetes becsléshez képest azért valamivel alacsonyabb, mert maradtak konkrét, két nyelvben azonosan jelen lévő szerződéses inkonzisztenciák.
+
+A projekt továbbra is kifejezetten erős: önálló Rust–Go implementációk, közös konformanciakorpusz, ADR-alapú szerződések, fuzzing és mutation testing. A #86 és #89 javítások valódi minőségi előrelépést jelentenek.
+
+A fő kritikám most: a meglévő tesztek és a dokumentált garanciák közötti kapcsolat néhány határhelyzetben még mindig nem elég szoros.
+
+A pontok egy része konkrét kódútból levezethető, de a fenti ellenpéldákat nem futtattam végig a legfrissebb Go/Rust toolchainnel. Ráadásul a GitHub élő `main` HEAD-jét nem tudtam egyértelműen azonosítani, ezért az értékelés kifejezetten az `ea6d8f2` verzióra vonatkozik, nem garantáltan minden későbbi commitra.
+
+A jelenlegi döntésem: nem látok bizonyított új P1-es hibát, de a 3. pontot javítanám, mielőtt a normalizálás sikerét teljes szemantikai validációként kezelném.
+</pasted_content id="2258">
+
+ ez a review-ban
+~~~~~
+
+
+### 2026-10-23 22:20 — Claude
+
+~~~~~
+Megnézem a kódban a két új állítást: a 3. pontot (a `Normalize` átengedi-e a hibás `access`-t a wrapperben) és a 4. pontot (a doksi ellentmond-e a #89 viselkedésének). Az 1., 2. és 5. pont részben már ismert.
+~~~~~
+
+
+### 2026-10-23 22:21 — Claude
+
+~~~~~
+A review pontos: a két új állítás (3. és 4.) igaz, és a többit is a kódban ellenőriztem.
+
+| # | Állítás | Ellenőrzés | Ítélet |
+|---|---|---|---|
+| 1 | Az azonos értékre szerkesztés és a no-op ütközik | Ugyanaz, mint a #85 5. pontja, amit ADR-döntésre félretettünk | Igaz, és már nyilván van tartva |
+| 2 | A `Same` nem szimmetrikus ismétlődő kulcsnál | `A=[(x,1),(x,1)]`, `B=[(x,1),(x,2)]` esetén `Same(A,B)=true`, `Same(B,A)=false`. A #86 előtti lineáris keresés is így működött, a meglévő teszt („az első bejegyzés dönt”) éppen ezt rögzíti | **Igaz, régi viselkedés.** Parse-olt dokumentumnál nem fordul elő, a publikus függvényt viszont érinti |
+| 3 | A `Normalize` átengedi a hibás `access`/`inherit` értéket | Futtatva `ea6d8f2`-n: `access: 123` és `inherit: maybe` mellett a `Normalize` **OK**, a `NormalizeWithPolicy` viszont elutasítja (`INVALID_ACCESS_VALUE`, `INVALID_INHERIT`) | **Igaz**, ez a legfontosabb pont |
+| 4 | A doksi szerint a hiányzó kötelező mező nem hiba | A `go/normalize.go:14` és a `rust/src/normalize.rs:13` még a #89 előtti állapotot írja le | **Igaz, az én mulasztásom a #89-ből.** A kód a kívánt viselkedés, a doksi elavult |
+| 5 | A séma és a grammar külön adható meg | Ugyanaz, mint a #88 10. pontja | Igaz, és már nyilván van tartva |
+
+**Egy fontos különbség a 3. pontnál:** a #85 3. pontját (az edit) azért tettük félre, mert az `EditScalar` nem kap grammart. A `Normalize` viszont kap `Grammar`-t, ezért ott a wrapper `access`, `modify` és `inherit` tagjai **API-változás nélkül** validálhatók. Ezt ugyanazzal a `ReadRule`/`ReadMode` olvasással tenném, amit a `ResolvePolicy` is használ, így a normalizálás sikere tényleg teljes validitást jelentene.
+
+**Javaslat, egy issue és egy PR:**
+- **3.** A `Normalize` validálja a kifejtett (expanded) wrapper szabálytagjait, mindkét nyelvben, közös próbával.
+- **4.** A doksi javítása mindkét nyelvben.
+- **2.** A `Same` szimmetrikus legyen: ismétlődő kulcsnál a két mapping bejegyzései multihalmazként egyezzenek. Ezzel a meglévő „az első bejegyzés dönt” tesztet is át kell írni, ezért ez a te döntésed. Ha inkább maradjon a mostani viselkedés, akkor elég dokumentálni, hogy ismétlődő kulccsal a `Same` nem szimmetrikus.
+
+Az 1. és az 5. pont a #85 és a #88 nyitott döntései között marad.
+
+Mehet így? A 2. pontnál a szimmetrikus változatot vagy csak a dokumentálást kéred?
+~~~~~
+
+
+### 2026-10-24 08:28 — Felhasználó
+
+~~~~~
+igen, szimmetrikus legyen
+~~~~~
+
+
+### 2026-10-24 08:28 — Claude
+
+~~~~~
+Rendben, a 2. pontnál a szimmetrikus változatot csinálom. Előbb megnézem, hol kezeli a normalizáló walker a már kifejtett wrappert, mert ott kell a tagokat ellenőrizni.
+~~~~~
+
+
+### 2026-10-24 08:29 — Claude
+
+~~~~~
+Now the stale package comment (point 4) in Go, then the same in Rust.
+~~~~~
+
+
+### 2026-10-24 08:29 — Claude
+
+~~~~~
+A Rust-szerkesztés elrontotta a szerkezetet: a `read_wrapper`-t az `impl` blokk közepére tettem, a `below` metódus pedig utána maradt. Kiemelem a fájl végére, külön szabad függvényként.
+~~~~~
+
+
+### 2026-10-24 08:30 — Claude
+
+~~~~~
+Rustban nincs ismétlődő kulcsos `Same`-teszt, csak Go-ban. Mindkét nyelvben szimmetriatesztet írok.
+~~~~~
+
+
+### 2026-10-24 08:31 — Claude
+
+~~~~~
+Mind a 199 bejegyzés illeszkedik. Lefuttatom a módosított fájlokat érintő beültetett hibákat is mindkét nyelvben, mert legutóbb pont ez bukott.
+~~~~~
+
+
+### 2026-10-24 08:31 — Claude
+
+~~~~~
+Ez nyelvenként 16 beültetett hiba, mindegyik a teljes tesztkészlettel, ami helyben 10–15 perc lenne. A CI `--changed-from` módban pontosan ezeket futtatja, ezért ezt rábízom. Commit és PR.
+~~~~~
+
+
+### 2026-10-24 08:32 — Claude
+
+~~~~~
+Megnyitottam az issue-t és a PR-t a review 2., 3. és 4. pontjára. A CI fut, a háttérben figyelem, és első hibánál vagy a végén szólok.
+
+- **Issue:** [#90](https://github.com/CentralInfraCore/cic-primitive-forms/issues/90)
+- **PR:** [#91](https://github.com/CentralInfraCore/cic-primitive-forms/pull/91), két aláírt commit.
+
+**`9aa7e1d`: a `Normalize` ellenőrzi a wrapper szabálytagjait (3. pont) és a doksit (4. pont)**
+- A policy-feloldás wrapper-olvasása közös függvény lett. A `Normalize` mostantól minden szerző által kifejtett wrapper `access`, `modify` és `inherit` tagját ellenőrzi a kötött grammar szerint.
+- Hibás tagnál ugyanazzal az üzenettel utasít el, mint a `ResolvePolicy` (`$.label: access of the position: INVALID_ACCESS_VALUE`).
+- Az `Expand` és az `ExpandPosition` viselkedése nem változik.
+- A `normalize` doksija mindkét nyelvben azt írja le, amit a #89 óta ténylegesen elutasít, köztük a hiányzó kötelező mezőt.
+
+**`28e9afb`: szimmetrikus `Same` (2. pont)**
+- Ismétlődő kulcsnál a két mapping bejegyzéseit multihalmazként veti össze, így a `Same(A,B)` és a `Same(B,A)` mindig ugyanazt adja.
+- Ismétlődés nélkül ugyanúgy lineáris, mint eddig.
+- A régi „az első bejegyzés dönt” tesztet mindkét irányú ellenőrzésre írtam át, és a Rust is kapott párteszt.
+
+**Helyben ellenőrizve:** a Go teljes készlete (`-race`) zöld, a Rust `fmt`, `clippy` és 24/24 teszt zöld. A beültetett hibák szövege mind a 199 bejegyzésnél illeszkedik, egyik sem lett elavult.
+
+A review 1. és 5. pontja továbbra is a #85 és a #88 nyitott döntései között van.
+~~~~~
+
+
+### 2026-10-24 08:35 — Claude
+
+~~~~~
+A Rust zöld, és a `rustbranch` helyben hiba nélkül lefut a módosított kódon. Commit, push, és leállítom a régi futást.
+~~~~~
+
+
+### 2026-10-24 08:35 — Claude
+
+~~~~~
+A #91-en a `branch-coverage` check bukott. A saját mérőeszköz (`rustbranch`) a Rust `let … else` szerkezetet nem tudja mérni, ezért a kódot elutasította. A szimmetrikus `Same`-ben ezt használtam, és helyben nem futtattam a branch coverage-et, így csak a CI-ban derült ki.
+
+**Javítás (`9d182da`):** a `let … else` helyére egy egyszerű lekérés került. Ha a kulcs hiányzik a másik mappingből, üres listát kap, így nincs egyezés. A viselkedés ugyanaz, de nincs benne mérhetetlen elágazás.
+
+**Helyben ellenőrizve:**
+- A Rust `fmt`, `clippy` és 24/24 teszt zöld.
+- A `rustbranch` hiba nélkül végigfut a módosított kódon.
+- A diffben nincs több `let … else`.
+
+Pusholtam. A régi HEAD futását leállítottam, az új CI-t figyelem, és első hibánál vagy a végén szólok.
+~~~~~
+
+
+### 2026-10-24 08:50 — Felhasználó
+
+~~~~~
+ez igy gyakorlatilag sosem fog rámenni a diff mutation ágra
+~~~~~
+
+
+### 2026-10-24 08:51 — Claude
+
+~~~~~
+Igen, és ennél a PR-nél pontosan látszik, mi az ok. Helyben lefuttattam a CI döntését (`tools/diff_gate.py scope`), és a #91 egyetlen ok miatt megy `full` módba:
+
+```
+full
+ - go/behaviour_test.go:423 removes or modifies a line of an existing test or test data
+ - go/behaviour_test.go:432 removes or modifies a line of an existing test or test data
+```
+
+Ez a régi „az első bejegyzés dönt” assertion, amit a szimmetrikus `Same` miatt át kellett írni. Az ügyben ez nem kerülhető el, mert a viselkedés szándékosan változott, a régi assertion pedig az új kódra hamis.
+
+**Ezt a gate szándékosan csinálja.** Egy meglévő teszt módosítása gyengítheti a tesztkészletet. Ilyenkor a diff-mutáció félrevezető lenne, mert a változatlan termékkód mutánsait a módosított teszt már nem feltétlenül öli meg. Ezért a gate konzervatív, és `full`-ra vált. A diff ágon csak az a PR marad, amelyik a meglévő teszteket és adatokat érintetlenül hagyja, és csak új, top-level teszteket ad hozzá, vagy adatfájl végére fűz.
+
+**A mai PR-ok nagyrészt ezért mentek `full`-ban:** a #86-ban és a #89-ben is volt meglévő teszt- vagy vektormódosítás. A #89-ben például a hibás resolution-vektor és a kötelező mezős teszt. A javítások jellege miatt ez gyakori lesz: ha egy hiba miatt a viselkedés változik, a régi tesztnek is változnia kell.
+
+**Mit tehetünk:**
+1. **Fegyelem a PR-szerkezetben.** Ahol csak lehet, új teszt kerüljön be, a meglévő ne változzon, és a viselkedésváltozás külön PR-ba menjen. Ez a #91-nél sem segítene: a `Same` módosítása mindenképp `full`.
+2. **A gate finomítása.** A meglévő teszt módosítása csak a tesztelt termékfájl mutánsaira terjessze ki a diff-et, ne az egész kódbázisra. Ez lazítás egy szándékosan konzervatív szabályon, ezért a te döntésed, és külön issue/PR kell hozzá.
+3. **Elfogadni.** A `full` a mostani PR-okon ~30 perc, és a 20-as CI-limit miatt a sorban állás a lassabb része.
+
+Melyik irányba menjünk? Ha a 2., felveszem issue-nak a pontos javaslattal.
+~~~~~
+
+
+### 2026-10-24 08:53 — Felhasználó
+
+~~~~~
+2-es, vedd fel issue-nak
+~~~~~
+
+
+### 2026-10-24 08:53 — Claude
+
+~~~~~
+Felveszem a forms repóba, mert ott van a `tools/diff_gate.py` és a `docs/DELTA-DIFF-GATE.md`. Előbb megnézem, mit mond a doksi a mostani szabályról, hogy a javaslat arra épüljön.
+~~~~~
+
+
+### 2026-10-24 08:54 — Claude
+
+~~~~~
+Felvettem: [#92](https://github.com/CentralInfraCore/cic-primitive-forms/issues/92).
+
+**A javaslat:** a gate-doksi (`docs/DELTA-DIFF-GATE.md`, 2. szakasz) maga írja, hogy a „FULL szűkítése a módosított tesztek lefedettségével későbbi optimalizálás, ha a FULL eset gyakori lesz”. Most gyakori lett.
+1. A módosított tesztfájl minden hunkját a befoglaló top-level teszthez rendeli (Go `TestX`/`FuzzX`, Rust `#[test] fn`). Ha a hunk segédfüggvényben, fixture-ben vagy közös táblában van, marad FULL.
+2. A módosított tesztek *régi* változatát a base commiton lefedettséggel futtatja (`go test -run … -coverprofile`, `cargo llvm-cov --test … -- … --exact`).
+3. A mutációs scope a PR saját változott sorai, és azok a termékkódsorok, amelyeket a régi tesztek lefuttattak. Egy ezen kívüli mutánst a módosított teszt korábban sem ölt meg, ezért a státusza nem változhat.
+4. A tesztadat-módosítás (`testdata/`, `corpus/`) egyelőre marad FULL.
+5. Ha a hozzárendelés vagy a mérés nem sikerül, FULL indoklással, ahogy most is.
+
+A biztonsági hálót továbbra is az éjszakai FULL adja, és benne vannak a gate-hez kért beültetett tesztesetek is.
+
+**Egy javítás az issue-ban, és egy tanulság:** a táblázatba eredetileg emlékezetből írtam a #86 és a #89 `full` okait. Utólag lefuttattam a gate-et, és pontosítottam. A valós okok egy része az én PR-jaim szerkezetéből jött, nem a módosított tesztekből:
+- regressziós eseteket meglévő tesztfüggvényekbe fűztem új top-level teszt helyett;
+- egy vektort a `schema.json` közepére szúrtam a vége helyett.
+
+Ezek elkerülhetők voltak. Az issue külön oszlopban mutatja őket, és el is mentettem a munkamódszerhez: új teszt top-level függvényként, vektor a fájl végére, push előtt pedig `diff_gate.py scope` ellenőrzés.
+
+A #91 CI-ja a `9d182da`-n még fut. A háttérben figyelem, és szólok.
+~~~~~
+
+
+### 2026-10-24 08:54 — Felhasználó
+
+~~~~~
+#92 mehet a javítás pr-ben
+~~~~~
+
+
+### 2026-10-24 08:54 — Claude
+
+~~~~~
+Ez nagyobb munka: érinti a `tools/diff_gate.py`-t, a CI `scope` jobját és a két diff-mutációs jobot. Előbb végigolvasom a mostani működést, hogy a szűkítés pontosan illeszkedjen.
+~~~~~
+
+
+### 2026-10-24 08:54 — Claude
+
+~~~~~
+Now the CI side: the `scope` job and the two diff-mutation jobs in `p1.yml`.
+~~~~~
+
+
+### 2026-10-24 08:58 — Claude
+
+~~~~~
+Now the code. First the new parts of `diff_gate.py`: mapping hunks to tests, reading coverage, line mapping, and the measurement.
+~~~~~
+
+
+### 2026-10-24 08:58 — Claude
+
+~~~~~
+Now `classify`: the hunk of an existing test is narrowed when it maps to a test, otherwise the old FULL reason stays.
+~~~~~
+
+
+### 2026-10-24 08:59 — Claude
+
+~~~~~
+A meglévő 22 teszt zöld. Az új esetek egy új tesztosztályba kerülnek, külön a mérés logikájára (hamis futtatóval) és a besorolásra.
+~~~~~
+
+
+### 2026-10-24 09:00 — Claude
+
+~~~~~
+Amíg ez fut, a Go diff-végrehajtó: előbb a shard-tulajdon, utána a diff-vizsgálat, és egy csak listázó mód a `diff-plan` számlálásához.
+~~~~~
+
+
+### 2026-10-24 09:01 — Claude
+
+~~~~~
+A Go-végrehajtó kész. Megnézem a teljes mód Rust shard-jobjának pontos `--shard` használatát, hogy a diff-shardolás ugyanazt kövesse.
+~~~~~
+
+
+### 2026-10-24 09:03 — Claude
+
+~~~~~
+Minden visszakerült: mind az öt módosított fájl megvan, `PENDING` és `diff-plan` is. Újrafuttatom a próbát `stash` nélkül.
+~~~~~
+
+
+### 2026-10-24 09:03 — Claude
+
+~~~~~
+A `w` lépés helyesen dönt. Egy csak tesztet módosító PR-nál `go=true`, és ott mér. Ha a gate maga is változik, `false`/`false`, és FULL marad. Most a doksi (`docs/DELTA-DIFF-GATE.md`).
+~~~~~
+
+
+### 2026-10-24 09:04 — Claude
+
+~~~~~
+A doksi kész. Lefuttatom az összes tool-tesztet, amelyet a CI `quality-gate-selftest` jobja futtat, a workflow- és evidence-teszteket, valamint egy shell-szintaxis ellenőrzést.
+~~~~~
+
+
+### 2026-10-24 09:05 — Claude
+
+~~~~~
+Megnyitottam a [#93](https://github.com/CentralInfraCore/cic-primitive-forms/pull/93)-at két aláírt committal: a #92 szűkítése és a diff-mutáció shardolása. A CI fut, a háttérben figyelem.
+
+**1. Módosított teszt → lefedettség szerinti szűkítés, nem FULL** (`66f8c78`, `diff_gate.py`)
+- Ha egy meglévő tesztfüggvényen belül változik valami, a gate a base-en megkeresi a befoglaló tesztet. Rustban ez lehet `rust/tests`, `#[cfg(test)]` modul vagy `proptest!`.
+- Ennek a tesztnek a *régi* változatát a base worktree-ben lefedettséggel futtatja. Az általa lefedett termékkódsorokat átviszi a head-re, és hozzáadja a diffhez.
+- FULL marad: segédfüggvény vagy fixture módosítása, tesztadat, törölt tesztfájl, és ha maga a gate változik.
+- Fail-closed: mérés nélkül, vagy ha a mérés bármiért nem sikerül, a mód FULL, indoklással.
+
+**2. Shardolt diff-mutáció** (`e6d9318`, `p1.yml`)
+- Új `diff-plan` job megszámolja a diff mutánsait, és ugyanazzal a költségvetéssel shardol, mint a teljes futás. Rustban mért költség szerint, Go-ban digest szerint.
+- A Go diff-végrehajtó előbb a shardot dönti el, és csak utána a diffet. Így minden mutánsnak pontosan egy döntése van az összes shardon át.
+- A `quality` minden shard-riportot ugyanahhoz a listához vet.
+- A `scope` csak akkor telepít toolchaint, ha kizárólag módosított teszt miatt lenne FULL.
+
+**Valós mérések konténerben:**
+- **A #91:** `diff` módba kerül, mert a módosított Go-teszt régi változata 184 termékkódsort futtatott le.
+- **Rust-próba:** a `rust/tests` és a forrásfájlbeli tesztmodul egyaránt, `cargo llvm-cov`-val, 352 sor.
+- **Go diff-végrehajtó, kézzel:** egy diffen kívüli mutánsra csak a tulajdonos shard ad `offdiff`-et, a többi kettő `offshard`.
+
+**Egy botlásom munka közben:** egy próbaparancsom a saját munkapéldányomon is lefuttatta a `git stash`-t. A nem commitolt változtatások így egy pillanatra félrekerültek. Azonnal visszaállítottam `stash pop`-pal, és ellenőriztem, hogy mind az öt fájl teljes. A commitok már a helyreállított állapotból készültek.
+
+**Amit ez a PR saját magán nem tud megmutatni:** a gate fájljait módosítja, ezért maga FULL-ban fut, merge után pedig háttér-FULL jön. Az új `diff-plan` és a shardolt diff-jobok az első diff módú PR-on futnak élesben. Erre a #91 alkalmas: merge után rebase-elve az ő CI-ja lesz az éles próba.
+~~~~~
+
+
+### 2026-10-24 09:06 — Claude
+
+~~~~~
+A #91 CI-ja zöld a mostani HEAD-en (`9d182da`): 71 check sikeres, 2 a tervezett módon kimaradt. Ez még a régi gate szerint futott, `full` módban.
+
+Két lehetőség van:
+- **Most mergeled a #91-et.** Kész van, és minden check zöld. Ha mehet:
+  ```
+  ! gh pr comment 91 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: 9d182dac9ee3460e23c5872d360a7aeea6013495"
+  ```
+- **Megvárod a #93-at.** Ha előbb a #93 megy be, és a #91-et rá rebase-elem, akkor a #91 újrafutó CI-ja lesz az új diff-gate első éles próbája: lefedettségmérés a `scope`-ban, aztán `diff-plan` és a shardolt diff-jobok. Ennek ára egy újabb CI-kör a #91-en.
+
+Én a második utat javaslom, mert az új gate-et másképp csak egy jövőbeli PR-on látnánk élesben. A #93 CI-ja még fut, és szólok, ha végzett.
+~~~~~
+
+
+### 2026-10-24 09:39 — Claude
+
+~~~~~
+A #93 CI-ja zöld: 71 check sikeres, 3 kimaradt. A harmadik kimaradt check az új `diff-plan`, ami `full` módban szándékosan nem fut. Ezt a módot maga a gate-módosítás váltja ki. A branch mergelhető (`CLEAN`).
+
+Ha mehet, ez a jóváhagyó parancs:
+```
+! gh pr comment 93 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: e6d93182a9205a5b5515b8aa0690148e6d658256"
+```
+
+Ha rögzítetted, elindítom a `land`-et. A merge után a következőket javaslom:
+1. A `p1.yml` változása miatt a háttérben lefut egy teljes FULL a `main`-en.
+2. A #91-et rebase-elem a friss `main`-re. Az újrafutó CI-ja lesz az új diff-gate első éles próbája: lefedettségmérés a `scope`-ban, aztán `diff-plan`, aztán shardolt diff-mutáció.
+~~~~~
+
+
+### 2026-10-24 09:46 — Felhasználó
+
+~~~~~
+<bash-input> gh pr comment 93 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: e6d93182a9205a5b5515b8aa0690148e6d658256"</bash-input>
+~~~~~
+
+
+### 2026-10-24 09:46 — Felhasználó
+
+~~~~~
+<bash-stdout>https://github.com/CentralInfraCore/cic-primitive-forms/pull/93#issuecomment-6382710853</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-10-24 09:46 — Claude
+
+~~~~~
+Megvan a jóváhagyás, és elindítottam a #93 `land`-jét. Ellenőrzi a jóváhagyást, mergel, és végigköveti a post-merge CI-t. Ha végzett, szólok, és utána rebase-elem a #91-et a friss `main`-re az új diff-gate éles próbájához.
+~~~~~
+
+
+### 2026-10-24 09:51 — Felhasználó
+
+~~~~~
+rebase-eld a #91-et
+~~~~~
+
+
+### 2026-10-24 09:51 — Claude
+
+~~~~~
+A #93 bent van (`9e4bd2b`), a háttér-FULL fut a `main`-en. Rebase-elem a #91-et.
+~~~~~
+
+
+### 2026-10-24 09:55 — Claude
+
+~~~~~
+A #91 rebase-elve a friss `main`-re (HEAD `89f3465`), és az új diff-gate élesben működik.
+
+- **`scope`:** `mode=diff`. A módosított `TestSameComparesEveryPartOfTheValue` régi változata a base-en 184 termékkódsort futtatott le, ezek kerültek a diffbe (Go: 90 tartomány, Rust: 10). A régi gate ugyanerre a PR-ra FULL-t adott.
+- **`diff-plan`:** elindult. Ő számolja meg a diff mutánsait és osztja ki a shardokat.
+
+A #91 CI-ja végéig figyelem, és jelzem a shardolt diff-mutáció és a `quality` eredményét. A háttérben közben fut a #93 merge utáni FULL is a `main`-en.
+~~~~~
+
+
+### 2026-10-24 10:12 — Claude
+
+~~~~~
+A stash pontosan ugyanazt a két fájlt tartalmazza, mint a mostani commit: a kettő között nincs eltérés, a munkafa tiszta. Semmi nem veszett el. Eldobom a felesleges stash-t.
+~~~~~
+
+
+### 2026-10-24 10:12 — Claude
+
+~~~~~
+Az új diff-gate első éles futása lefutott a #91-en, és valódi hiányt talált, amit a régi FULL nem jelzett.
+
+**A gate mechanikája rendben működött:**
+- A `scope` megmérte a módosított Go-tesztet, és `diff` módot adott.
+- A `diff-plan` 4 Go-shardot és 1 Rust-shardot számolt.
+- A Go diff 294/303 = 97,03% lett, és átment.
+- A `quality` minden shard-riportot a közös listához vetett.
+
+**A bukás oka:** a `quality` job azért lett piros, mert a Rust diffben 4 mutánsból 3-at öltek meg, 10 alatti mutánsnál pedig mind a négyet kell. A túlélő a `src/expand.rs:420`-on van: az `authored && self.members` → `||` csere. Erre nem volt teszt, pedig a PR kimondja, hogy az `Expand` nem ellenőrzi a wrapper tagjait, csak a `Normalize`. A régi FULL-ban ez az egy túlélő elveszett a 975/981-es összesítésben.
+
+**Javítás (`ffe74fb`):** mindkét nyelvben új top-level párteszt került be, amely szerint az `Expand` megtartja a szerző által írt, olvashatatlan `access: 123`-at, a `Normalize` pedig elutasítja. Kézzel kipróbáltam: a túlélő mutánst mindkét nyelvben megöli, tisztán mindkettő zöld. Új tesztként tiszta hozzáadás, így a PR diff módban marad.
+
+**Egy újabb hibám:** a commit előtt megint `git stash`-t használtam, amire itt semmi szükség nem volt. Mielőtt eldobtam, ellenőriztem: a stash pontosan a már commitolt két fájlt tartalmazta, és a munkafa tiszta volt. Semmi nem veszett el. A `stash`-t a munkapéldányomon ezentúl nem használom.
+
+A #91 új CI-ját (`ffe74fb`) figyelem, és szólok.
+~~~~~
+
+
+### 2026-10-24 10:12 — Felhasználó
+
+~~~~~
+bukott a CI
+~~~~~
+
+
+### 2026-10-24 10:12 — Claude
+
+~~~~~
+Most nincs új bukás. Az egyetlen bukott futás a #91 előző HEAD-jén (`89f3465`) volt, `40083661507`, és azt már javítottam: ez volt a Rust-diff 3/4-es eredménye, a túlélő `&&` → `||` mutánssal. A GitHub PR-oldala valószínűleg még ezt a régi futást mutatja.
+
+**A jelenlegi állapot:**
+- **#91, az új HEAD (`ffe74fb`):** a `p1` és a `corpus` most fut (10:12 UTC-kor indult), egy check sikeres, hét még fut.
+- **`main`:** a #93 utáni `p1` és `corpus` zöld. A háttérben a `nightly` (a FULL) még fut.
+
+A #91 futását a háttérben figyelem, és ha végez, megmondom, kiszedte-e az új teszt a túlélőt.
 ~~~~~
