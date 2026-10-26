@@ -1,6 +1,6 @@
-# Thread-napló — 2026-10-23/24 (Actions PR-jóváhagyás, memória, on-demand MCP szolgáltatás, forms #77-#93)
+# Thread-napló — 2026-10-23..26 (Actions PR-jóváhagyás, memória, on-demand MCP szolgáltatás, forms #77-#96)
 
-Interaktív session transcriptje (2026-10-23 és 24): miért `false` a `can_approve_pull_request_reviews` a cic-primitive-forms repón (a beállítás org-szinten zárolt), a fejlesztőgép memória- és swap-foglalásának felmérése, egy privát KB-hoz tartozó stdio MCP szerver átalakítása systemd user socket-aktivált, tétlenség után magától leálló SSE szolgáltatássá, négy külső review véleményezése és javításai (cic-primitive-forms #78 `33bc6a8`, #86 `56e222d`, #89 `ea6d8f2`, #91 `2a96304`), a seeded-defects szerepe, a CI-sor és a diff gate: a módosított teszt lefedettség szerinti szűkítése és a shardolt diff-mutáció (#92, #93 mergelve `9e4bd2b`; első éles futása a #91, diff módban), és a #84 PR mergelése (`c0ec550`). Csak az interakció: a felhasználó üzenetei (beillesztett szöveggel, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `229b7e34-f3c1-4f6e-aeae-17e724711212.jsonl` (a helyi eredeti napló nem kerül a repóba); a `tools/session-transcript.py --private-repo <privát repó neve>` hívással generálva, majd utólag a privát ticket-azonosítók és a helyi scratchpad-útvonal kézzel `[MASKED:<típus>]` jelölővel kitakarva. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, kontextus-összefoglaló.
+Interaktív session transcriptje (2026-10-23 és 26 között): miért `false` a `can_approve_pull_request_reviews` a cic-primitive-forms repón (a beállítás org-szinten zárolt), a fejlesztőgép memória- és swap-foglalásának felmérése, egy privát KB-hoz tartozó stdio MCP szerver átalakítása systemd user socket-aktivált, tétlenség után magától leálló SSE szolgáltatássá, öt külső review véleményezése és javításai (cic-primitive-forms #78 `33bc6a8`, #86 `56e222d`, #89 `ea6d8f2`, #91 `2a96304`), a diff gate lefedettség szerinti szűkítése és shardolása (#93 `9e4bd2b`), és a CI-lánc javítása (#95 `ab2e8cf`: a nem forduló Go-mutáns és beültetett hiba nem számít elkapásnak - 322 hamis Go-ölés, valós pontszám 93,08%; Rust pin, cache, nightly egyszer commitonként; follow-up #96), valamint a #84 PR mergelése (`c0ec550`). Csak az interakció: a felhasználó üzenetei (beillesztett szöveggel, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `229b7e34-f3c1-4f6e-aeae-17e724711212.jsonl` (a helyi eredeti napló nem kerül a repóba); a `tools/session-transcript.py --private-repo <privát repó neve>` hívással generálva, majd utólag a privát ticket-azonosítók és a helyi scratchpad-útvonal kézzel `[MASKED:<típus>]` jelölővel kitakarva. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, kontextus-összefoglaló.
 
 
 ### 2026-10-23 10:42 — Felhasználó
@@ -2412,4 +2412,427 @@ A HEAD `ffe74fb`. Ha mehet a merge:
 
 ~~~~~
 Megvan a jóváhagyás, és elindítottam a #91 `land`-jét: mergel, aztán végigköveti a post-merge CI-t. Ha végzett, jelzem az eredményt, és frissítem a session-naplót. A merge lezárja a #90 issue-t is.
+~~~~~
+
+
+### 2026-10-24 10:24 — Claude
+
+~~~~~
+A #91 mergelve (`2a96304`), a post-merge CI zöld: 22 check, 0 hiba, és minden kötelező check jelentett. A merge lezárta a #90 issue-t. A session-naplót frissítettem és pusholtam a cic-factory `main`-re (`cf6476c`).
+
+**Az új diff-gate első éles futása a #91 volt:**
+- Az egyetlen módosított Go-teszt miatt a gate nem váltott `full`-ra. Megmérte a teszt lefedettségét, és az így kapott sorokra korlátozott diff-futást indított.
+- A diff 4 Go- és 1 Rust-shardon futott.
+- Közben valódi hiányt talált: egy túlélő Rust-mutánst a `src/expand.rs:420`-on, amit a régi teljes futás elfedett.
+
+**Nyitva maradt, a te döntéseid:**
+- **#85:** a 3. pont (az edit wrapper-validálása, ehhez grammar-paraméter kell) és az 5. pont (a no-op és az `EDIT_VALUE_NOT_REPRESENTABLE` sorrendje az ADR 0012-ben).
+- **#88:** a 10. pont (a grammar kötése a lefordított sémához), a 11. pont (a tárolt normalizálási eredmények integritása) és a 9. pont (a Go parser erőforrásigényének mérése).
+- **#92 folytatása, ha kell:** a tesztadat-módosítás (`testdata/`, `corpus/`) még mindig FULL-t vált ki. Ugyanezzel a lefedettség-alapú módszerrel szűkíthető lenne, ha ez is gyakorinak bizonyul.
+~~~~~
+
+
+### 2026-10-26 09:24 — Felhasználó
+
+~~~~~
+kaptam egy review-t mi valid mit tennél bele mi az ami tévedés:
+
+<pasted_content id="2258">
+ A nightly lánc kódját néztem át: nightly.yml → p1.yml (929 sor) és corpus.yml, valamint a két composite actiont (cached-tool, upstream-pinned), a Go shard- és diff-executort és a
+  quality_gate.py shard-ellenőrzését. A logika átgondolt és jól dokumentált.
+
+  Ami jó
+ 
+  - Hibázásra van tervezve a gate. A quality job kézzel ellenőrzi, hogy a választott mód jobjai lefutottak-e, a másik mód jobjai pedig kimaradtak-e. Ezzel kizárja, hogy egy kihagyott
+    job zöldnek számítson (p1.yml:625-633). A fuzz gyűjtőjob ugyanígy működik.
+  - Minden gate-hez van szándékosan elrontott próba. Coverage, mutációs pontszám, fuzz canary és parity: mindegyiknél megnézi, hogy a gyengített teszt tényleg pirosat ad-e. Ez ritka és
+    értékes.
+  - Kiegyensúlyozott shardolás. Mért költség alapján osztja ki, a verify lépés pontos regex-egyezést kér, a gate pedig megköveteli, hogy minden mutáns pontosan egy shardban fusson.
+  - Rendes ellátási lánc. Az actionök SHA-ra vannak pinelve, a toolok verzióra, a nightly Rust dátumra, a Go 1.27.2-re. A permissions: {} jobonként szűkítve, a cache-kulcsban benne van
+    a fordító és a runner image is.
+ 
+  Problémák, fontossági sorrendben
+</pasted_content id="2258">
+
+
+<pasted_content id="2258">
+ 
+  1. A gate nem kötelező. A main-en nincs branch protection és ruleset sem: rulesets: [], Branch not protected. A p1, corpus és fuzz eredménye így csak tájékoztató, piros PR is
+     mergelhető. A szkriptekben sok utalás van „required checks”-re (p1.yml:796), de a GitHubon ez nincs beállítva. Kell egy ruleset a main-re, amely a p1 / quality, p1 / fuzz, p1 / 
+     rust, p1 / go, corpus stb. checkeket kötelezővé teszi.
+  2. A Rust stable nincs pinelve. A rustup toolchain install stable mindig az aktuális legújabbat telepíti, nincs rust-toolchain.toml. Egy új Rust-kiadás új clippy lintjei a -D 
+     warnings miatt kódváltozás nélkül is pirosra fordíthatják a nightlyt. Ez ráadásul ellentmond a repó saját elvének („minden pinelt”). Pineld a stable verziót is, akár a cached-tool
+     kulcsában szereplő rustc verzióra.
+  3. Minden commit kétszer fut le FULL-ban. A changed job 48 órás ablakot néz (nightly.yml:56), napi cron mellett. Egy commit után két egymást követő éjszaka is lefut a teljes, kb. 30
+     perces, 60+ jobos FULL ugyanarra a commitra. Pontosabb és olcsóbb megoldás: a main HEAD-et az utolsó sikeres nightly headSha-jával összevetni (gh run list -w nightly -s success 
+     -L1 --json headSha). Így a késve induló futás sem gond, és nincs dupla futás. 
+  4. A Go mutánslista nincs összevetve a planben számolttal. Rustnál a gate egy külön listához méri a shardokat (--rust-listed). Gónál csak azt ellenőrzi, hogy a shardok egymással
+     egyeznek (quality_gate.py:194). A plan job kiszámolja a Go mutánsszámot, de ez nem jut el a gate-ig. Ha a go-mutesting minden shardban ugyanott determinisztikusan elhasal (a || 
+     true miatt, p1.yml:414), a hiányzó mutánsokat semmi nem jelzi. Javítás: a plan.outputs adja tovább a Go darabszámot, és a gate kérje ezt --go-expected-ként.
+  5. [MASKED:private-implementation]
+     oldalon target- és registry-cache egyáltalán nincs (például Swatinem/rust-cache). Kb. 38 mutációs shard, 16 fuzz job és a parity mind újrafordít. Javítás: cache-dependency-path: 
+     go/go.sum, plus rust-cache a rust workdirre. Valószínűleg jelentős időt nyer.
+  6. Egy gate-változás nem mindig indít FULL-t. A nightly push-triggere csak a p1.yml változására indít FULL-t (nightly.yml:21). A gate logikája viszont a tools/quality_gate.py,
+     shard_plan.py, diff_gate.py, *_exec.sh és a .github/actions/** fájlokban is benne van. Ezek PR-on full módot váltanak ki, de a merge utáni háttér-FULL elmarad. A paths listát
+     érdemes a p1 PR-paths gate-részéhez igazítani.
+  7. A riport vakfoltjai.
+     - Ha maga a changed job hasal el (checkout- vagy git-hiba), a report nem fut, mert csak p1 vagy corpus failure esetén indul. Ilyenkor a nightly csendben elmarad.
+     - A cancelled állapotot sem jelzi.
+     - Ha a PR nem nyitható meg, a ci-incident/* ág már pusholva van, és ottmarad. Ezek idővel felhalmozódnak.
+  8. Apróságok.
+     - Időzóna: a cron a téli és nyári időszámítás váltásakor kézi átírást igényel (nightly.yml:6). Egyszerűbb UTC-ben gondolkodni, és csak dokumentálni.
+     - Kézi futtatás más ágról: a workflow_dispatch másik ágról indítva a changed a main-t nézi, a p1 viszont a dispatch-elt ágon fut.
+     - Duplikált checkout: a corpus.yml saját maga is checkoutolja a cic-primitives-t, közben az upstream-pinned action ugyanezt csinálja.
+     - Node 20 elavult: az action-pineken ideje verziót emelni.
+  9. Ellenőrizendő, nem biztos. A Go executor a go test 2-es kilépési kódját veszi „uncompilable”-nek. Ha a go test fordítási hibánál 1-gyel lép ki, a nem forduló mutánsok
+     „killed”-ként számítanak, és felfelé torzítják a pontszámot. Ezt nem futtattam le. A mapping a go-mutesting saját szkriptjéből jön, és lehet, hogy a go-mutesting előtte kiszűri
+     ezeket. Egy célzott teszt eldöntené. 
+    
+  Ha kéred, a 2., 3., 5. és 6. pontot egy PR-ban megcsinálom, ezek kicsi, mechanikus változások. Az 1. pont repó-admin beállítás, azt neked vagy az ownernek kell bekapcsolnia.
+
+</pasted_content id="2258">
+~~~~~
+
+
+### 2026-10-26 09:24 — Claude
+
+~~~~~
+Mind a kilenc pontot ellenőrzöm a valós repóban és a GitHub-beállításokban. A 9. pontot ki is próbálom, mert az futtatással eldönthető.
+~~~~~
+
+
+### 2026-10-26 09:25 — Claude
+
+~~~~~
+Az 5. pont igaz: `Restore cache failed: Dependencies file is not found … go.sum`. Most a 9. pont: milyen kilépési kóddal jön ki a `go test` fordítási hibánál?
+~~~~~
+
+
+### 2026-10-26 09:26 — Claude
+
+~~~~~
+Amíg a mérés fut, megnézem a 4., 6. és 8. pontot.
+~~~~~
+
+
+### 2026-10-26 09:26 — Claude
+
+~~~~~
+A 6. pont nagyrészt téves, a 8.-ból egy alpont szintén. Megnézem, szándékos döntés-e a Rust stable pineletlensége (2.).
+~~~~~
+
+
+### 2026-10-26 09:26 — Claude
+
+~~~~~
+Még fut: a pinelt go-mutesting most települ, utána négy fájl minden mutánsát lefordítja. Amint végzett, összesítem a review-t, a 9. pont számaival együtt.
+~~~~~
+
+
+### 2026-10-26 09:32 — Claude
+
+~~~~~
+Megvan a 9. pont mérése is, így mind a kilenc pontot ellenőriztem a kódban, a GitHub-beállításokban vagy futtatással. Röviden: a review nagyrészt valid, egy pontja téves, a 9. pont pedig valódi mérési hiba.
+
+| # | Állítás | Ítélet | Bizonyíték |
+|---|---|---|---|
+| 1 | Nincs branch protection, a gate nem kötelező | **Valid** | `rulesets: 0`, `Branch not protected`. A `land` betartja a kötelező készletet, de a GitHub felületén bármit be lehet mergelni (a #78-at is ott mergelted) |
+| 2 | A Rust stable nincs pinelve | **Valid** | Nincs `rust-toolchain.toml`, a `p1.yml`-ben 11 helyen `toolchain install stable` áll, és nincs erről dokumentált döntés |
+| 3 | Egy commitra két FULL fut | **Valid** | A 48 órás ablak szándékos (a késve induló cron miatt), de a javaslat ezt is lefedi. Pontosítás: az utolsó olyan nightlyhoz kell hasonlítani, amelyben a `p1` lefutott, akár sikerrel, akár hibával. Különben egy bukott nightly másnap újra futna, és dupla incidenst nyitna |
+| 4 | A Go mutánsszámot semmi nem veti össze a terv számával | **Valid** | A gate csak a shardok egymás közti egyezését nézi. Ha a go-mutesting minden shardban ugyanott determinisztikusan elhasal, a hiányzó mutánsok nem látszanak. A tegnapi `diff-plan`-re (#93) is igaz |
+| 5 | Nincs fordítási cache | **Valid** | A logban: `Restore cache failed: Dependencies file is not found … go.sum`. Rust-cache sincs |
+| 6 | A gate-fájlok változása után nem fut FULL | **Nagyrészt téves** | A felsorolt fájlok (`quality_gate.py`, `shard_plan.py`, `diff_gate.py`, `*_exec.sh`, `.github/actions/**`) a PR-on már FULL-t váltanak ki, ezért a merge után nem kell újabb. Valós rés csak ott van, ahová a review nem nézett: a `shard_count.py`, `shard_budget.json`, `fuzz_matrix.py`, `coverage_gate.py` és `seeded_defects.py` „other” besorolású, így se a PR-on, se utána nem jár FULL-lal |
+| 7 | Vakfoltok a riportban | **Valid** (mindhárom) | Ha a `changed` job bukik vagy a futás `cancelled`, nincs riport. A `ci-incident/*` ág a PR-nyitás előtt pusholódik, és ha csak issue lesz, az ág ott marad |
+| 8 | Apróságok | **Részben** | Az időzóna valid, de a fájl már dokumentálja. A más ágról indított `dispatch` valid. **A duplikált checkout téves**: a `corpus.yml` nem használja az `upstream-pinned`-et, egyetlen checkout van benne. A Node 20 valid, a logokban figyelmeztet |
+| 9 | Az `uncompilable` ág soha nem fut | **Valid, és ez a legsúlyosabb** | Lásd lent |
+
+**A 9. pont részletesen.** A `go test` fordítási hibánál ugyanúgy 1-es kóddal lép ki, mint bukó tesztnél, ezt kipróbáltam. A végrehajtó szkriptjeink az 1-et „killed”-ként könyvelik. A go-mutesting csak az eredeti fájlt típusellenőrzi, a mutánsokat nem.
+- **Valós adat:** az utolsó sikeres nightly 2143 tesztelt Go-mutánsa közül **0 lett `uncompilable`**: 2017 killed, 126 survived.
+- **Saját mérés négy fájlon** (`parse.go`, `node.go`, `recognize.go`, `access.go`): a 732 mutánsból **64 nem fordul (8,7%)**. Ezek mind „killed”-ként számítanak.
+- **Hatás:** ezzel az aránnyal becsülve a valós Go-pontszám ~93,6%, nem 94,1%. Ez még 90% fölött van, így a teljes futás döntése nem fordulna meg. A diff módban viszont egy 10 alatti halmazban egy nem forduló mutáns tévesen zölddé tehet egy PR-t.
+
+**Mit tennék bele, prioritás szerint, három PR-ban:**
+1. **A mérés helyessége (9. és 4. pont).** A három Go-végrehajtó (`shard`, `diff`, `reduced`) a `[build failed]` / `[setup failed]` kimenetből felismeri a fordítási hibát, és `uncompilable`-nek könyveli. Ehhez beültetett hibás próba is jár. A Go mutánsszám a `plan`-ből és a `diff-plan`-ből `--go-expected`-ként eljut a gate-hez. Ez a PR maga is FULL-ban fut, és a valós Go-pontszám a nightly-ban derül ki.
+2. **Toolchain és cache (2. és 5. pont).** A Rust stable konkrét verzióra pinelve, `cache-dependency-path: go/go.sum`, és Rust-cache.
+3. **Nightly (3., 7. és 6. pont).** `headSha` alapú változásfigyelés, riport a `changed` bukására és a `cancelled` állapotra, takarítás a beragadt incidens-ágakra, és a „other” gate-eszközök besorolása gate-fájlnak.
+
+**A tiéd:**
+- **1. pont:** a ruleset repó-admin beállítás. Ha kéred, összeállítom a pontos `gh api` hívást a kötelező checkekkel, és te futtatod.
+- **8. pont apróságai:** a Node 20 frissítése mehet a 2. PR-ba, a többi maradhat.
+
+Mehet így, az 1. PR-ral kezdve?
+~~~~~
+
+
+### 2026-10-26 09:54 — Felhasználó
+
+~~~~~
+ezek szeirntem egy PR-ba elkocognak vagy tévedek?
+~~~~~
+
+
+### 2026-10-26 09:54 — Claude
+
+~~~~~
+Nem tévedsz, belefér egy PR-ba, és egy szempontból jobb is.
+
+**Ami az egy PR mellett szól:**
+- **Egy CI-kör három helyett.** Mind a hat érintett fájl gate-fájl (`p1.yml`, `nightly.yml`, az exec szkriptek, a `quality_gate.py`). Bármelyik PR-t is nyitjuk, `full` módban fut, és a merge után jön egy háttér-FULL is. Három PR háromszor ennyi, és a 20 helyes limit mellett ez órákat jelent.
+- **Az eredmények nem keverednek.** A Rust stable pinje a mostani verzióra (1.99.1) történik, a cache pedig csak gyorsít. Egyik sem változtat a mért számokon. Ha a merge után megváltozik a Go-pontszám, az egyértelműen a 9. pont javítása lesz.
+
+**Egy feltételem van: pontonként külön commit.** Így a review követhető, és ha valami gondot okoz (például a Rust-cache instabil), az a commit önmagában visszavonható.
+
+**A sorrend:**
+1. A 9. pont (`uncompilable` felismerése) beültetett hibás próbával.
+2. A 4. pont (`--go-expected` a `plan`-ből és a `diff-plan`-ből).
+3. A 2. és az 5. pont (Rust pin, Go- és Rust-cache, Node 20).
+4. A 3. és a 7. pont (`headSha` alapú nightly, riport-vakfoltok, ág-takarítás).
+5. A 6. pont maradéka (az „other” besorolású gate-eszközök felvétele gate-fájlnak).
+
+Egy várható hatást előre jelzek. A 9. pont után a nightly Go-pontszáma kb. 94,1%-ról ~93,6%-ra csökken. Ez nem regresszió, hanem a valós szám, és a 90%-os küszöb fölött marad.
+
+Kezdjem?
+~~~~~
+
+
+### 2026-10-26 09:54 — Felhasználó
+
+~~~~~
+igen, issue és mehet a PR
+~~~~~
+
+
+### 2026-10-26 09:55 — Claude
+
+~~~~~
+Megnyitom az issue-t, aztán a munka. Előbb két részletet tisztázok, mert ezektől függ a megoldás: hogyan jelenik meg a `go test` kimenetében a fordítási és a vet-hiba (9. pont), és hány helyen van beégetve a `stable` (2. pont).
+~~~~~
+
+
+### 2026-10-26 09:56 — Claude
+
+~~~~~
+A CI-ban most 1.99.1 fut, erre pinelek. Megnyitom az issue-t a pontos, ellenőrzött hatókörrel.
+~~~~~
+
+
+### 2026-10-26 09:57 — Claude
+
+~~~~~
+Megvan a #94. Kezdem a 9. ponttal. A `go test` eredményének értelmezését egy közös függvénybe teszem (`tools/mutation_go_test.sh`), mert most három végrehajtó szkript ismétli ugyanazt.
+~~~~~
+
+
+### 2026-10-26 10:06 — Claude
+
+~~~~~
+Amíg a fordíthatósági ellenőrzés fut, jön a 4. pont: a gate megkapja a Go mutánsok tervezett számát (`--go-expected`), és összeveti azzal, hány mutáns kapott ténylegesen döntést.
+~~~~~
+
+
+### 2026-10-26 10:07 — Claude
+
+~~~~~
+A gate selftestje zöld: 66 hibaeset, 6/6 ok. Most a `p1.yml`: a Go-számok továbbadása (4.), a Rust pin (2.), a cache (5.) és a végrehajtó-teszt a `go` jobban. Megnézem a workflow fejét.
+~~~~~
+
+
+### 2026-10-26 10:08 — Claude
+
+~~~~~
+Now the Go count into the gate (4) and the executor test into the `go` job.
+~~~~~
+
+
+### 2026-10-26 10:09 — Claude
+
+~~~~~
+Rossz helyre szúrtam be: a `go test` lépés `working-directory: go` sora utána volt, így most az új lépéshez tartozik, és kétszer szerepel. Javítom.
+~~~~~
+
+
+### 2026-10-26 10:11 — Claude
+
+~~~~~
+Now `nightly.yml`: the new decision, the report condition, cancelled jobs and the branch cleanup.
+~~~~~
+
+
+### 2026-10-26 10:11 — Claude
+
+~~~~~
+A `nightly.yml` szerkezete rendben. Lefuttatom a workflow-teszteket, mert lehet, hogy a régi 48 órás szövegre építenek.
+~~~~~
+
+
+### 2026-10-26 10:11 — Claude
+
+~~~~~
+The workflow tests are green. I'll add new tests for this PR's workflow promises, the gate-file classification (6) and the missing CI paths.
+~~~~~
+
+
+### 2026-10-26 10:12 — Claude
+
+~~~~~
+Mind a kilenc átírt beültetett hiba most lefordul, és a tesztek továbbra is elkapják (Go 7/7, Rust 2/2). Így ezek valódi bizonyítékok lettek, nem fordítási hibák. Jön a doksi.
+~~~~~
+
+
+### 2026-10-26 10:12 — Claude
+
+~~~~~
+Mielőtt commitolok, ellenőrzöm a doksiba írt nightly-dátumot, és egyben lefuttatom az összes tool-tesztet.
+~~~~~
+
+
+### 2026-10-26 10:12 — Claude
+
+~~~~~
+A doksiban a dátum téves: a nightly 2026-10-26-án futott, nem 25-én. Javítom, és a futás azonosítóját is beírom. Utána jönnek a commitok.
+~~~~~
+
+
+### 2026-10-26 10:12 — Claude
+
+~~~~~
+Öt aláírt commit, a munkafa tiszta. Push és PR.
+~~~~~
+
+
+### 2026-10-26 10:13 — Claude
+
+~~~~~
+Megnyitottam a #94 issue-t és a [#95](https://github.com/CentralInfraCore/cic-primitive-forms/pull/95) PR-t, öt aláírt committal. A CI fut, a háttérben figyelem, és első hibánál vagy a végén szólok.
+
+**Ugyanez a hibaosztály máshol is (amit kértél, hogy kezeljek):**
+- **Go-mutációk:** a 9. pont a legfontosabb. A nem forduló mutáns eddig „killed”-nek számított. Most mindhárom végrehajtó egy közös vizsgálattal dönti el, hogy fordul-e a mutáns, így a nem forduló mutáns már nem számít ölésnek. A csak `vet` által elkapott mutáns továbbra is „killed”.
+- **`seeded_defects.py`:** ugyanez a hiba volt benne. **A 199 beültetett hibából 9 le sem fordult** (Go 7, Rust 2), és ezek eddig „CAUGHT”-nak számítottak. Mind a kilencet átírtam, hogy forduló kódba ültessék ugyanazt a hibát. A valódi eszköz mindegyiket elkapja. Az eszköz mostantól elutasítja a nem forduló hibát („DOES NOT BUILD”).
+- **`test-evidence/seeded.py`:** a Python- és YAML-hibáknak előbb parse-olhatónak kell lenniük, csak utána számít az elkapásuk.
+- **Átnézve, nem érintett:** az `edit_proof.py` (ott ezt eddig is jól kezelte), a `branchcov`, a `grammar_identity` és a fuzz-canary.
+
+**A review többi pontja:**
+- **4. pont, `--go-expected`:** a Go-shardoknak pontosan a tervezett számú mutánsra kell döntést adniuk.
+- **3. és 7. pont, a nightly:** commitonként egyszer fut. Jelzi a bukott és a megszakított döntést is, a megszakított jobokat is. Ha issue nyílik, törli a beragadt incidens-ágat.
+- **2. és 5. pont:** a Rust egy helyen pinelve (1.99.1), és a Go- és Rust-cache működik.
+- **6. pont, ami belőle igaz:** négy olyan eszköz, amely a diff mód viselkedését dönti el, most gate-fájlnak számít.
+
+**Közben javított apró hibák:**
+- A `fuzz-target` a pin után a cargo-fuzzhoz külön toolchaint kap.
+- A doksiba először rossz dátumot írtam a nightly-hoz, ezt javítottam.
+- Ha valaki kézzel nem a `main`-ről indítja a nightlyt, figyelmeztet és nem fut.
+
+**Várható hatás a merge után:** a Go mutációs pontszám kb. fél ponttal csökken (≈94,1% → ≈93,6%). Ez nem romlás, hanem a valós szám, és a 90% fölött marad. A merge utáni FULL mutatja meg a pontos értéket.
+
+**Nem került bele:**
+- **Ruleset a `main`-re:** a te beállításod.
+- **Node 20 frissítés:** az actionök major-váltása külön változás.
+~~~~~
+
+
+### 2026-10-26 10:46 — Claude
+
+~~~~~
+A #95 CI-ja zöld, és most először látszik a valós Go mutációs pontszám:
+
+```
+ok   go mutation score      1695/1821 = 93.08%     (eddig: 2017/2143 = 94.12%)
+ok   rust mutation score    977/983 = 99.39%
+QUALITY GATE: PASS
+```
+
+Ugyanazok a 2143 Go-mutánsok:
+
+| Verdikt | Eddig (nightly) | Most |
+|---|---|---|
+| killed | 2017 | 1695 |
+| survived | 126 | 126 |
+| uncompilable | **0** | **322** |
+
+- **322 mutáns (15%) le sem fordult**, és eddig mind „killed”-nek számított. Ez majdnem a kétszerese annak, amit a négy fájlos minta alapján becsültem (8,7%).
+- **A túlélők száma nem változott (126).** A javítás tehát pontosan a hamis öléseket vette ki, valódi elkapást nem.
+- **A valós pontszám 93,08%.** Ez a 90%-os küszöb fölött van, a gate zöld.
+- **Az új `--go-expected` ellenőrzés is átment:** 1695 + 126 + 322 = 2143, pontosan a tervezett szám.
+
+A #95 mergelhető. Ha mehet:
+```
+! gh pr comment 95 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: $(gh pr view 95 -R CentralInfraCore/cic-primitive-forms --json headRefOid -q .headRefOid)"
+```
+
+A merge után a `p1.yml` változása miatt lefut egy háttér-FULL, és ez lesz az első nightly-jellegű futás az új döntési logikával.
+~~~~~
+
+
+### 2026-10-26 11:04 — Felhasználó
+
+~~~~~
+<bash-input> gh pr comment 95 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: $(gh pr view 95 -R CentralInfraCore/cic-primitive-forms --json headRefOid -q .headRefOid)"</bash-input>
+~~~~~
+
+
+### 2026-10-26 11:04 — Felhasználó
+
+~~~~~
+<bash-stdout>https://github.com/CentralInfraCore/cic-primitive-forms/pull/95#issuecomment-6414458403</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-10-26 11:04 — Claude
+
+~~~~~
+Ellenőrzöm, hogy a hozzászólásban tényleg a teljes HEAD SHA szerepel-e, mert a parancs a SHA-t futásidőben helyettesítette be. Utána indítom a `land`-et.
+~~~~~
+
+
+### 2026-10-26 11:04 — Claude
+
+~~~~~
+A jóváhagyásod pontosan a #95 mostani HEAD-jére szól (`cfb5206…`). Elindítottam a `land`-et: mergel, és végigköveti a post-merge CI-t, benne a háttér-FULL-lal. Ha végzett, jelzem az eredményt, és frissítem a session-naplót.
+~~~~~
+
+
+### 2026-10-26 11:05 — Felhasználó
+
+~~~~~
+illetve az issue-t is kezeld
+~~~~~
+
+
+### 2026-10-26 11:05 — Claude
+
+~~~~~
+A #94 issue-t a merge automatikusan lezárja („Closes #94”). Ezen felül a lezáráshoz hozzáírom a mért eredményt, és a kimaradt pontokat (a `main` rulesetje és a Node 20 actionök) egy új issue-ba veszem fel, hogy ne vesszenek el. Megnézem, hol tart a merge.
+~~~~~
+
+
+### 2026-10-26 11:05 — Claude
+
+~~~~~
+Mergelve (`ab2e8cf`), a #94 lezárult. A post-merge CI még fut. Megírom a lezáró összefoglalót az issue-ra, és nyitok egy follow-up issue-t a kimaradt pontokra.
+~~~~~
+
+
+### 2026-10-26 11:05 — Claude
+
+~~~~~
+Az issue-ba írt kötelező check-listát fejből adtam meg. Összevetem a valós `ci-required` fájllal, és ha eltér, javítom.
+~~~~~
+
+
+### 2026-10-26 11:06 — Claude
+
+~~~~~
+Az issue-k rendben vannak:
+- **#94:** a merge lezárta. Lezáró hozzászólásban rögzítettem a mért eredményt:
+  - 322 nem forduló Go-mutáns eddig „killed”-nek számított;
+  - a valós Go-pontszám 93,08%;
+  - a túlélők száma változatlan;
+  - a 9 javított beültetett hiba.
+- **[#96](https://github.com/CentralInfraCore/cic-primitive-forms/issues/96):** új follow-up a két kimaradt pontra.
+  - **Ruleset a `main`-re (a te döntésed):** a javasolt kötelező checkek pontosan azok, amelyeket a `land` most is vár (`tools/ci-required/cic-primitive-forms.txt`). A shardolt mutációs jobok nincsenek köztük, mert azokat a `quality` már megköveteli.
+  - **A Node 20 actionök frissítése:** major-verzióváltás, saját változásként.
+
+Egy hibámat javítottam: a #96-ba először fejből, hiányosan írtam be a kötelező checkeket. Négy maradt ki, és rossz névformát használtam. A valós fájl alapján pontosítottam.
+
+A #95 post-merge CI-ja és a háttér-FULL még fut. Ha végzett, jelzem az eredményt, és frissítem a session-naplót.
 ~~~~~
