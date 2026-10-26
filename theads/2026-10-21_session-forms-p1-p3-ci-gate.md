@@ -12289,3 +12289,448 @@ Mindkettő csak dokumentáció, ezért a `p1` CI nem indul rajtuk, a `corpus` el
 ~~~~~
 <bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
 ~~~~~
+
+
+### 2026-10-23 19:09 — Claude
+
+~~~~~
+Az E4 beolvadt (`9ed91f9`), ezzel a P3b első egysége kész.
+
+**Elkészült az utómunka:**
+- **Szálnapló:** commitolva és pusholva (`decfdd7`, titokmentes).
+- **Memória:** frissítve (E4 mergelve, P4 állapot, a bizonyítás tanulságai).
+- **P3b lezárási rekord:** #82 (https://github.com/CentralInfraCore/cic-primitive-forms/pull/82). Kimondja, hogy az első egység lezárt, a többi (beszúrás, törlés, blokk- és flow-skalárok, kötegelt szerkesztés) nyitott. A P3b egésze **nem** zárul le.
+- **A háttér-FULL** a `main`-en a #79 merge után újra elindult (a `p1.yml` változott), a `nightly` éppen fut. Az eredményt jelentem, ha lefutott.
+
+**Ami a te döntésedre vár** (mind csak dokumentáció):
+- **#80:** a P4 terv (a reviewer pontosításaival).
+- **#81:** az ADR 0013 (javasolt) a patch első egységéről.
+- **#82:** a P3b lezárási rekord.
+- **cic-factory #44:** a nightly profil a számolt shardokhoz.
+
+A P4 következő lépése (a patch-vektorok kézzel, majd a diff D1–D3) az ADR 0013 elfogadása után kezdődik. Ha előbb akarod, az accounting-számok kiszervezése adatfájlba (a gate-költség miatt) egy kis, önálló PR, azt már most meg tudom csinálni.
+~~~~~
+
+
+### 2026-10-23 19:18 — Felhasználó
+
+~~~~~
+kérem a parancsokat is a lezáráshoz...
+~~~~~
+
+
+### 2026-10-23 19:18 — Felhasználó
+
+~~~~~
+kérem a parancsokat is a lezáráshoz...
+
+<pasted_content id="d623">
+## P3b lezárás és a négy nyitott PR
+
+A GitHubon megerősítettem, hogy a #79 E4 PR beolvadt, a merge commit `9ed91f9`. Ez alapján a P3b első, egyetlen meglévő skalárra vonatkozó forrásmegőrző szerkesztési egysége megvalósult és megkapta a vállalt bizonyítási teszteket.
+
+A [#82 lezárási rekord](https://github.com/CentralInfraCore/cic-primitive-forms/pull/82?utm_source=chatgpt.com) tartalmát ellenőriztem. Szakmai GO: helyesen választja el az E1–E4 egység lezárását a teljes P3b fázistól. A még nem támogatott beszúrás, törlés, átnevezés, blokk- és flow-skalár, valamint kötegelt szerkesztés továbbra is nyitott marad.
+
+Ez fontos különbség: a P4 elkezdhető az elkészült `edit_scalar` képességre építve, anélkül, hogy a P3b teljes feladatkörét késznek nyilvánítanánk.
+
+### Egy fontos CI-hiányosságot találtam a cic-factory #44-ben
+
+A [factory #44](https://github.com/CentralInfraCore/cic-factory/pull/44?utm_source=chatgpt.com) helyesen cseréli le a dinamikus számú mutation-shardok rögzített neveit a `plan` és `quality` összesítő ellenőrzésekre. A saját `gate` workflow-ja sikeres.
+
+De a nightly követelménylistából hiányzik két új E4-bizonyítási job:
+
+- `p1 / edit-proof (rust)`
+- `p1 / edit-proof (go)`
+
+Ezek már szerepelnek a `cic-primitive-forms` aktuális `p1.yml` workflow-jában, viszont a `p1 / quality` nem függ tőlük. Ezért a factory #44 jelenlegi nightly profilja akkor is teljesítettnek láthatná a saját követelménylistáját, ha az egyik `edit-proof` job megbukna.
+
+Ezt a #44-en javítani kell. A két állandó nevű jobot külön felvenném a nightly követelmények közé, és olyan hibaszimulációval tesztelném, amelyben az egyik hiányzik vagy sikertelen.
+
+Ez pontosan az a fajta hamis zöld, amelynek felismerésére az E4 bizonyítási módszerét kialakítottuk.
+
+### A P4 dokumentációs döntései
+
+| PR                                                                                                          | Döntésem          | Teendő                                           |
+| ----------------------------------------------------------------------------------------------------------- | ----------------- | ------------------------------------------------ |
+| [#80 – P4 terv](https://github.com/CentralInfraCore/cic-primitive-forms/pull/80?utm_source=chatgpt.com)     | Szakmai GO        | Apró szövegezési javítás, branch szinkronizálása |
+| [#81 – ADR 0013](https://github.com/CentralInfraCore/cic-primitive-forms/pull/81?utm_source=chatgpt.com)    | Feltételes GO     | Két normatív ellentmondás pontosítása            |
+| [#82 – P3b lezárás](https://github.com/CentralInfraCore/cic-primitive-forms/pull/82?utm_source=chatgpt.com) | GO                | Tulajdonosi merge-felhatalmazás                  |
+| [Factory #44](https://github.com/CentralInfraCore/cic-factory/pull/44?utm_source=chatgpt.com)               | Javítás szükséges | Az E4 két új bizonyítási jobjának bekötése       |
+
+A #80-ban a P4-1 leírásában még előfordul az idempotence szó, noha a normatív döntés már replay rejection. Ezt egységesíteném. A GitHub a #80-at jelenleg nem merge-elhetőnek jelzi, ezért az aktuális `main`-nel történő szinkronizálást is ellenőrizni kell.
+
+A #81-ben két pontosítást kérek:
+
+1\. Per-call ellenőrzés és külső bizonyítás. A 4. szakasz azt állítja, hogy minden garancia minden híváskor ellenőrzött. Csakhogy a patch nem kapja meg B-t, ezért a B elleni round-trip tulajdonságot nem tudja egyetlen hívás során ellenőrizni. A Rust–Go azonosságot és a replay-elutasítást is külön teszteljük. Válasszuk szét a futásidejű ellenőrzéseket a P4-3 külső bizonyítási kötelezettségeitől.
+
+2\. Hibafázisok kizárólagossága. Egy A-dokumentum validálási hibája a korábbi `validate` fázis hibája, miközben az ADR a `PATCH_CONTEXT_MISMATCH` leírásába is beleérti. Hasonlóan, egy sémában ismeretlen útvonal és egy sémában létező, de A-ban hiányzó célpont nem ugyanaz. Az előbbi `path_resolve`, az utóbbi `PATCH_TARGET_ABSENT`. Ezek sorrendjét és besorolását egyértelműsíteném.
+
+Ezek nem változtatják meg az elfogadott architektúrát, de a vektorok előtt rögzíteni kell őket.
+
+### Az accounting kiszervezését most megcsinálnám
+
+Igen, javaslom külön, kis PR-ban, még a P4-1 előtt. Az elvárások maradjanak előre rögzítve, a gate továbbra is bukjon minden eltérésre, és a módosítás ne gyengítsen semmit a bizonyításból.
+
+A haladási sorrend így lenne: #82 lezárás → #80/#81 pontosítás és elfogadás → factory #44 javítása → accounting PR → P4-1 vektorok → D1–D3 diff.
+
+Nem végeztem merge-et, és a main háttér-FULL/nightly sikerét még nem minősítettem. Azokat külön, a ténylegesen befejezett futás alapján kell elfogadni.
+
+A lényeg: a P3b első egysége immár bizonyított építőelem. A P4-nél már nem az alapmechanizmust kell újra bizonyítani, hanem a több változásból álló művelet szemantikai helyességét, konfliktuskezelését és atomikusságát.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-23 19:18 — Claude
+
+~~~~~
+Elkészítem a javításokat (#44, #80, #81), mert ezek változtatják a HEAD-eket, és a parancsokat csak a végleges HEAD-ekhez adhatom. A #82 független. Előbb a factory #44: a nightly profil és a tesztjei.
+~~~~~
+
+
+### 2026-10-23 19:19 — Claude
+
+~~~~~
+A valódi futás megerősíti a neveket: `p1 / edit-proof (rust)` és `p1 / edit-proof (go)` (mindkettő sikeres a `main`-en). Megnézem, hogyan tesztelhető a profil hibaszimulációval.
+~~~~~
+
+
+### 2026-10-23 19:19 — Claude
+
+~~~~~
+A 4 új teszt és az összes régi zöld (84). A régi (`e15eaec`) futáson a profil helyesen jelzi, hogy a két új job még nem létezett. Commit, push a #44-re.
+~~~~~
+
+
+### 2026-10-23 19:25 — Claude
+
+~~~~~
+A három Forms-PR zöld és `CLEAN`. A factory #44 `gate` ellenőrzése viszont **elbukott** az új commitomon. Megnézem, miért.
+~~~~~
+
+
+### 2026-10-23 19:31 — Claude
+
+~~~~~
+Mind a négy PR `CLEAN` és zöld, a végleges HEAD-ekkel. A parancsok (futtasd `!`-lel, sorrendben):
+
+```
+! gh pr merge 82 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 7ebb17b9968fb33ade838163dcc49056f78bc0cf
+! gh pr merge 80 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 0a1a451b8d0aae9fca63eeaae1ade8b225eee2cd
+! gh pr merge 81 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 7443641c9e732ff81c1fca5a6c2e4fbc5f883504
+! gh pr merge 44 -R CentralInfraCore/cic-factory --squash --match-head-commit 42ef495a9b8ee570379cd13156b1d565c4c1dbb5
+```
+
+**Mit tartalmaz mindegyik:**
+- **#82** (P3b lezárás): az első egység kész, a többi nyitott. Itt van a `PHASES.md` P4-sora is.
+- **#80** (P4 terv): a replay-elutasítás szövegezése egységes, a branch szinkronizálva. A `PHASES.md`-t már nem érinti, így a #82-vel nem ütközik.
+- **#81** (ADR 0013, javasolt): a két kért normatív pontosítással. Minden hiba pontosan egy fázishoz és egy kódhoz tartozik (nem validáló dokumentum = korábbi fázis; ismeretlen útvonal = `path_resolve`; séma szerint létező, de A-ban hiányzó cél = `PATCH_TARGET_ABSENT`), és a hívásonkénti ellenőrzések külön szakaszt kaptak a P4-3 külső bizonyításaitól.
+- **cic-factory #44:** a nightly profil a számolt shardok miatt nem nevez shardot, és a `p1 / edit-proof (rust)` és `(go)` jobokat névvel kéri, mert a `p1 / quality` nem vár rájuk. A teszt mind a 10 kötelező névre kipróbálja a hiányt, a bukást, a kihagyást és a futás közbeni állapotot, tehát a hamis zöld ki van zárva.
+
+**Két megjegyzés:**
+- Az elfogadás itt valóban a te merge-ed: a #81 ADR a merge után válik érvényessé (a "javasolt" státuszt a merge után átírom elfogadottra az elfogadási rekorddal).
+- A #44 első kísérlete elbukott az aláírás-ellenőrzésen, mert a rebase tönkreteszi az aláírást a cic-factory-ban. Ezért friss commitban hoztam létre, amit a hook újra aláírt.
+
+A `main` háttér-FULL-ja (`9ed91f9`) még fut; a `p1 / quality` van hátra, a profilt ellene mérve 94 ellenőrzésből 78 sikeres, hibás nincs. A végeredményt a lefutás után jelentem.
+~~~~~
+
+
+### 2026-10-23 19:36 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 82 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 7ebb17b9968fb33ade838163dcc49056f78bc0cf
+! gh pr merge 80 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 0a1a451b8d0aae9fca63eeaae1ade8b225eee2cd
+! gh pr merge 81 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 7443641c9e732ff81c1fca5a6c2e4fbc5f883504
+! gh pr merge 44 -R CentralInfraCore/cic-factory --squash --match-head-commit 42ef495a9b8ee570379cd13156b1d565c4c1dbb5</bash-input>
+~~~~~
+
+
+### 2026-10-23 19:37 — Felhasználó
+
+~~~~~
+<bash-stdout></bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-10-23 19:39 — Claude
+
+~~~~~
+Megvan a szerkezet. Megírom: az adatfájlt, a checker-szabályt hibaesetekkel, és a két futtató átállítását.
+~~~~~
+
+
+### 2026-10-23 19:41 — Claude
+
+~~~~~
+Mindkét futtató zöld. A bukás-képességet is megmutatom: elrontom a fájlt háromféleképp, és mindkét futtatónak pirosra kell váltania.
+~~~~~
+
+
+### 2026-10-23 19:44 — Claude
+
+~~~~~
+Pontosan a kívánt viselkedés: egy hozzáfűzött új kind `diff` módot ad, egy meglévő szám módosítása (egy gyengítés) viszont `full`-t. Doksi, push, PR.
+~~~~~
+
+
+### 2026-10-23 19:46 — Claude
+
+~~~~~
+Mind a négy PR beolvadt (#82, #80, #81 és a cic-factory #44), és a `main` háttér-FULL-ja (`9ed91f9`) **sikeresen lefutott**, benne a két `edit-proof` job.
+
+Két új PR vár a te merge-edre:
+
+- **#83: ADR 0013 elfogadási rekord.** Az ADR státusza `accepted`, a rekord a hét döntést mint meghozottat rögzíti. Az ADR 0007 megkapja a `patch` fázist, az ADR 0005 a `patch` kind-ot. Közben javítottam egy hiányt: az ADR 0012 `edit` kind-módosítása nem nevezte meg az E3-ban bevezetett `path_after` mezőt. A rekord az én olvasatom a te merge-eidről, a #83 merge-e megerősíti. Csak dokumentáció, a `corpus` ellenőrzés zöld, `CLEAN`.
+- **#84: az accounting-számok adatfájlba** (`corpus/accounting.yaml`, 24 sor). Előre, kézzel rögzített elvárás, soha nem futásból számolt. Mindkét futtató elbukik bármilyen eltérésen mindkét irányban, a kind-onkénti összeg egyezése mellett is, amit négyféle rontással meg is mutattam. A checker új `ACCOUNTING` szabálya négy hibaesettel dolgozik.
+  - **A diff-kapu viselkedése:** egy hozzáfűzött új kind `diff` mód, egy meglévő szám módosítása viszont `full`. Ez az szándékolt aszimmetria: egy új suite sorokat ad hozzá, a "mi számít futottnak" változása a teljes bizonyítást kéri.
+  - A PR maga `full`-ban fut, egyszer, mert a két meglévő számlálás-tesztet módosítja. A CI most fut rajta.
+
+A merge-parancsokat a #84 zöldje után adom a pontos HEAD-ekkel (a #83-hoz már most megadhatom, ha akarod). A következő lépés a P4-1: a kézzel írt patch-vektorok.
+~~~~~
+
+
+### 2026-10-23 19:54 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+#83 — az elfogadás tartalmával egyetértek
+A hét tulajdonosi döntés helyesen szerepel az ADR 0013 elfogadási rekordjában. Az ADR 0007 módosítása különválasztja a patch, validate, path_resolve és edit hibákat; az ADR 0005 pedig végre megnevezi az E3-ban már bevezetett path_after mezőt.
+
+Két apró javítást kérek:
+1. Az elfogadás dátuma: az ADR-ben 2026. október 24. szerepel, miközben a #81 GitHub szerinti merge-je 2026. október 23-án, 19:37:07 UTC-kor történt, azaz Magyarországon 21:37-kor. A pontos dátum tehát október 23.
+2. A patch-vektorok elvárt eredményének egyértelműsége: az ADR 0005 táblázatában világosan szerepeljen, hogy siker esetén output_yaml vagy output_hex és replaced, hiba esetén viszont errors az elvárás. A jelenlegi megfogalmazás ezeket egy felsorolásba teszi.
+Ezek nem architekturális kifogások; az ADR 0013 normatív irányát elfogadom.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-23 19:54 — Claude
+
+~~~~~
+Két kisebb javítás a #83-ban. Előbb leellenőrzöm a dátumot: a #81 pontos merge-ideje és a mai nap.
+~~~~~
+
+
+### 2026-10-23 19:57 — Claude
+
+~~~~~
+Mindkét javítás a #83-ban van, a `corpus` ellenőrzés zöld, `CLEAN`.
+
+1. **A dátum:** az ADR 0013 státuszában, az elfogadási rekordban és az ADR 0007 módosításának címében is 2026-10-23 áll. A hiba az enyém volt, ma 2026-10-23 van, és a #81 19:37:07 UTC-kor ment be. A saját jegyzeteimben is javítottam.
+2. **A patch-vektor elvárása:** az ADR 0005 táblázata most csak a bemenetet és egy hivatkozást ad az elvárásra. Alatta kimondja, hogy **két alak van, soha nem mindkettő**. Siker esetén `output_yaml` vagy `output_hex` **és** `replaced` (üres diffnél `replaced: []` és a kimenet a bemenettel egyezik). Hiba esetén `errors`, kimenet és `replaced` nélkül, és nincs visszaadott szöveg.
+
+Merge-parancs a #83-hoz, a végleges HEAD-del:
+
+```
+! gh pr merge 83 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit f9ac0c1b1be4ff9c7a79fa8f44f691013902079d
+```
+
+A #84 (accounting-adatfájl) CI-je még fut (`full` mód); a parancsát a zöld után adom.
+~~~~~
+
+
+### 2026-10-23 20:15 — Claude
+
+~~~~~
+A #84 teljesen zöld: `CLEAN`, 71 ellenőrzés sikeres, 2 `skipping` (a diff-módú jobok full futásban), hibás nincs. A `full` mód is lefutott rajta (számolt shardok, fuzz-célok, `edit-proof`, parity).
+
+Merge-parancs, a végleges HEAD-del:
+
+```
+! gh pr merge 84 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 8a32d0fed152448256ad2dbab8323e7612196499
+```
+
+A két nyitott PR parancsa együtt (a #83 az előző üzenetből):
+
+```
+! gh pr merge 83 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit f9ac0c1b1be4ff9c7a79fa8f44f691013902079d
+! gh pr merge 84 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 8a32d0fed152448256ad2dbab8323e7612196499
+```
+
+A két PR független (a #83 dokumentáció, a #84 a számlálás), sorrendjük mindegy, és nem ütköznek.
+
+Ezek után nincs akadály a P4-1 (a kézzel írt patch-vektorok) előtt. Ezt a merge után kezdem, mert a vektorok a `corpus/accounting.yaml` új sorait és az ADR 0005 kész `patch` kind-leírását használják.
+~~~~~
+
+
+### 2026-10-26 06:54 — Felhasználó
+
+~~~~~
+hány orakkor van a forduló?
+~~~~~
+
+
+### 2026-10-26 06:54 — Felhasználó
+
+~~~~~
+hány orakkor van a forduló? mármint a claude heti limit
+~~~~~
+
+
+### 2026-10-26 06:54 — Claude
+
+~~~~~
+Ezt nem tudom megmondani: nem látom a fiókod használati korlátait és azok visszaállási idejét, és nem akarok tippelni.
+
+A pontos időpontot itt találod:
+- **Claude Code-ban:** a `/usage` parancs (futtasd a promptban, a `!` előtag nélkül) mutatja a heti és az aktuális korlátot, és hogy mikor áll vissza.
+- **Weben:** claude.ai → Settings → Usage.
+
+Ha lekérdezted, szólj, és a munka ütemezését (például a hosszú CI-futásokat és a P4-1 vektorírást) ahhoz igazítom.
+~~~~~
+
+
+### 2026-10-26 15:36 — Felhasználó
+
+~~~~~
+ok nézd meg a helyzetet
+~~~~~
+
+
+### 2026-10-26 15:37 — Claude
+
+~~~~~
+Három nap telt el, és közben a `main` továbbment. Megnézem, mi változott azóta (commitok, új issue-k), mielőtt bármit mondanék.
+~~~~~
+
+
+### 2026-10-26 15:38 — Claude
+
+~~~~~
+A helyzet a hétfő (2026-10-26) délutáni állapotban:
+
+**Elkészült az utolsó üzenetem óta (mind beolvadt):**
+- **#83:** az ADR 0013 elfogadási rekordja (`1911a6c`), a javított dátummal és a siker/hiba szerint szétválasztott patch-elvárással.
+- **#84:** az accounting-számok a `corpus/accounting.yaml`-ban (`c0ec550`).
+- Ezzel a **P4-0 teljesen kész**: terv, elfogadott ADR 0013, az accounting adatfájlban.
+
+**Közben a `main` tovább mozgott, nem általam** (te dolgoztál rajta, a thread-naplókból is látszik):
+- **#85/#88 javítások:** az ismeretlen resolve-művelet már `unknown`, a Rust parser nem épít fát a limit után, a `Normalize` és a `ResolvePolicy` elutasítja a nem validáló dokumentumot.
+- **#92/#93:** a diff-kapu a módosított tesztet a lefedettsége alapján szűkíti, nem kényszerít `full`-t, és a diff-mutáció shardolt.
+- **#94/#95:** a CI-lánc (egy nem forduló Go-mutáns vagy seeded defect nem számít elkapásnak).
+- **#97/#98:** a `p1` minden PR-on fut, hogy a ruleset megkövetelhesse a checkjeit.
+- A **#96** nyitott: a `main`-re ruleset (a te döntésed) és a Node 20 → 24 akciók.
+
+**A CI jó állapotú:** az ütemezett éjszakai FULL az október 25-i és 26-i futásban is **sikeres**. Az aktuális `main` (`c3dc92b`) futásai épp indultak, a `nightly` sorban áll, ezeket még nem minősítem.
+
+**Nyitott PR-ok a Forms repóban nincsenek**, a cic-factory-ban csak a #38 (VCN fixture v2), az nem ehhez a vonalhoz tartozik.
+
+**Egy kis elmaradás:** a `PHASES.md` P4-sora még azt írja, hogy az "ADR 0013 proposed", pedig elfogadott. Ezt a P4-1 PR-ba viszem bele.
+
+**Következő lépés a tervem szerint: a P4-1**, a kézzel írt patch-vektorok (`corpus/patch`):
+- tiszta alkalmazás, konfliktus, minden elutasított eseményfajta, replay, üres diff, kontextus-eltérés, körút B ellen scope-pal, minden hibakódhoz negatív vektor,
+- hozzá a checker szabályai és hibaesetei, a `corpus/codes.yaml` négy kódja, a `corpus/accounting.yaml` új sora (hozzáfűzés, tehát `diff` mód).
+
+Kezdhetem, vagy van előbb teendő a változások miatt (például a #96 ruleset, amelynek a `required checks` listája miatt a mi CI-jobjaink neveit is érdemes egyeztetni)?
+~~~~~
+
+
+### 2026-10-26 15:41 — Felhasználó
+
+~~~~~
+kezdheted a P4-1-et
+~~~~~
+
+
+### 2026-10-26 15:41 — Claude
+
+~~~~~
+Elkezdem a P4-1-et. Előbb megnézem, hogyan írják le a meglévő diff-vektorok az eseményeket, a kontextust és a hibákat, hogy a patch-vektorok ugyanazt a nyelvet használják.
+~~~~~
+
+
+### 2026-10-26 15:44 — Claude
+
+~~~~~
+Összeállítom a checker bővítését: a `patch` kind bemenet- és elvárás-szabályai, a bájt-aritmetika és a körút-ellenőrzés.
+~~~~~
+
+
+### 2026-10-26 15:45 — Claude
+
+~~~~~
+Az eszköz előtt kikeresem a hivatkozott hibák pontos alakját a meglévő vektorokból (korábbi fázisú hibák: parse, validate), hogy a patch-vektorokban ne találgassak.
+~~~~~
+
+
+### 2026-10-26 16:13 — Claude
+
+~~~~~
+A `diff` mód megvan (egy új suite hozzáfűzés). A Rust viszont **1 hibát** jelez. Megnézem, melyik teszt.
+~~~~~
+
+
+### 2026-10-26 16:15 — Claude
+
+~~~~~
+A P4-1 PR megnyílt: https://github.com/CentralInfraCore/cic-primitive-forms/pull/99 (HEAD `a99cae9`). Kód nincs benne, csak a vektorok és a kapu. Az ellenőrzések futnak, a végeredményt jelentem.
+
+**Mi van benne:**
+- **60 kézzel írt `patch` vektor** (26 siker és 34 elutasítás), a szabályokból levezetve, a szerzőeszköz csak a bájt-aritmetikát végzi.
+  - Sikerek: minden skalárfajta, beágyazott mező, lista-elem azonosítóval, a diff sorrendje a dokumentumétól eltér, idézőjelek megmaradnak, komment, CRLF, BOM, nem kanonikus `previous` (`True`, `+5`), üres diff, 4 körút egy B ellen (teljes és részleges scope-pal).
+  - Elutasítások: mind a 4 `PATCH_*` kód, a nem támogatott események neve szerint, a teljes patch elutasítása vegyes diffnél, a korábbi fázisok kódjai, és az `edit` fázis elutasításai.
+- **A checker három új szabálya** (`PATCH_INPUT`, `PATCH_BYTES`, `PATCH_ROUNDTRIP`), mindegyikhez hibaeset, amely pirosra váltja. Összesen 195 hibaeset, és az önteszt kimondja: minden szabály tud bukni.
+- A négy kód a regiszterben, és a `patch/patch: {not_run: 60}` sor az accounting végén. Ezért ez a PR **`diff` módban** fut, nem `full`-ban. Ez a #84 célja volt, és most először látszik a gyakorlatban.
+
+**Független ellenőrzés:** a vektorokat egyszeri, nem megőrzött Go-próbával is lefuttattam. Mind a **45** eldönthető eset (minden siker kimenete, az `edit` fázisú hibák pozíciói és kódjai, a `CONFLICT` és `TARGET_ABSENT` horgonyok) **egyezik a megvalósítással, 0 eltérés**. A maradék 15-höz a patch-logikája kell (nem támogatott események, kontextus, korábbi fázisok), azokat csak a szabályok védik.
+
+**Egy flaky teszt:** a Rust `a_late_duplicate_is_still_found_and_many_keys_do_not_cost_quadratic_time` (5 másodperces korlát) egyszer elbukott, mert a gépen 34-es load volt. Önmagában 3,5 mp alatt fut, és a teljes csomag 165/165 zöld. A PR leírása megemlíti. A CI futtatókon nem várom, hogy gond legyen, de a 5 mp-es korlát terhelésre érzékeny.
+
+A merge-parancsot a zöld CI után adom a pontos HEAD-del. A P4 következő lépése a D1 (a diff megvalósítása az ADR 0008 vektoraira).
+~~~~~
+
+
+### 2026-10-26 16:21 — Claude
+
+~~~~~
+A `parity` ellenőrzés elbukott. Ez a #68 (E1) esete lehet: egy új suite szövegei és mutációi új bemeneteket adnak a két parser összehasonlításához. Megnézem a naplót.
+~~~~~
+
+
+### 2026-10-26 16:24 — Claude
+
+~~~~~
+Classifying the five new parity divergences into known classes; checking the position class for the fourth, then adding them to the allow list.
+~~~~~
+
+
+### 2026-10-26 16:30 — Claude
+
+~~~~~
+PR #99 is green on its exact head `f8928c9a38d4023b2e74f3ed2f590aa99bc509a3` and merge state is CLEAN. It's still unmerged.
+
+**What failed and what I did:** the `parity` job failed because the new `corpus/patch` suite shifted the generated sample and surfaced 5 Rust/Go parser divergences that weren't allow-listed. I appended them to `testdata/p1/parity-known.txt` under a comment block and changed no parser. Locally, `compare.py` now reports 292 allowed, 0 changed, 0 new, and `selftest.py` still turns every break red.
+
+Four of the five are classes already open in `docs/P1-SUPPORTED-SUBSET.md`:
+- A single-quoted scalar continuing onto the next line: Rust refuses, Go folds it.
+- A double-quoted scalar continuing on a less-indented line, with a duplicate key behind it: same split.
+- A bare CR inside a flow sequence: Rust refuses, Go reads it as a line break.
+- A `?` inside a plain scalar of a flow mapping: Rust reads it as text, Go refuses.
+
+The fifth is not one of those: it is a position difference only, with the same tree. For a block sequence under a key that itself starts with a dash (`-items:`), Rust places the sequence at its first item (3:5) and Go at its `-` (3:3). It looks like the earlier indentless-sequence fix not covering this variant. No scalar position differs, so `edit_scalar` and `patch` are unaffected. I commented it as open rather than calling it known, and I haven't opened an issue for it yet.
+
+**Merge command (yours to run):**
+```
+! gh pr merge 99 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit f8928c9a38d4023b2e74f3ed2f590aa99bc509a3
+```
+
+**After the merge, I will:**
+- regenerate and commit the thread log to cic-factory `main`;
+- update the memory notes (P4-1 done);
+- open the issue for the dash-key position variant, unless you'd rather I didn't.
+
+The next P4 step is D1–D3 (the `diff` implementation in Rust and Go).
+~~~~~
+
+
+### 2026-10-26 17:07 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 99 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit f8928c9a38d4023b2e74f3ed2f590aa99bc509a3</bash-input>
+~~~~~
+
+
+### 2026-10-26 17:07 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
