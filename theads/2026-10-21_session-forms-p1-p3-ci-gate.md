@@ -13378,3 +13378,240 @@ Merge után a szál-napló és a memória frissítése jön, majd a P4-3 (a `pat
 ~~~~~
 <bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
 ~~~~~
+
+
+### 2026-10-26 22:21 — Claude
+
+~~~~~
+A PR #103 bekerült: `253165241a55ff30a9138ccc1ae5ef968cdf2deb` (P4-2, a `patch` első egysége Go-ban és Rustban; mind a 60 vektor fut).
+
+- **Szál-napló:** frissítve és a cic-factory `main`-re pusholva (`ba6b139`), titkot nem találtam benne.
+- **Memória:** a jegyzet rögzíti az állapotot és a tanulságokat. Ezek: a terhelt gépen futó mutációs mérés hamis túlélőket adhat, és push előtt a branch-lefedettségi kaput kell futtatni (nem csak a `let-else`, hanem a makróba tett `if` is elbukik rajta).
+
+A P4 ezzel a P4-3-ig jutott el. A P4-3 a `patch` bizonyítási köre:
+- generált A–B párokon a tulajdonságok, köztük a kör-bejárás a scope-on belül;
+- a Rust–Go differenciál önteszttel;
+- ültetett és seeded hibák;
+- fuzz-cél, a kötelező canary-maggal.
+
+Kezdhetem, ha mondod.
+~~~~~
+
+
+### 2026-10-26 22:21 — Felhasználó
+
+~~~~~
+mehet a P4-3
+~~~~~
+
+
+### 2026-10-26 22:29 — Claude
+
+~~~~~
+Közben a CI-be bekötöttem a patch differenciált és a `patch-proof` jobot; a seeded és planted futások még mennek. Utána jön a dokumentáció és a helyi kapuk.
+~~~~~
+
+
+### 2026-10-26 22:29 — Claude
+
+~~~~~
+Várom a ültetett és seeded hibák eredményét; közben nem indítok újabb nehéz munkát, hogy ne zavarjam a mérést.
+~~~~~
+
+
+### 2026-10-26 22:32 — Claude
+
+~~~~~
+Közben a dokumentációt írom (terv 13. szakasz, PHASES, README); a futás végén pontos számokat írok be.
+~~~~~
+
+
+### 2026-10-26 22:33 — Claude
+
+~~~~~
+Futnak a seeded és az ültetett hibák ismételt mérései; a dokumentáció kész, az eredmény után jön a helyi kapuk futtatása, a push és a PR.
+~~~~~
+
+
+### 2026-10-26 22:35 — Felhasználó
+
+~~~~~
+mehet tovább
+~~~~~
+
+
+### 2026-10-26 22:35 — Claude
+
+~~~~~
+A seeded futás kész: mind a 14 `patch:` hibát elkapják a tesztek és a vektorok (a Go build-hiba javítva). Az ültetett hibák (a differenciálban) most futnak; várom a végét.
+~~~~~
+
+
+### 2026-10-26 22:35 — Claude
+
+~~~~~
+Mind a 14 ültetett hiba pirosra fordítja a differenciált, és mind a 14 seeded hibát elkapják a tesztek. Most a helyi kapuk (fuzz, branch-coverage, formázás), utána push és PR.
+~~~~~
+
+
+### 2026-10-26 22:42 — Claude
+
+~~~~~
+A fuzzer a javítás után mindkét nyelven tiszta (Go 1,9M, Rust 1,5M futás). Most a mutációs mérés (csak a módosított sorokra), a branch-coverage kapu helyben, utána push és PR.
+~~~~~
+
+
+### 2026-10-26 22:42 — Claude
+
+~~~~~
+A branch-lefedettségi kapu helyben átmegy (Rust 94,27%, Go 97,15%). A mutációs mérés (csak a módosított sorokra, a javított `patch.go` / `patch.rs`) fut; utána jön a push és a PR.
+~~~~~
+
+
+### 2026-10-26 22:44 — Felhasználó
+
+~~~~~
+mehet tovább
+~~~~~
+
+
+### 2026-10-26 22:45 — Claude
+
+~~~~~
+Futnak a teljes `patch` fájlokra a mutációs mérések (Rust, majd Go), az alap a P4-2 előtti commit. Az eredményre várok, utána push és PR.
+~~~~~
+
+
+### 2026-10-26 22:55 — Claude
+
+~~~~~
+A P4-3 PR megnyílt: **#104** (`feat/p4-3-patch-proof`), a CI fut.
+
+**Fontos lelet: a fuzzer valódi hibát talált a P4-2-ben, ez most javítva van.** A `FuzzPatch` az első fél percben előállította az `a:` → `a: A` esetet. A diff szerint az `a` értéke `null`-ból `"A"`-ra változik, a patch viszont `PATCH_TARGET_ABSENT`-et mondott, mert a P4-2 a "nincs értéke" pozíciót hiányzónak vette. A dokumentum azonban tartalmazza a mezőt, a jelentése `null`. Mostantól csak az hiányzik, amit a dokumentum egyáltalán nem említ; az `a:` esetén a `previous` összehasonlítása történik (a `null` elfogadott, bármi más `PATCH_CONFLICT`), a cserét pedig az `edit_scalar` utasítja el `EDIT_NO_SOURCE_VALUE`-val. A hibás bemenet regressziós mag lett, és mindkét nyelven egységteszt is rögzíti. A P4-2 saját egységtesztje hibás döntést kódolt, ezért a kézzel írt teszt nem találta meg.
+
+**Ami még a PR-ban van:**
+- **Differenciál:** 3000 generált dokumentum szövegként, mindegyikhez egy B. A Rust, a Go és a modell egyezik, 0 eltérés és 0 megsértett ígéret.
+- **Önteszt:** 24 szándékos hiba, mind pirosra fordítja az összehasonlítást.
+- **Ültetett hibák:** 14 hiba, mind pirosra fordítja a differenciált, és mind a 14-et elkapják a tesztek is.
+- **Fuzz:** `FuzzPatch` (Go) és `patch` (Rust), mindkettő canary-maggal, a javítás után kb. 1,9M és 1,5M futás, nincs találat.
+- **Helyi mérések:** a mutáció Go 40/40, Rust 16/16 (100%); a branch-lefedettségi kapu átmegy (Rust 94,27%, Go 97,15%).
+
+**Mérési tanulság:** ha a tesztek és a `cargo mutants` ugyanazt a build-könyvtárat használják egyszerre, a tesztek mutált könyvtárat linkelnek. Ez okozta a korábbi félrevezető "túlélőket" és bukásokat a P4-2-ben is; mostantól külön könyvtárakat használok.
+
+Ha a CI zöld, megkapod a head-hez kötött merge-parancsot. A `patch-proof` job nevei még nincsenek a kötelező listákban (a te döntésed).
+~~~~~
+
+
+### 2026-10-26 22:56 — Felhasználó
+
+~~~~~
+miért a full-ra megy mindig?
+~~~~~
+
+
+### 2026-10-26 22:57 — Claude
+
+~~~~~
+Nem mindig, de az utóbbi négy PR-nál (#101–#104) igen. Az okokat a CI `scope` jobjának logjából olvastam ki.
+
+**Miért ment full-ra (a log szerint):**
+- **#101 és #103 (a `diff` és a `patch` kód):** az `accounting.yaml` egy meglévő sorát módosítottuk (`not_run` → `run`), ami a gate szerint "meglévő tesztadat módosítása". Emellett a meglévő `rust/tests/corpus.rs`-be és a parity dump fájlokba is sorokat adtunk hozzá, nem csak új, teljes tesztfüggvényt. A szabály: új tesztfüggvény vagy fájl végi bővítés addíció (diff mód), meglévő teszt belsejébe írt sor viszont gyengítésnek számít.
+- **#102 és #104 (az eszközök):** a `fuzz_matrix.py` és a `seeded_defects.py` módosítása a gate mérési módját változtatja, ezért a gate-szabály ilyenkor full. A `p1.yml` módosítása viszont külön kezelt: az nem teszi full-lá a PR-t, hanem a merge után háttérben FULL indul.
+- **Mindhárom típusnál:** a log szerint a CI-ben `MEASURE: false`, vagyis a megváltozott tesztek régi lefedettsége nincs mérve. A gate ezért a megváltozott tesztet gyengítésnek veszi, ami szintén full-ra kényszerít.
+
+**Mit lehetne tenni, hogy diff mód legyen:**
+- Az `accounting.yaml` új sorait mindig a fájl végére kell fűzni; meglévő sort csak akkor módosítunk, ha a runner tényleg `not_run`-ból `run`-ba megy. Ez a P4 lépéseknél nem kerülhető el, mert pont ez a bizonyíték.
+- A runnerek (`corpus.rs`, `corpus_test.go`) kiterjesztését új, teljes függvényekbe kellene tenni, nem a meglévő elszámoló tesztekbe. Az elszámolás feltétele (`|| kind == "patch"`) viszont egy meglévő sor, ezt nem lehet kikerülni.
+- A `MEASURE` bekapcsolása azt is lehetővé tenné, hogy a megváltozott tesztek régi lefedettségéből szűkítsen. Ez az #92/#93 munka eredménye, de a CI-ben jelenleg ki van kapcsolva.
+
+Ha érdemes, megnézem, hogy a `MEASURE` bekapcsolása mit változtatna a #104-hez hasonló, csak eszközt módosító PR-okon. Ez külön, kis döntés lenne, nem része a P4-nek.
+~~~~~
+
+
+### 2026-10-26 23:02 — Felhasználó
+
+~~~~~
+KAPCSOLD BE
+~~~~~
+
+
+### 2026-10-26 23:03 — Claude
+
+~~~~~
+Nem tudom úgy bekapcsolni, hogy a #104 diff módba kerüljön. A `MEASURE` ugyanis nem kikapcsolt kapcsoló, hanem már most is bekapcsol, amikor számít.
+
+**Hogyan működik most.** A `p1.yml` `scope` jobja csak akkor kapcsolja be a `--measure`-t, ha a full egyetlen oka az, hogy a megváltozott tesztek lefedettsége nincs mérve (`only = reasons == [PENDING]`). A mérés a megváltozott tesztek régi változatát futtatja a base-en, és a lefedett terméksorokat hozzáadja a diffhez. A CI-logban a `MEASURE: false` azért szerepelt, mert a #101–#104-nél más, független ok is volt.
+
+**Kipróbáltam.** A #104 ágán helyben lefuttattam a `diff_gate.py scope --measure`-t:
+- A PENDING ok eltűnik: a megváltozott tesztek a base-en 452 (Go) és 545 (Rust) terméksort futtattak, ezek bekerültek a diffbe.
+- A mód mégis full marad, mert a `tools/fuzz_matrix.py` és a `tools/seeded_defects.py` módosítása "changes how the gate measures". Ez szándékos: ha a mérés eszköze változik, a gate nem szűkíthet.
+
+Ha a kapcsolót mindig bekapcsolnám, a módon semmi sem változna, csak futási időt adnánk hozzá. Ezért nem módosítottam a workflow-t.
+
+**Mi tenné diff móddá a következő hasonló PR-okat.** A #101 és #103 okai: az `accounting.yaml` egy meglévő sorának módosítása, és sorok hozzáadása meglévő tesztfüggvényekbe. Az eszközmódosító PR-ok (#102, #104) mindig full-ok maradnának, hacsak a szabályt nem lazítjuk. Ez a gate gyengítése lenne, amit korábbi döntésed szerint nem javasolok sebességért. Ha mégis akarod, megnevezem, melyik szabályt és milyen bizonyítékkal lehetne szűkíteni.
+
+Hogyan döntesz?
+~~~~~
+
+
+### 2026-10-26 23:03 — Felhasználó
+
+~~~~~
+és a https://github.com/microsoft/ox-tools/tree/main/crates/cargo-gamma?utm_source=chatgpt.com nem segítene?
+~~~~~
+
+
+### 2026-10-26 23:03 — Claude
+
+~~~~~
+**Röviden: a mi problémánkat nem oldaná meg, a mutációs költséget pedig csak a Rust felén csökkentené, és csak úgy, hogy a bizonyítékunk forrása megváltozik.**
+
+**1. A full-ra kerülés okát nem érinti.** A #101–#104 azért ment full-ra, mert a gate saját szabályai (az `accounting.yaml` egy sorának módosítása, a gate-eszközök változása) kényszerítik. A mutációs motor ezekhez nem nyúl: az a döntés a `diff_gate.py`-ban történik, mielőtt bármi mutáns lefutna. Ha a `cargo-gamma`-t bevezetnénk, ugyanezek az okok ugyanúgy full-ot adnának.
+
+**2. Mit tud ténylegesen** (a repo oldala alapján):
+- **Közös fordítás:** az összes mutánst egyetlen instrumentált tesztbinárisba fordítja, és futásidőben kapcsolja be egyenként. Ez azt támadja, ami nálunk a legdrágább: a Rust-mutánsonkénti fordítás.
+- **Elérhetőség és szűkítés:** a tesztek közül csak az fut, amelyik a mutált kódot eléri; rögzíti, melyik teszt ölt meg melyik mutánst, és azt próbálja elsőként. A `--in-diff` is megvan.
+- **Csak Rust.** A Go-ról az oldal nem szól, a Go-oldal (110–118 runner-perc) érintetlen marad.
+
+**3. A korlátai nálunk:**
+- A beillesztett elemzés számai szerint a Rust-mutánsonkénti idő nagyobb része (kb. 75 perc a 144-ből) fordítás, ez az, amit ez megspórolna. Ez valódi nyereség lehetne Rustban, de a teljes runner-időt ez nem fele-harmadára viszi, mert a Go-oldal és a többi job marad.
+- **A bizonyítékunk forrása megváltozna.** A kvalitatív kapu a `cargo-mutants` eredményére épül (`quality_gate.py` a `CaughtMutant`/`MissedMutant`/`Timeout`/`Unviable` verdiktekre és az elszámolás teljességére). A `cargo-gamma` másik motor, más verdiktekkel, mutáns-azonosítással és kizárási logikával; a gate-et át kellene írni, és újra bizonyítani kellene, hogy ugyanúgy tud bukni (a mi szabályunk: egy ellenőrzés csak akkor hihető, ha láttuk elbukni).
+- **A beillesztett elemzés két aggálya jogos és ránk is vonatkozik:** a `compiler-exclusions.json` tartós kizárásokat őriz, ami ellentmond annak, hogy nálunk nincs tartós kizárási lista; és a saját kódjukon nem fut a saját eszközük a CI-ben.
+- **Nincs benne a Go-oldalon használható elem, és a doctesteket sem futtatja** (nekünk ez kevésbé számít).
+
+**Mit javasolok:**
+- A full-ra kerülés okán ez nem segít, és a gate-et sem érdemes miatta átírni most.
+- Ha a Rust-mutáció költsége zavar, a legolcsóbb első lépés egy mérés: a `cargo-gamma`-t egy mintán (néhány száz mutáns) lefuttatni párhuzamosan a `cargo-mutants`-szal, és összevetni az eredményt (azonos verdiktek-e) és az időt. Ha az eredmények nem egyeznek, nem bizonyíték az új motor.
+- Az érdemi következtetés a mi esetünkben a szabályokról szól, nem a motorról: ha meg akarod változtatni, hogy mikor lesz full, az a `diff_gate.py` szabályainak döntése.
+
+Szóljak, hogy futtassam le az összehasonlító mérést a Rust-mutánsok egy mintáján?
+~~~~~
+
+
+### 2026-10-26 23:33 — Claude
+
+~~~~~
+A PR #104 CI-ja az `52a6111c5709a5ef418a704abefa798401f72888` fejen teljesen zöld, az állapot CLEAN.
+
+Merge-parancs (a tiéd, ehhez a headhez kötve):
+
+```
+! gh pr merge 104 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 52a6111c5709a5ef418a704abefa798401f72888
+```
+
+A merge után a `p1.yml` változása miatt háttérben FULL indul (`nightly.yml`). A `cargo-gamma` összehasonlító mérésről a fenti kérdésemre még várom a válaszodat; addig nem indítok el semmit.
+~~~~~
+
+
+### 2026-10-26 23:35 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 104 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 52a6111c5709a5ef418a704abefa798401f72888</bash-input>
+~~~~~
+
+
+### 2026-10-26 23:35 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
