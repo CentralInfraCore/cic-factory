@@ -12734,3 +12734,215 @@ The next P4 step is D1–D3 (the `diff` implementation in Rust and Go).
 ~~~~~
 <bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
 ~~~~~
+
+
+### 2026-10-26 17:08 — Claude
+
+~~~~~
+PR #99 is merged as `eda9d1e` (P4-1: the 60 hand-written patch vectors, their checker rules and faults, and the four patch codes). I've also finished the follow-up steps.
+
+- **Thread log:** I regenerated `theads/2026-10-21_session-forms-p1-p3-ci-gate.md`, scanned the diff for secrets (none found), and pushed it to cic-factory `main` as `456abb5`.
+- **Memory:** I added the P4-1 state and the next steps to `project_p3_closed_p3b_state.md`.
+
+One thing is still open: the position-variant parity divergence is allow-listed but has no GitHub issue. A block sequence under a key that starts with a dash (`-items:`) is located at its first item by Rust and at the dash by Go. Say if you want me to open an issue for it.
+
+The next step is D1–D3, implementing `diff` in Rust and Go so all 66 `corpus/diff` vectors run, with a differential and a self-test. I haven't started it and will wait for your go.
+~~~~~
+
+
+### 2026-10-26 17:08 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 99 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit f8928c9a38d4023b2e74f3ed2f590aa99bc509a3</bash-input>
+~~~~~
+
+
+### 2026-10-26 17:08 — Felhasználó
+
+~~~~~
+<bash-stdout>! Pull request #99 was already merged</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-10-26 17:08 — Claude
+
+~~~~~
+That's expected: #99 was already merged as `eda9d1e` when you ran the command the first time, so the second run did nothing. Nothing is left to do on it.
+
+The next step is still D1–D3 (the `diff` implementation in Rust and Go). I'm waiting for your go.
+~~~~~
+
+
+### 2026-10-26 17:12 — Felhasználó
+
+~~~~~
+kezdheted a D1-D3-at
+~~~~~
+
+
+### 2026-10-26 17:13 — Claude
+
+~~~~~
+Reading the existing Go building blocks (parse scalar handling, expand, identity, schema shapes) that `diff` will sit on.
+~~~~~
+
+
+### 2026-10-26 17:14 — Claude
+
+~~~~~
+Still on D1–D3: I've settled the shape of `diff` (expand both views, walk by schema, emit events) and am now reading the Shape/validate/identity APIs to write the Go implementation.
+~~~~~
+
+
+### 2026-10-26 17:17 — Claude
+
+~~~~~
+Értettem, mostantól magyarul írok. Folytatom a Go `diff` megvalósítását: a hibás maradék sorokat kijavítom, aztán jön az összehasonlító és a kanonikus író.
+~~~~~
+
+
+### 2026-10-26 17:18 — Claude
+
+~~~~~
+Nem találom a Go/Rust eszközláncot a PATH-on; megnézem, hogyan futtattam korábban.
+~~~~~
+
+
+### 2026-10-26 17:19 — Claude
+
+~~~~~
+Közben a Go forgatókönyv fordul; az importokat tisztítom, aztán megírom a Go-oldali korpuszfuttatót.
+~~~~~
+
+
+### 2026-10-26 17:44 — Claude
+
+~~~~~
+Közben a gépi ellenőrzések futnak (helyi mutációs mérés és a korpusz-ellenőrzés); amint megvan az eredmény, a túlélő mutánsokat kezelem, majd pusholok és megnyitom a PR-t.
+~~~~~
+
+
+### 2026-10-26 17:48 — Claude
+
+~~~~~
+Korpusz-ellenőrzés zöld. Várom a mutációs mérést.
+~~~~~
+
+
+### 2026-10-26 17:48 — Claude
+
+~~~~~
+Még fut; a megfigyelő jelezni fog, amikor végez.
+~~~~~
+
+
+### 2026-10-26 18:03 — Claude
+
+~~~~~
+A mutációs mérés fut; az eredményről értesítést kapok.
+~~~~~
+
+
+### 2026-10-26 18:28 — Claude
+
+~~~~~
+Mérés fut, várom az eredményt.
+~~~~~
+
+
+### 2026-10-26 18:42 — Claude
+
+~~~~~
+Minden zöld helyben. Pusholom, és megnyitom a PR-t.
+~~~~~
+
+
+### 2026-10-26 18:42 — Claude
+
+~~~~~
+A P4 D1–D3 elkészült és pusholva van: a PR #101 (`feat/p4-d1-diff`, fej: `6268918c358cfbfbe94d0bff8a9f070f1fc5180c`). A GitHub CI még fut; a végét a háttérben figyelem, és amint az ehhez a headhez zöld, megkapja a merge-parancsot.
+
+- **Megvalósítás:** a `diff` Go-ban és Rustban is megvan (ADR 0008). A D1, D2 és D3 egyetlen PR, mert a csoportok egy függvényt alkotnak.
+- **Vektorok:** mind a 66 `corpus/diff` vektor fut mindkét nyelven, és az első működő kódnál átment. A P0-ban kézzel levezetett elvárások tehát független bizonyítékot adnak.
+- **Számlálás:** a `diff/diff` és `diff/diff_stability` átkerült `not_run`-ból `run`-ba. Az összesítés 378 futó + 101 nem futó, összesen 479. A dokumentumokban a korábbi 419 elavult volt, azt javítottam.
+- **Tesztek:** nyelvenként 21 egységteszt (`go/diff_test.go`, `rust/tests/diff.rs`) fedi a vektorok által nem érintett helyeket.
+- **Helyi mutációs mérés:** a Go 199/199 (100%), de csak azután, hogy az első kör 89,4%-os volt. A 23 túlélő mutáns vagy elérhetetlen ág volt (ezeket töröltem), vagy hiányzó teszt (ezeket pótoltam). A Rust 109/112 (97,3%) volt, a három túlélő megölésére teszteket adtam, de a Rustot ezek után nem mértem újra.
+- **Teljes helyi futás:** a `seeded_defects --stale-only`, a Go- és a Rust-tesztek, a clippy és a korpusz-ellenőrzés zöld. A korpusz-ellenőrzést még a vektor-javítások előtt futtattam, azóta nem változott a korpusz.
+- **Mód:** a PR `full` módú lesz, mert módosítja az `accounting.yaml` egy meglévő sorát, és meglévő tesztfájlokhoz ad sorokat. A teljes kapu a mérvadó.
+
+Az implementációnak néhány olyan pontot kellett eldöntenie, amit az ADR nyitva hagyott; ezek a `docs/P4-DIFF-PATCH.md` 10. szakaszában vannak, bájtot nem érintenek:
+
+- **`KindUnsupported`:** új modellfajta Go-ban és Rustban. A parser továbbra sem állítja elő, csak hívó építheti. Anélkül a `DIFF_UNSUPPORTED_VALUE` nem lenne elérhető és tesztelhető.
+- **Elutasítások sorrendje:** kontextusok, scope, nem támogatott szám (előbb A, aztán B), A nézet, B nézet. Válaszonként egy hiba van; az identitás-kódok `path_of` fázisban jönnek, az operanddal együtt.
+- **`Unsupported`, nem találgatás:** `null` egy gyűjteménnyel szemben, elemleírás nélküli lista, és `null` alatti scope.
+
+A D3b még nincs kész: a Rust–Go differenciál generált dokumentumokon, az önteszt, az ültetett és seeded hibák, valamint a fuzz-cél. Ezt a PHASES.md és a tervdokumentum is kimondja, ezért a P4 sora nem zárt.
+
+A Rust időzítés-tesztje (`a_late_duplicate_…`) terhelés alatt elbukik; egyedül lefut, ezért a mutációs mérést üres gépen kellett megismételnem. A változtatásnak nincs köze hozzá.
+
+Következő lépés: CI-zöld után a pontos head-hez kötött merge-parancs jön. Merge után a szál-napló és a memória frissítése következik, majd a D3b.
+~~~~~
+
+
+### 2026-10-26 18:47 — Felhasználó
+
+~~~~~
+meghalt a pipeline
+~~~~~
+
+
+### 2026-10-26 18:48 — Claude
+
+~~~~~
+Közben: a `branch-coverage` job elbukott, a log pedig nem a várt helyen mutatja az okot; megkeresem a hibát.
+~~~~~
+
+
+### 2026-10-26 18:49 — Claude
+
+~~~~~
+A branch-coverage kapu helyben átmegy (Rust 94,5%, Go 97,0%). Commitolok, pusholok, és újra figyelem a CI-t.
+~~~~~
+
+
+### 2026-10-26 18:50 — Claude
+
+~~~~~
+A pipeline-hiba oka megvolt: a `diff.rs`-ben `let-else` szerepelt, amit a Rust ág-lefedettségi eszköz nem tud mérni (ez a P3b-ből ismert korlát, nekem kellett volna ismernem). Átírtam `match`-re, és a kaput helyben lefuttattam (Rust 94,5%, Go 97,0%, PASS). A javítás a `1883eb0eab270ce2e523018b06cd4b3152920446` commit, ezen fut újra a CI; amint végez, jelzem, és zöld esetén adom a head-hez kötött merge-parancsot.
+~~~~~
+
+
+### 2026-10-26 19:36 — Claude
+
+~~~~~
+Az a értesítés a régi, `6268918` fejhez tartozó futásé; az mostantól érvénytelen. A `1883eb0` futását figyelem, és jelzek, ha végez.
+~~~~~
+
+
+### 2026-10-26 19:36 — Claude
+
+~~~~~
+A CI a `1883eb0eab270ce2e523018b06cd4b3152920446` fejen teljesen zöld, a PR állapota CLEAN (a `quality` összesítő is lefutott).
+
+Merge-parancs (a tiéd, ehhez a headhez kötve):
+
+```
+! gh pr merge 101 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 1883eb0eab270ce2e523018b06cd4b3152920446
+```
+
+Merge után a szál-napló és a memória frissítése jön, utána a D3b (a Rust–Go differenciál az önteszttel).
+~~~~~
+
+
+### 2026-10-26 20:08 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 101 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 1883eb0eab270ce2e523018b06cd4b3152920446</bash-input>
+~~~~~
+
+
+### 2026-10-26 20:08 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
