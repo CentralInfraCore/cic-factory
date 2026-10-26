@@ -13103,3 +13103,278 @@ A figyelő lezárult, az eredmény megegyezik a fentivel: az `5dd69ba` fej zöld
 ~~~~~
 <bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
 ~~~~~
+
+
+### 2026-10-26 21:13 — Claude
+
+~~~~~
+A PR #102 bekerült: `47041dabcfef1a5f0a1d4593091f35a296d4a0ac` (a `diff` Rust/Go/modell differenciálja, önteszt, 32 ültetett hiba, fuzz-célok).
+
+- **Szál-napló:** frissítve, a cic-factory `main`-re pusholva (`aa2b340`), titkot nem találtam benne.
+- **Memória:** a jegyzet tartalmazza az állapotot és a tanulságokat. A fő tanulság, hogy minden Go fuzz-célhoz commitolt canary-mag kell, és hogy az önteszt az összeomlást is hibás eredménynek számítsa.
+- **Háttér-FULL:** a `p1.yml` változása miatt a `nightly.yml` a merge után elindult. A végét még nem néztem; az eredményét a következő lépés előtt megnézem.
+
+Következő a P4-2: a `patch` kód Rustban és Goban a `diff` és az `edit_scalar` fölé, a 60 `patch` vektor `not_run`-ból `run`-ba állításával. Kezdhetem, ha mondod.
+~~~~~
+
+
+### 2026-10-26 21:14 — Felhasználó
+
+~~~~~
+mehet a P4-2
+~~~~~
+
+
+### 2026-10-26 21:16 — Claude
+
+~~~~~
+Közben: megírom a Go oldali `patch` korpusz-futtatót (a 60 vektorhoz), és mellé az elszámolás átállítását `not_run`-ból `run`-ba.
+~~~~~
+
+
+### 2026-10-26 21:19 — Claude
+
+~~~~~
+Futnak a patch mutációs mérései (Rust, majd Go). Közben a docs-frissítést készítem elő; az eredményt a megfigyelő jelzi.
+~~~~~
+
+
+### 2026-10-26 21:20 — Claude
+
+~~~~~
+Az elszámolás összege egyezik (438 futó + 41 nem futó). A mutációs mérés eredményére várok.
+~~~~~
+
+
+### 2026-10-26 21:20 — Felhasználó
+
+~~~~~
+mehet tovább
+~~~~~
+
+
+### 2026-10-26 21:20 — Claude
+
+~~~~~
+Még a Rust mérése fut (27 mutáns); a Go utána jön. Várok rá, a megfigyelő jelezni fog.
+~~~~~
+
+
+### 2026-10-26 21:23 — Felhasználó
+
+~~~~~
+mehet tovább
+~~~~~
+
+
+### 2026-10-26 21:24 — Claude
+
+~~~~~
+A Go mérés még fut a `patch.go`-n; a megfigyelő jelezni fog. Közben a Rust `is_key_component` ciklust egyszerűsítettem (az aritmetikát kiváltó túlélők miatt), azt a Go után mérem újra.
+~~~~~
+
+
+### 2026-10-26 21:24 — Felhasználó
+
+~~~~~
+mehet tovább
+~~~~~
+
+
+### 2026-10-26 21:25 — Claude
+
+~~~~~
+Várom a Go mérés végét; amint kész, a Rustot újramérem a leegyszerűsített ciklussal.
+~~~~~
+
+
+### 2026-10-26 21:28 — Claude
+
+~~~~~
+Közben értékelem a beillesztett két elemzést is; előbb a Rust oldali teszteket tükrözöm, utána megmérem újra mindkét nyelvet.
+~~~~~
+
+
+### 2026-10-26 21:29 — Claude
+
+~~~~~
+Megnéztem a két beszélgetést. A számokat és a gate-ről szóló állításokat a repóban és a futásnál ellenőriztem. A megállapításokról alább írok, a P4-2 munka közben fut tovább.
+
+**1. beszélgetés (a diff gate mint bizonyíték-érvényességi modell)**
+- **Egyezik a valósággal:**
+  - A FULL futás 31 perces volt (09:46→10:17).
+  - A 76 jobra összesen 340 runner-perc jut: Rust mutáció 149 perc, Go 118 perc, seeded-defects 16 perc.
+  - A `diff_gate.py` a megváltozott tesztek régi változatát futtatja a base-en, és a lefedett sorokat egyesíti (`run_coverage`, 265. sor).
+  - A Rust timeoutot elkapottnak számoljuk.
+  - A teljességi ellenőrzés külön van a mutáns-elszámolásnál.
+- **A legfontosabb határ jogos:** a mutáns helye a diffben nincs, de eredménye változhat. Erre a nightly FULL a háló (`DELTA-DIFF-GATE.md` 12. sor). A dokumentum ezt "safety net"-ként nevezi meg, de a "mi nincs bizonyítva a diff-szűkítéssel" mondatot ennyire élesen nem. Ezt érdemes odaírni.
+- **Kihagyási döntés mint bizonyíték:** jó irány, de ma még nincs meg. Ez külön tervezési feladat, nem sürgős.
+- **Hiba a szövegben:** a tesztenkénti coverage-index nem létezik nálunk, a `diff_gate.py` a tesztek lefedettségét összevonja.
+
+**Sebességbecslés**
+- A másodiknak beillesztett becslés (Rustnál kb. 1,2×, összesen kb. 20%) elfogadható; a "2–5×" valóban megalapozatlan volt.
+- Saját szabályunk szerint a futásidő nem költség, ezért ebből nem lesz kapu-lazítás.
+- Ha az index kell, akkor a teszt–sor–mutáns gráf miatt kell, nem a gyorsításért.
+
+**2. beszélgetés (cargo-gamma)**
+- **Új ötlet:** a mutánsonkénti teszt-szűkítés. Ezt sem veszem át gyorsítás címén.
+- **Ami nálunk már megvan:**
+  - A történeti kizárás kockázata (egy régi fordítási hiba tartósan kizár) ránk nem áll: a go-mutesting és a Rust `unviable` minden futásban újra számolódik, és nincs tartós kizárási lista.
+  - A populáció teljessége külön invariáns.
+- **Ami figyelemre méltó:** a nevezőből kimaradnak az `unviable` és `skipped` mutánsok ("Unviable mutants (Rust) and skipped or duplicated ones (Go) are not counted either way", `DELTA-DIFF-GATE.md` 22. sor). Az arányuk ma nincs a jelentésben. Ha a jelentés kiírná, felfedeznénk, ha a kapu vakfoltja nőne. Ez olcsó, jó következő kis lépés.
+- **A saját kódot nem mérik:** nálunk a kapu a saját eszközeit is méri (`diff-proof`, seeded defects), tehát ez az ellenpélda arra, amit mi csinálunk.
+
+**Felhatalmazás:** a "ki módosíthatja a kaput" kérdés a már nyitott #96-hoz tartozik. A ruleset-kötelező lista még nincs bekapcsolva, és a `diff-proof` jobok sincsenek benne. Ez a te döntésed.
+
+**P4-2 állapot:** az első mutációs mérésen a Rust 88%, a Go 83,9% lett (alatta a 90%-nak). A megoldás: az egyenértékű ágak törlése és hiányzó tesztek. A javított kód újramérése fut (`ONLY=rust`, majd `ONLY=go`). Az eredmény után a branch-coverage kaput is lefuttatom helyben, mielőtt pusholok.
+~~~~~
+
+
+### 2026-10-26 21:30 — Felhasználó
+
+~~~~~
+mehet tovább
+~~~~~
+
+
+### 2026-10-26 21:32 — Claude
+
+~~~~~
+Folyamatban: a Go patch-mutáció újramérése fut. A Rust három "túlélőjét" kézzel és célzottan is lemértem, és ott mind elbukik, ezért a diff-es Rust mérést a Go után terheletlenül megismétlem.
+~~~~~
+
+
+### 2026-10-26 21:33 — Felhasználó
+
+~~~~~
+mehet tovább
+~~~~~
+
+
+### 2026-10-26 21:33 — Claude
+
+~~~~~
+A Go mérés még fut; a megfigyelő jelez, ha kész. Utána jön a Rust ismételt, terheletlen mérése.
+~~~~~
+
+
+### 2026-10-26 21:34 — Felhasználó
+
+~~~~~
+mehet tovább
+~~~~~
+
+
+### 2026-10-26 21:34 — Claude
+
+~~~~~
+A go-mutesting még dolgozik a `patch.go`-n. Nem tudok mást gyorsítani rajta; az értesítés megérkezik, amint befejezi.
+~~~~~
+
+
+### 2026-10-26 21:34 — Felhasználó
+
+~~~~~
+kérdés hol tart
+~~~~~
+
+
+### 2026-10-26 21:34 — Claude
+
+~~~~~
+A P4-2 még nincs készen, és nincs pusholva.
+
+- **Kész:**
+  - A `patch` megvan Go-ban (`go/patch.go`) és Rustban (`rust/src/patch.rs`).
+  - Mind a 60 `patch` vektor fut mindkét nyelven, és az első működő kódnál átmentek.
+  - Az elszámolás 438 futó és 41 nem futó, összesen 479. A dokumentumok frissítve vannak.
+  - A branch két commitot tartalmaz (`7b27333`, `9a9fa03`) a `main` fölött. Ezeket csak helyben commitoltam, a remote-ra még nem mentek ki.
+- **Folyamatban:** az első mérésen a Rust mutációs lefedettsége 88%, a Go-é 83,9% volt, vagyis a 90% alatt. Ezért töröltem az egyenértékű ágakat (a `isKeyComponent` logikát egyszerűsítettem), és célzott teszteket adtam az eddigi túlélőkre. Most az ismételt Go-mérés fut; a mutációs eszköz még nem írt ki eredményt.
+- **Rust-oldali kérdés:** az újramérésben három túlélő maradt az `is_key_component`-ben. Ugyanezeket a mutánsokat külön lefuttatva viszont mind elkapják a tesztek. A Go-mérés után terheletlen gépen megismétlem a Rust-mérést, hogy kiderüljön, tényleges hiányról vagy mérési zajról van-e szó.
+- **Hátra van:**
+  - a helyi branch-lefedettségi kapu futtatása;
+  - push és PR;
+  - CI-zöld után a head-hez kötött merge-parancs.
+
+Ha az újramérés után is marad túlélő, célzott tesztet írok rá, és csak utána pusholok.
+~~~~~
+
+
+### 2026-10-26 21:34 — Claude
+
+~~~~~
+A Go-mérés kész: 42/42 (100%). Most a Rust diff-mérést ismétlem meg terheletlenül.
+~~~~~
+
+
+### 2026-10-26 21:35 — Claude
+
+~~~~~
+A Rust-mérés fut terheletlenül; az eredményt a megfigyelő jelzi, utána jön a branch-lefedettségi kapu helyben.
+~~~~~
+
+
+### 2026-10-26 21:36 — Felhasználó
+
+~~~~~
+mehet tovább
+~~~~~
+
+
+### 2026-10-26 21:36 — Claude
+
+~~~~~
+A Rust-mérés még épít és fut (20 mutáns). Várom a végét; addig nincs mást tennivaló, amit nem zavarna a terhelés.
+~~~~~
+
+
+### 2026-10-26 21:38 — Claude
+
+~~~~~
+A branch-lefedettségi kapu helyben átmegy (Rust 94,27%, Go 97,15%). Pusholom és megnyitom a PR-t.
+~~~~~
+
+
+### 2026-10-26 21:39 — Claude
+
+~~~~~
+A P4-2 PR megnyílt: **#103** (`feat/p4-2-patch`), a CI fut, a végét figyelem.
+
+- **Teljes `patch`:** mind a 60 vektor fut mindkét nyelven, az elszámolás 438 futó és 41 nem futó.
+- **Mutáció (helyben):** a Go 42/42 (100%), a Rust 16/16 (100%).
+- **Branch-lefedettségi kapu (helyben):** átmegy, Rust 94,27%, Go 97,15%.
+- **Zaj:** a Rust három "túlélője" terhelt gépen volt zaj. Egyedül és terheletlen gépen futtatva mind elbukik, ezért ez nem hiba. Ezt a PR leírásában is jeleztem.
+
+A helyi kapu közben talált egy hibát, még a CI előtt: egy `if` volt a `vec![...]`-on belül a `patch.rs`-ben, amit a Rust ág-eszköz nem tud számolni. Átírtam.
+
+Ha a CI zöld, megkapod a head-hez kötött merge-parancsot. Utána a P4-3 jön (bizonyítási kör a `patch`-re: generált A–B párokon a kör-bejárás, a Rust–Go differenciál önteszttel, ültetett hibák, fuzz).
+~~~~~
+
+
+### 2026-10-26 22:17 — Claude
+
+~~~~~
+A CI a `7f9678982d6d450b0192d3c19237ec83caaeacdc` fejen teljesen zöld, a PR állapota CLEAN (a `quality` összesítő is lefutott; a lista végén "pending" volt a nézet pillanatában, de a merge-állapot CLEAN).
+
+Merge-parancs (a tiéd, ehhez a headhez kötve):
+
+```
+! gh pr merge 103 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 7f9678982d6d450b0192d3c19237ec83caaeacdc
+```
+
+Merge után a szál-napló és a memória frissítése jön, majd a P4-3 (a `patch` bizonyítási köre).
+~~~~~
+
+
+### 2026-10-26 22:20 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 103 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 7f9678982d6d450b0192d3c19237ec83caaeacdc</bash-input>
+~~~~~
+
+
+### 2026-10-26 22:20 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
