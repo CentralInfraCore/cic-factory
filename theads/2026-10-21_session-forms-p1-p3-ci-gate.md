@@ -12946,3 +12946,160 @@ Merge után a szál-napló és a memória frissítése jön, utána a D3b (a Rus
 ~~~~~
 <bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
 ~~~~~
+
+
+### 2026-10-26 20:09 — Claude
+
+~~~~~
+A PR #101 bekerült: a merge-commit `b5be6e7aa11c9925d9180a06e027e720fb2c397d` (D1–D3, a `diff` Go-ban és Rustban, mind a 66 vektor fut).
+
+- **Szál-napló:** frissítettem és a cic-factory `main`-re pusholtam (`67375ef`); titkot nem találtam benne.
+- **Memória:** a jegyzet tartalmazza az állapotot, a helyi eszközlánc helyét és a tanulságot (a Rust ág-lefedettségi eszköz nem tud `let-else`-t mérni, ezért push előtt helyben futtatom a kaput).
+
+Következő a D3b: a `diff` Rust–Go differenciálja generált dokumentumokon, önteszttel, ültetett és seeded hibákkal és fuzz-céllal. Kezdhetem, ha mondod.
+~~~~~
+
+
+### 2026-10-26 20:10 — Felhasználó
+
+~~~~~
+mehet a következő lépés
+~~~~~
+
+
+### 2026-10-26 20:12 — Claude
+
+~~~~~
+Folyamatban a D3b: megírtam a független Python-modellt a `diff`-hez; most azon mérem, hogy mind a 66 kézzel levezetett vektort reprodukálja-e.
+~~~~~
+
+
+### 2026-10-26 20:14 — Claude
+
+~~~~~
+Közben: megírom a Rust oldali dump-tesztet (ugyanaz a séma, ugyanaz a kimeneti forma), hogy a Rust és a Go válaszai összevethetők legyenek.
+~~~~~
+
+
+### 2026-10-26 20:19 — Claude
+
+~~~~~
+Hozzáadom a tervezett hibákat a `seeded_defects.py`-hez (mindkét nyelven), a generátort kiegészítem vezérlőkaraktereket tartalmazó szavakkal, és megírom a `diff_proof.py`-t.
+~~~~~
+
+
+### 2026-10-26 20:20 — Claude
+
+~~~~~
+A seeded-defect futás megy (32 hiba, mindkét nyelv); az eredményre várok, utána jön a `diff_proof.py` és a CI-job.
+~~~~~
+
+
+### 2026-10-26 20:24 — Claude
+
+~~~~~
+Most a differenciál-bizonyítás: új bemenet (a generátor bővült), mindkét dump, összehasonlítás, önteszt, majd a ültetett hibák egyenként.
+~~~~~
+
+
+### 2026-10-26 20:26 — Claude
+
+~~~~~
+Közben: a Go `FuzzDiff` seedekkel fut, a Rust fuzz-cél és a mátrix-bejegyzés kész; most a Rust célt építem meg, a planted-defect futást pedig a háttérben figyelem.
+~~~~~
+
+
+### 2026-10-26 20:29 — Claude
+
+~~~~~
+Közben a dokumentációt frissítem (a terv D3b része és a PHASES sor), a bizonyítás eredménye után pedig pontos számokat írok be.
+~~~~~
+
+
+### 2026-10-26 20:30 — Claude
+
+~~~~~
+A D3b PR megnyílt: **#102** (`feat/p4-d3b-proof`), a CI fut, a végét figyelem. A termékkódhoz nem nyúltam.
+
+Helyben mindent lefuttattam:
+- **Differenciál:** a Rust, a Go és az új Python-modell 3000 generált párra egyezik; 0 eltérés.
+- **Modell:** a `diff_model.py` az első futásra reprodukálta mind a 65 pozitív vektor-futást.
+- **Önteszt:** 21 szándékos hiba, mind pirosra fordítja az összehasonlítást.
+- **Ültetett hibák:** 32 hiba (nyelvenként 16), mind pirosra fordítja a differenciált.
+- **Fuzz:** `FuzzDiff` (Go) és `diff` (cargo-fuzz), nyelvenként körülbelül 1 perc, nagyjából 1 millió futás, nincs találat.
+
+Három dolgot a futások maguk találtak meg:
+- **Önteszt:** az egyik hiba összeomlasztotta az összehasonlítót ahelyett, hogy az találta volna meg. Most az összeomlás is hibás eredménynek számít, és az összehasonlító le is kezeli.
+- **Seeded defects:** a futtatás 32-ből 31 hibát elkapott. A 32. (az U+007F kikapcsolása) azért maradt el, mert a seeded futás nem tartalmazta az új `diff` tesztcélt; ezt felvettem.
+- **Modell:** csak ugyanaz a szerző írta, mint a kódot. Védi az átírási hibákat és a kódban közös hibákat, de nem védi az ADR félreolvasását; ezt a tervdokumentum 11. szakasza is kimondja.
+
+A PR `full` módú lesz, mert a kapu saját eszközeit módosítja (`p1.yml`, `fuzz_matrix.py`, `seeded_defects.py`). Merge után emiatt a háttérben egy FULL is elindul.
+
+Az új `diff-proof` job nevei egyik kötelező listában sincsenek még (a main ruleset-ben és a cic-factory nightly profiljában). Ezt te döntöd el.
+
+Ha a CI zöld, megkapod a head-hez kötött merge-parancsot. Utána jön a P4-2, vagyis a `patch` kód a `diff` és az `edit_scalar` fölé.
+~~~~~
+
+
+### 2026-10-26 20:33 — Felhasználó
+
+~~~~~
+megtört
+~~~~~
+
+
+### 2026-10-26 20:34 — Claude
+
+~~~~~
+Az új headre (`5dd69ba`) fut a CI; a végén jelzek.
+~~~~~
+
+
+### 2026-10-26 21:11 — Claude
+
+~~~~~
+Ez a régi fej (`6ee…`/előző) figyelője volt, érvénytelen. Az `5dd69ba` futását még figyelem.
+~~~~~
+
+
+### 2026-10-26 21:12 — Felhasználó
+
+~~~~~
+kész
+~~~~~
+
+
+### 2026-10-26 21:12 — Claude
+
+~~~~~
+A CI az `5dd69ba9a30e332f113e881167854c5c7c48973b` fejen teljesen zöld, a PR állapota CLEAN.
+
+Merge-parancs (a tiéd, ehhez a headhez kötve):
+
+```
+! gh pr merge 102 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 5dd69ba9a30e332f113e881167854c5c7c48973b
+```
+
+A merge után a `p1.yml` változása miatt háttérben elindul egy FULL (`nightly.yml`). Utána a szál-napló és a memória frissítése jön, majd a P4-2 (a `patch` kód). A `diff-proof` job nevei még nincsenek egyik kötelező listában sem: a ruleset és a cic-factory nightly profilja a te döntésed.
+~~~~~
+
+
+### 2026-10-26 21:12 — Claude
+
+~~~~~
+A figyelő lezárult, az eredmény megegyezik a fentivel: az `5dd69ba` fej zöld. A merge-parancsot fent adtam meg; a merge a tiéd.
+~~~~~
+
+
+### 2026-10-26 21:12 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 102 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 5dd69ba9a30e332f113e881167854c5c7c48973b</bash-input>
+~~~~~
+
+
+### 2026-10-26 21:12 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
