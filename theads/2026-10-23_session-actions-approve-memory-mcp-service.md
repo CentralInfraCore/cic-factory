@@ -1,6 +1,6 @@
-# Thread-napló — 2026-10-23..26 (Actions PR-jóváhagyás, memória, on-demand MCP szolgáltatás, forms #77-#96)
+# Thread-napló — 2026-10-23..26 (Actions PR-jóváhagyás, memória, on-demand MCP szolgáltatás, forms #77-#98, main ruleset)
 
-Interaktív session transcriptje (2026-10-23 és 26 között): miért `false` a `can_approve_pull_request_reviews` a cic-primitive-forms repón (a beállítás org-szinten zárolt), a fejlesztőgép memória- és swap-foglalásának felmérése, egy privát KB-hoz tartozó stdio MCP szerver átalakítása systemd user socket-aktivált, tétlenség után magától leálló SSE szolgáltatássá, öt külső review véleményezése és javításai (cic-primitive-forms #78 `33bc6a8`, #86 `56e222d`, #89 `ea6d8f2`, #91 `2a96304`), a diff gate lefedettség szerinti szűkítése és shardolása (#93 `9e4bd2b`), és a CI-lánc javítása (#95 `ab2e8cf`: a nem forduló Go-mutáns és beültetett hiba nem számít elkapásnak - 322 hamis Go-ölés, valós pontszám 93,08%; Rust pin, cache, nightly egyszer commitonként; follow-up #96), valamint a #84 PR mergelése (`c0ec550`). Csak az interakció: a felhasználó üzenetei (beillesztett szöveggel, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `229b7e34-f3c1-4f6e-aeae-17e724711212.jsonl` (a helyi eredeti napló nem kerül a repóba); a `tools/session-transcript.py --private-repo <privát repó neve>` hívással generálva, majd utólag a privát ticket-azonosítók és a helyi scratchpad-útvonal kézzel `[MASKED:<típus>]` jelölővel kitakarva. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, kontextus-összefoglaló.
+Interaktív session transcriptje (2026-10-23 és 26 között): miért `false` a `can_approve_pull_request_reviews` a cic-primitive-forms repón (a beállítás org-szinten zárolt), a fejlesztőgép memória- és swap-foglalásának felmérése, egy privát KB-hoz tartozó stdio MCP szerver átalakítása systemd user socket-aktivált, tétlenség után magától leálló SSE szolgáltatássá, öt külső review véleményezése és javításai (cic-primitive-forms #78 `33bc6a8`, #86 `56e222d`, #89 `ea6d8f2`, #91 `2a96304`), a diff gate lefedettség szerinti szűkítése és shardolása (#93 `9e4bd2b`), a CI-lánc javítása (#95 `ab2e8cf`: a nem forduló Go-mutáns és beültetett hiba nem számít elkapásnak - 322 hamis Go-ölés, valós pontszám 93,08%; Rust pin, cache, nightly egyszer commitonként; follow-up #96), a p1 minden PR-on fut és a seeded.py shardolva (#98 `c3dc92b`), utána a `main` ruleset a 12 kötelező checkkel (#96 1. pont), valamint a #84 PR mergelése (`c0ec550`). Csak az interakció: a felhasználó üzenetei (beillesztett szöveggel, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `229b7e34-f3c1-4f6e-aeae-17e724711212.jsonl` (a helyi eredeti napló nem kerül a repóba); a `tools/session-transcript.py --private-repo <privát repó neve>` hívással generálva, majd utólag a privát ticket-azonosítók és a helyi scratchpad-útvonal kézzel `[MASKED:<típus>]` jelölővel kitakarva. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, kontextus-összefoglaló.
 
 
 ### 2026-10-23 10:42 — Felhasználó
@@ -2835,4 +2835,309 @@ Az issue-k rendben vannak:
 Egy hibámat javítottam: a #96-ba először fejből, hiányosan írtam be a kötelező checkeket. Négy maradt ki, és rossz névformát használtam. A valós fájl alapján pontosítottam.
 
 A #95 post-merge CI-ja és a háttér-FULL még fut. Ha végzett, jelzem az eredményt, és frissítem a session-naplót.
+~~~~~
+
+
+### 2026-10-26 11:35 — Claude
+
+~~~~~
+A #95 lezárult. A post-merge CI 98 checkje közül 80 sikeres, a többi a tervezett módon kimaradt, hiba nincs. A merge utáni háttér-FULL (`nightly`) is zölden futott le a `main`-en (`ab2e8cf`). Ebben a FULL-ban már a javított Go-végrehajtók futottak, a merge előtti mérés szerint 93,08%-os Go-pontszámmal.
+
+A session-naplót frissítettem és pusholtam a cic-factory `main`-re (`337946d`). A titokkeresés tiszta.
+
+**Lezárva:**
+- **#94:** a lezáró hozzászólás rögzíti, hogy 322 Go-mutáns hamisan számított ölésnek, és hogy 9 beültetett hibát javítottam.
+- **#92:** a diff gate lefedettség szerinti szűkítése és shardolása.
+
+**Nyitva maradt:**
+- **#96:** ruleset a `main`-re (a te beállításod) és a Node 20 actionök frissítése.
+- **#85:** a 3. pont (az edit wrapper-validálása) és az 5. pont (a no-op sorrendje az ADR 0012-ben).
+- **#88:** a 9. pont (a Go parser benchmarkja), a 10. pont (a grammar kötése a sémához) és a 11. pont (provenance-integritás).
+~~~~~
+
+
+### 2026-10-26 11:49 — Felhasználó
+
+~~~~~
+ezt a 3 egybe PR alatt megcsinálni?
+~~~~~
+
+
+### 2026-10-26 11:49 — Claude
+
+~~~~~
+Szerintem egy PR-ben nem érdemes. Nem a méret a gond, hanem hogy a hat pont négy különböző fajta munka:
+
+| Pont | Fajta | Mire van szükség |
+|---|---|---|
+| #96/1 ruleset | repóbeállítás | nem PR, hanem a te `gh api` parancsod |
+| #96/2 Node 20 | CI-karbantartás | hat action major-váltása, mindegyik a saját breaking change-eivel |
+| #85/3 edit wrapper-validálás + #88/10 grammar a sémához kötve | **API-változás** | ugyanaz a kérdés: hogyan jut el a grammar az API-hoz |
+| #85/5 no-op vs. `NOT_REPRESENTABLE` | **ADR-döntés** | egy mondat a te döntésedből, kicsi kódváltozás |
+| #88/11 provenance-integritás | **tervezési kérdés** | előbb design kell: kell-e, és ha igen, milyen formában |
+| #88/9 Go parser | **mérés** | benchmark, nem javítás |
+
+Ha egybe tenném, egy CI-frissítés mellett egy API-szerződés változna. A review is összefolyna, és ha az egyik része gondot okoz, nem lehet külön visszavonni.
+
+**A javaslatom:**
+1. **Most, egy PR:** a #85/3 + #88/10 + #85/5. Ez egy témakör: a grammar a lefordított sémához kötve, és ebből az edit is megkapja, plus az ADR 0012 módosítása (a no-op sorrendje). Ehhez két döntés kell tőled, lent.
+2. **Külön PR:** a Node 20 frissítése (#96/2). Mechanikus, de FULL-t igényel.
+3. **Neked:** a ruleset (#96/1). Megírom a pontos parancsot.
+4. **Később, külön:** a #88/11 (előbb egy rövid design note) és a #88/9 (benchmark).
+
+**A két döntés az 1. PR-hoz:**
+- **#85/5:** ha egy pozíció már pontosan az új értéket tartja (például egy meglévő `"a\n"`), legyen no-op, vagy maradjon `EDIT_VALUE_NOT_REPRESENTABLE`? Én a no-op-ot javaslom.
+- **#85/3 + #88/10:** a `CompiledSchema` tárolja a kötött grammart, és a `NormalizeWithPolicy` meg az `EditScalar` onnan veszi? Vagy az `EditScalar` kapjon egy külön `Grammar` paramétert? Én az elsőt javaslom, mert így nem lehet két különböző grammart összekeverni, ami a #88/10 lényege.
+
+Mehet így?
+~~~~~
+
+
+### 2026-10-26 11:50 — Felhasználó
+
+~~~~~
+96/1 kérem a parancsot
+~~~~~
+
+
+### 2026-10-26 11:50 — Claude
+
+~~~~~
+Előbb két dolgot ellenőrzök, mert ezektől függ, hogy a parancs ne zárja be a repót:
+- pontosan milyen néven és milyen apptól jelennek meg a checkek;
+- a `p1` és a `corpus` path-szűrt-e. Ha igen, egy csak doksit módosító PR-on a kötelező checkek meg sem jelennének, és az ilyen PR örökre blokkolva maradna.
+~~~~~
+
+
+### 2026-10-26 11:51 — Claude
+
+~~~~~
+Itt a parancs, de egy előfeltétellel. Nélküle a ruleset blokkolná a repót.
+
+**A probléma:** a `p1` workflow `pull_request` triggere path-szűrt. Egy csak doksit módosító PR-on a `p1` el sem indul. A #82-n például egyetlen check futott, a `corpus`. Ha a `p1` checkjei kötelezők, egy ilyen PR soha nem kapja meg őket, és **örökre mergelhetetlen marad**.
+
+**Ezért előbb kell egy kis PR:** a `p1` `pull_request` triggeréből kiveszem a `paths` szűrőt. Egy doksi-PR-on a `scope` `diff` módot ad mutáns nélkül, így ott csak az olcsó jobok futnak (~10 perc). Ezt megcsinálom, ha kéred.
+
+**Utána a ruleset** (a nevek és az app ID, 15368 = GitHub Actions, a #95 tényleges checkjeiből származnak):
+
+```
+! gh api -X POST repos/CentralInfraCore/cic-primitive-forms/rulesets --input - <<'EOF'
+{
+  "name": "main: required checks",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+  "bypass_actors": [],
+  "rules": [
+    {"type": "deletion"},
+    {"type": "non_fast_forward"},
+    {"type": "required_status_checks", "parameters": {
+      "strict_required_status_checks_policy": false,
+      "required_status_checks": [
+        {"context": "scope", "integration_id": 15368},
+        {"context": "rust", "integration_id": 15368},
+        {"context": "go", "integration_id": 15368},
+        {"context": "branch-coverage", "integration_id": 15368},
+        {"context": "quality-gate-selftest", "integration_id": 15368},
+        {"context": "quality-lines", "integration_id": 15368},
+        {"context": "evidence-selftest", "integration_id": 15368},
+        {"context": "seeded-defects", "integration_id": 15368},
+        {"context": "fuzz", "integration_id": 15368},
+        {"context": "parity", "integration_id": 15368},
+        {"context": "quality", "integration_id": 15368},
+        {"context": "corpus", "integration_id": 15368}
+      ]}}
+  ]
+}
+EOF
+```
+
+**A beállítások indoka:**
+- **`integration_id: 15368`:** csak a GitHub Actions által jelentett check számít, egy kézzel beküldött, azonos nevű status nem.
+- **`strict: false`:** a `land` maga ellenőrzi, hogy a jóváhagyás a friss HEAD-re szól-e. A `strict` minden `main`-változásnál branch-frissítést és ezzel új jóváhagyást kényszerítene ki.
+- **`bypass_actors: []`:** megkerülés nincs, a GitHub felületén sem. Ha vészhelyzeti kiskaput szeretnél magadnak, a listába ez kerül: `{"actor_type": "OrganizationAdmin", "actor_id": 1, "bypass_mode": "always"}`.
+- **`deletion`, `non_fast_forward`:** a `main` nem törölhető, és nem force-pusholható.
+- **A shardolt mutációs jobok szándékosan nincsenek benne:** a számuk a tervtől függ, és a `quality` amúgy is megköveteli őket.
+
+**Visszavonás, ha gond van:**
+```
+! gh api repos/CentralInfraCore/cic-primitive-forms/rulesets -q '.[]|"\(.id) \(.name)"'
+! gh api -X DELETE repos/CentralInfraCore/cic-primitive-forms/rulesets/<id>
+```
+
+Megcsináljam előbb a path-szűrő eltávolítását?
+~~~~~
+
+
+### 2026-10-26 11:52 — Felhasználó
+
+~~~~~
+igen, issue és mehet a PR és engedem a javasolt api hivást is
+~~~~~
+
+
+### 2026-10-26 11:52 — Claude
+
+~~~~~
+Rendben. A sorrend fontos: előbb a path-szűrő eltávolítása kerül a `main`-be, és csak utána futtatom a ruleset-hívást. Fordított sorrendben a mostani PR-ok közül a doksi-PR-ok azonnal beragadnának.
+~~~~~
+
+
+### 2026-10-26 11:53 — Claude
+
+~~~~~
+The trigger is now unconditional (a `pull_request:` with no value) and the test checks it. Commit, PR.
+~~~~~
+
+
+### 2026-10-26 11:54 — Claude
+
+~~~~~
+Megnyitottam a #97 issue-t és a [#98](https://github.com/CentralInfraCore/cic-primitive-forms/pull/98) PR-t. A CI fut, a háttérben figyelem.
+
+**Ami a PR-ben van:**
+- **`9924247`:** a `p1` `pull_request` triggeréből kikerült a `paths` szűrő. Így minden PR-on lefut, és mindig ugyanazokat a checkeket jelenti. Egy csak doksit érintő PR `diff` módban, mutáns nélkül fut, ezért ott csak az olcsó jobok mennek.
+- **`6d225e0`:** helyben derült ki, hogy a `test_shard_plan.py` egyik tesztje a régi szűrőlistára épült („minden fájl, amit a `p1` használ, szerepel a `paths`-ban”), és a szűrő nélkül elbukott. Átírtam, hogy ugyanazt a tulajdonságot az új formában ellenőrizze: a `p1` minden PR-on fut. A doksi sorát is igazítottam.
+- Minden tool-teszt és a workflow-tesztek zöldek.
+
+**A ruleset-hívást csak a #98 merge-e után futtatom.** Ha előbb aktiválnám, a #98 maga is a régi, szűrős `p1`-gyel futna, és a doksi-PR-ok azonnal beragadnának. A sorrend tehát:
+1. A CI zöld lesz.
+2. Te rögzíted a jóváhagyást.
+3. Lefut a `land`.
+4. Lefut a ruleset-hívás.
+5. Ellenőrzöm, hogy a ruleset aktív, és a checkek a várt nevekkel szerepelnek benne.
+~~~~~
+
+
+### 2026-10-26 11:56 — Felhasználó
+
+~~~~~
+szerintem elakadt a https://github.com/CentralInfraCore/cic-primitive-forms/actions/runs/40318472129/job/121557049872
+~~~~~
+
+
+### 2026-10-26 11:57 — Claude
+
+~~~~~
+Nem akadt el, a lépés a szokásos tempóban halad:
+- A `seeded.py` lépés a korábbi zöld futásokban **5,8 és 8,9 percig** tartott.
+- Most kb. 2,5 perce fut (11:54:36-kor indult), így várhatóan 12:01 és 12:04 UTC között végez.
+- A jobon 20 perces timeout van. Ha tényleg elakadna, legkésőbb 12:14-kor a GitHub leállítaná.
+
+A #94-ben ehhez a lépéshez hozzáadott parse-ellenőrzés (Python `compile`, YAML `safe_load`) csak milliszekundumokat tesz hozzá, a lassúság régi: 97 beültetett hiba, mindegyikre a teljes tesztkészlet fut.
+
+Ha zavaró a hossza, egy külön ügyként shardolható, ahogy a többi hosszú lépés. A #98 figyelője közben fut, és szólok, ha végzett.
+~~~~~
+
+
+### 2026-10-26 11:58 — Felhasználó
+
+~~~~~
+shardold a seeded.py-t is, issue és PR
+~~~~~
+
+
+### 2026-10-26 11:58 — Felhasználó
+
+~~~~~
+shardold a seeded.py-t is EBBEN A PRban
+~~~~~
+
+
+### 2026-10-26 11:58 — Claude
+
+~~~~~
+Rendben, ebben a PR-ben. Egy fontos szempont: az `evidence-selftest` check a ruleset kötelező listáján van, ezért a nevének változatlannak kell maradnia. Ha mátrix-jobbá alakítanám, a neve `evidence-selftest (0)`, `(1)` stb. lenne, és a kötelező check eltűnne.
+
+Ezért a jobon belül shardolok, ugyanúgy, ahogy a `seeded_defects.py --shard` működik. A `seeded.py` `--shard K/N` kapcsolót kap, és a lépés N folyamatot indít párhuzamosan a runner magjain (az `ubuntu-latest` 4 magos). A check neve marad, a futásidő pedig kb. a negyedére csökken.
+~~~~~
+
+
+### 2026-10-26 12:10 — Claude
+
+~~~~~
+A shardolt `seeded.py` lépés a CI-ban **2 perc 58 másodperc** alatt futott le, korábban 5,8–8,9 percig tartott. Megnézem a futás többi részét.
+~~~~~
+
+
+### 2026-10-26 12:10 — Claude
+
+~~~~~
+A #98 CI-ja zöld a `3589fb5`-ön: 17 sikeres, 4 kimaradt. Ez a gyors készlet, mert a PR a `p1.yml`-t módosítja.
+
+**Az `seeded.py` shardolása:**
+- A `--shard K/N` és a `--parallel N` kapcsolóval az `evidence-selftest` job a 97 beültetett hibát 4 párhuzamos folyamatban futtatja a runner magjain.
+- A CI-ban ez a lépés **2 perc 58 másodperc** volt, korábban 5,8–8,9 perc.
+- A check neve változatlanul `evidence-selftest`, így a ruleset kötelező listája rendben marad.
+
+Ha mehet a merge:
+```
+! gh pr comment 98 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: 3589fb5203c4a8fa56b57e693198b308004bd484"
+```
+
+A jóváhagyásod után elindítom a `land`-et. Ha a merge és a post-merge kör zöld, futtatom a ruleset-hívást (ezt már engedélyezted), és ellenőrzöm, hogy aktív-e és helyesek-e benne a checkek.
+~~~~~
+
+
+### 2026-10-26 15:35 — Felhasználó
+
+~~~~~
+<bash-input> gh pr comment 98 -R CentralInfraCore/cic-primitive-forms --body "merge-approved: 3589fb5203c4a8fa56b57e693198b308004bd484"</bash-input>
+~~~~~
+
+
+### 2026-10-26 15:35 — Felhasználó
+
+~~~~~
+<bash-stdout>https://github.com/CentralInfraCore/cic-primitive-forms/pull/98#issuecomment-6420116397</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-10-26 15:35 — Claude
+
+~~~~~
+Approval recorded. Launch land in background.
+~~~~~
+
+
+### 2026-10-26 15:35 — Claude
+
+~~~~~
+A jóváhagyásod rögzült a GitHubon. A `land` elindult a háttérben a #98-ra, a `3589fb5` HEAD-del: mergel, aztán végigköveti a post-merge kört a `main`-en.
+
+Ha zölden végez, a következő sorrend jön:
+1. Felveszem a ruleset-et a `main` ágra, a kötelező checkekkel.
+2. Ellenőrzöm, hogy aktív-e, és jól vannak-e benne a checkek.
+3. A #96 1. pontját frissítem, illetve lezárom.
+4. Commitolom a session-napló frissítését.
+
+Szólok, ha végzett vagy megállt.
+~~~~~
+
+
+### 2026-10-26 16:07 — Claude
+
+~~~~~
+Merged, post-merge green. Now the ruleset.
+~~~~~
+
+
+### 2026-10-26 16:07 — Claude
+
+~~~~~
+All 12 required checks report on a PR. Creating the ruleset.
+~~~~~
+
+
+### 2026-10-26 16:07 — Claude
+
+~~~~~
+Now the session log update.
+~~~~~
+
+
+### 2026-10-26 16:08 — Claude
+
+~~~~~
+Most a session-naplót frissítem; keresem az előző generáló parancsot.
 ~~~~~
