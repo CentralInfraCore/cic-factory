@@ -13615,3 +13615,278 @@ A merge után a `p1.yml` változása miatt háttérben FULL indul (`nightly.yml`
 ~~~~~
 <bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
 ~~~~~
+
+
+### 2026-10-26 23:36 — Claude
+
+~~~~~
+A P4 első patch-egysége lezárult: mind a három lépés bekerült a `main`-be, a szál-napló és a memória is naprakész.
+
+**Bekerült ma:**
+
+| PR | Merge-commit | Tartalom |
+|---|---|---|
+| #101 | `b5be6e7` | D1–D3: a `diff` Go-ban és Rustban, mind a 66 vektor fut |
+| #102 | `47041da` | D3b: Rust/Go/modell differenciál, 21 önteszt-hiba, 32 ültetett hiba, fuzz |
+| #103 | `2531652` | P4-2: a `patch` első egysége, mind a 60 vektor fut |
+| #104 | `d0cc8b4` | P4-3: a `patch` bizonyítása; a fuzzer talált és javíttatott egy valódi hibát a P4-2-ben |
+
+**Háttér-FULL:**
+- A #102 merge után indult FULL zöld lett (`47041da`).
+- A #104 merge utáni FULL (`d0cc8b4`) még sorban áll; az eredményét még nem láttam.
+
+**Nyitott, rád váró döntések:**
+- **Kötelező job-nevek:** a `diff-proof` és `patch-proof` jobok nincsenek a ruleset kötelező listájában és a cic-factory nightly profiljában (#96).
+- **Full-szabályok:** hogy a #101–#104-hez hasonló PR-ok mikor legyenek full-ok. Az `accounting.yaml` soron és az eszközmódosításon a mérés nem segít; a lazítás a gate gyengítése lenne.
+- **`cargo-gamma`:** az összehasonlító mérés (néhány száz Rust-mutáns, `cargo-mutants` mellett) csak akkor indul, ha kéred.
+
+**Lehetséges következő munkák:**
+- a `patch` további egységei: `added`/`removed`, `set_change`, deklarációs változások, opaque érték (mindegyik külön ADR);
+- az a kis olvasó, amely a diff kanonikus bájtjait eseménnyé alakítja;
+- az `unviable`/`skipped` mutánsok arányának kiírása a jelentésbe, a nevező vakfoltjának figyelésére.
+
+Szólj, melyiket vegyem sorra.
+~~~~~
+
+
+### 2026-10-27 05:41 — Felhasználó
+
+~~~~~
+3-as p-ben valami még nem volt lezárva ?
+~~~~~
+
+
+### 2026-10-27 05:42 — Claude
+
+~~~~~
+**A P3 maga lezárt, a P3b viszont nem.** A `docs/PHASES.md` szerint:
+
+**P3 (normalizálás): lezárt.** A négy egység (#44, #45, #49, #53) és a záró kör (#55–#57) bekerült, a bizonyíték a `docs/P3-EXIT-CRITERIA.md`-ben van, köztük a teljes kapu futása a merge-elt main-en. Egy korlát ott is van: a P3 differenciál egyetlen sémacsaládot fed le (a közös sématest egy rajzolt `policy_surface`-szel), tetszőleges sémát nem.
+
+**P3b (forrás-megőrző szerkesztés): csak az első egysége zárt (E1–E4).** Az egység egyetlen meglévő, egysoros skalárt cserél le. Ami még nincs elkezdve, és a támogatott részhalmazon kívül van:
+- kulcs beszúrása, törlés, átnevezés, újrarendezés;
+- listaelem hozzáadása;
+- rövid pozíció átírása kibontottra;
+- blokk-skalárok, flow-kollekciók, többsoros skalárok;
+- horgonyok, aliasok, tagek (ezeket a parser eleve elutasítja);
+- szerkesztések kötege;
+- lemezre írás.
+
+Mindegyik külön jegyzet és ADR lenne.
+
+**Ebből a P4-et két dolog érinti:**
+- A `patch` első egysége csak a meglévő skalár cseréjét tudja. Az `added`/`removed` események alkalmazása a P3b beszúrás/törlés egységeire épülne, azok pedig nincsenek meg.
+- A `patch` a blokk-skalárt, flow-kollekciót és többsoros skalárt `EDIT_*` kóddal elutasítja, ami a P3b hiányzó egységei miatt van.
+
+**Hiba a docs-ban, amit észrevettem:** a `PHASES.md` P4 sora még ezt mondja: "P4-1: 60 hand-written `patch` vectors that run in neither language". Ez elavult, a vektorok már mindkét nyelven futnak. Ezt egy kis dokumentációs PR-ban kijavítom, ha mondod.
+
+Melyik irányt vegyem: a P3b következő egységét (pl. kulcs beszúrása), vagy a P4 többi patch-egységét?
+~~~~~
+
+
+### 2026-10-27 05:42 — Felhasználó
+
+~~~~~
+és a p0-ban?
+~~~~~
+
+
+### 2026-10-27 05:43 — Claude
+
+~~~~~
+**P0 hivatalosan "kész" (ADR-ek elfogadva), de maradtak nyitott pontok.** A `PHASES.md` szerint a P0 állapota "done (ADRs accepted)", az ADR 0001–0013 mind `accepted`. Az ADR 0000 az egyetlen kivétel: a státusza még `draft, open decisions listed below`.
+
+**1. Az ADR 0000 (a P0 "esernyő") nincs lezárva.** A P0 átvilágítás maga mondja: ez külön döntést igényel, vagy indexszé válik, ami az elfogadott ADR-ekre mutat, és a nyitott pontjait lezárja vagy máshová teszi. Ez nem történt meg.
+
+**2. Hat kód még `provisional`** (`corpus/codes.yaml`), az elfogadás sem változtatta meg:
+- `INVALID_ACCESS_VALUE`, `INVALID_CERT_PATTERN`, `INVALID_INHERIT`: ezek upstream döntésre (cic-primitives #17) várnak;
+- `PATH_INTEGER_RANGE`, `PATH_KEY_UNSUPPORTED`, `DIFF_UNSUPPORTED_VALUE`: számábrázolásra és kulcs-kódolásra várnak, amíg nincs numerikus szerződés.
+
+**3. A P0 átvilágítás "Open" sorai közül ide tartozik:**
+- a `false` és `0` normatív különbsége, a `boolean` kontra `0` ellentmondás az `inherit_policy`-nál, és az öröklés kiértékelése (ADR 0004);
+- a szerepfüggő alapértelmezés-jogosultság (ADR 0003; az ADR 0011 azóta lezárta);
+- a lebegőpontos és 64 bitnél nagyobb egész számok (ADR 0008, `DIFF_UNSUPPORTED_VALUE`);
+- a halmaz-értékek sorrendje a töredékekben, és az `item_choice`-esetek közötti sorrend (a D1–D3 tesztekkel pótolta, de a sémafüggő sorrend vektor nélkül maradt);
+- az attestation ellenőrzése és az, hogy mitől megbízható egy kötés (ADR 0010, P5/P6-ra halasztva);
+- az `item_choice` csak a `devel`-en van, a kiadott `primitives/@v0.2.0`-ban nincs (ideiglenes kompatibilitási profil).
+
+**4. Ami azóta lezárult:** az ADR 0009 `proposed` státuszából `accepted` lett (a mérőeszközök `gobranch`/`rustbranch`, `coverage/tools.yaml`); a grammar-digest hiánya megszűnt (`pins.yaml` most manifest-digestet hordoz); a `PHASES.md` P0 sora tehát igaz abban, hogy az ADR-ek elfogadottak.
+
+**Amit javasolok:** egy kis dokumentációs PR, amely (a) kijavítja a P4 sor elavult mondatát, (b) az ADR 0000-t indexszé alakítja, ami a nyitott pontokat a lezáró ADR-re vagy a hat `provisional` kódra irányítja. Szólj, ha indítsam.
+~~~~~
+
+
+### 2026-10-27 06:30 — Felhasználó
+
+~~~~~
+3p ban akkor gyakorlatilag a p0 görgeteg dolgai vannak benne
+~~~~~
+
+
+### 2026-10-27 06:32 — Felhasználó
+
+~~~~~
+[Request interrupted by user]
+~~~~~
+
+
+### 2026-10-27 06:32 — Felhasználó
+
+~~~~~
+ujra
+~~~~~
+
+
+### 2026-10-27 06:33 — Claude
+
+~~~~~
+Nagyjából igen, a P3-ra igaz, a P3b-re nem. Amit a docs-ból ellenőriztem:
+
+**A P3 a P0-ból áthúzott szemantikát vitte végig:**
+- **Alapértelmezések szerepek szerint:** a P0 átvilágítás nyitott pontja volt, hogy melyik pozíció kaphat alapértelmezést. Ezt az ADR 0011 és a P3 2. egysége zárta le (szerep három tengelyen, `ApplyDefaults`).
+- **Az öröklés kiértékelése:** az ADR 0004 nyitott pontja volt. Ez a P3 4. egysége (`resolve_rule`, `resolve_policy`, 86 rögzített referenciavektorral keresztellenőrizve), ahol a `false` és a `0` megkülönböztetve marad.
+- **A normalizálás összeállítása** (3. egység) és a `normalize`/`denormalize` az eredet nyilvántartásával.
+
+**Ami a P0-ból nem a P3-ba került, és még nyitott:**
+- a hat `provisional` kód, köztük az `INVALID_INHERIT`, amely az upstream cic-primitives #17-re vár (a `false`/`0` normatív különbsége itt még nincs mind lezárva);
+- a lebegőpontos és 64 bitnél nagyobb számok (`DIFF_UNSUPPORTED_VALUE`);
+- az attestation ellenőrzése, ami a P5/P6-ra halasztott;
+- az ADR 0000, amely még `draft`.
+
+**A P3b nem P0-átvitel.** Az új képesség (forrás-megőrző szerkesztés), amelynek saját ADR-je van (0012). A későbbi egységei új funkciók, nem a P0 hátrahagyott pontjai.
+
+Összefoglalva: a P3 a P0 szemantikai adósságát törlesztette, a számábrázolás, az attestation és az upstream-függő kódok viszont még nyitva maradtak. Ha szeretnéd, a docs-PR-ban ezt a leképezést is leírom (melyik P0 pont melyik fázisban zárult, melyik maradt nyitva).
+~~~~~
+
+
+### 2026-10-27 06:33 — Felhasználó
+
+~~~~~
+írd bele a docs-PR-ba is és folytasd a feladatot
+~~~~~
+
+
+### 2026-10-27 06:35 — Claude
+
+~~~~~
+A docs PR megnyílt: **#105** (`docs/p0-carry-over`), a CI fut, a végét figyelem.
+
+**Helyesbítés a korábbi állításomhoz:** az ADR 0000 már most is index; a döntési indexe megvan. Egyetlen tétel miatt maradt `draft`: az upstream cic-primitives #17 típusdöntés. A tényleges hiány az volt, hogy az index nem sorolta fel az ADR 0011–0013-at, ezt pótoltam.
+
+**Ami a PR-ban van** (csak dokumentáció, kód és döntés nélkül):
+- **`docs/P0-CARRY-OVER.md` (új):** a P0-ból átvitt tételek három táblában.
+  - Lezárt (a bizonyíték helyével): szerepfüggő alapértelmezések, az öröklés kiértékelése, a grammar-digest, az ADR 0009 eszközei, a `diff`, a `patch` első egysége.
+  - Döntéssel rögzített, de vektorral nem bizonyított: a halmaz-elemek és az `item_choice`-tartalom sorrendje a diffben.
+  - Továbbra is nyitott, az okkal: a #17, a hat `provisional` kód, a számábrázolás, az attestation (P5/P6), az `item_choice` csak a `devel`-en, a parser-eltérések.
+- **ADR 0000:** az index mostantól tartalmazza a 0011–0013-at, és a új jegyzetre mutat.
+- **`PHASES.md`:** a P0 sor a jegyzetre mutat, a P4 sor pedig a mai állapotot írja le (a korábbi elavult mondatot lecseréltem).
+
+A "nyitott" sorokat a P0 átvilágításból vettem és a `codes.yaml`-lal, valamint az ADR-státuszokkal vetettem össze; azokat, amelyekhez azóta nem nyúltunk, nem vezettem le újra a kódból. Ezt a jegyzet is kimondja.
+
+Ha a CI zöld, megkapod a merge-parancsot. Utána a következő feladatnál a választás a tiéd: a P3b következő egysége (pl. kulcs beszúrása) vagy a `patch` további eseményei. Mindkettőhöz előbb ADR kell.
+~~~~~
+
+
+### 2026-10-27 06:38 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+## PR #105 — P0 lezárási leltár
+
+Megvan a [#105 PR](https://github.com/CentralInfraCore/cic-primitive-forms/pull/105?utm_source=chatgpt.com). Ez most dokumentációs rendezés, nem új kódimplementáció.
+
+Nyitott
+
+HEAD: `31cb3029d6c86486c1b7bf6af68474df14f3b964`
+
+Három fájlt érint: új `docs/P0-CARRY-OVER.md`, az ADR 0000 döntési indexe és a `docs/PHASES.md`.
+
+A cél jó: megmutatni, hogy a P0-ból továbbvitt döntések közül mi készült el, mi maradt nyitva, és mihez van tényleges bizonyíték.
+
+Viszont találtam egy fontos ellentmondást: a PR továbbra is lezáratlan upstream akadályként kezeli a `cic-primitives #17` döntést. Ez a GitHubon már lezárt issue, és a D-018 döntés elfogadását a Forms ADR 0004 is dokumentálja.
+
+Vagyis a #105 jelen formájában egy elavult állapotot emelne be az új, összegző dokumentációba.
+
+### Mit javítanék a #105-ben?
+
+A `docs/P0-CARRY-OVER.md` két sora hibásan szerepel a Still open részben:
+
+1. Az `access` / `modify` típusellentmondása: a D-018 már rögzítette a `list<CertPattern> | inherit` típust.
+2. A `false` / `0` jelentése és a háromállapotú öröklés: a D-018 már definiálta az `inherit`, `no-inherit`, `reset` módokat.
+
+Ezeket upstream lezárva státuszba tenném. Ettől külön kérdés marad a helyi hibakódregiszterben a `provisional` státuszú kódok elfogadása, valamint a #3 követőjegy formális lezárása.
+
+Az ADR 0000 és a `PHASES.md` P0 sora is ehhez igazítandó. A #105 egyéb részei – különösen a P4 első egységének pontos lezárása és a későbbi patch-műveletek elkülönítése – rendben vannak.
+
+### CI-állapot
+
+CI még fut
+
+Az utolsó ellenőrzéskor a Corpus sikeres volt; a P1-ben 17 job sikeres, 4 várhatóan kihagyott és 3 még futott. Sikertelen job nem volt.
+
+[PR #105](https://github.com/CentralInfraCore/cic-primitive-forms/pull/105?utm_source=chatgpt.com) · [P1 CI](https://github.com/CentralInfraCore/cic-primitive-forms/actions/runs/40462016113?utm_source=chatgpt.com)
+
+Döntésem: jelenleg NO-GO a merge-re, de csak dokumentációs pontatlanság miatt. Az upstream döntésre vonatkozó két állítást javítanám, majd az új HEAD-en ellenőrizném a CI-t.
+
+Ennek a PR-nak éppen az a célja, hogy az elmaradt szerződéses döntéseket pontosan számba vegye. Ezért különösen fontos, hogy egy már meghozott döntés ne maradjon benne nyitott akadályként.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-27 06:42 — Claude
+
+~~~~~
+A reviewer pontosan látta a hibát, és igaza volt: az első vázlatom nem ellenőrizte a #17 állapotát. A javítás pusholva van (`38e678f`).
+
+**Amit ellenőriztem:**
+- A cic-primitives **#17 lezárt** (2026-10-18T21:06Z).
+- Az ADR 0004 "Amendment: adoption of D-018" részében rögzítve van, hogy a típus a `list<CertPattern> | inherit` unió, az `inherit_policy` típusa `InheritanceMode`, és a `false`/`0` különbsége definiált (`inherit | no-inherit | reset`).
+- A forms #3 issue még **nyitott**, a 8. pont nincs kipipálva.
+
+**Mit javítottam:**
+- **P0-CARRY-OVER:** a két hibás sor átkerült a "Closed since P0" táblába (lezárt upstream és bevezetett). A hat `provisional` kódot kettéválasztottam: három (`INVALID_ACCESS_VALUE`, `INVALID_CERT_PATTERN`, `INVALID_INHERIT`) blokkolója megszűnt, nekik már csak a te `stable` döntésed hiányzik; a másik három a számábrázolásra vár.
+- **ADR 0000:** a "mi akadályozza a P0 lezárását" bekezdés és a történeti rész is javítva. Most a te dolgod marad: a #3 8. pontjának kipipálása és lezárása, valamint a három kód `stable`-ra állítása.
+- **PHASES P0 sor:** ugyanezt mondja.
+- Új sor jelzi, hogy a `corpus/codes.yaml` trigger szövege ("open upstream decision") elavult; ezt nem érintettem, mert a registry a gate által ellenőrzött adat, külön változtatás.
+- A PR-hoz kommentet írtam a javításról, és kimondtam, hogy az első vázlat előtt nem néztem meg a #17-et.
+
+A CI az új headre fut. Ha zöld, megkapod a head-hez kötött merge-parancsot.
+~~~~~
+
+
+### 2026-10-27 06:45 — Felhasználó
+
+~~~~~
+nézd meg a work parancsot részletesebben
+~~~~~
+
+
+### 2026-10-27 08:55 — Claude
+
+~~~~~
+Újra próbáltam, és most átment: a hiba csak hálózati volt (a GitHub GraphQL "TLS handshake timeout"), a PR-nak nincs bukó checkje.
+
+A PR #105 CI-ja a `38e678f65c8ebb06a85a8e96b577807033ea89a6` fejen teljesen zöld, az állapot CLEAN.
+
+Merge-parancs (a tiéd, ehhez a headhez kötve):
+
+```
+! gh pr merge 105 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 38e678f65c8ebb06a85a8e96b577807033ea89a6
+```
+
+**A "work parancs" kérdésedhez** nem találtam ilyen nevű parancsot: sem a cic-factory `.claude/commands/` könyvtárában (ott `job-boot`, `job-close`, `job-create`, `job-review`, `job-run`, `job-validate`, `land-pr` van), sem a forms `Makefile`-ban (`corpus`, `coverage`, `quick`, `grammar-*`). Melyikre gondoltál? Lehet a `/job-run`, a `make quick`, a `tools/run-job.sh`, vagy valami más. Ha megmondod, részletesen átnézem.
+~~~~~
+
+
+### 2026-10-27 09:00 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 105 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 38e678f65c8ebb06a85a8e96b577807033ea89a6</bash-input>
+~~~~~
+
+
+### 2026-10-27 09:00 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
