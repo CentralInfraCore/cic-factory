@@ -13890,3 +13890,226 @@ Merge-parancs (a tiéd, ehhez a headhez kötve):
 ~~~~~
 <bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
 ~~~~~
+
+
+### 2026-10-27 09:00 — Claude
+
+~~~~~
+A parancs most nem futott le (az automatikus ellenőrző átmenetileg nem adott választ). Újra megpróbálom ugyanazt.
+~~~~~
+
+
+### 2026-10-27 09:01 — Claude
+
+~~~~~
+A memória-jegyzet frissítve. A szál-napló commitját újra megpróbálom.
+~~~~~
+
+
+### 2026-10-27 09:01 — Claude
+
+~~~~~
+A PR #105 bekerült (`29af238c65799b7d6674574ec8007fc7dcb4112c`), a memória-jegyzet frissítve van. A szál-napló commitja viszont még nincs kész, mert az automatikus parancs-ellenőrző háromszor egymás után nem adott választ, így a `git commit`/`push` nem futott le.
+
+A szál-napló már újra generálva és titokszkennelve van a munkakönyvtárban, csak a commit és a push hiányzik. Ezt a következő sikeres futásnál pótlom: `git add theads/2026-10-21_session-forms-p1-p3-ci-gate.md`, commit, push a cic-factory `main`-re.
+
+**Ami még rád vár:**
+- A forms #3 issue 8. pontjának kipipálása és lezárása, valamint az `INVALID_ACCESS_VALUE`, `INVALID_CERT_PATTERN`, `INVALID_INHERIT` kódok `stable` státuszának eldöntése. Ezek tartják draftban az ADR 0000-t.
+- A "work parancs" kérdésed: nem találtam ilyen nevű parancsot. Megmondod, melyikre gondoltál (`/job-run`, `make quick`, `tools/run-job.sh`, vagy más)?
+~~~~~
+
+
+### 2026-10-28 06:38 — Felhasználó
+
+~~~~~
+mehet tovább
+~~~~~
+
+
+### 2026-10-28 06:39 — Claude
+
+~~~~~
+A szál-napló commitja most átment és fel van pusholva a cic-factory `main`-re (`f3c30a4`). A memória-jegyzet már korábban frissült, így minden lezárás megvan.
+
+A munka most nem folytatható tovább egyetlen nyílt irányba sem, döntés nélkül:
+
+- **P3b következő egysége** (pl. kulcs beszúrása): új képesség, előbb ADR kell hozzá.
+- **A `patch` további eseményei** (`added`/`removed`, `set_change`, deklarációs változások): ezek a P3b beszúrás/törlés egységeire épülnek, azok nincsenek meg.
+- **A diff kanonikus bájtjainak beolvasója** (eseménnyé alakítás): kicsi, önálló, ADR nélkül is indítható; a `patch` jelenleg eseményeket kap, nem bájtokat.
+- **A nevezőben nem szereplő mutánsok (`unviable`/`skipped`) arányának kiírása** a jelentésbe: kicsi, olcsó vakfolt-figyelő.
+
+**Rád váró döntések:** a forms #3 issue 8. pontjának lezárása és a három kód `stable` státusza; a `diff-proof`/`patch-proof` job-nevek a ruleset kötelező listájába; a "work parancs" kérdés (melyikre gondoltál).
+
+Az én javaslatom: a nevező-arány kiírása és a kanonikus bájt-beolvasó, mert mindkettő kicsi és ADR nélkül indítható; a P3b/P4 nagyobb irányhoz a te döntésed kell. Melyiket vegyem?
+~~~~~
+
+
+### 2026-10-28 06:43 — Felhasználó
+
+~~~~~
+mehet tovább
+~~~~~
+
+
+### 2026-10-28 06:44 — Claude
+
+~~~~~
+Folyamatban: a `quality_gate.py`-ba beírom a kimenet-jegyzetet az eredményszámításból kimaradó mutánsokról (csak tájékoztatás, küszöb nélkül), és hozzá a selftest-esetet.
+~~~~~
+
+
+### 2026-10-28 06:45 — Claude
+
+~~~~~
+A PR #106 megnyílt (`feat/quality-denominator-report`): a CI fut, a végét figyelem.
+
+**Mit csinál.** A mutációs pontszám alatt most kiírja, hogy a pontszám nevezőjéből hány mutáns marad ki, mert nem fordul le. Ez Rustnál az `unviable`, Gónál a `skipped`/`uncompilable`. A kimenet így néz ki:
+
+```
+ok   rust mutation score   95/100 = 95.00%
+     not in the denominator: 5 of 105 mutants (4.76%), unviable: they do not compile
+```
+
+**Ami nem változik.** Ez csak tájékoztatás: nincs új küszöb, nincs új elutasítási ok, a verdikt és a pontszámítás ugyanaz. A meglévő selftest (66 hiba, 6 az 6-ból) tovább fut.
+
+**Hogy tud-e elbukni.** Az új selftest-ellenőrzés elbukik, ha a kiírást kikapcsolom (`BAD ... missing`, nem nulla kilépési kód), tehát nem üres ellenőrzés.
+
+**Hogy miért.** A korábban beillesztett cargo-gamma elemzés felvetette, hogy két 100%-os eredmény nagyon eltérő populációt takarhat. Nálunk ez eddig nem látszott, mostantól látszik.
+
+A PR `full` lesz, mert a gate saját eszközét módosítja. Ha a CI zöld, megkapod a head-hez kötött merge-parancsot.
+~~~~~
+
+
+### 2026-10-28 06:58 — Felhasználó
+
+~~~~~
+<pasted_content id="d623">
+## PR #106 — első review-eredmény
+
+A [#106 PR](https://github.com/CentralInfraCore/cic-primitive-forms/pull/106?utm_source=chatgpt.com) a mutációs tesztelés egyik fontos hiányát kezeli: a mutation score mellé kiírja, hány mutáns maradt ki a pontszám nevezőjéből.
+
+Ellenőrzött HEAD: `92ca6a31c53ef289c94517f5f9ba04fa35bc0230`
+
+Például két rendszer egyaránt elérhet 95%-os mutációs pontszámot, miközben az egyiknél a generált mutánsok 2%-a, a másiknál 30%-a nem fordítható. Ez nem ugyanazt a bizonyítási lefedettséget jelenti.
+
+Az irány helyes: a PR nem változtatja meg a 90% feletti kötelező küszöböt, csak láthatóvá teszi a kizárt populációt.
+
+Viszont a Go oldalon találtam egy számlálási hiányosságot, amit merge előtt javíttatnék.
+
+### Konkrét hiba: a Go kizárt mutánsainak száma alacsonyabb lehet a valósnál
+
+A `tools/quality_gate.py` új `go_mutants()` logikája:
+
+```
+note_excluded("go", counted["skipped"], counted["total"])
+```
+
+Csakhogy a meglévő parser az `UNKOWN exit code for` eredményt is beleszámolja a `total` értékébe, miközben az nem kerül bele sem a sikeres, sem a sikertelen mutánsok közé.
+
+Egy példa:
+
+| Eredmény          | Darab |
+| ----------------- | ----- |
+| Killed            | 95    |
+| Survived          | 5     |
+| Skipped           | 3     |
+| Unknown exit code | 1     |
+| Összesen          | 104   |
+
+A mutation score helyesen 95/100 = 95%.
+
+Az új információs sor azonban 3/104 = 2,88% kizártat jelezne, holott 4/104 = 3,85% maradt ki a nevezőből.
+
+Ráadásul a Go jelentés `duplicated` számlálóját is figyelmen kívül hagyja. Erről külön kell dönteni: a duplikátumokat a generált teljes populációba számoljuk-e, vagy önálló kategóriában jelentjük.
+
+Javasolt javítás: a Go kimenetben külön számoljuk a `skipped`, az `unknown/error` és a `duplicated` értékeket. A kijelzett arány nevezőjét pedig egyértelműen definiáljuk. Ehhez tartozzon egy negatív teszt, amely eltérő populációszámolás esetén pirosra vált.
+
+A meglévő önellenőrzés már tartalmaz unknown-exit-code esetet, de jelenleg nem ellenőrzi hozzá az új kizárási arány helyességét.
+
+### CI állapot
+
+29/30 sikeres — FULL még fut
+
+A Corpus zöld, a quality-gate selftest zöld. A `seeded-defects` job az utolsó ellenőrzéskor még futott.
+
+[PR #106](https://github.com/CentralInfraCore/cic-primitive-forms/pull/106?utm_source=chatgpt.com) · [P1 FULL CI](https://github.com/CentralInfraCore/cic-primitive-forms/actions/runs/40645775129?utm_source=chatgpt.com)
+
+### Döntésem
+
+Az ötletre GO, a konkrét HEAD merge-jére egyelőre NO-GO.
+
+Ez nem mutation-score számítási hiba, hanem az új bizonyíték-elszámolás pontatlansága. De éppen ennek a PR-nak az a célja, hogy a mutációs pontszám mögötti valós populáció látható legyen.
+
+Ha ezt pontosítják, és a teljes CI zöld, akkor a #106 mehet.
+
+Egyébként ez nagyon jó folytatása a korábbi CIC-minőségkapus gondolatmenetnek: a 100%-os eredmény önmagában nem árulja el, hogy az eredetileg vizsgálandó populáció mekkora részére vonatkozik.
+</pasted_content id="d623">
+~~~~~
+
+
+### 2026-10-28 06:59 — Claude
+
+~~~~~
+A reviewer megállapítása jogos, a hibát javítottam (`8331180`) és a PR-hoz kommentet írtam. Az előző, a régi headre indított CI-figyelő értesítése érvénytelen; az új headét figyelem.
+
+**A hiba.** A Go oldal a nevezőből kimaradók közül csak a `skipped` mutánsokat számolta, a go-mutesting összege viszont az `UNKOWN exit code` (hiba) eredményeket is tartalmazza. A reviewer példájában a sor 3/104-et (2,88%) írt volna 4/104 (3,85%) helyett.
+
+**A javítás.**
+- A Go sor mostantól mindent számol, ami az összegben se megölt, se megmaradt mutáns, külön megnevezve (`skipped`, `errors`).
+- A duplikátumok nincsenek az összegben, ezért mellé kerülnek, nem hozzáadva: `; 2 more dropped as duplicates, not in that total`.
+- A nevező definíciója bekerült az eszköz leírásába: a mutánsok, amelyeket az eszköz listázott (a saját összege); Rust: `unviable`; Go ledger: `uncompilable`.
+
+**Bizonyíték, hogy a teszt valóban fogja.** A selftestben új eset van a reviewer példájával (95 megölt, 5 megmaradt, 3 kihagyott, 1 hiba, 2 duplikátum), és láttam elbukni a régi számolással (`BAD`, nem nulla kilépési kód). A selftest 68 hibával, 6 az 6 okkal zöld.
+
+Ha a CI zöld az új headen, megkapod a head-hez kötött merge-parancsot.
+~~~~~
+
+
+### 2026-10-28 07:19 — Claude
+
+~~~~~
+A teljes FULL futás még folyik (a Go mutációs shardok ~10–20 percig tartanak). Ha kész, jelzek, és zöld esetén adom a head-hez kötött merge-parancsot.
+~~~~~
+
+
+### 2026-10-28 07:38 — Claude
+
+~~~~~
+A ciklus időkorlátja lejárt, mielőtt a CI befejezte volna: még a `seeded-defects` és néhány mutációs shard fut. Új várakozást indítok.
+~~~~~
+
+
+### 2026-10-28 07:38 — Claude
+
+~~~~~
+A CI még fut (hosszabb várakozási ciklust indítottam); amint befejezi, jelzek, és zöld esetén adom a merge-parancsot.
+~~~~~
+
+
+### 2026-10-28 07:50 — Claude
+
+~~~~~
+A PR #106 CI-ja az `8331180c7a33a205cf5b25d0ec47ae8baa01efaf` fejen teljesen zöld (nincs függő és nincs bukó check), az állapot CLEAN.
+
+Merge-parancs (a tiéd, ehhez a headhez kötve):
+
+```
+! gh pr merge 106 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 8331180c7a33a205cf5b25d0ec47ae8baa01efaf
+```
+
+Merge után a szál-napló és a memória frissítése jön.
+~~~~~
+
+
+### 2026-10-28 07:54 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 106 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 8331180c7a33a205cf5b25d0ec47ae8baa01efaf</bash-input>
+~~~~~
+
+
+### 2026-10-28 07:54 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
