@@ -14883,3 +14883,335 @@ Mehet mindkettő? A naplót a workdir `main`-jére commitolom, és nem pusholom,
 ~~~~~
 mehet mindkettő
 ~~~~~
+
+### 2026-10-29 09:56 — Claude
+
+~~~~~
+Dolgozom: a szál-napló új szakasza bekerült (771 sor, titokminta nincs benne), most a memóriát írom, utána commitolom a naplót.
+~~~~~
+
+
+### 2026-10-29 09:56 — Claude
+
+~~~~~
+Mindkettő kész.
+
+**Szál-napló** (`theads/2026-10-21_session-forms-p1-p3-ci-gate.md`)
+- Commit `8e7b226` a workdir `main`-jén. Nincs pusholva, amíg nem szólsz.
+- Az új szakasz `2026-10-28 22:48 UTC`-tól tart, 67 blokk (24 felhasználói, 43 Claude). A titokszűrő nem maszkolt semmit, és a kimenetben nincs kulcs- vagy tokenminta.
+- A forrás-felsorolás a fejlécben kiegészült a `7895b2db…jsonl`-lel.
+- A session jelenlegi vége (ez a válasz) még nincs benne. A szabály szerint a következő lezárt PR-nál megy a következő frissítés.
+
+**Memória**
+- A `project_p3_closed_p3b_state.md` új szakaszt kapott a #108-ról, a #107-ről, a három `diff_gate` vakfoltról és a `diff-mutation-rust` megszakadásról.
+- A `MEMORY.md` indexsora ugyanígy frissült. Azt írtam bele, hogy a megszakadás tünete szűnt meg a `ulimit`-tel, az oka nincs bizonyítva.
+- A rendszer jelezte, hogy a `MEMORY.md` és a memóriafájl közben máshol is változott. A tartalmuk megfelel annak, amit beírtam, ezt nem írtam felül.
+
+**Maradt nyitva**
+- A `fix/diff-gate-blind-spots` lokális ág (a `main`-ről, `d968884`) feleslegessé vált, és a scratchpad worktree-k is. Törölhetem, ha szólsz.
+- A `quality-mutation-rust` és a többi `cargo mutants` hívás nem kapott memóriaplafont.
+- A két megmaradt timeout (`diffread.rs:137` és `:189`) strukturálisan javítható.
+~~~~~
+
+
+### 2026-10-29 12:29 — Felhasználó
+
+~~~~~
+nézd meg ezt https://github.com/CentralInfraCore/cic-primitive-forms/pull/109
+~~~~~
+
+
+### 2026-10-29 12:29 — Claude
+
+~~~~~
+Ez egy automatikus incident-PR: a #107 merge (`8acac86`, `p1.yml` változott) után elindult háttér-FULL bukott, a `quality-mutation-rust (10)` és `(11)` shardon. Megnézem, mi a hiba.
+~~~~~
+
+
+### 2026-10-29 12:30 — Claude
+
+~~~~~
+Megnéztem. A #109 egy automatikus incident-PR (`app/github-actions`), csak egy fájlt vesz fel (`ci-incidents/2026-10-29-40841623917.md`, +9 sor), kód nincs benne. A PR maga azt írja, hogy a javítás külön változtatás, és ezt zárni kell, ha megértettük.
+
+**Mi bukott.** A #107 merge (`8acac86`) után, a `p1.yml` változása miatt elindult háttér-FULL (klasszikus motor, teljes fa), futás `40841623917`:
+- `quality-mutation-rust (10)`: 3,5 perc után
+- `quality-mutation-rust (11)`: 4,7 perc után
+- `quality`: ezek következménye
+
+Mindkét shardnál ugyanaz az annotáció: **"The operation was canceled."** A naplóban nincs MISSED vagy TIMEOUT sor, a shard a mutációs lépésben szakad meg, verdikt nélkül.
+
+**Összefüggés a #107-es megszakadással.** Ez ugyanaz a tünet, ugyanabban a lépésben (`cargo mutants`), és a memóriaplafont csak a `diff-mutation-rust` kapta meg, a `quality-mutation-rust` nem. Ez egyezik a memória-hipotézissel: a teljes futás shardjai is tartalmaznak `diffread.rs` mutánsokat (a #107 ezt a fájlt hozta be), és a plafon nélküli shard megszakad. Ugyanakkor ez továbbra sem bizonyíték: azt nem néztem meg, hogy a 10. és 11. shard mutánsai között ott vannak-e a `diffread.rs` mutánsai, és a shardok memóriahasználatát sem mértem.
+
+**Nem manuális megszakítás.** A saját jegyzetem szerint a tulajdonos kézi cancel-jénél az annotáció "The run was canceled by …" szövegű. Itt nem az, hanem a lépés szintű "The operation was canceled".
+
+**Javaslat.** A `quality-mutation-rust` (és a többi plafon nélküli `cargo mutants` hívás) ugyanazt kapja, amit a diff shard: `ulimit -v 6291456` és az `always()` napló-feltöltés. Új PR kellene `main`-re. A #109-et a javítás után zárni, vagy a javítás PR-jában hivatkozni rá. Csináljam meg?
+~~~~~
+
+
+### 2026-10-29 13:05 — Felhasználó
+
+~~~~~
+csináld
+~~~~~
+
+
+### 2026-10-29 13:06 — Claude
+
+~~~~~
+A #110 PR megnyílt `main`-re: https://github.com/CentralInfraCore/cic-primitive-forms/pull/110
+
+**Mi van benne.** A `quality-mutation-rust` (teljes futás) lépése ugyanazt kapja, mint a diff shard #107-ben:
+- `ulimit -v 6291456` a `cargo mutants` körül.
+- Új, `always()` feltételű feltöltés `rust-mutants-log-<shard>` néven: a per-mutáns napló megszakadás után is megmarad.
+
+Más nem változott. A YAML betölthető, a `tools/` tesztek 110 OK (3 skipped), és a `diff_gate.py` szerint a PR `diff` módú (a `p1.yml` módosítás csak megjegyzés).
+
+**Nem bizonyított.**
+- Hogy a megszakadás oka a memória. A PR leírása ezt kimondja.
+- Hogy 6 GB elég egy egész fát futtató shardnak. A diff shardok ugyanazt a tesztkészletet futtatták és átmentek, de a teljes shardokat helyben nem futtattam.
+
+**Hogyan látszik, ha tévedtem.** Ha a plafon túl szűk, a shard allokációs hibával bukik, nem megszakadással. Ha megint megszakad plafon mellett is, a feltöltött napló mutatja meg az éppen futó mutánst.
+
+A #109-et nem zártam, mert az incidens-rekord, és a leírásom szerint a következő zöld FULL után zárható. Nincs "Closes" hivatkozás.
+
+CI-t kell kivárni a #110-en. Szóljak, ha kész, és adjam a head-hez kötött merge-parancsot?
+~~~~~
+
+
+### 2026-10-29 13:09 — Felhasználó
+
+~~~~~
+szólj, ha lefutott a CI
+~~~~~
+
+
+### 2026-10-29 13:10 — Claude
+
+~~~~~
+Szinte kész: 22 pass, 1 pending. Háttérben megvárom, és jelzek, amint lefutott.
+~~~~~
+
+
+### 2026-10-29 13:10 — Claude
+
+~~~~~
+Háttérben figyelem a #110 CI-ját, a végén jelzek az eredménnyel és a head-hez kötött merge-paranccsal.
+~~~~~
+
+
+### 2026-10-29 13:11 — Claude
+
+~~~~~
+A #110 CI-ja lefutott, és zöld: 23 pass, 0 fail, 8 skipping, az állapot CLEAN. A háttérparancs "failed" jelzése az én hibám volt: a végén a `gh pr view` jq-kifejezésem idézőjelezése hibás volt (`cannot plus: string`). A checkeket nem érintette.
+
+Head: `ddf556658ea18298aa82d25edd5c87ea4cc883b3`.
+
+**Mit jelent ez, és mit nem.** Ez a PR `diff` módú, a `quality-mutation-rust` shardok rajta nem futnak (`skipping`). A zöld CI tehát csak azt mutatja, hogy a workflow szerkezetileg rendben van és a gate-tesztek mennek. Azt **nem**, hogy a plafon megoldja a teljes futás megszakadását. Ezt az első FULL futás mutatja meg a merge után: a `p1.yml` változása miatt az automatikusan elindul (mint a #107 után), és a #109 akkor zárható, ha az zöld.
+
+Merge-parancs (a tiéd, ehhez a headhez kötve):
+
+```
+! gh pr merge 110 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit ddf556658ea18298aa82d25edd5c87ea4cc883b3
+```
+~~~~~
+
+
+### 2026-10-29 13:20 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 110 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit ddf556658ea18298aa82d25edd5c87ea4cc883b3</bash-input>
+~~~~~
+
+
+### 2026-10-29 13:21 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-10-29 13:21 — Claude
+
+~~~~~
+A #110 mergelve (`1a41018`, squash), ellenőrizve a GitHubon.
+
+A `p1.yml` változása miatt automatikusan elindult a háttér-FULL (`nightly.yml`, run `40881121008`, a `1a41018` commiton). Ez az első valódi próba, hogy a 6 GB-os plafon a teljes futásban is megszünteti-e a megszakadást. Jelenleg `queued`.
+
+A #109 (incidens-rekord) nyitva marad, amíg ez a futás zöld nem lesz. Ha a 10. és 11. shard megint megszakad, az új `rust-mutants-log-<shard>` artifact mutatja meg, melyik mutáns futott. Ha allokációs hibával bukik, a plafon túl szűk.
+
+Figyeljem a futást, és szóljak, ha kész? Egy teljes FULL kb. 50–60 perc.
+~~~~~
+
+
+### 2026-10-29 14:17 — Felhasználó
+
+~~~~~
+na mi a van most a 109-essl
+~~~~~
+
+
+### 2026-10-29 14:18 — Claude
+
+~~~~~
+A FULL lefutott és zöld. A #109 viszont még nyitva van.
+
+**A FULL (run `40881121008`, `1a41018`, 13:21 → 14:13 UTC)**
+- Mind a 22 `quality-mutation-rust` shard `success`, köztük a 10. és 11., amelyek a `8acac86`-os futásban megszakadtak.
+- A `quality` job `success`, összesen 104 job sikeres, 8 skipped, 0 bukott.
+
+**Mit bizonyít.** A tünet (megszakadás) a plafonnal a teljes futásban is eltűnt, a #110 tehát bevált. Az **okot** továbbra sem bizonyítja: nem tudjuk, hogy memória volt-e, és hogy a plafon "caught"-ként fogott-e el mutánst, vagy a futás csak máshogy alakult. A `rust-mutants-log-*` artifactokból kiolvasható, de nem néztem meg.
+
+**A #109.** `OPEN`, `UNKNOWN` merge-állapot, 0 komment, utolsó frissítés 09:06 UTC. Ez az automatikus incidens-rekord (egy fájl, kód nélkül), és a saját leírása szerint zárni kell, ha megértettük. Ennek a feltételei: a javítás merge-elve (#110), a következő FULL zöld. Mindkettő teljesült.
+
+Mit tegyek a #109-cel?
+1. Zárom egy lezáró kommenttel (a megfigyelések, és hogy az ok nem bizonyított). A te jóváhagyásoddal, mert külső felületre ír.
+2. Előbb kiolvasom a `rust-mutants-log-*` artifactokból, hogy volt-e allokációs hiba, és csak utána zárom.
+
+Az 1. gyorsabb, a 2. megmondja, tényleg a memória volt-e. A 2.-t javaslom.
+~~~~~
+
+
+### 2026-10-29 14:18 — Felhasználó
+
+~~~~~
+2
+~~~~~
+
+
+### 2026-10-29 14:19 — Claude
+
+~~~~~
+Ez az a két mutáns, amely a megszakadt shardokban volt. Megnézem a naplójuk végét, mi történt velük a plafon alatt.
+~~~~~
+
+
+### 2026-10-29 14:20 — Claude
+
+~~~~~
+A #109 lezárva, lezáró kommenttel (angolul, a GitHub-szabály szerint).
+
+**Az ok most már bizonyított, nem gyanú.** A zöld FULL artifactjaiból:
+- A megszakadt két shard mutánsai: `diffread.rs:170:21` `+=`→`*=` a `Reader::string`-ben (10. shard) és `diffread.rs:241:39` `+=`→`-=` az `array`-ben (11. shard).
+- A 6 GB-os plafon alatt a tesztfolyamat így áll le: `memory allocation of 2147483648 bytes failed` (10.), illetve `8589934592 bytes failed` (11.), SIGABRT. A cargo-mutants mindkettőt "caught"-nak jegyzi.
+- Plafon nélkül az allokáció (főleg a 8 GB) addig nőtt, amíg a runner a jobot ki nem lőtte: ez a "The operation was canceled."
+
+A korábbi állításom ("oka nem bizonyított") ezzel javítandó. A `hex4`-hipotézis tévedés volt, a bűnösök a `string` és az `array` mutánsai.
+
+**Ami a FULL-ban még látszik, és nem ennek a PR-nak a dolga:** 1240 caught, **6 missed**, 16 timeout, 218 unviable. A gate átment, de a 6 missed mutáns (pl. `validate.rs:78` `eq`→`true`/`false`, `schema.rs:187/217`, `parse.rs:98`) és a sok `scan_words`/`scan` timeout nem új. Ezekről külön nem csináltam semmit.
+
+A memóriát és a szál-naplót frissíteni kell ezzel a javítással (a mostani bejegyzés még "oka nem bizonyított"-at mond). Mehet?
+~~~~~
+
+
+### 2026-10-29 15:23 — Felhasználó
+
+~~~~~
+te mit mondasz merre tovább?
+~~~~~
+
+
+### 2026-10-29 15:23 — Claude
+
+~~~~~
+Ezt javaslom, ebben a sorrendben.
+
+**1. Most: a memória és a napló javítása (kicsi, sürgős).** A tárolt bejegyzés még azt mondja, hogy az ok nem bizonyított, és a `hex4`-et nevezi meg gyanúsnak. Ez ma már hamis, és egy későbbi session ráépíthetne. A javítás: az ok (a `string` és az `array` mutánsai, 2 GB és 8 GB allokáció, SIGABRT a plafon alatt) és a #109/#110 lezárása. A naplóba a következő PR-lezárásnál kerül.
+
+**2. Utána: a 6 missed mutáns a FULL-ban.** Ezt tartom a legértékesebbnek, mert a minőség nálad elsőbbséget élvez a CI-időnél. A kapu átment, de a `validate.rs:78` `DefaultValue::eq` mind `true`-ra, mind `false`-ra túlélt (két shardban), vagyis semmilyen teszt nem különbözteti meg az egyenlőséget. Az `schema.rs:187/217/748` és a `parse.rs:98` guard-mutánsok ugyanilyen jelek. Először azt kell megnézni, hogy ezek **újak-e** a #107 óta, vagy a `3d8d03d`-os zöld éjszakai futásban is megvoltak. Ezt még nem ellenőriztem. Ha régiek, külön issue-ba tartoznak, nem javításba.
+
+**3. Aztán a P4 következő egysége**, de ez a te döntésed. A lehetőségek: a későbbi patch-egységek (`added`/`removed`, `set_change`, deklarációs változások), vagy a `diff-proof`/`patch-proof` jobnevek felvétele a ruleset-be. A `docs/PHASES.md` P4 sora is elavult ("ADR 0013 proposed"), ez apró, külön PR.
+
+**Nem javaslom most:** a két megmaradt `diffread` timeout (`:137`, `:189`) átírását. A plafon alatt ezek nem okoznak kárt, a mutáns "timeout"-ként számolódik, és a kapu átmegy.
+
+Kezdjem az 1. ponttal, és utána a 2. pont ellenőrzésével (újak-e a missed mutánsok)?
+~~~~~
+
+
+### 2026-10-29 15:24 — Felhasználó
+
+~~~~~
+nézd már meg hol vagyunk pontosan jó ne csak a fejedből találgass
+~~~~~
+
+
+### 2026-10-29 15:24 — Claude
+
+~~~~~
+Igazad van, ellenőrzöm az élő állapotot.
+~~~~~
+
+
+### 2026-10-29 15:24 — Claude
+
+~~~~~
+Ez az élő állapot, a parancsok kimenetéből, nem emlékezetből.
+
+**cic-primitive-forms**
+- `main` = `1a41018` (#110). Előtte: #107 `8acac86`, #108 `3d8d03d`, #106 `a3277de`.
+- A `main`-en minden zöld ezen a commiton: `p1`, `corpus` és az éjszakai `nightly` is `success` (13:21 UTC). Az `evidence` job `skipped`, ez nem hiba.
+- **Nyitott PR: nincs.** A #109 lezárva, a #107 és #110 mergelve.
+- Nyitott issue 5 van: #100 (parser-paritás pozíciók), #96 (ruleset a `main`-re, tulajdonosi), #88, #85 (review-leletek), #3 (P0 szerződés-döntések).
+
+**Workdir (`cic-factory`)**
+- A `main` egy committal előrébb van az `origin/main`-nél: `8e7b226`, a szál-napló frissítése a #107-ig. **Nincs pusholva**, mert a pusholáshoz nem kaptam kérést.
+- Az untracked fájlok (`.fork_scratch/`, `docs/audit-merge-approval-…`, `tools/*.yaml` stb.) ugyanazok, mint a session elején. Nem nyúltam hozzájuk.
+
+**Ami elavult vagy hibás a saját feljegyzéseimben**
+- A memória (`project_p3_closed_p3b_state.md`) még azt mondja, hogy a megszakadás oka nem bizonyított, és a `hex4`-et gyanúsítja. Ez hamis: az ok bizonyított (a `string` `:170` és az `array` `:241` mutánsa, allokációs hiba a plafon alatt). Javítandó.
+- A szál-napló a #107 merge-ig tart, a #110 és a #109 lezárása nincs benne.
+
+**Ami még nincs ellenőrizve**
+- A FULL-ban látott 6 missed mutáns újak-e (a `3d8d03d`-os zöld éjszakai futásban is megvoltak-e). Ezt nem néztem meg.
+- A `diff_gate` javítás tényleges `go test` / `compare.py` hatása, csak a besorolást futtattam.
+
+**Takarítás**
+- A forms repóban sok régi worktree van (kb. 60, főleg a `d1a9f2ae` job `tmp/` alatt és korábbi sessionök scratchpadjei). Az enyéim: `scratchpad/wt`, `wt107`, `wtcap`, plusz a lokális `fix/diff-gate-blind-spots`, `fix/diff-gate-blind-spots-107`, `fix/full-rust-mutants-memory-cap` ágak. A többihez nem nyúltam.
+
+Ebből a következő lépés szerintem: (1) memória javítása, (2) a missed mutánsok újdonságának ellenőrzése. A szál-napló pusholását és az én worktree-im takarítását külön kérésre csinálom.
+~~~~~
+
+
+### 2026-10-29 15:25 — Felhasználó
+
+~~~~~
+csináld a memória javítást és a missed mutánsok ellenőrzését
+~~~~~
+
+
+### 2026-10-29 15:26 — Claude
+
+~~~~~
+Mindkettő kész.
+
+**1. Memória javítva.** A `project_p3_closed_p3b_state.md` szakasza és a `MEMORY.md` indexsora most azt mondja, hogy az ok bizonyított (a `diffread` `string`/`array` mutánsai 2–8 GB-ot allokálnak), a `hex4`-hipotézis téves volt, és a javítás a `ulimit -v` a #107-ben és a #110-ben. Nincs benne több "unproven".
+
+**2. A 6 missed mutáns nem új.** Összevetettem a `1a41018`-as FULL-t két korábbi zöld éjszakai futással (a sorszámokat levágva a nevekből):
+
+| Futás | caught | missed | timeout | unviable |
+|---|---|---|---|---|
+| `29af238` (10-28) | 1083 | 6 | 14 | 164 |
+| `3d8d03d` (10-29 06:38) | 1083 | 6 | 14 | 164 |
+| `1a41018` (#110 után) | 1240 | 6 | 16 | 218 |
+
+- A 6 missed mutáns (5 különböző név, a `schema.rs` `compile_with` guard kétszer) mind **ugyanúgy** megvolt a két korábbi futásban is. Egyik sem a #107-ből ered.
+- A timeoutoknál pontosan 2 az új, és mindkettő `diffread.rs`: `number` `+=`→`*=` és `escape` `+=`→`-=`. A régi timeoutokból egy sem tűnt el.
+- A többlet 157 caught és 54 unviable a #107 új kódjából jön, a `diffread.rs` 213 mutánsából.
+
+**Következmény.** A #107 nem rontott a missed-számon, a hiányosságok régiek. Egy dolog érdemel külön figyelmet: a `validate.rs` `DefaultValue::eq` mind `true`-ra, mind `false`-ra túlél, vagyis semmilyen teszt nem különbözteti meg két alapérték egyenlőségét. Ez valódi tesztrés, nem a #107 dolga. Nyissak rá issue-t a 6 régi missed mutánssal (név és sor szerint)?
+
+Pusholjam a szál-naplót is (`8e7b226`), vagy előbb kérsz még valamit a naplóba?
+~~~~~
+
+
+### 2026-10-29 19:41 — Felhasználó
+
+~~~~~
+tedd meg az issuet és mehet a napló
+~~~~~
+
+
+### 2026-10-29 19:42 — Claude
+
+~~~~~
+Az issue kész (#111). Most a naplót frissítem: a transcriptből legenerálom a "mehet mindkettő" utáni részt, és hozzáfűzöm.
+~~~~~
