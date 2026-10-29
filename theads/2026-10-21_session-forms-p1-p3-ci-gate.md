@@ -1,6 +1,6 @@
 # Thread-napló — 2026-10-21 (Forms P1–P3, ci-gate)
 
-Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T19:08:59Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl` (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
+Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T19:08:59Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl`, a 2026-10-28T22:48Z-tól induló szakasz: `7895b2db-5143-4537-8eaa-3624850e408c.jsonl` (a #106–#108 lezárása, a `diff_gate` vakfoltjai, a `diff-mutation-rust` megszakadása; a szakasz a session közben, lezárt PR-onként gyarapodik) (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
 
 
 ### 2026-10-21 05:57 — Claude
@@ -14112,4 +14112,774 @@ Merge után a szál-napló és a memória frissítése jön.
 
 ~~~~~
 <bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-10-28 22:48 — Felhasználó
+
+~~~~~
+vedd fel a fonalat
+~~~~~
+
+
+### 2026-10-28 22:48 — Claude
+
+~~~~~
+Felvettem a fonalat. A helyzet 2026-10-28 reggeli állapotban:
+
+**Lezárva ma (cic-primitive-forms)**
+- #106 mergelve (`a3277de`): a quality gate kiírja a nevezőből kimaradt mutánsok arányát. A reviewer által talált hiba (a Go oldal az `UNKOWN exit code` hibákat nem számolta) javítva, a selftest fogja.
+- #108 mergelve (`3d8d03d`): a PR-os FULL futást cargo-gamma és go-mutants méri, az éjszakai FULL a klasszikus eszközöket tartja meg.
+- A szál-napló a #106-ig frissítve (`9e0d745`), a workdir `main` tiszta, nincs push-ra váró commit.
+
+**Nyitva**
+- **#107** `ReadDiff / read_diff`: a diff kanonikus bájtjainak visszaolvasása eseményekké, szigorúan, mindkét nyelven (`feat/read-canonical-diff`, utoljára 09:48 UTC-kor frissítve). Ez a P4 következő egysége. Nem néztem meg, hogy van-e rajta review vagy CI-eredmény.
+- A szál-napló és a memória (`project_p3_closed_p3b_state`) a #108-at és a #107-et még nem tartalmazza.
+- A workdir untracked fájljai (`ci-gate.yaml`, `session-transcript.py` stb.) régóta lógnak. Nem nyúltam hozzájuk.
+
+Melyikkel folytassuk?
+1. #107 állapota: CI, head, review, és ha zöld, a head-hez kötött merge-parancs.
+2. A napló és a memória pótlása a #108-cal.
+3. Valami más.
+~~~~~
+
+
+### 2026-10-28 22:48 — Felhasználó
+
+~~~~~
+hogy nézed meg a feladataidat ? 
+
+<pasted_content id="aa6b">
+Átnéztem a feltöltött `cic-primitive-forms-feat-ci-fast-full` projekt tényleges forráskódját, különösen a Go/Rust implementációkat, a CI-workflow-kat, a mutációs tesztelést és a `fast/full/diff` mód kiválasztását.
+
+Az eddigi kódalapú ellenőrzés során három konkrét hibát találtam, amelyekből kettő kritikus. Ezeket nem a dokumentáció alapján állapítottam meg: mindhárom problémás működést külön reprodukáltam.
+
+## Talált hibák
+
+Kritikus
+
+1\. Új Go-tesztfájl kikapcsolhatja a teszteket, mégis `diff` módot kap
+
+`tools/diff_gate.py:361–366`, `50–53`
+
+Az új `_test.go` fájlt a rendszer automatikusan ártalmatlan tesztbővítésnek tekinti. Csak a `TestMain` és `init` függvényeket kezeli külön, de a csomagszintű változóinicializálás is módosíthatja a tesztek futását.
+
+Reprodukció: egy eredetileg hibás Go-teszthez hozzáadtam egy tesztfájlt, amely inicializáláskor `os.Exit(0)`-t hív.
+
+Eredeti Go-teszt
+
+FAIL
+
+Új tesztfájllal
+
+PASS
+
+CI-besorolás
+
+`diff`
+
+Javítás: új tesztfájlokat csak akkor szabad biztonságos bővítésnek minősíteni, ha ellenőrizhetően nem változtatják meg a csomag inicializálását. Egyébként `full` mód szükséges.
+
+Kritikus
+
+2\. Rust éles kód kimaradhat a mutációs tesztelésből
+
+`tools/diff_gate.py:385–397`, `118–138`
+
+A kód az első `#[cfg(test)]` előfordulásától a fájl végéig minden módosítást tesztkódnak feltételez. Ez hibás, mert egy Rust-tesztmodult éles függvények is követhetnek.
+
+Reprodukcióként egy meglévő Rust-tesztmodul után új publikus függvényt adtam a forrásfájl végéhez.
+
+A besoroló tényleges eredménye
+
+```
+{
+  "mode": "diff",
+  "reasons": [],
+  "widen": {}
+}
+```
+
+A Rust mutációs ellenőrzésre kijelölt kódsorok halmaza üres maradt.
+
+Így az új függvény mutánsai nem kerülnek a diff-alapú mérésbe.
+
+Javítás: tényleges Rust-szintaxis alapján kell megkülönböztetni a tesztmodulokat és a production kódot. Amíg ez nincs meg, bizonytalan esetben `full` módra kell váltani.
+
+Magas
+
+3\. A paritásellenőrzés kivétellistája észrevétlenül bővíthető
+
+`tools/diff_gate.py:371–376`, `tools/parity/compare.py:153–158, 195–230`
+
+A `testdata/p1/parity-known.txt` tartalmazza az elfogadott Rust/Go eltéréseket. Ha ehhez új sort fűznek, a `diff_gate.py` ártalmatlan tesztadat-bővítésnek tekinti.
+
+A paritásellenőrzés azonban az új kivételt felhasználva egy korábban hibás eltérést elfogadottá tehet.
+
+Új, nem engedélyezett eltérés
+
+Exit 1
+
+Ugyanez a kivétellistába felvéve
+
+Exit 0
+
+CI-besorolás
+
+`diff`
+
+Javítás: az ismert eltérések listájának módosítását külön kell kezelni, nem általános append-only tesztadatként. Az új kivételekhez célzott jóváhagyás és ellenőrzés szükséges.
+
+## Tesztek és ellenőrzések
+
+CI- és scope-egységtesztek
+
+73 sikeres
+
+Evidence/workflow tesztek
+
+34 sikeres
+
+Quality gate hibainjektálásos önteszt
+
+94 eset
+
+Python szintaktikai ellenőrzés
+
+Sikeres
+
+Teljes Go/Rust termékteszt
+
+Nem futott le
+
+A teljes Go/Rust tesztfuttatás környezeti akadályba ütközött: a Go-projekt legalább 1.25-öt igényel, itt 1.23.2 érhető el, a Rust `cargo` pedig nincs telepítve. Emiatt a termékkód teljes futásidejű helyességéről nem állítok bizonyított eredményt.
+
+## Összegzés
+
+A `quality_gate.py` ellenőrzései a futtatott öntesztek alapján jól vizsgálják a hiányzó, duplikált és hibás mutációs riportokat. A legfontosabb feltárt gyengeség nem a riportok kiértékelése, hanem annak eldöntése, hogy milyen kódot kell egyáltalán ellenőrizni.
+
+A javítás sorrendje: először a Rust-éleskód felismerését, utána a Go-tesztfájlok biztonságos besorolását, végül a paritás-kivétellista kezelését javítanám. Mindhárom hibához érdemes a fenti reprodukciókból regressziós tesztet készíteni.
+
+A jelenlegi állapotban a `diff` besorolást nem tekinteném megbízható garanciának arra, hogy minden releváns módosítás megfelelő mutációs ellenőrzést kapott. Ez a feltárt CI-kódhibákra vonatkozó megállapítás, nem a teljes Go/Rust implementáció lezárt auditja.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-28 22:48 — Claude
+
+~~~~~
+A feladataimat a forrásokból olvasom ki, nem emlékezetből. Ma ezeket néztem: a `theads/` legutóbbi naplóját, a `git log`-ot és státuszt, a `gh pr list`-et a forms repón, a memória-indexet. Egy tennivaló-listám nincs. A #107 review- és CI-állapotát még nem néztem meg, ezért azt nem állítom.
+
+A beillesztett review konkrét állításait helyben ellenőrzöm, mielőtt bármit elfogadok.
+~~~~~
+
+
+### 2026-10-28 22:49 — Claude
+
+~~~~~
+Reprodukálom mindhármat a meglévő tesztek mintájára, a `main` (`3d8d03d`) `diff_gate.py`-jával.
+~~~~~
+
+
+### 2026-10-28 22:49 — Claude
+
+~~~~~
+Mindhárom állítás igaz a `main`-en (`3d8d03d`). A besorolást a repo saját `test_diff_gate.py` fixtúrájával futtattam, a `main` `diff_gate.py`-jával. Mindháromra ez jött ki: `mode: diff`, `reasons: []`.
+
+| # | Eset | Eredmény | Mit nem futtattam |
+|---|---|---|---|
+| 1 | Új `go/b_test.go`, csomagszintű `var _ = func(){ os.Exit(0) }()` | `diff`, a `kind` új fájlt "an addition"-nek veszi (`diff_gate.py:~359`) | A `go test`-et, de a PASS-ra váltás Go-szemantikából következik. |
+| 2 | Új `pub fn mul` a `rust/src/w.rs` `#[cfg(test)]` modulja után | `diff`, a Rust-tartományok üresek. A `test_from` az első `#[cfg(test)]`-től a fájl végéig tesztnek veszi a fájlt (`~385–397`). | A mutációs futást. A tartomány üres, ezért nincs mit futtatni. |
+| 3 | Sor hozzáfűzése a `testdata/p1/parity-known.txt`-hez | `diff`, a `data` ág szerint a hozzáfűzés addition | A `parity/compare.py`-t. A jelentés szerint a hozzáfűzött sor elfogadottá tesz egy eltérést. |
+
+**Eltérés a review-hoz képest.** A review a `feat-ci-fast-full` forrást nézte, én a `main`-t. A hibás ágak (`kind` / `top_level_addition` / `test_from`) viszont a `main`-en is megvannak.
+
+**A #2 súlyosabb, mint első ránézésre.** Az új éles függvény mutánsai kimaradnak a mérésből, és a kapu zöld marad. Ezt a vakfoltot a `test_diff_gate.py` sem fedi: a meglévő `test_a_new_unit_test_in_the_test_module…` esetnek csak az ellentéte hiányzik.
+
+**Javaslat a sorrendre** (a review sorrendjét követem). A `cfg(test)` modul végének kezelését kell kijavítani úgy, hogy a modul zárójelezett törzsét keresse, ne a fájl végéig tartson. Ez után jön a Go új tesztfájl (`TestMain`/`init` mellé a csomagszintű `var` inicializálás is), végül a `parity-known.txt` `full`-ra. Bizonytalan esetben mindhárom `full`. Mindhárom reprodukcióból regressziós teszt készül, és mindet hamisítani kell a javítás előtt (a kapu-vakfolt szabály szerint).
+
+Új branchen kezdjem a javítást a #2-vel (külön PR), vagy előbb mind a hármat egybe vegyem? Eddig nem írtam és nem commitoltam semmit.
+~~~~~
+
+
+### 2026-10-28 22:50 — Felhasználó
+
+~~~~~
+csináld meg mindegyiket és van egy 
+
+<pasted_content id="aa6b">
+#107
+·sinkog opened 13 hours ago
+Member
+·
+</pasted_content id="aa6b">
+
+ ami bukott
+~~~~~
+
+
+### 2026-10-28 22:53 — Claude
+
+~~~~~
+Tisztán mergelődött. Pusholom a PR-ágra, ami a #107 head-jét mozgatja és új CI-t indít.
+~~~~~
+
+
+### 2026-10-28 22:54 — Claude
+
+~~~~~
+Most a két bukó új tesztem. Megnézem, miért.
+~~~~~
+
+
+### 2026-10-28 22:54 — Claude
+
+~~~~~
+A javítás kész és lokálisan zöld. Pusholni és PR-t nyitni még nem fogok, mert azt külön kérésnek veszem. Összefoglaló:
+
+**#107 (`feat/read-canonical-diff`)**
+- A `main`-t tisztán mergeltem rá és pusholtam (`1d7bb83..39b6711`). Ez új CI-t indít.
+- A bukás oka nem tiszta. A `diff-mutation-rust` shardok futás közben "operation canceled" üzenettel álltak le (4–7 perc után, a limit 60 perc), nem mutáns-bukással. A korábbi zöld futás (`4ec17d4`) shardjai 10–12 percig futottak. Ez lehet runner-oldali (az `ubuntu-latest` Ubuntu 26.04-re vált), de nem bizonyítottam. Ha az új futás is így bukik, az ok nyomozása a következő lépés.
+
+**`diff_gate` javítás** (branch `fix/diff-gate-blind-spots`, worktree a scratchpadben, commit `d968884`, nincs pusholva)
+1. **Rust:** a `#[cfg(test)]` modul a zárójelezett törzsére korlátozódik (`cfg_test_modules`). A modul utáni éles kód újra a diff része, a le nem zárható modul `full`.
+2. **Go:** az új vagy bővített `_test.go` `full`, ha csomagszintű `var`-t vagy `import _` / `import .` side-effect importot ad hozzá.
+3. **Paritás:** a `testdata/p1/parity-known.txt` módosítása `full`.
+
+A 4 új regressziós tesztből 3 elbukik a régi gate-en (a 4. hiba helyett kivételt dob), az új kóddal mind zöld. A teljes `tools/` tesztkészlet: 110 teszt OK.
+
+**Nem fedi:** a `go test` tényleges `os.Exit` viselkedését és a `parity/compare.py` kimenetét nem futtattam, csak a besorolást.
+
+Pusholjam a javítás-branchet és nyissak PR-t `main`-re?
+~~~~~
+
+
+### 2026-10-29 05:40 — Felhasználó
+
+~~~~~
+visszaelenőrizted?
+~~~~~
+
+
+### 2026-10-29 05:40 — Claude
+
+~~~~~
+Nem mindent. A #107 push utáni CI-eredményt nem néztem meg, ezt most pótolom.
+~~~~~
+
+
+### 2026-10-29 05:40 — Claude
+
+~~~~~
+Az új headen (`39b6711`) ugyanaz bukik: csak a `diff-mutation-rust (0)`, a `quality` ennek következménye. Megnézem, hogy ugyanúgy megszakad-e.
+~~~~~
+
+
+### 2026-10-29 05:41 — Claude
+
+~~~~~
+Nem tudom megmondani biztosan az okot, mert itt nincs `cargo`, így a mutánst helyben nem tudtam lefuttatni.
+
+**Mit ellenőriztem.**
+- A #107 új headjén (`39b6711`, a `main` merge után) ugyanúgy bukik. A `diff-mutation-rust (0)` shard a mutációs lépésben "The operation was canceled" üzenettel áll le, nem mutáns-bukással. Ez a harmadik egymás utáni futás, mindig a 0. shard, tehát determinisztikus.
+- Az első napló szerint a megszakítás előtt az utolsó mutáns a `diffread.rs:155` `+=`→`-=` a `hex4`-ben. Az az egyetlen sor ilyen.
+
+**Mit nem ellenőriztem: az okot.** A hipotézisem: a `-=` visszaviszi a pozíciót, a `string()` ciklus újra és újra ugyanazt a `\u` escape-et olvassa, és közben a `Vec` korlátlanul nő. A runner memóriából kifogy, és kilövi a jobot, a 120 mp-es mutáns-timeout ezt nem előzi meg. Ez statikus olvasatból következik, futtatással nem igazoltam.
+
+**Mi lett volna még ellenőrizendő, és nem tettem.** A `diff_gate` javításomnál a `go test` és a `compare.py` tényleges kimenetét nem futtattam, csak a besorolást.
+
+**Javaslat a #107-re:** a `string()` ciklusba haladás-őr kerüljön (ha a pozíció nem lépett előre, hibával kilép). Ez a valódi olvasót is védi bemenet-hibára, és a mutáns timeout helyett tisztán "caught" lesz. Alternatíva: memóriakorlát (`ulimit -v`) a shard lépésben, de az csak elfedi a hibát. A védőkorlátot javaslom.
+
+Megcsináljam az őrt a #107 ágon? Akkor a hiányzó paritást is a Go-olvasóval egyeztetem, mert a `hex4` "a Go reader-rel azonos" viselkedésre hivatkozik.
+~~~~~
+
+
+### 2026-10-29 05:44 — Felhasználó
+
+~~~~~
+csináld meg az őrt a #107 ágon
+~~~~~
+
+
+### 2026-10-29 05:45 — Claude
+
+~~~~~
+A #107 ágon kész a `hex4` módosítás (`63fc6e4`), és pusholtam. Nem fordítottam le, mert itt nincs `rustc`/`cargo`, így a CI az első bizonyíték.
+
+Az őr helyett a forrást írtam át, mert egy `string()`-beli haladás-őrnek a határfeltétel-mutánsai észrevétlenül túlélnének. A `hex4` most `let end = self.at + 4`-ből számolja a végpontot, és `self.at = end`-del állítja be a pozíciót, nem `+= 4`-gyel. Így nincs olyan mutáns, ami a pozíciót hátrébb vihetné:
+- az `end` számításában a `+`→`-` miatt a `get` `None`-t ad, vagy debug-ban aritmetikai túlcsordulás panic jön;
+- a `+`→`*` más hosszú szeletet ad, ezt a meglévő `\u` tesztek elfognák.
+
+**Nem igazolt:** hogy ez volt az okozó. A végtelen ciklus-hipotézis meggyengült: a `-=` nettó −2 bájtot mozgatna visszafelé iterációnként, ami véges `usize`-túlcsordulás-panicba futna, kivéve ha a bemenet ciklust alkot. Ezért nem állítom, hogy a javítás megoldja. Ha a CI-n a `diff-mutation-rust (0)` ugyanúgy megszakad, a javítás nem érte el az okot, és onnan a pontos shard-napló kell.
+
+A #107 új CI-jét nézzem végig, és szóljak az eredményről?
+~~~~~
+
+
+### 2026-10-29 06:06 — Felhasználó
+
+~~~~~
+pusholtad?
+~~~~~
+
+
+### 2026-10-29 06:07 — Claude
+
+~~~~~
+Részben.
+- **#107 ág (`feat/read-canonical-diff`):** igen, pusholva. A távoli ág ellenőrizve `63fc6e4` (a `hex4` módosítás), előtte a `main`-merge `39b6711`.
+- **`diff_gate` javítás (`fix/diff-gate-blind-spots`, commit `d968884`):** nem. Csak lokális worktree-ben van, a távolin nincs ilyen ág. Erre kértem a megerősítést, és nem jött, ezért vártam.
+
+Pusholjam, és nyissak PR-t `main`-re?
+~~~~~
+
+
+### 2026-10-29 06:07 — Felhasználó
+
+~~~~~
+baszottul nem jött össze
+~~~~~
+
+
+### 2026-10-29 06:07 — Claude
+
+~~~~~
+Megnézem, mi bukott.
+~~~~~
+
+
+### 2026-10-29 06:07 — Claude
+
+~~~~~
+A fordítás átment, és a 0. shard már nem bukik. Most a 2. shard bukik, ezt nézem meg.
+~~~~~
+
+
+### 2026-10-29 06:08 — Felhasználó
+
+~~~~~
+[Request interrupted by user]
+~~~~~
+
+
+### 2026-10-29 06:08 — Felhasználó
+
+~~~~~
+a fix a feat/read-cannical-diff-ből ágazzon le és oda csatlakozzon vissza
+~~~~~
+
+
+### 2026-10-29 06:08 — Claude
+
+~~~~~
+Rendben: a `diff_gate` javítást a `feat/read-canonical-diff` fejére teszem (cherry-pick), ellenőrzöm, és visszamergelem abba az ágba.
+~~~~~
+
+
+### 2026-10-29 06:08 — Claude
+
+~~~~~
+Zöld a #107 tetején is. Visszamergelem a feature ágba (no-ff, hogy látszódjon az ág), és pusholom.
+~~~~~
+
+
+### 2026-10-29 06:08 — Claude
+
+~~~~~
+Megtörtént: a `diff_gate` javítás a `feat/read-canonical-diff` fejéről ágazott le (`fix/diff-gate-blind-spots-107`), és no-ff mergeként visszakerült az ágba. Pusholva: `63fc6e4..65aac0b`. Ellenőrizve: a tetején 110 teszt OK, 3 skipped.
+
+**A `diff-mutation-rust` bukás:** a `hex4` hipotézisem téves volt. A javítás után a 0. shard már nem bukik, viszont a 2. shard bukik ugyanúgy ("operation canceled"), és előtte nem volt TIMEOUT sor. Az utolsó naplósor a baseline (`ok Unmutated baseline`), utána 4 percig semmi, majd `interrupted`. A napló nem mondja meg, melyik mutáns futott éppen. Tehát vagy egy mutáns kimerít valamit, vagy a runner ér véget (a bukás shardról shardra vándorol, ez inkább az utóbbit sugallja). Eldönteni nem tudom, `cargo` nélkül itt nem reprodukálható.
+
+Az új head (`65aac0b`) CI-jére várok, mielőtt bármit állítok. Szóljak, ha kész?
+~~~~~
+
+
+### 2026-10-29 06:17 — Felhasználó
+
+~~~~~
+miért fut a fast és a diff ág is?
+~~~~~
+
+
+### 2026-10-29 06:17 — Claude
+
+~~~~~
+Mert a javítás miatt a #107 `diff`-ből `full`-ba váltott, és a `full` PR-on a workflow a diff jobokat is futtatja.
+
+**Bizonyíték.** Az előző headen (`63fc6e4`) csak `diff-*` jobok futottak, a legutóbbin (`65aac0b`) megjelentek a `fast-list` és a `fast-mutation-*` shardok is.
+
+**Ok:** a `65aac0b` merge a `tools/diff_gate.py`-t módosítja. Ez a `BUILD_CONFIG` listában van (`diff_gate.py:41`, "changes how the gate measures"), tehát a `scope` `full`-t mond, és `engine=fast`-ot választ. A `docs/FAST-FULL.md` táblázata szerint a `full` PR-on a `fast-*` job (cargo-gamma, cargo-gomutants) **és** a klasszikus diff job is fut a módosított sorokon. A `p1.yml` ezt valósítja meg: a `diff-plan`, `diff-mutation-*` és `diff-gamma` feltétele `mode == 'diff' || engine == 'fast'`.
+
+**Következmény.**
+- A #107 CI-ja a gate-javításom miatt hosszabb és drágább lett. A `quality` job azt ellenőrzi, hogy pontosan a választott motor jobjai futottak.
+- A `diff-mutation-rust` shardok, amik korábban megszakadtak, most is futnak. Ezért ugyanaz a bukás újra előjöhet.
+- Ha a #107 CI-ját el akarod választani a gate-javítástól, a javítás külön PR-ban `main`-re menjen, ne a #107 ágon. Ez ellentmond annak, amit az előbb kértél. Te döntöd el.
+
+A `scope` kimenetét nem olvastam ki a futásból, a `full`/`fast` besorolást a jobok jelenlétéből és a kódból következtettem.
+~~~~~
+
+
+### 2026-10-29 06:18 — Felhasználó
+
+~~~~~
+akkor elvárt működés?
+~~~~~
+
+
+### 2026-10-29 06:18 — Claude
+
+~~~~~
+Igen, ez a tervezett működés, és nem hiba. A gate-fájl módosítása szándékosan `full`-t vált ki, hogy a gate-et ne a saját, módosított szabályai mérjék. A `full` PR-on pedig a `docs/FAST-FULL.md` szerint a `fast-*` és a klasszikus `diff-*` jobok együtt futnak.
+
+Ami nem elvárt, az a `diff-mutation-rust` shard megszakadása. Az a #107 saját kódjához tartozik (`diffread.rs`), nem a gate-hez. A `full` mód nem okozza, de megszakadásra hosszabb futás több esélyt ad.
+
+A besorolást a jobok jelenlétéből és a kódból következtettem, a `scope` tényleges kimenetét nem olvastam ki a futásból.
+~~~~~
+
+
+### 2026-10-29 06:25 — Felhasználó
+
+~~~~~
+bukott egy diff rust rész
+~~~~~
+
+
+### 2026-10-29 06:25 — Claude
+
+~~~~~
+Újra a `diff-mutation-rust` bukott, a 2. shard (`123294002387`): 5m27s után "The operation was canceled". A másik két Rust shard (0, 3) még fut, a napló a futás végéig nem érhető el.
+
+Ami a három futásból látszik:
+- A `fail-fast: false` és a 60 perces időkorlát nem ok: egyik sem teljesült.
+- A bukás shardról shardra **vándorol**: 3 futás a 0. shardon (215 mutáns), 2 futás a 2. shardon (213 mutáns). Egy véletlen runner-hiba nem követné a mutánsok számát, ezért most egy konkrét mutánst gyanítok: az 5. ismétlésnél már nem a `hex4`, hanem egy másik, ami erőforrást fogyaszt és kilövi a runnert. A `diffread.rs` mutánsai közül kell megtalálni.
+- A cargo-mutants naplója csak a **befejezett** mutánsokat írja ki, az éppen futót nem, és a megszakadt shard után az artifact feltöltés is kimarad. A CI-ból tehát nem derül ki, melyik az.
+
+**Eldönteni itt nem tudom**, mert nincs `cargo`/`rustc`. Két út van:
+1. Telepítem a Rust toolchaint és a `cargo-mutants@27.1.0`-t ide, és futtatom a `diffread.rs` mutánsait memóriakorláttal (`ulimit -v`) a gyanúsra. Letöltést és telepítést jelent a gépen, ehhez a jóváhagyásod kell.
+2. A workflow shard lépésébe `ulimit -v` memóriakorlátot teszek és a mutáns-naplót is feltöltöm hiba esetén, így a következő bukás megmondja az okot. Ez a CI-t módosítja, tehát megint `full` mód.
+
+Melyiket?
+~~~~~
+
+
+### 2026-10-29 06:56 — Felhasználó
+
+~~~~~
+1
+~~~~~
+
+
+### 2026-10-29 06:56 — Claude
+
+~~~~~
+Telepítem a Rust toolchaint (a projekt `1.99.1` pinje) és a `cargo-mutants@27.1.0`-t a scratchpadbe, a saját profilodat nem módosítva.
+~~~~~
+
+
+### 2026-10-29 06:57 — Claude
+
+~~~~~
+Baseline zöld. Futtatom a `diffread.rs` mutánsait 6 GB memóriakorláttal és 120 mp-es timeouttal, a CI-val megegyező beállítással. Háttérben megy, naplóba.
+~~~~~
+
+
+### 2026-10-29 06:57 — Claude
+
+~~~~~
+A lokális mutációs futás elindult a háttérben (a `diffread.rs` összes mutánsa, 6 GB-os korláttal). Amint végez, értesítést kapok, és megnézem, melyik mutáns fogyaszt erőforrást vagy fut ki timeoutra. Addig nem állítok semmit az okról.
+~~~~~
+
+
+### 2026-10-29 06:58 — Claude
+
+~~~~~
+Ez az értesítés csak az indító parancs végét jelenti (`echo started`), nem a mutációs futásét. Megnézem, hol tart a tényleges futás.
+~~~~~
+
+
+### 2026-10-29 06:58 — Claude
+
+~~~~~
+Még fut: 213 mutánst talált, és eddig egyet sem fejezett be. Várok, és a haladást a naplóból kérem le, nem találgatok.
+~~~~~
+
+
+### 2026-10-29 06:58 — Claude
+
+~~~~~
+A figyelő él: a lokális futás minden MISSED, TIMEOUT, ERROR vagy memória-eseményét jelzi, és a végén az összesítést. Eddig egyetlen mutáns sem fejeződött be, ezért nincs mit állítanom.
+~~~~~
+
+
+### 2026-10-29 07:01 — Claude
+
+~~~~~
+Az első esemény: `diffread.rs:137` `+=`→`*=` a `Reader::number`-ben, TIMEOUT 120 mp után. Ez egy másik mutáns, mint a `hex4`-es, és itt még nincs memória-hiba, csak lassú vagy végtelen futás. A futás tart, folytatom a figyelést.
+~~~~~
+
+
+### 2026-10-29 07:05 — Claude
+
+~~~~~
+Második TIMEOUT: `diffread.rs:189` `+=`→`-=` az `escape`-ben. Ez ugyanabba a családba tartozik, mint a `hex4`: a pozíció hátrafelé mozog, a `string()` ciklus nem fejeződik be. A `hex4`-et már javítottam, ezt még nem.
+
+**Amit ez bizonyít, és amit nem.** Hogy a `diffread.rs`-ben több mutáns is végtelen ciklust csinál, igaz. A CI-n való megszakadás okaként viszont nem bizonyított: itt a 6 GB-os memóriakorlát mellett a mutáns TIMEOUT-ra futott (nem memóriahibára), a CI-runneren nincs ilyen korlát. Ha a ciklus memóriát is növeszt, ott ez magyarázná a kilövést, de a memóriahasználatot nem mértem.
+
+Megvárom a teljes futást, mert több ilyen mutáns lehet. Utána egyszerre javítom az összeset, ugyanazzal a módszerrel (kiszámolt végpont hozzárendelése, nem léptetés).
+~~~~~
+
+
+### 2026-10-29 07:14 — Claude
+
+~~~~~
+A lokális futás lezárult: 213 mutáns, 157 caught, 54 unviable, **2 timeout, 0 missed**, nincs összeomlás. A `hex4`-es mutáns, amely korábban TIMEOUT volt, a javításom után már nem szerepel a timeoutok között. Ez a javítás hatásának az egyetlen közvetlen bizonyítéka.
+
+**A #107 CI jelenleg** (`65aac0b`): 66 zöld, csak a `diff-mutation-rust (2)` bukott (5m19s), és ebből a `quality`. A többi Rust shard átment, a 0. shard is, ami korábban háromszor megszakadt.
+
+**Ami nincs megoldva.** A 2. shard CI-n megszakad, helyben viszont a teljes fájl végigfut. A különbség: a CI-n nincs memóriakorlát, és a shardok a teljes diffet (nem csak a `diffread.rs`-t) mérik. A 2. shard mutánsait helyben nem futtattam. A 2. shard pontos mutánslistáját a CI `shard_plan.py select` lépése adja, azt kell lefuttatnom helyben.
+
+**A két megmaradt timeout** (`diffread.rs:137` `*=` a `number`-ben, `:189` `-=` az `escape`-ben) ugyanolyan hátrafelé-mozgás családba tartozik. Ezeket is lehet strukturálisan javítani. A 120 mp-es timeout miatt viszont eddig is csak "timeout"-ként számolódtak, nem megszakadást okoztak.
+
+Következő lépés: a 2. shard mutánsainak helyi lefuttatása a `shard_plan.py`-val. Menjek erre, vagy előbb a két timeoutot javítsam?
+~~~~~
+
+
+### 2026-10-29 07:28 — Claude
+
+~~~~~
+A figyelő lejárt, de a futás már lezárult és az eredményt közöltem (213 mutáns, 157 caught, 54 unviable, 2 timeout, 0 missed). Nincs mit újra bekapcsolni.
+
+Az utolsó kérdésemre még nem jött válasz: a 2. shard mutánsait futtassam helyben a `shard_plan.py`-val, vagy előbb a két megmaradt timeoutot javítsam?
+~~~~~
+
+
+### 2026-10-29 07:29 — Felhasználó
+
+~~~~~
+pushold a diff_gate javítást
+~~~~~
+
+
+### 2026-10-29 07:29 — Claude
+
+~~~~~
+Pusholtam: a `fix/diff-gate-blind-spots-107` ág most a távolin is megvan (`df23878`), a `feat/read-canonical-diff` fejéről ágazik le. Ugyanez a commit már benne van a `feat/read-canonical-diff` ágban is, a `65aac0b` merge révén, tehát a #107 PR-ban már látszik.
+
+A korábbi `fix/diff-gate-blind-spots` ágat (a `main`-ről, commit `d968884`) nem pusholtam, mert a `feat`-ről indított ág leváltja. Töröljem a lokális példányát?
+
+Pull requestet nem nyitottam.
+~~~~~
+
+
+### 2026-10-29 07:32 — Felhasználó
+
+~~~~~
+107 PR hozd rejtve és arra tedd rá
+~~~~~
+
+
+### 2026-10-29 07:32 — Claude
+
+~~~~~
+Nem vagyok biztos, hogy jól értem: a "rejtve" lehet elírás.
+
+- Ha **"hozd rendbe"**, akkor a #107-et kell zöldre vinni. A `diff_gate` javítás már rajta van (`65aac0b`), a hátralévő rész a bukó `diff-mutation-rust (2)` shard.
+- Ha **draftba tegyem** (rejtve = nem review-ra kész), azt a `gh pr ready --undo 107` csinálja. A PR látható marad, csak draft lesz, és a merge-et blokkolja.
+- Ha valami **más**, írd le egy mondatban.
+
+Melyik?
+~~~~~
+
+
+### 2026-10-29 07:33 — Felhasználó
+
+~~~~~
+mergeld rá a fix/diff-gate-blind-spots-107 a feat/read-canonical-diff ágra
+~~~~~
+
+
+### 2026-10-29 07:33 — Claude
+
+~~~~~
+Ez már megtörtént, nincs mit mergelni. Az `origin/fix/diff-gate-blind-spots-107` benne van az `origin/feat/read-canonical-diff`-ben: a `65aac0b` a no-ff merge, a fix ágon 0 olyan commit van, ami a feature ágban nincs meg.
+
+Ennek a mergenek a CI-ja fut a #107-en. Ott 66 check zöld, csak a `diff-mutation-rust (2)` bukik, és ebből a `quality`.
+~~~~~
+
+
+### 2026-10-29 07:34 — Felhasználó
+
+~~~~~
+futtasd a 2. shard mutánsait helyben
+~~~~~
+
+
+### 2026-10-29 07:35 — Claude
+
+~~~~~
+213 mutáns, 4 shard, pont mint a CI-n. Kiválasztom a 2. shardot ugyanazzal a `shard_plan.py`-val, és futtatom úgy, hogy közben mérem a memóriahasználatot.
+~~~~~
+
+
+### 2026-10-29 07:35 — Claude
+
+~~~~~
+A 2. shard 53 mutánsa lokálisan fut, a CI-val megegyező kiválasztással (`shard_plan.py verify` rendben). A figyelő jelez minden MISSED, TIMEOUT, ERROR eseményt és az összesítést, a memóriamintákat a végén összevetem.
+~~~~~
+
+
+### 2026-10-29 07:36 — Felhasználó
+
+~~~~~
+mondd, mi lett az eredmény
+~~~~~
+
+
+### 2026-10-29 07:36 — Claude
+
+~~~~~
+Még fut, eredmény nincs. Eddig csak a baseline ment le (zöld), egyetlen mutáns sem fejeződött be.
+
+A memóriamintában a használt memória 19,5 GB-ról 20,5 GB-ra emelkedett a mérés elejétől, de a gép alapterhelése (egyéb folyamatok) is ilyen magas, ezért ebből még nem következtetek semmit.
+
+Amint a futás végez, jön az értesítés a pontos összesítéssel (MISSED/TIMEOUT/ERROR, és hogy a memória elérte-e a plafont). Addig nem mondok eredményt.
+~~~~~
+
+
+### 2026-10-29 07:39 — Claude
+
+~~~~~
+A 2. shard helyben **lefutott, és nem bukott**: 53 mutáns, 41 caught, 12 unviable, **0 timeout, 0 missed**, nincs megszakadás. Ez 3 perc alatt lett kész (a CI-n a megszakadás 5 perc körül történt).
+
+**Memória.** A használt memória csúcsa 26,5 GB volt (indulásnál 19,6, a végén 18,7 GB), vagyis nagyjából +7 GB átmenetileg. A gépen más folyamatok is futnak, ezért a pontos értéket nem tulajdonítom egyetlen mutánsnak. Viszont 7 GB megegyezik egy GitHub-runner memóriájával (~7 GB), ami összhangban van azzal, hogy ott kilövik a jobot. Ez egy gyanú, nem bizonyíték.
+
+**Mit zár ki ez.** A 2. shard mutánsai a kódban nem hibásak: helyben mind lezárulnak. A CI-megszakadás tehát nem logikai hiba, hanem erőforrás vagy runner-környezet.
+
+**Mit nem tudok.** Melyik mutáns okozta a memória-emelkedést, és hogy a CI-n tényleg az a kiváltó ok. Ehhez mutánsonkénti mérés kell.
+
+Következő lépésként a javaslatom: a CI shard-lépésébe memóriakorlát (`ulimit -v`, pl. 5 GB) és hiba esetén a `mutants.out` feltöltése. Így egy memóriát felfaló mutáns "caught"-ként (allokációs hiba) lezárul, a megszakadás helyett. Ez módosítja a `p1.yml`-t, tehát a #107 marad `full` módban. Csináljam meg?
+~~~~~
+
+
+### 2026-10-29 07:40 — Felhasználó
+
+~~~~~
+csináld meg
+~~~~~
+
+
+### 2026-10-29 07:40 — Claude
+
+~~~~~
+Megcsinálom a `diff-mutation-rust` lépésben: 6 GB-os virtuálismemória-plafon (ezzel a beállítással futott végig helyben mind a 213 mutáns) és a `mutants.out` feltöltése `always()`-szel, hogy megszakadás után is megmaradjon a napló.
+~~~~~
+
+
+### 2026-10-29 07:40 — Claude
+
+~~~~~
+Kész és pusholva a #107 ágra (`65aac0b..0977fbc`). Csak a `.github/workflows/p1.yml` változott (+10 −1), az `upstream/` munkafa-mappám nincs benne.
+
+**Mi változott a `diff-mutation-rust` shard lépésben**
+- A `cargo mutants` hívás `ulimit -v 6291456` (6 GB) alatt fut. Ezzel a beállítással futott végig helyben mind a 213 mutáns, a CI-val megegyező lekérdezéssel.
+- Új feltöltési lépés `if: always()` feltétellel (`rust-diff-mutants-log-<shard>`): a per-mutáns napló (`mutants.out`) megszakadás után is megmarad, és megmondja, melyik mutáns futott.
+
+**Ellenőrizve:** a YAML betölthető, a `tools/` tesztek 110 OK (3 skipped).
+
+**Nincs ellenőrizve:** hogy ez a CI-n megoldja-e a megszakadást. Az ok még gyanú (a helyi csúcs +7 GB egy mutáns alatt, ami egy runner memóriájával egyezik). A `p1.yml` módosítása a `diff_gate.py` szerint önmagában nem vált ki `full`-t (csak megjegyzés), de a #107 az előző javítás miatt úgyis `full` marad.
+
+**Két kockázat.** Ha 6 GB virtuális memória a runneren szűk, a build vagy a tesztek hibásan "elbukhatnak". Helyben ez nem történt meg. A `quality-mutation-rust` (teljes futás) és a többi `cargo mutants` hívás nem kapta meg a plafont, csak a diff shard.
+
+Az új CI-t figyeljem, és szóljak, ha kész?
+~~~~~
+
+
+### 2026-10-29 07:45 — Felhasználó
+
+~~~~~
+mi volt a hiba oka?
+~~~~~
+
+
+### 2026-10-29 07:46 — Claude
+
+~~~~~
+Biztosan nem tudom, és ezt nem mondom ki tényként.
+
+**Ami bizonyított**
+- A `diff-mutation-rust` shardok a mutációs lépésben "The operation was canceled" üzenettel álltak le, nem mutáns-bukással. Hat egymás utáni futás, a bukó shard vándorolt (0., majd 2.).
+- A `diffread.rs` mutánsai helyben mind lezárulnak (213 és a 2. shard 53 mutánsa: 0 missed, 0 összeomlás). Tehát nem logikai hiba a kódban.
+- Helyben egy mutáns alatt a használt memória +7 GB-ot ugrott a gépen. Ez nagyjából egy GitHub-runner memóriája.
+
+**Ami gyanú, nem bizonyíték**
+- Hogy a megszakadást a runner kilövése okozza memóriahiány miatt, és hogy ezt a `diffread.rs` egyik hátrafelé léptető mutánsa váltja ki. Mérést mutánsonként nem végeztem, a CI-n pedig nincs napló arról, melyik mutáns futott.
+
+**Ami megdőlt**
+- Az első hipotézisem (a `hex4` `+=`→`-=`) téves volt, a javítása után a bukás csak továbbvándorolt.
+
+**Most:** a #107 új headje (`0977fbc`) CI-ja fut (29 zöld, 36 függőben). Ha a `diff-mutation-rust` most átmegy, az a memóriaplafon mellett szól, de akkor is csak azt bizonyítja, hogy a plafon eltünteti a tünetet, nem azt, hogy ez volt a mechanizmus. Ha megint megszakad, az új feltöltött `rust-diff-mutants-log-*` artifact megmondja, melyik mutáns futott.
+
+Szóljak, ha a CI kész?
+~~~~~
+
+
+### 2026-10-29 08:05 — Claude
+
+~~~~~
+A figyelő lejárt, de az eredményt már közöltem (a 2. shard helyben 53 mutáns, 0 timeout, 0 missed). Újra bekapcsolni nem kell.
+
+A #107 CI-ja (`0977fbc`) még fut. Amint kész, megnézem a `diff-mutation-rust` shardokat, és szólok, mi lett, a bukás okát addig nem állítom.
+~~~~~
+
+
+### 2026-10-29 08:14 — Felhasználó
+
+~~~~~
+lefutott
+~~~~~
+
+
+### 2026-10-29 08:15 — Claude
+
+~~~~~
+```
+! gh pr merge 107 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 0977fbc4925848943dbe418620f61e062c91973b
+```
+
+Merge után a szál-naplót és a memóriát frissítem (a #108 és #107 is hiányzik belőlük).
+~~~~~
+
+
+### 2026-10-29 08:22 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 107 -R CentralInfraCore/cic-primitive-forms --squash --match-head-commit 0977fbc4925848943dbe418620f61e062c91973b</bash-input>
+~~~~~
+
+
+### 2026-10-29 08:22 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-10-29 08:22 — Claude
+
+~~~~~
+A #107 mergelve (`8acac86`, squash). Ellenőrizve a GitHubon: `MERGED`.
+
+A naplót és a memóriát még nem írtam. Mielőtt hozzányúlok, két dolgot tisztázok:
+
+1. **Szál-napló.** A legutóbbi naplóm (`2026-10-21_…`, `2026-10-23_…`) mellé ennek a session-nek új napló kell. A szabály szerint csak transcript, UTC, lezárt PR-onként commitolva. A `tools/session-transcript.py` a `.jsonl`-ból generálja. Ezt a session `.jsonl`-ját még nem azonosítottam, és a generált kimenetet commit előtt titokra át kell nézni.
+2. **Memória.** A `project_p3_closed_p3b_state`-et frissíteném: #106, #108 és #107 lezárva. Plusz egy új tanulság: egy gate-fájl módosítása szándékosan `full` módot vált ki, és a `diff-mutation-rust` megszakadás tünete a 6 GB-os plafonnal szűnt meg, az oka nem bizonyított.
+
+Mehet mindkettő? A naplót a workdir `main`-jére commitolom, és nem pusholom, amíg nem szólsz.
+~~~~~
+
+
+### 2026-10-29 09:55 — Felhasználó
+
+~~~~~
+mehet mindkettő
 ~~~~~
