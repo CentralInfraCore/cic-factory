@@ -15215,3 +15215,366 @@ tedd meg az issuet és mehet a napló
 ~~~~~
 Az issue kész (#111). Most a naplót frissítem: a transcriptből legenerálom a "mehet mindkettő" utáni részt, és hozzáfűzöm.
 ~~~~~
+
+### 2026-10-29 19:44 — Felhasználó
+
+~~~~~
+mit szolsz ehhez a tervhez?
+
+<pasted_content id="aa6b">
+Szerintem most térjünk vissza a Forms fejlesztéséhez. A CI-t nem optimalizálnám tovább önmagáért. A három vizsgálati mód kialakult, a legutóbbi FULL sikeres volt, és a mutációs eredmények alapján a továbbiakban a feltárt gyengeségeket javítsuk.
+
+Most ellenőriztem a GitHubot: a `cic-primitive-forms` `main` jelenleg `1a41018a`, nincs nyitott PR.
+
+## Javasolt útvonal
+
+1\. P4 — Patch szerződésének megerősítése
+
+Ez legyen a következő PR. A közvetlenül átadott `PatchDiff` jelenleg elfogadhat több `value_change` eseményt ugyanarra az útvonalra. Ezt szigorúan vissza kell utasítani.
+
+Az ADR 0013-ban rögzítjük az elutasítás hibakódját és prioritását, majd Rustban és Go-ban negatív vektorokkal, differential és mutációs ellenőrzéssel bizonyítjuk a javítást.
+
+2\. ReadDiff — a bizonyítás kiterjesztése
+
+Új Rust/Go differential és fuzz target. Nem a mutation score kozmetikázására, hanem arra, hogy a két független parser között eddig fel nem ismert eltéréseket találjunk.
+
+3\. P5-0 — Resolve → Materialize → Receipt
+
+Ez legyen a következő nagy fejlesztés. Snapshothoz kötött feloldás, determinisztikus materializálás, valamint a bemenetet és eredményt összekötő receipt.
+
+Ehhez nem feltétlenül szükséges előbb a teljes P3b szerkesztési képességet vagy az összes P4 patch-eseményt megvalósítani.
+
+## Mit csináljon ezalatt a CI?
+
+Semmi különöset: dolgozzon értünk, ne mi dolgozzunk folyamatosan érte.
+
+DIFF
+
+PR-változások
+
+FAST FULL
+
+Teljes kód, gyorsított mutációk
+
+NIGHTLY FULL
+
+Main, klasszikus mutációk
+
+A sávok külön vizsgálati módokat jelölnek, nem összehasonlítható pontszámokat.
+
+A szabály maradjon:
+
+- A 90% kemény alsó határ.
+- A túlélő mutánsokat elemezzük, és a valódi teszthiányokat vagy kódhibákat javítjuk.
+- A javításra írt regressziós tesztek a további ellenőrzések részei maradnak.
+- A nightly eredménye később bővíti a bizonyítottan vizsgált hibaváltozatok körét. Ha piros, incidens és célzott javítás következik.
+
+Egyetlen külön governance-kört tartanék még szükségesnek: a Factory proof-követelményeinek szinkronizálását és a #3 formális lezárását. Ezeket nem tenném a P5 fejlesztésének általános blokkolójává, de ne maradjanak nyomtalanul nyitva.
+
+Konkrét döntésem: következő PR a P4 duplikált patch-események elutasítása és bizonyítása. Utána ReadDiff fuzz/differential, majd P5-0.
+
+Így megmarad az eredeti CIC-fejlesztési filozófia: új képesség → bizonyítás → megtalált hibák javítása → következő képesség. Nem ragadunk bele a CI végtelen finomhangolásába.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-29 19:44 — Claude
+
+~~~~~
+Mielőtt véleményt mondok, megnézem, igaz-e a terv kiinduló állítása (a `PatchDiff` több `value_change`-et fogad el ugyanarra az útvonalra).
+~~~~~
+
+
+### 2026-10-29 19:45 — Claude
+
+~~~~~
+Még egy ellenőrzés hátravan: a duplikált útvonal tényleg átmegy-e, vagy a 3–6. sor már fogja.
+~~~~~
+
+
+### 2026-10-29 19:45 — Claude
+
+~~~~~
+A terv jó, és a kiinduló állítás igaz. Két kiegészítésem van.
+
+**Ellenőrzés.** A `go/patch.go` (`origin/main`, `1a41018`) sehol nem néz duplikált útvonalat. Két `value_change` ugyanarra az útvonalra mindkét `previous`-ellenőrzésen átmegy, mert az ellenőrzés az eredeti A-hoz képest történik (8–6. sor). Utána az alkalmazás sorban fut, a második felülírja az elsőt, és a `Replaced` kétszer tartalmazza az útvonalt. A hiányt Go-ban láttam. A Rust oldalt nem néztem meg, de a 60 patch-vektor és a differential azt sugallja, hogy ott is ugyanígy van. Ezt a PR első lépéseként kell lemérni: egy negatív vektor, amely bukik a régi kódon.
+
+**Mit tennék másképp.**
+1. **Az ADR 0013 hibakódjánál ne új kódot vegyetek fel.** A 3. sor (`PATCH_UNSUPPORTED_EVENT`) már most is "olyan esemény, amit a 2. szakasz nem alkalmaz". A duplikált útvonal természetes helye ott van, vagy egy külön `PATCH_DUPLICATE_TARGET`. A prioritás kényes: a duplikáció vizsgálata a 3. és a 4. sor közé vagy a 4–6. sorba kerüljön? Ezt az ADR-ben ki kell mondani, mert a "sorban az első hiba" szabály ettől függ.
+2. **A `ReadDiff` felől duplikáció nem jöhet.** A diff kanonikus, ezért ez csak a közvetlenül átadott `PatchDiff` hibája. A PR leírásában ezt ki kell mondani, hogy ne tűnjön a #107 hibájának.
+3. **Az "utána ReadDiff fuzz/differential" sorrendet megcserélném, vagy legalább nem tekinteném szigorúnak.** A fuzz olcsó, és a duplikációhoz hasonló, eddig fel nem ismert eltéréseket találhat. A P4 PR előtt vagy mellette futtatva talán további patch-hibát is előhoz.
+4. **A "90% kemény alsó határ" mellé tegyétek ki az #111-et.** A 6 régi missed mutáns a terv szabálya szerint "valódi teszthiány", tehát a `DefaultValue::eq` párnak a P4 vagy a P5-0 előtt kell valakinek a feladatának lennie. Nem kell blokkolónak lennie, de a tervből ne maradjon ki.
+5. **A governance-kör (Factory proof-követelmények, #3).** Egyetértek, hogy ne blokkoljon. A #3 viszont még nyitott a "P0: close the contract decisions" címmel. Érdemes egy lezáró komment és egy dátum, hogy ne maradjon nyomtalanul nyitva.
+
+**P5-0.** A sorrend rendben van. A "nem kell hozzá a teljes P3b" állítást a terv indoklás nélkül mondja ki, ezért a P5-0 ADR-jébe kerüljön be, hogy melyik P3b-képességre építi a Materialize-t, és melyikre nem.
+
+Kérsz a P4 PR-hoz egy elő-ellenőrzést (Rust-oldali duplikáció-repro, a hibakód-javaslat az ADR-hez), vagy a terv jóváhagyva indulhatok?
+~~~~~
+
+
+### 2026-10-29 19:47 — Felhasználó
+
+~~~~~
+csináld az elő-ellenőrzést
+~~~~~
+
+
+### 2026-10-29 19:48 — Claude
+
+~~~~~
+Az elő-ellenőrzés kész. A hiba Rustban megvan, Goban nem tudtam futtatni.
+
+**Rust (futtatva, `origin/main` `1a41018`).** Két `value_change` ugyanarra az útvonalra elfogadva lett:
+
+| Eset | Eredmény |
+|---|---|
+| `$.mtu` 1→2 és 1→3 | **elfogadva**, a szöveg `mtu: 3`, `replaced=["$.mtu","$.mtu"]` |
+| `$.mtu` 1→2 és 1→2 | **elfogadva**, a szöveg `mtu: 2`, `replaced=["$.mtu","$.mtu"]` |
+
+Az első eset a súlyosabb: az utolsó esemény csendben felülírja az előzőt. Mindkét esemény `previous` értéke az eredeti A-hoz képest egyezik, ezért a konfliktus-ellenőrzés (6. sor) egyiket sem fogja meg. A `patch.rs`-ben nincs duplikáció-ellenőrzés (nincs `seen`, `duplicate` vagy `HashSet`).
+
+**Go (csak kódolvasással).** A `patch.go` ciklusai ugyanezt a szerkezetet követik, és nincs benne duplikáció-ellenőrzés. A helyi gépen nincs Go-eszköztár, ezért a Go-oldalt nem futtattam. A PR-ban a negatív vektort a CI-n kell látni bukni a régi Go-kódon is. A Go-eszköztár telepítését nem kezdtem el, mert a Rust-telepítésnél is kértél rá külön.
+
+**Amit tehát tudok, és amit nem:**
+- Megerősítve: a Rust-oldali hiba valós, és két különböző esetben is előáll.
+- Nem megerősítve: a Go-oldal futási viselkedése.
+- A `ReadDiff` felől duplikáció nem jöhet (a kanonikus diffben az útvonalak egyediek). Ezt a PR leírásában érdemes kimondani, hogy ne tűnjön a #107 hibájának.
+
+**Javaslat az ADR 0013-hoz.**
+- **Hibakód:** a `PATCH_UNSUPPORTED_EVENT` helyett külön `PATCH_DUPLICATE_TARGET`. A duplikáció nem "nem támogatott esemény", hanem egy érvényes események közti ellentmondás. Egy külön kód a hívónak is használhatóbb.
+- **Prioritás:** a 3. sor (esemény és cél támogatott-e) után, a 4. sor (útvonal-feloldás) előtt. A kanonikus útvonal-szöveg összehasonlítása elég, mert a feloldás nélkül is eldönthető. Így a duplikáció nem függ attól, hogy az útvonal feloldható-e.
+- **Összehasonlítás:** az útvonal kanonikus szövege szerint, mert két eltérő írásmód ugyanarra a pozícióra mutathat, például más sorrendű kulcsok egy összetett listaelem-azonosítóban. Ezt a vektorkészletnek is le kell fednie.
+
+A teszt-szkriptek a scratchpadben maradtak (a worktree `wtp`, tiszta állapotban), a repóban nem változtattam semmit.
+
+Indítsam a P4 PR-t az ADR-módosítással és a negatív vektorokkal?
+~~~~~
+
+
+### 2026-10-29 19:55 — Felhasználó
+
+~~~~~
+mehet
+~~~~~
+
+
+### 2026-10-29 19:55 — Claude
+
+~~~~~
+Dolgozom: a P4 PR-hoz azt nézem, hogy a corpus-ellenőrző enged-e duplikált útvonalú diffet a vektorok közé.
+~~~~~
+
+
+### 2026-10-29 19:56 — Claude
+
+~~~~~
+Dolgozom: a P4 PR kódját és az ADR-módosítást írom (Rust, Go, ADR 0013/0007, `codes.yaml`, doksi), utána jönnek a vektorok és a tesztek.
+~~~~~
+
+
+### 2026-10-29 19:57 — Claude
+
+~~~~~
+Most a dokumentumok: ADR 0013 (3a sor, kódtábla, módosítási szakasz), ADR 0007, `codes.yaml`, P4-doksi.
+~~~~~
+
+
+### 2026-10-29 19:58 — Claude
+
+~~~~~
+Dolgozom: a corpus-futtatókat (Go és Rust) tanítom meg a közvetlen diff-alakra, utána jönnek az egységtesztek.
+~~~~~
+
+
+### 2026-10-29 19:58 — Claude
+
+~~~~~
+Dolgozom: egységtesztek (Rust és Go tükörpár), utána futtatom a Rust-tesztek és a corpus-ellenőrző teljes körét.
+~~~~~
+
+
+### 2026-10-29 20:02 — Claude
+
+~~~~~
+Dolgozom: bizonyítom, hogy az új tesztek bukják a régi Rust-kódot (visszaállítom ideiglenesen a `patch.rs`-t, lefuttatom, majd visszateszem).
+~~~~~
+
+
+### 2026-10-29 20:05 — Claude
+
+~~~~~
+Egy ellenőrzés (`parity`) már 33 mp után bukott. Megnézem, mi.
+~~~~~
+
+
+### 2026-10-29 20:10 — Claude
+
+~~~~~
+A PR-t megnyitottam ([#112](https://github.com/CentralInfraCore/cic-primitive-forms/pull/112)), a CI még fut. Az eddigi állás: egy ellenőrzés bukott, 24 zöld, 34 még fut.
+
+**Mi készült el.** A hibát a Rust-kód javítja, és a Go-oldalon ugyanez a kód van:
+- **Szerződés:** az ADR 0013 3a. sora és a `PATCH_DUPLICATE_TARGET` kód, a 0007-es ADR, a `codes.yaml` és a P4-doksi frissítve.
+- **Kód:** Rust és Go, ugyanazzal a szerkezettel.
+- **Vektorok:** 11 új eset (60-ról 71-re). Mivel duplikált útvonalú diff nem lehet kanonikus, ezek `diff: {changes, version}` alakban, bájtok nélkül mennek. A `corpus_check.py` erre kapott szabályt és 4 seeded fault-ot. Mind a 199 fault pirosra váltja a megfelelő szabályt.
+- **Bizonyíték (Rust):** az új egységteszt és a corpus-teszt bukik a régi (`1a41018`) kódon, és zöld a javítással. A `cargo test`, a clippy és a fmt tiszta.
+- **Go:** helyben nem futtattam, mert nincs Go-eszköztár. A PR leírásában ezt kimondtam, a Go-oldalt a CI dönti el.
+
+**A bukott ellenőrzés a `parity`, és nem a javítás hibája.** A Rust–Go parser-differenciál egy új eltérést talált: az `ip: {gateway: g1, prefix: :4}` bemenetet. A Rust sima szövegként (`":4"`) fogadja el. A Go-oldalt nem tudtam helyben megnézni, de a CI-napló szerint ez a már ismert, 113 elemű "Rust ok, Go YAML_SYNTAX" osztályba tartozik. A `main` zöld volt, mert a generátor a corpus-szövegekből magol, és az új vektorok megváltoztatták a magkészletet. A hibát tehát a PR felszínre hozta, nem okozta.
+
+**Döntés, amit nem hozok meg helyetted.** Két út van:
+1. **A bemenetet felvenni a `testdata/p1/parity-known.txt` listára.** Ez a megszokott eljárás (289 ilyen sor van), de a `diff_gate` az ilyen sort `full`-ra állítja, és az elfogadott eltérések körét bővíti.
+2. **A parser-eltérést kijavítani**, vagyis eldönteni, hogy a flow-kontextusban a `:4` érvényes sima szöveg-e (ez a YAML-specifikáció szerint kérdéses). Ez külön, nagyobb munka, és nem ennek a PR-nak a tárgya.
+
+Az 1. útra hajlok, külön commitban, hogy a PR-ban látszódjon, mi az új és mi a parity-lista. A CI többi része is lefut még, és kérdés, hogy a `corpus` és a Go-tesztek zöldek-e. Megvárom, és csak utána kérdezlek.
+~~~~~
+
+
+### 2026-10-29 20:10 — Claude
+
+~~~~~
+A CI félúton van: 39 zöld, 1 bukott (`parity`), 19 még fut (mutációk, fuzz, seeded-defects). Ezek közt vannak a Go-tesztek is, amelyeket helyben nem tudtam futtatni. A zöldek között ott van a `corpus` és a patch-tesztek Rust-oldala is, ezért a javítás alapja áll.
+
+A `parity` bukása változatlan: az új vektorok megváltoztatták a generátor magkészletét, és az `ip: {gateway: g1, prefix: :4}` bemenet felszínre hozott egy Rust–Go eltérést. Ez a már ismert "Rust ok, Go YAML_SYNTAX" osztályba tartozik.
+
+**Kérdés:** felvegyem ezt a bemenetet a `testdata/p1/parity-known.txt` listára külön commitban, vagy inkább külön issue-ban kezeljük a `:4` flow-szövegkérdést, és a PR addig maradjon piros?
+
+A lista bővítése a `diff_gate` szerint `full` módot kapcsol, és az elfogadott eltérések körét növeli, ezért ezt a döntést rád hagyom. Addig a többi ellenőrzés lefutását várom.
+~~~~~
+
+
+### 2026-10-29 20:27 — Felhasználó
+
+~~~~~
+ez elbukott
+~~~~~
+
+
+### 2026-10-29 20:27 — Claude
+
+~~~~~
+A PR többi része zöld, csak a `parity` piros. A CI lefutott: 61 zöld, 1 bukott, 4 kihagyott. A Go-oldal tesztjei is zölden mentek át, tehát a `PATCH_DUPLICATE_TARGET` Go-megvalósítása működik a CI-ben, és a bukás nem tőle jön.
+
+A `parity` bukásáról közben kiderült valami:
+
+- **A `:4` flow-szövegben a Rust az eltérő.** A Go elutasítja, és a PyYAML is elutasítja (`expected the node content, but found ':'`). Csak a Rust fogadja el sima szövegként (`":4"`). Három parserből kettő refuzálja.
+- **Nem a PR okozza.** A parity-generátor a corpus-szövegekből magol. Az új vektorok megváltoztatták a magkészletet, és ez a már meglévő hibát hozta felszínre. A `main` azért volt zöld, mert ez a bemenet addig nem szerepelt.
+
+**Ajánlásom:**
+1. A `:4`-et ne vegyük fel a `parity-known.txt` listára, mert ott a Rust az eltérő, vagyis a lista egy Rust-hibát fedne el. Nyissunk helyette issue-t: "a Rust-parser elfogadja a flow-kontextusban a `:`-tal kezdődő sima szöveget, a Go és a PyYAML nem".
+2. Ennek a PR-nak a zöldítéséhez két út van: a Rust-parser javítása (kicsi, de külön vektort és differential-t kér), vagy az egy sornyi felvétel a listára, az issue-ra hivatkozva.
+
+Melyiket kéred? Én a Rust-javítást külön PR-ban csinálnám, a #112 pedig felvételsor nélkül várna rá. A PR így hosszabb ideig piros marad, viszont a lista nem fedi el a hibát.
+~~~~~
+
+
+### 2026-10-29 20:31 — Felhasználó
+
+~~~~~
+ebben a PRban csináld
+~~~~~
+
+
+### 2026-10-29 20:32 — Claude
+
+~~~~~
+Dolgozom: a Rust-parser javítás már bent van (`parse.rs`), most a hozzá tartozó tesztet írom és futtatom.
+~~~~~
+
+
+### 2026-10-29 20:33 — Claude
+
+~~~~~
+Dolgozom: a Rust-oldali javítás helyben tiszta, most commitolom, pusholom, és figyelem a CI-t.
+~~~~~
+
+
+### 2026-10-29 20:36 — Claude
+
+~~~~~
+A Rust-parser javítás fent van a #112-n (második commit), és a PR leírását frissítettem. A CI-n most fut az új ellenőrzés. Az eredményt akkor mondom, ha a `parity` lefutott.
+
+**Mi változott.** A Rust előszkennere most szintaktikai hibát ad, ha egy flow-kollekcióban egy `:` egy másik érték-jelző után áll (`{a: :4}`). Más refúzálások után jelzi, ahogy az olvasó a szintaktikai hibákat jelzi.
+
+**Amit helyben bizonyítottam:**
+- A `behaviour` új tesztje bukik a régi `parse.rs`-en, és zöld az újjal. Rögzíti azt is, ami érvényes marad (`a: :4` blokk-kontextusban, `{b: x:4}`, `- :4`), és hogy a későbbi tag továbbra is előbb kerül.
+- A generált parity-bemenetekre (33 180 db) a Rust-kimenetek régi és új kód közt **pontosan egyben** térnek el: az `ip: {gateway: g1, prefix: :4}` ok → `YAML_SYNTAX`. Más eredmény nem változott, így a parity-lista egyik tételét sem érinti.
+- A `cargo test`, a clippy és a fmt tiszta.
+
+**Ami nem bizonyított.** A Go-oldalt helyben nem futtattam, ezért azt, hogy a Go kimenete tényleg `YAML_SYNTAX`, a CI `parity` jobja mondja meg. A naplóból a "Rust ok, Go refused:YAML_SYNTAX" osztályra következtettem.
+~~~~~
+
+
+### 2026-10-29 20:36 — Claude
+
+~~~~~
+A `parity` zöld. A javítás tehát a Go-oldalon is bevált: a Rust és a Go kimenete egyezik, és a listához nem kellett hozzányúlni.
+
+A CI többi része (34 ellenőrzés) még fut: a mutációk, a fuzz-targetek, a seeded-defects és a diff-proof. A mutációs eredmény a legfontosabb, mert az mutatja meg, hogy az új tesztek tényleg rögzítik-e a duplikáció-ellenőrzést. Ha mind lefut, jelentem az eredményt, és a merge a te döntésed marad.
+~~~~~
+
+
+### 2026-10-29 20:51 — Felhasználó
+
+~~~~~
+elbukott
+~~~~~
+
+
+### 2026-10-29 20:51 — Claude
+
+~~~~~
+Dolgozom: a minőségi kapu a Rust-mutációkon bukott (24/30 = 80%, a küszöb 90%). Lekérem, melyik 6 mutáns élte túl.
+~~~~~
+
+
+### 2026-10-29 20:53 — Claude
+
+~~~~~
+Dolgozom: a javított segédfüggvény mutánsait helyben futtatom (6 mutáns), hogy a CI előtt lássam, megfogják-e a tesztek.
+~~~~~
+
+
+### 2026-10-29 20:54 — Claude
+
+~~~~~
+A kapu azért bukott, mert a saját új segédfüggvényemnek (`follows_value_indicator`) 6 mutánsa túlélt. A patch-javításhoz tartozó mutánsok mind elbuktak, a bukás a parser-javításból jött.
+
+**Mi volt a baj.** A függvény felesleges indexszámítást tartalmazott (`j < i && j > 0 && c[j-1] == ':'`), amelyet a hívó feltételei amúgy is garantáltak. Ezekre a fölös műveletekre a tesztek nem tudtak különbséget tenni.
+
+**Mit tettem.**
+- Egysorosra egyszerűsítettem: az utolsó nem-szóköz karakter `:`-e. A hívó feltétele (a `starts_scalar`) már biztosítja a szóközt, ezt kommentben rögzítettem.
+- A függvény 6 mutánsát helyben lefuttattam, és mind a 6-ot megfogták a tesztek. A CI-ban ez a kapu a bukott.
+- A `behaviour` tesztek, a clippy és a fmt tiszta. A változtatás a harmadik commit a #112-n.
+
+A CI újra fut (50 ellenőrzés). Az eredményt akkor jelentem, ha a `quality` kapu lefutott.
+~~~~~
+
+
+### 2026-10-29 21:19 — Felhasználó
+
+~~~~~
+mergelve
+~~~~~
+
+
+### 2026-10-29 21:19 — Claude
+
+~~~~~
+A #112 be van olvasztva (`e814126`, squash). A merge előtti utolsó fejen (`00bf38b`) minden ellenőrzés zöld volt: 62 sikeres, 4 kihagyott, nulla bukott. A `main` saját futása (`p1` és `corpus`) még folyik, ezt még nem láttam lefutni.
+
+A hátralévők közül kettő most esedékes:
+
+1. **Napló és memória.** Ezek a #112 lezárása miatt kerülnek be:
+   - A szál-napló új szakasza: a #111 issue, a duplikáció elő-ellenőrzése, a #112 és a parity-döntés.
+   - A memória `project_p3_closed_p3b_state.md` bejegyzése: P4 duplikált-patch lezárva, a Rust-parser `:`-eltérés javítva, és az új lecke (egy új vektor megváltoztatja a parity-generátor magkészletét).
+2. **Takarítás:** a `wtp` worktree és a három korábbi (`wt`, `wt107`, `wtcap`) a scratchpadben, valamint a hozzájuk tartozó lokális ágak.
+
+A napló és a memória kérés nélkül is járna, de a naplót csak a `main` zöld lefutása után szeretném lezárni, hogy ne állítsak olyat, amit nem láttam. Megvárom, aztán megcsinálom mindkettőt. A takarítást csak a te jelzésedre.
+~~~~~
+
+
+### 2026-10-29 21:26 — Felhasználó
+
+~~~~~
+csináld a naplót és a memóriát
+~~~~~
