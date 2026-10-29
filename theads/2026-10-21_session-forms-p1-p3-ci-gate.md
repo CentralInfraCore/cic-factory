@@ -15578,3 +15578,303 @@ A napló és a memória kérés nélkül is járna, de a naplót csak a `main` z
 ~~~~~
 csináld a naplót és a memóriát
 ~~~~~
+
+### 2026-10-29 21:27 — Claude
+
+~~~~~
+Dolgozom: a napló új szakaszát (30 blokk, titokminta nélkül) hozzáfűzöm, commitolom és pusholom.
+~~~~~
+
+
+### 2026-10-29 21:27 — Claude
+
+~~~~~
+A napló és a memória elkészült, és a napló pusholva van (`82f7530`).
+
+- **Napló:** 30 új blokk került be, a #111 issue-tól a #112 merge-ig. Titokminta nincs bennük, maszkolás nem kellett.
+- **Memória:** a `project_p3_closed_p3b_state.md` két új bekezdést kapott, és a `MEMORY.md` indexsora frissült.
+  - **P4 duplikált patch-cél:** a hiba, a javítás, és ami nincs kész.
+  - **Parity-lecke:** egy új vektor megváltoztatja a generátor magkészletét, ezért a parity-lista bővítése előtt el kell dönteni, melyik parser az eltérő. Itt a Rust volt, ezért azt javítottam.
+- **A `main`:** a `p1` és a `corpus` zöld az `e814126`-on.
+
+A javaslatod (ReadDiff fuzz és Rust/Go differential, utána P5) egyezik azzal a sorrenddel, amit a terved második lépéseként korábban én is támogattam. Ebben a lépésben két dolgot érdemes rögzíteni, mielőtt nekilátok:
+
+1. **Mit bizonyít a differential?** A `ReadDiff` két független olvasója ugyanazt az eredményt adja-e tetszőleges bájtokra: ugyanaz az elfogadás/elutasítás, ugyanaz a `reason`, ugyanaz az offset, ugyanazok az események. A generátor mutálja a kanonikus diff-eket, ne csak véletlen bájtokat dobáljon be.
+2. **A #112-ből tanulva:** a fuzz és a differential új bemeneteket hoz, és eltéréseket találhat. Ezekre a szabály az, hogy mindegyiknél előbb eldöntjük, melyik oldal a hibás, és csak utána javítunk. Az `-known` típusú listára nem veszünk fel eltérést.
+
+Indítsam az elő-ellenőrzéssel (a meglévő `ReadDiff` fuzz- és differential-lefedettség felmérése), vagy kezdhetem rögtön a generátorral?
+~~~~~
+
+
+### 2026-10-29 21:29 — Felhasználó
+
+~~~~~
+kezdd az elő-ellenőrzéssel
+~~~~~
+
+
+### 2026-10-29 21:30 — Claude
+
+~~~~~
+Az elő-ellenőrzés kész. Kimondom, mit mértem és mit nem.
+
+**Amit a repóban találtam (`origin/main`, `e814126`):**
+- **Fuzz-target a `ReadDiff`-re: nincs.** A Go-ban 11, a Rustban 11 target van (`Diff`, `Patch`, `Parse` stb.), a `ReadDiff`-ből egy sincs. Ezt a `tools/fuzz_matrix.py` két táblája rögzíti (`GO_TARGETS`, `RUST_TARGETS`), és a `test_fuzz_matrix.py` hibát jelez, ha egy target a kódban megvan, a táblában nincs.
+- **Rust–Go differential a `ReadDiff`-re: nincs.** A P4-doksi 14. szakasza ki is mondja: "Not in this step: fuzz targets and a Rust/Go differential for the reader".
+- **Ami van:** 81 soros megosztott offset-tábla (`diffread-offsets.tsv`, mindkét olvasó ugyanazt olvassa, "apart írva, és egyeznek"), a corpus kanonikus sztringjeinek oda-vissza olvasása, egységtesztek.
+
+**Amit helyben mértem (csak Rust, Go nélkül):** 90 különböző kanonikus corpus-sztringből 60 000 mutált bemenetet (bitflip, törlés, beszúrás, csonkolás, másolás, csere) futtattam a Rust-olvasón.
+- Nincs pánik, és nincs olyan eset, ahol az offset a bemenet vége után mutatna.
+- Minden elfogadott bemenet (3 940 db) pontosan önmagára írja vissza magát, vagyis az invariáns tartott.
+- **A lefedettség szerkezete torz:** a bemenetek 60%-a szintaxishiba (35 769), 13% nem UTF-8, 17% `shape`. A *szemantikai* ágak alig jutnak elő: `order` 42, `no_change` 2, `duplicate_key` 171, `unsupported_number` 98, **`depth` 0**. Egy naiv bájt-fuzz ezt a mélyebb logikát alig érintené.
+
+**Következtetések a generátorhoz:**
+1. **Strukturális mutáció kell**, nem csak bájtmutáció: események cseréje/duplikálása, azonos útvonal két eseményen, `previous == next`, mélyen egymásba ágyazott JSON (a `depth` ághoz), számok formái (`-0`, vezető nulla, `1e2`, 2⁶³), nem kanonikus írásmód. Ezek a valódi eltérés-gyanús helyek.
+2. **A differential két részből álljon**, ahogy a patchnél is: a meglévő offset-tábla bővítése, és egy generált, hex-bemenetes futtatás mindkét oldalon (Rust-dump és Go-dump), egy összehasonlítóval. Az eltérések kezelésére a #112-ből tanult szabály él: előbb eldöntjük, melyik oldal a hibás.
+3. **A CI-kötés:** a két target-tábla, a fuzz-matrix jobok és a Go-oldali canary-magok bővítése. Ezek a `diff_gate`-et érintik, ami a `tools/` változása miatt `full` módot kapcsolhat. Előre számolni kell vele.
+
+**Nem mértem:** a Go-olvasó viselkedését (nincs Go-eszköztár), és azt, hogy a két olvasó valójában eltér-e. Az eltérés keresése maga a következő lépés, a Rust-oldali eredmény ehhez csak a bemenet-eloszlást adta.
+
+Mehet a generátorral és a differentiallel kezdve (a Go-dump és az összehasonlító a patch-differential mintájára), vagy előbb a fuzz-targetet írjam meg?
+~~~~~
+
+
+### 2026-10-29 21:31 — Felhasználó
+
+~~~~~
+kezdd a generátorral és a differentiallel
+~~~~~
+
+
+### 2026-10-29 21:32 — Claude
+
+~~~~~
+Dolgozom: megírom a generátort (`gen_diffread.py`), a Rust- és Go-dumpot, az összehasonlítót és az önellenőrzést.
+~~~~~
+
+
+### 2026-10-29 21:37 — Felhasználó
+
+~~~~~
+[Request interrupted by user for tool use]
+~~~~~
+
+
+### 2026-10-29 21:37 — Felhasználó
+
+~~~~~
+bukott a pr
+~~~~~
+
+
+### 2026-10-29 21:37 — Claude
+
+~~~~~
+The differential found 2 divergent inputs out of 20 000.
+~~~~~
+
+
+### 2026-10-29 21:40 — Claude
+
+~~~~~
+A #113 `parity` ellenőrzése bukott, és ez valódi lelet volt, nem hiba a differentialban. A javítást feltoltam, az új CI most fut.
+
+**Mit talált a differential.** A 20 000 bemenetből 2 esetben a két olvasó mást mondott ugyanarra a bájtsorra. A bemenet egy rossz útvonalú `changes`-eseményt és egy `"representation": null` mezőt tartalmazott:
+- a Rust `path`-ot mondott,
+- a Go `shape`-et.
+
+**Miért.** A Go előbb ellenőrizte, hogy mindkét rész lista-e, és csak utána olvasta az eseményeket. A Rust a `changes`-t teljesen végigolvasta, mielőtt a `representation`-höz nyúlt. A szerződés nem mondta ki, melyik rész hibája nyer, ha kettő is rossz.
+
+**Döntés.** A dokumentum sorrendje számít: előbb `changes`, aztán `representation`, és az első rossz rész adja az okot. Ez a Rust viselkedése, és egyszerűbb kimondani (a kanonikus írásmód sorba rendezi a tagokat, tehát ez a bájtok sorrendje is). A Gót igazítottam hozzá, a megosztott `diffread-offsets.tsv`-be három új sor került, amelyek mindkét olvasónál rögzítik ezt. Listára semmit nem vettem fel.
+
+**A bizonyíték, hogy a teszt bukott a régi Go-n:** ez maga az első CI-futás (`40958972285`), a javítás előtti állapoton. A Rust-oldalon a tábla új sorai és a `diffread` tesztek helyben zöldek. A Go-javítást helyben nem tudtam futtatni (nincs Go-eszköztár), azt a most futó CI dönti el.
+
+**A megvalósítás állapota.** A generátor, a két dump, az összehasonlító és a 13 töréses önteszt a PR-ban van. A fuzz-target külön lépés marad. Ha a `parity` zöld, jelentem, mi futott le még a PR-on.
+~~~~~
+
+
+### 2026-10-29 21:47 — Felhasználó
+
+~~~~~
+mergelve
+~~~~~
+
+
+### 2026-10-29 21:47 — Claude
+
+~~~~~
+A #113 be van olvasztva (`a165e70`). A merge előtti fejen (`6fda37e`) a `parity` zöld volt, és az egész PR-on 45 ellenőrzés sikeres, 7 kihagyott, bukott nincs. Ez azt is jelenti, hogy a két olvasó 20 000 generált bemenetre ugyanazt mondja, és a 13 töréses önteszt is lefutott.
+
+A `main` saját futása (`p1`, `corpus`) még folyik, és a `nightly` is elindult. A nightly a teljes classic mutációs futás, ezért az eredményére érdemes figyelni: az új Go-kód és a `parse.rs`-javítás mutánsai ott is megjelennek. A zöld lefutást még nem láttam, ezért a naplót és a memóriát addig nem zárom le.
+
+A következő lépésekről:
+1. **A `ReadDiff` fuzz-target** (a `fuzz_matrix.py` két táblája, a Go- és Rust-targetek, canary-magok). Ez a terved második felének maradéka.
+2. **P5-0** tervezése: a Resolve → Materialize → Receipt ADR-je.
+
+Melyikkel folytassam, vagy előbb várjuk meg a `main` és a nightly zöld lefutását?
+~~~~~
+
+
+### 2026-10-29 21:50 — Felhasználó
+
+~~~~~
+mehet
+~~~~~
+
+
+### 2026-10-29 21:50 — Claude
+
+~~~~~
+"Mehet" alatt a fuzz-targetet értem, mert az a terved következő lépése. Ha a P5-0-ra gondoltál, szólj. Elsőként a meglévő targetek mintáját nézem meg.
+~~~~~
+
+
+### 2026-10-29 21:52 — Claude
+
+~~~~~
+Dolgozom: a Go-oldali `FuzzReadDiff` target és a hozzá tartozó canary-mag megírása, utána a target-táblák és a teszt.
+~~~~~
+
+
+### 2026-10-29 21:52 — Claude
+
+~~~~~
+A #114 nyitva van, a CI fut. A fuzz-targetek ebben a PR-ban először fordulnak és futnak. Ha valami hibás, azt jelezni fogja a `fuzz-target` ellenőrzés.
+
+**Mi van a PR-ban.** A `FuzzReadDiff` (Go) és a `read_diff` (Rust, cargo-fuzz) target a nyers bájtokon ellenőrzi az olvasót:
+- nincs pánik;
+- az elutasítás oka a zárt halmazból való, az offset nem lóg túl a bemeneten;
+- a `ReadDiffVersion` ugyanazt az okot és offsetet adja, ha elutasít, és pontosan akkor nevez 1-től eltérő verziót, ha a `ReadDiff` `version` okkal utasít el;
+- az elfogadott diff UTF-8, 1-es verziójú, pontosan a kapott bájtokra íródik vissza, újraolvasva ugyanaz, és a patch-nek annyi eseménye van, mint a változásnak.
+
+A két target a `tools/fuzz_matrix.py` mindkét táblájában be van jegyezve, a Rust-seedek 17 fájlban vannak, és a többi targethez hasonlóan van canary-mag.
+
+**Amit helyben ellenőriztem:** a tulajdonság-kódot Rustban lefuttattam a #113 differential 20 000 bemenetén és a 17 seeden, és tartott. A `test_fuzz_matrix.py` zöld.
+
+**Amit nem:** egyik target sem fordult le helyben (a Rust nightlyt és cargo-fuzzt kér, a Go a Go-eszköztárat). Ha a CI fordítási hibát jelez, az az én hibám. A PR leírása is kimondja.
+
+**Nincs kész:** a `seeded_defects.py`-ban nincs ReadDiff-hiba, vagyis a fuzz-targetről csak a canary mutatja, hogy bukni tud. Ezt a PR-ban szintén leírtam.
+
+Jelzem az eredményt, ha a `fuzz-target` ellenőrzések lefutottak.
+~~~~~
+
+
+### 2026-10-29 21:56 — Felhasználó
+
+~~~~~
+elbukott
+~~~~~
+
+
+### 2026-10-29 21:56 — Claude
+
+~~~~~
+A #114 `scope` ellenőrzése bukott, de nem a fuzz-target miatt. A `tools/diff_gate.py` összeomlott, mert az egyik Rust-seed fájlom egyetlen `0xff` bájt volt.
+
+A `git diff` kimenetét a gate UTF-8-ként dekódolja, és egy nem érvényes UTF-8 bájtnál `UnicodeDecodeError`-ral leáll. A `scope` job nélkül a többi ellenőrzés kihagyva maradt, ezért a lista nagy része `skipping`.
+
+**Mit tettem.**
+- Kivettem a `bad03` seedet (a `0xff` bájtot), és a commit után pusholtam. A `not_utf8` ok így is elérhető: a Go-target seedje `"\xff"`-t ír escape-szel (ASCII a forrásban), a fuzzer pedig bármikor talál ilyet.
+- A P4-doksi 17. szakaszát frissítettem (16 seed fájl, és a miértje).
+- A gate törékenységéről nyitottam egy külön issue-t: [#115](https://github.com/CentralInfraCore/cic-primitive-forms/issues/115). Zárt irányú (piros, nem csendes átengedés), tehát nem lyuk, de olyan PR, amely nem-UTF-8 szöveges fájlt ad hozzá, soha nem lehet zöld. A javítás a `diff_gate.py`-ben van, ami `full` módot kapcsol, ezért nem tettem bele ebbe a PR-ba.
+
+A CI újra fut. A fuzz-target jobok eredményét még nem láttam, ezért azt jelzem, ha lefutottak.
+~~~~~
+
+
+### 2026-10-29 22:16 — Felhasználó
+
+~~~~~
+egy kérés ugye meg lehet csinálni hogy a PR és a mergelt állapot (post merge) között git diff <> null azaz azonos akkor semmilyen ellenőrzés ne fusson a pipelinere?
+~~~~~
+
+
+### 2026-10-29 22:17 — Claude
+
+~~~~~
+Igen, megcsinálható, de a haszna kisebb, mint amilyennek látszik, és van egy kényes feltétele.
+
+**Hogyan.** Egy push a `main`-re a `scope` jobban megnézné, hogy a push commitjához van-e PR. Ha igen, akkor a PR fejének (`headRefOid`) minden ellenőrzése zöld-e, és a `git diff --quiet <PR-fej> <push-commit>` üres-e (azaz a két fa azonos). Ha mindez teljesül, a `mode` egy új értéket kap (mondjuk `inherited`), és a többi job ezt kihagyja.
+
+**Miért biztonságos, ha azonos a fa.** A PR a merge-ref ellen futott (a feje + a mögöttes `main`). Ha a `main` közben haladt, és a végső fa mégis megegyezik a PR fejével, akkor a `main` újdonságai már a fejben benne voltak, így a tesztelt és a leszállított állapot ugyanaz. Ha eltér, az ellenőrzések futnak, mint most.
+
+**A feltételek, amelyeket szerintem kötelező betartani:**
+1. **A nightly nem érintett.** A `nightly` (a teljes, klasszikus mutációs futás a `main`-en) a terved szerint külön vizsgálati sáv, és másik motorral mér, mint a PR-os FAST FULL. Az azonos fa nem teszi feleslegessé, csak a push-triggerű `p1` és `corpus` futását.
+2. **Közvetlen push, PR nélkül:** mindig fut, nincs mit örökölni.
+3. **A PR-ellenőrzések teljességét** ugyanúgy kell nézni, ahogy a `ci-gate.py` `check` parancsa már most (a fej SHA-ján, minden kötelező job sikeres), nem csak "nincs piros".
+4. **A merge utáni ellenőrzésemet is át kell állítani.** Most a `main` push-futásának zöldjét nézem a commit SHA-ján. Ezután a bizonyíték a PR-fej ellenőrzése és a fa-azonosság lenne, a `ci-gate.py post-merge` logikáját is ehhez kell igazítani.
+
+**A haszon mérve** (a `main` legutóbbi push-futásai): a `p1` 128–172 mp, a `corpus` 125–152 mp, párhuzamosan. Ez a "light" mód, amely eleve csak az olcsó ellenőrzéseket futtatja. A spórolás tehát percnyi futásidő, nem az a ~52 perces `nightly`. A te szabályod szerint a futásidő nem költség, ezért a valódi nyereség a zaj és a futtatási kvóta, nem az idő.
+
+**A kockázat:** egy új döntési ág a `scope`-ban, amely hibája esetén csendben kihagy valós ellenőrzést. Az a fajta kapu-vakfolt ez, amit eddig is hajszoltunk. Ezért csak úgy csinálnám, hogy a döntés tesztelt Python-függvény (mint a `diff_gate.py`), és a regressziós tesztek előbb bukjanak a naiv változaton (például: azonos fa, de piros PR-ellenőrzés; azonos fa, de közvetlen push; eltérő fa).
+
+Szerintem a mérleg határeset: érdemes megcsinálni, ha a kvóta/zaj számít, de ez nem sürgős. Szóljak a javaslattal egy külön PR-ban (a `tools/` és a `p1.yml` változik, ami `full` módot kapcsol), vagy hagyjuk későbbre, és folytatom a #114 és a P5-0 előkészítésével?
+~~~~~
+
+
+### 2026-10-29 22:19 — Felhasználó
+
+~~~~~
+gyakorlatilag ha nincs git diff külömbség akkor totál felesleges az újboli ugyaonolyan futás
+~~~~~
+
+
+### 2026-10-29 22:20 — Claude
+
+~~~~~
+Egyetértek: a push-triggerű `p1` és `corpus` futás azonos fán felesleges. Egy kivétel van: a `nightly` és a fuzz más-más bemenetet nyer minden futásnál, azokat meghagyom. Külön ágon megcsinálom, a #114-től függetlenül. Elsőként megnézem, hol dől el most a `mode`.
+~~~~~
+
+
+### 2026-10-29 22:24 — Claude
+
+~~~~~
+Megcsináltam: a [#116](https://github.com/CentralInfraCore/cic-primitive-forms/pull/116) leállítja a `main`-re érkező push-futást, ha a fa azonos a már ellenőrzött PR-fejjel. A drót-bekötés viszont csak az első merge utáni pushnál fut először.
+
+**Hogyan működik.** A `tools/inherited_tree.py` pontosan akkor mond `true`-t, ha:
+- a commit pontosan egy `main`-be mergelt PR merge-commitja;
+- a fája azonos a PR fejének fájával (a `git diff` üres);
+- a `p1.yml` és a `corpus.yml` legfrissebb PR-futása a fejen sikeres.
+
+Bármilyen kétség (API-hiba, még futó újrafuttatás, olvashatatlan objektum) `false`, és az ellenőrzések a régi módon futnak. A `p1.yml` és a `corpus.yml` push-jobjai a döntésre várnak, és `true` esetén kimaradnak. A `scope` job továbbra is lefut.
+
+**A nightlyhoz nem nyúlok.** Ha a nightly hívja a `p1`-et, a hívó neve nem egyezik a kért névvel, ezért a válasz `false`. A `branchcov` és a `c0-selftest` csak saját útvonal-változásra fut `main`-en, ezeket hagytam.
+
+**Bizonyíték:**
+- 12 egységteszt, és a döntésen végrehajtott 11 mutáció mind pirosra váltja. Egyik redundáns feltétel túlélt, azt kivettem.
+- A valódi merge-eken is lefuttattam: a `main` utolsó 14 első-szülős commitja (köztük az `a165e70`, az `e814126`, az `1a41018`) mind `true`-t ad, a PR-fejjel és a fával. A `false` ágakat csak az egységtesztek fedik, mert a történetben nincs eltérő fájú merge.
+
+**Ami nem bizonyított.** A workflow-bekötés (a `uses:` hívás és az `if` kifejezések) PR-on nem tesztelhető, mert ott az `inherit` job kimarad. Az első `main`-push lesz az első éles futás. A hibamód úgy van tervezve, hogy a kimenet "az ellenőrzések futnak", de egy workflow-indítási hiba piros lenne. Ezt az első mergenél figyelni kell.
+
+**Hatás az ellenőrzésemre.** Egy teljesen kihagyott futás `skipped` lezárással ér véget, nem `success`-szel. A merge utáni zöldet ezentúl a PR-fej futásából és a fa-azonosságból olvasom, nem a push-futásból. Ezt a doksiban is rögzítettem.
+
+A #114 CI-ja közben 27 zölddel, 34 futó ellenőrzéssel áll, bukott nincs.
+~~~~~
+
+
+### 2026-10-29 22:46 — Felhasználó
+
+~~~~~
+még a mergelve
+~~~~~
+
+
+### 2026-10-29 22:47 — Claude
+
+~~~~~
+A #114 be van olvasztva (`5f7c073`). Az utolsó fején 64 ellenőrzés sikeres, 4 kihagyott, bukott nincs. Az új fuzz-targetek mindkét nyelven lefutottak és zöldek: `fuzz-target (go ReadDiff)` és `fuzz-target (rust read_diff)`. A fordítási kockázat, amit előre jeleztem, nem következett be.
+
+A `main` push-futása (`p1`, `corpus`) még folyik. Ez a futás még a régi, teljes lánccal megy, mert a #116 nincs mergelve. Az első, ténylegesen az új `inherit` logikát próbára tevő push a #116 merge-e után lesz.
+
+Ami hátravan:
+1. **#116** (azonos fa → nincs futás) vár a merge-re. Az első utána következő `main`-push dönti el, hogy a drót-bekötés jó-e. Szerintem érdemes egy kisebb PR-t (például a naplót) vele együtt vagy közvetlenül utána kipróbálni, hogy lássuk a `skipped` lefutást éles adaton.
+2. **Napló és memória** a #113/#114/#115/#116 szakaszával. A `main` push-futás zöldjét még nem láttam, ezért azt megvárom.
+3. **#111, #115** issue-k nyitva (a 6 régi missed mutáns, illetve a `diff_gate` nem-UTF-8 törékenysége).
+~~~~~
+
+
+### 2026-10-29 22:53 — Felhasználó
+
+~~~~~
+csináld
+~~~~~
