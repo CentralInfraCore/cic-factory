@@ -16729,3 +16729,95 @@ Rögzített upstream checkoutok kész; most lefuttatom a 20 új seeded defect-et
 ~~~~~
 A háttérben fut a seeded defect-ek ellenőrzése; az eredményt a monitor jelzi. Addig a #119 utáni állapotot rögzítem a naplóba és a memóriába, mert a #119 mergelve (`5b76294`).
 ~~~~~
+
+### 2026-10-30 07:21 — Claude
+
+~~~~~
+A napló mentve (`4c3f8e6`). Most a seeded defect-futás állását nézem.
+~~~~~
+
+
+### 2026-10-30 07:21 — Claude
+
+~~~~~
+A monitor jelezni fog, ha van eredmény; addig nem pollozok.
+~~~~~
+
+
+### 2026-10-30 07:23 — Felhasználó
+
+~~~~~
+akkor hajrá
+~~~~~
+
+
+### 2026-10-30 07:23 — Claude
+
+~~~~~
+A seeded defect-futás még az első (Rust) baseline-nál tart: a teljes tesztcsomagot egyszer le kell futtatnia a módosítatlan másolaton, utána jön a 10 Rust és a 10 Go defect. A monitor jelezni fog, amint van eredmény. Addig nem pollozok.
+~~~~~
+
+
+### 2026-10-30 07:26 — Claude
+
+~~~~~
+A [#120](https://github.com/CentralInfraCore/cic-primitive-forms/pull/120) nyitva van, a CI-ját még nem néztem meg. A #119 mergelve van (`5b76294`).
+
+**Mi van benne:**
+- **20 elültetett hiba a kanonizálóra.** Nyelvenként 10, mindegyik `canonical:` előtaggal a `tools/seeded_defects.py`-ban. Lefedik a kulcsrendezést (bájtsorrend helyett UTF-16 is), az ismétlődő kulcsot, az `Unsupported` érték `null`-ként kiírását, a `<` és U+2028 escape-et, az utolsó vezérlőkaraktert, az újsort, a digest-előtagot, a sequence megfordítását (Rust) és a nem-UTF-8 string kiírását (Go).
+- **20/20 elbukik** a táblán és az unit teszteken. A baseline mindkét nyelven zöld. Az első futásban egy Go-bejegyzés nem fordult (nem használt import maradt benne), ezt javítottam és újrafuttattam.
+- **Új vektor:** a UTF-16 mutáns addig átment, mert a táblában nem volt olyan kulcspár, ahol a bájt- és a UTF-16-sorrend eltér. A tábla most 27 soros (21 tartományon belüli, 6 azon kívüli).
+- **Forrástisztítás:** a nyers U+2028/U+2029 karaktereket a Go-forrásban, a generátorban és egy tesztben kiírtam escape-ekre. Az értékük azonos.
+
+**Amit a bizonyítás nem fed:** a Rust kód a mutációs ellenőrzésen 23/23, a Go-t mutációval nem futtattam. A `CanonicalBytes(nil)` pánik és az engine `digest` függvényének további ellenőrzése nyitva maradt.
+
+Ezzel a P5-1 lezárható. A következő lépés a P5-2 (materialize), és ahhoz neked kell eldöntened a H kérdést: a halmaz elemeinek kanonikus sorrendjét.
+~~~~~
+
+
+### 2026-10-30 10:31 — Claude
+
+~~~~~
+A monitor lejárt, de már nincs rá szükség: a seeded defect-futás eredményét addigra megkaptam és feldolgoztam (20/20 elkapva), így nem indítom újra.
+
+Nincs új teendő a monitor miatt. Nyitva maradt a [#120](https://github.com/CentralInfraCore/cic-primitive-forms/pull/120) CI-ja, azt még nem néztem meg. Szóljatok, ha mehet a merge, vagy ha addig a H döntésről (halmaz sorrendje) beszélnénk a P5-2 előtt.
+~~~~~
+
+
+### 2026-10-30 16:10 — Felhasználó
+
+~~~~~
+kész mergelhető
+~~~~~
+
+
+### 2026-10-30 16:10 — Claude
+
+~~~~~
+A head egyezik a lokálissal, és nincs bukott vagy függő check. Mergelem.
+~~~~~
+
+
+### 2026-10-30 16:11 — Claude
+
+~~~~~
+A [#120](https://github.com/CentralInfraCore/cic-primitive-forms/pull/120) mergelve, a merge commit `7abc026`. Merge előtt a head `cc5a71f` volt, egyezett a lokálissal, és egy check sem bukott vagy függött.
+
+Ezzel a P5-1 lezárult:
+- **#118:** a kanonizáló és az engine-pinelt vektortábla.
+- **#119:** a Rust/Go differential független referenciával, és a fuzz targetek.
+- **#120:** a 20 elültetett hiba.
+
+**Ami nyitva maradt belőle:** az engine `digest` függvényének ellenőrzése az üres map-en túl, és a Go `CanonicalBytes(nil)` pánik (API-döntés).
+
+**A P5-2 előtt a H döntés a tiéd:** a halmaz elemeinek kanonikus sorrendje. Az engine A6 szakasza sem döntötte el. Három irány van: rendezés a kanonikus bájtok szerint, a séma szerinti sorrend, vagy a P5-2-ből kihagyni a halmazokat, és külön egységben megoldani. Javaslatom az utolsó: a P5-2 halmaz nélküli dokumentumokra szorítkozzon, a halmaz pedig kapjon saját döntést az engine oldalával egyeztetve. Így a P5-2 nem épít egy olyan szabályra, amelyet az engine később másképp dönthet el.
+
+A naplót és a memóriát a #120 lezárása után még nem frissítettem. Mehet előbb az, vagy a H döntés?
+~~~~~
+
+
+### 2026-10-30 16:12 — Felhasználó
+
+~~~~~
+csináld a naplót és a memóriát
+~~~~~
