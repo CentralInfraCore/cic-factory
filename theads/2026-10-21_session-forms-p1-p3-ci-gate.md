@@ -17149,3 +17149,197 @@ Hátravan: a #115 issue lezáró kommentje (csak az #121 hivatkozásával, nem k
 ~~~~~
 csináld a naplót és a memóriát
 ~~~~~
+
+### 2026-10-30 16:57 — Claude
+
+~~~~~
+A napló és a memória frissítve.
+
+- **Napló.** A `theads` napló a #121–#122 szakaszával bővült (`7d54e39`, pusholva), titkot a maszkoló nem talált. Az első kísérletem rossz kezdőpontot használt, mert a mostani kérésed szövegét találta meg a korábbi helyett, és üres szakaszt fűzött volna hozzá. Ezt észrevettem, és mielőtt bármit hozzáfűztem volna, a helyes, 16:12-es időponttal újragenerálta.
+- **Memória.** A projektjegyzet és a `MEMORY.md` index frissült:
+  - **A döntéseid.** H = A fail-closed, a nightly marad, `nil_node`, ADR 0014 `accepted`, a B és C géppel ellenőrizhető szerződése, a #111 halasztva, a #115 javítva.
+  - **A következő lépés.** A P5-2 előellenőrzése.
+  - **Két tanulság.** A „proposed" státusz frissítése a merge-ölő PR-ban, és hogy a teljes Go-suite lokálisan is fut, tehát a CI előtt érdemes lefuttatni.
+
+A #115 issue lezáró kommentjét még nem írtam meg. Mehet a P5-2 előellenőrzése?
+~~~~~
+
+
+### 2026-10-30 16:58 — Felhasználó
+
+~~~~~
+mehet
+~~~~~
+
+
+### 2026-10-30 16:58 — Claude
+
+~~~~~
+Az előellenőrzést a kódból és az engine szerződésből állítom össze: mi az, ami megvan, és hol nem találkozik a kettő. Egy rövid jegyzetbe írom.
+~~~~~
+
+
+### 2026-10-30 16:59 — Claude
+
+~~~~~
+Elkészült a P5-2 előellenőrzés: [#123](https://github.com/CentralInfraCore/cic-primitive-forms/pull/123), csak dokumentum, kód és futtatás nincs benne. Az engine tényei a `93c793a` olvasásából jönnek.
+
+**Mit vár az engine.**
+- A `MaterializedObject` egy lapos mezőnév → `{capability, evidence}` map. A `try_new` csak akkor fogadja el, ha a kulcshalmaz pontosan egyezik a várt halmazzal.
+- Az `output_digest` a `{"fields": [{key, capability, provenance, value?}]}` vetület digestje, kulcs szerint rendezve.
+- A spec szövege az Access atom struktúrájába csomagolt értéket említ, a típus és a vetület viszont sima értéket. A kódot követem, mert azt ellenőrzik a vektorok és a verifier.
+
+**Mit ad a forms.** A `provenance` megvan: a `value_origins` `authored`/`default` értéke megfelel az `Authored`/`SchemaDefault`-nak, a szerző által kihagyott, default nélküli mező pedig `Authored(None)`.
+
+**Öt hely, ahol nem találkoznak.**
+1. **A capability-nek nincs hiteles értéke egy szándékdokumentumban.** Az ADR 0010 szerint egy szerzői pozíció capability-je nem bizonyíték, az engine enumjában viszont nincs „ismeretlen", és a B7 szerint a capability bekerül a digestbe. Ha minden szerzői pozícióra `implemented`-et írnék, egy defaultot állításként írnék egy digestbe.
+2. A lapos kulcs nincs specifikálva.
+3. A várt kulcshalmaz még nem érhető el listaként.
+4. Az engine-nek nincs parancsa a `try_new`-ra, ezért az oracle egy kis harnesst igényel.
+5. A kollekciók leállnak (a set a H miatt, a listaelem a lapos kulcs hiánya miatt).
+
+**Az első egység javaslata:** lapos dokumentum, ahol minden pozíció top-level skalár. A capability a hívó bemenete, és ha egy mezőre nincs, az leállítja a materializálást. Minden beágyazott dolog szabályozott hibát ad a digest előtt. A bizonyítás az engine `try_new` és `materialized_object_digest` függvénye egy harnessen át, a harmadik olvasó az engine, nem a saját referenciám.
+
+**Három kérdés a tiéd:**
+- **I.** A capability legyen a hívó bemenete fail-closed módon (javaslat), vagy rögzített szabály? A rögzítettnél például az `implemented` jelenne meg minden nem igazolt pozícióra, ami az ADR 0010 `default` bázisa, de nem-bizonyítékot ír a digestbe.
+- **J.** Induljunk lapos dokumentumokkal és szabályozott hibával a beágyazottakra, vagy várjunk az engine oldali lapos kulcs definíciójára?
+- **K.** A harness ebben a repóban éljen (Rust és Go program a pinelt engine-re), ahogy az A döntés már mondja, vagy az engine egy CI-jobja fusson egy általunk előállított fixture-fájlon?
+
+A #123 CI-ját még nem néztem meg. Kód nélkül a P5-2 nem indul, amíg az I–K kérdésekre nincs válasz.
+~~~~~
+
+
+### 2026-10-30 17:54 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## PR #123 — P5-2 pre-check: MaterializedObject
+
+[CentralInfraCore/cic-primitive-forms #123](https://github.com/CentralInfraCore/cic-primitive-forms/pull/123?utm_source=chatgpt.com)
+
+&#x20;CI sikeres
+
+HEAD: `ce005088d54c2876ac4a18a8a5c2611c1885f34a` · Nyitott, mergeable
+
+Ez a P5-2 előzetes szerződésvizsgálata: egyetlen dokumentumot módosít, 24 sorral. Még nem tartalmaz materializer-implementációt.
+
+| Ellenőrzés                                                                                                                     | Eredmény        |
+| ------------------------------------------------------------------------------------------------------------------------------ | --------------- |
+| [P1 #41094814179](https://github.com/CentralInfraCore/cic-primitive-forms/actions/runs/41094814179?utm_source=chatgpt.com)     | Success         |
+| [Corpus #41094814191](https://github.com/CentralInfraCore/cic-primitive-forms/actions/runs/41094814191?utm_source=chatgpt.com) | Success         |
+| Engine `MaterializedObject` szerződés összevetése                                                                              | Elvégezve       |
+| Új működő materializer                                                                                                         | Nincs           |
+| Owner-döntések                                                                                                                 | I, J, K nyitott |
+
+A PR öt illeszkedési problémát azonosít a Forms és az Engine között: capability, lapos kulcsok, elvárt kulcshalmaz, engine-tesztharness és kollekciók.
+
+Az engine `93c793a` commitjának forrásával összevetve a fő megállapítások helyesek. Van viszont egy további szemantikai probléma, amelyet a tervben még nem megfelelően különítettek el.
+
+## 1. A legfontosabb hibalehetőség: `Authored(None)`
+
+A PR ezt állítja az opcionális, alapértelmezett érték nélküli mezőkről:
+
+> An authored optional field with no default is absent: that is `Authored(None)`.
+
+Ez még nem bizonyított szemantikai megfeleltetés.
+
+Az Engine `MATERIALIZATION-SPEC.md` B2 szakasza kifejezetten nyitva hagyja az authored-absent reprezentációját. Az Engine ugyan képes `IntentEvidence::Authored(None)` tárolására, de ettől még nem következik, hogy egy dokumentumból egyszerűen kihagyott mező azonos a szerző által kifejezetten megadott hiánnyal.
+
+Ez különösen fontos, mert a `provenance` része az `output_digest` által védett állításnak.
+
+Javaslatom: a P5-2 első egységében egyelőre csak ténylegesen jelen lévő vagy igazolt séma-defaulttal kitöltött mezők szerepeljenek. Az elhagyott opcionális mezőkkel rendelkező dokumentumokat utasítsuk el, amíg a hiány reprezentációját az Engine szerződése nem rendezi.
+
+## 2. A `Complete` bizonyítása önmagában még körkörös
+
+A `MaterializedObject::try_new(fields, expected_keys)` kizárólag azt ellenőrzi, hogy a két kulcshalmaz azonos.
+
+Nem ellenőrzi, hogy az `expected_keys` valóban a sémából helyesen származik.
+
+Ha a Forms hibásan kihagy egy opcionális mezőt mind a `fields`, mind az `expected_keys` halmazból, az Engine sikeresen elfogadhatja a hiányos objektumot.
+
+Ezért a P5-2 bizonyításának három külön követelménye legyen:
+
+- A `expected_keys` származtatása a compiled schema alapján, a materializer által előállított objektumtól függetlenül ellenőrizve.
+- Az Engine `try_new` és `materialized_object_digest` ellenőrzése a tényleges, pinned implementációval.
+- Hibainjektálás: kötelező vagy opcionális deklarált kulcs kihagyása, illetve extra kulcs beillesztése legyen kimutatható.
+
+Ez a CIC `agent_done ≠ done` elvének egy újabb esete: egy zöld Engine-hívás nem feltétlenül bizonyítja a bemenet szemantikai helyességét.
+
+## 3. Válaszaim az I–K döntésekre
+
+| Kérdés               | Döntésem                                                                                                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| I — Capability       | Hívótól származó, de ellenőrzött adapter/binding adat. Hiányzó vagy nem igazolt capability esetén fail-closed. Nem képezünk automatikusan `implemented` értéket az authored mezőből. |
+| J — Flat első egység | Igen. Top-level skalármezőkkel induljon; nested, list, set és megoldatlan mezőhiány kontrollált elutasítás.                                                                          |
+| K — Engine harness   | A Forms repó CI-jában. Pinned Engine, Rust és Go ellenőrzés, önálló negatív tesztek.                                                                                                 |
+
+Az I döntésnél külön figyelni kell: a hívó által átadott capability és annak hiteles eredete két külön állítás. A digest az előbbit rögzíti, önmagában nem igazolja az utóbbit.
+
+## 4. Dokumentációs javítás
+
+A #123 által módosított P5 dokumentum korábbi szakaszában még az szerepel, hogy a Go `CanonicalBytes(nil)` pánikot okoz. Ezt a már mergelt #122 kijavította. A #123-ban célszerű ezt is aktualizálni.
+
+## Merge-döntésem
+
+Feltételes GO a #123-ra mint előkészítő dokumentációra.
+
+A merge előtt két érdemi pontosítást kérnék: az `Authored(None)` legyen kifejezetten nyitott szerződéses kérdés, és a Complete bizonyítása ne pusztán a Forms által szolgáltatott két kulcshalmaz összehasonlításából álljon.
+
+A fennmaradó `nil` dokumentációs elavulást ugyanebben a PR-ban javítanám.
+
+A CI már zöld, és a tervezési irányt elfogadom. A P5-2 implementációra viszont addig nem adnék GO-t, amíg a hiányzó opcionális mezők reprezentációját és a kulcshalmaz független bizonyítását nem rögzítettük.
+
+A #123-at nem merge-eltem.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-30 17:54 — Claude
+
+~~~~~
+Beépítem a review két pontosítását és a `nil` elavulását a #123 ágába.
+~~~~~
+
+
+### 2026-10-30 17:56 — Claude
+
+~~~~~
+A #123-ba beépítettem a review két pontosítását és a `nil` javítást. A tartalmat a `3214a12` commit hozza. A CI még fut, ezért a merge-hez egy zöld futásra várok.
+
+- **`Authored(None)`:** a 11. szakasz már nem állítja, hogy az elhagyott, default nélküli opcionális mező `Authored(None)`. Új 6. pont: ez nyitott szerződéses kérdés, mert az engine B2 szakasza nyitva hagyja, a `provenance` pedig a digestelt állítás része. Az első egység nem tippel. Az ilyen pozíciójú dokumentumot szabályozottan elutasítja, és csak a jelen lévő vagy séma-defaulttal kitöltött mezőket materializálja.
+- **A `Complete` körkörös:** új 7. pont. A `try_new` csak két kulcshalmazt hasonlít össze, ezért ha a kihagyott kulcs mindkettőből hiányzik, az engine elfogadja. A bizonyítás ezért kiegészült:
+  - az elvárt kulcshalmaz a compiled schemából külön származik, és az eredményt összevetjük a materializer saját halmazával;
+  - három hibabeültetés kötelező: kötelező kulcs kihagyása, opcionális kulcs kihagyása, extra kulcs beszúrása.
+- **I, J, K:** a válaszok bekerültek a jegyzetbe, a kérdések "asked" jelölést kaptak.
+  - **I:** a capability a hívó bemenete, de ellenőrzött binding-adat. Hiány vagy nem igazolt érték esetén fail-closed, és authored mezőből nem képzünk `implemented` értéket.
+  - **J:** lapos dokumentummal indulunk.
+  - **K:** a harness ebben a repóban él, a CI-ban.
+- **`nil`:** a `CanonicalBytes(nil)` pánikra utaló sor helyén most a `nil_node` áll, a #122 szerint.
+
+A merge-hez explicit szó kell tőled. Utána jöhet a P5-2 kód, a fenti feltételekkel.
+~~~~~
+
+
+### 2026-10-30 18:10 — Felhasználó
+
+~~~~~
+mergelheted a #123-at
+~~~~~
+
+
+### 2026-10-30 18:11 — Claude
+
+~~~~~
+A #123 beolvadt `c3aba32` néven. A merge előtt a `3214a12` fejen nem volt bukó vagy függő ellenőrzés, 14 zöld volt, és 8 kimaradt (skipping).
+
+A fájllistában más fájlok is megjelentek, például `tools/patch-vectors/author.py`. Ezek a main közbeni mozgásából jönnek, nem a #123 tartalmai, mert a #123 egy dokumentumot módosít.
+
+A #115 issue lezáró kommentje még hiányzik, és a naplót meg a memóriát sem mentettem el a #123 után. Mindkettőt elintézem, ha szólsz. A P5-2 kód a jegyzetben rögzített feltételekkel indulhat.
+~~~~~
+
+
+### 2026-10-30 18:11 — Felhasználó
+
+~~~~~
+csináld a naplót és a memóriát
+~~~~~
