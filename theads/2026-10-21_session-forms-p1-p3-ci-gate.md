@@ -17910,3 +17910,305 @@ Ez az értesítés ugyanazt jelzi, amit az előbb már ellenőriztem: a `01b8113
 ~~~~~
 mergelheted a #124-et
 ~~~~~
+
+### 2026-10-30 20:13 — Claude
+
+~~~~~
+A napló és a memória is mentve van a #124 után.
+
+- **Napló:** a thread log a #124 teljes szakaszával bővült (a commit helyben van: `50a0aa2`, nem pusholtam). A szakaszban nincs titok és nincs nyers U+2028/2029.
+- **Memória:** a `project_p3_closed_p3b_state.md` és a `MEMORY.md` rögzíti, hogy a #124 `3935835`-tel mergelve van. A következő lépés a generált differential az engine-nel mint harmadik olvasóval, plusz egy fuzz target. A tanulságok is bekerültek:
+  - a branch-coverage eszköz nem mér `let … else`-t;
+  - a Go map-sorrend miatt a mutáns 2-ből 1 futásban túlél, ezért sok kulccsal és ismétléssel kell tesztelni;
+  - a lokális `go-mutesting`-hez `GOTOOLCHAIN=go1.27.2` kell;
+  - a review talált egy Go nil-deref pánikot, amit a corpus nem.
+
+A nightly FULL a main-en a `p1.yml` változás miatt le fog futni. Ha szeretnéd, a következő lépést (a generált differentialt) a P5-2 doc 12. szakasza alapján kezdem.
+~~~~~
+
+
+### 2026-10-30 20:28 — Felhasználó
+
+~~~~~
+mergelheted
+~~~~~
+
+
+### 2026-10-30 20:29 — Claude
+
+~~~~~
+A forms-repóban nincs nyitott PR, mert a #124 már beolvadt (`3935835`), így nincs mit mergelni.
+
+A workdir repóban a naplóra két helyi commit vár (`50a0aa2` és az előző), de azok közvetlenül a `main`-en vannak, nem PR-ban. Ha a „mergelheted" arra vonatkozik, hogy pusholjam őket, azt nem tettem meg a kimondott szó nélkül. Ezt kérted?
+~~~~~
+
+
+### 2026-10-30 20:45 — Felhasználó
+
+~~~~~
+pushold a naplót
+~~~~~
+
+
+### 2026-10-30 20:45 — Claude
+
+~~~~~
+Pusholtam a naplót. A `7d54e39..50a0aa2` két commit ment fel a `cic-factory` `main` ágra: a #123-as (`b967e4a`) és a #124-es (`50a0aa2`) szakasz. A helyi és a távoli ág most egyezik.
+~~~~~
+
+
+### 2026-10-30 20:46 — Felhasználó
+
+~~~~~
+kezdd a generált differentialt
+~~~~~
+
+
+### 2026-10-30 20:46 — Claude
+
+~~~~~
+Először a meglévő canonical differential mintáját nézem meg (generátor, dump, összehasonlító, selftest), hogy ugyanabba a formába építsem.
+~~~~~
+
+
+### 2026-10-30 20:47 — Claude
+
+~~~~~
+A generátor lefedi az összes válaszfajtát (ok, hat elutasítási ok). Következnek a Rust- és Go-dump tesztek.
+~~~~~
+
+
+### 2026-10-30 20:48 — Claude
+
+~~~~~
+Mindkét dump lefutott 6000 esetre (a sémák fordulnak, a dokumentumok parse-olódnak). Az összehasonlító jön, a canonical mintájára.
+~~~~~
+
+
+### 2026-10-30 20:48 — Claude
+
+~~~~~
+6000/6000 egyezik elsőre, ami gyanús, amíg nem látom, hogy az összehasonlító tud bukni. A selftest jön (tört dumpok).
+~~~~~
+
+
+### 2026-10-30 20:49 — Claude
+
+~~~~~
+Az engine Rust-oldala mind az 1787 elfogadott generált esetre egyezik. A Go-harness differential módja jön.
+~~~~~
+
+
+### 2026-10-30 20:49 — Claude
+
+~~~~~
+Az engine mindkét nyelv kimenetével egyezik. Mielőtt a CI-ba kötöm, megmutatom, hogy a differential tényleg bukik beültetett hibán: két hibát ültetek be a Rust-ba.
+~~~~~
+
+
+### 2026-10-30 20:50 — Claude
+
+~~~~~
+Megnyitottam a [#125](https://github.com/CentralInfraCore/cic-primitive-forms/pull/125) PR-t a generált differentialról, és most a CI-futásra várok. Ha valami bukik, megnézem az okát.
+
+A lényeg, amit lokálisan láttam:
+- **Egyezés:** 6000 generált esetből mind egyezik a Rust, a Go és a független referencia. Az engine mindkét harness-ben (Rust és Go) az összes 1787 elfogadott esetre egyezik, mindkét nyelv kimenetére.
+- **Bukni tudás:** két beültetett Rust-hibát (a rendezés kivétele, illetve a legutolsó kulcs eldobása a mezők és az `expected_keys` közül) az összehasonlító és az engine is megfogott. A selftest mind a 16 törést észreveszi.
+- **Kulcslista:** az engine-nek a **generátor** saját kulcslistáját adom, nem a nyelvek jelentését. Ezzel lezárul a #124-ben nyitva hagyott kérdés, hogy egy mindkét oldalon elveszett kulcs látszik-e.
+
+A CI-lépés új, még nem láttam futni. A merge-hez explicit szó kell tőled.
+~~~~~
+
+
+### 2026-10-30 20:55 — Claude
+
+~~~~~
+Kevesebb job futott (23 pass, 9 skipping), mert a PR-ban nincs terméknek számító fájl. Ellenőrzöm, hogy az új lépést tartalmazó `parity` job tényleg lefutott, nem kimaradt.
+~~~~~
+
+
+### 2026-10-30 20:55 — Claude
+
+~~~~~
+A `parity` zöld. Megnézem a logban, hogy az új lépés tényleg lefutott és mit mondott.
+~~~~~
+
+
+### 2026-10-30 20:55 — Claude
+
+~~~~~
+A [#125](https://github.com/CentralInfraCore/cic-primitive-forms/pull/125) CI-ja zöld: 23 pass, 9 skipping, 0 fail. A `parity` job logjában látom, hogy az új lépés tényleg lefutott, és a CI ugyanazt adja, mint a lokális futás:
+- **6000 bemenet:** a Rust és a Go egyezik egymással és a referenciával. A 1787 elfogadott eset mellett nyolc elutasítási ok szerepel, mindegyiket eléri a generátor.
+- **Selftest:** 16 törés, mind pirosra fordítja az összehasonlítást.
+- **Engine mint harmadik olvasó:** mind a Rust-, mind a Go-harness az 1787 elfogadott esetre egyezik, mindkét nyelv kimenetére (összesen négy sor). Az engine a generátor saját kulcslistáját kapta.
+
+A kevesebb job azért van, mert a PR nem terméket módosít: csak teszteszközök, dump tesztek és CI-lépés vannak benne. A `quality` kapu ezért nem mér új termékkódot. A Go diff-mutáció (0) és a Rust diff-mutáció (0) is zöld.
+
+Nyitott marad, és a doc 13. szakasza is kimondja: a fuzz target a `materialize_flat`-re, és az, hogy a differential az elutasításokat bizonyítja, nem a beágyazott/lista/set materializálását.
+
+A fej `14be123`, a PR mergelhető. A merge-hez explicit szó kell tőled.
+~~~~~
+
+
+### 2026-10-30 20:58 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## PR #125 — P5-2 differential review
+
+[CentralInfraCore/cic-primitive-forms #125](https://github.com/CentralInfraCore/cic-primitive-forms/pull/125?utm_source=chatgpt.com)
+
+NO-GO — két javítást kérek
+
+HEAD: `14be123ecda1b0a2685b6f68819fbde4fc16f67b` · Nyitott, GitHub szerint mergeable
+
+A CI most már teljesen zöld. A tényleges kódban viszont két olyan bizonyítási hiányt találtam, amelyet ennél a PR-nál javítanék.
+
+| Ellenőrzés                                                                                                                     | Eredmény                          |
+| ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
+| [P1 #41126423051](https://github.com/CentralInfraCore/cic-primitive-forms/actions/runs/41126423051?utm_source=chatgpt.com)     | Success — 21 sikeres, 9 kihagyott |
+| [Corpus #41126422697](https://github.com/CentralInfraCore/cic-primitive-forms/actions/runs/41126422697?utm_source=chatgpt.com) | Success                           |
+| Generált bemenetek                                                                                                             | 6000                              |
+| Elfogadott esetek                                                                                                              | 1787                              |
+| Elutasítási kategóriák                                                                                                         | 8                                 |
+| Rust/Go/reference eltérés                                                                                                      | 0                                 |
+| Negatív önellenőrzések                                                                                                         | 16/16 pirosra fordul              |
+| Engine-harness Rust és Go                                                                                                      | Mindkét nyelv kimenetére sikeres  |
+
+### 1. A Unicode-rendezési lefedettség állítása hibás
+
+A `gen_materialize.py` szerint a generált mezőnevek olyanok, hogy a UTF-8 bájtsorrend, a Unicode-kódpontsorrend és a UTF-16 sorrend különbözik.
+
+De a jelenlegi `NAMES` halmazban kizárólag BMP-karakterek vannak. Ezeknél a három rendezés azonos. Sőt, érvényes Unicode-karaktersorozatoknál a UTF-8 bájtsorrend és a kódpontsorrend eleve megegyezik.
+
+Pont azt az UTF-16 hibát nem képes ez a generátor kimutatni, amelyhez a #120-ban külön vektort kellett hozzáadni.
+
+Javítás: U+E000 és U+1F600 mezőnév együttes szerepeltetése, valamint olyan célzott teszt, amely bizonyítja, hogy a generált esetek között ténylegesen van eltérő UTF-16 sorrendű pár.
+
+### 2. A comparator csendben elfogadja az ismételt rekordazonosítókat
+
+A `compare_materialize.py` jelenlegi betöltése:
+
+```
+out[d["id"]] = d
+```
+
+Ha egy dumpban ugyanaz az ID kétszer szerepel, az utolsó felülírja az előzőt.
+
+Így például egy 6000 egyedi azonosítót tartalmazó dumpban megjelenhet egy további, duplikált rekord anélkül, hogy a comparator hibát adna.
+
+Ez a teljes és egyértelmű teszteredmény-készlet bizonyításánál fontos.
+
+Javítás: az ismételt ID-t utasítsa el a betöltő, és kerüljön be egy új, pirosra forduló self-test erre az esetre.
+
+### Összegzés
+
+A #125 technikai felépítése nagyon jó: a generátor a szerkezeti modellből dolgozik, a két implementációt külön ellenőrzi, az Engine pedig valóban külső olvasóként szerepel.
+
+De most éppen a bizonyítás minőségét fejlesztjük. Ezért nem hagynám benne a téves Unicode-lefedettségi állítást és a duplikált rekordok csendes felülírását.
+
+Döntésem: két célzott javítás, új CI-futás, utána GO. A #125-öt nem merge-eltem.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-30 20:58 — Claude
+
+~~~~~
+Mindkét állítás igaz, ellenőriztem:
+1. A `NAMES`-ben csak BMP-karakter van. Érvényes Unicode-nál a UTF-8 bájtsorrend és a kódpontsorrend eleve azonos, a UTF-16 csak a U+E000–U+FFFF és a pótsík (U+10000 fölött) párosánál tér el. Ilyen pár nincs a generátorban, tehát a kommentem is téves volt.
+2. `out[d["id"]] = d` valóban felülírja az ismételt azonosítót.
+
+Javítom mindkettőt, és megmutatom, hogy a UTF-16 hibát a differential most tényleg elkapja.
+~~~~~
+
+
+### 2026-10-30 20:58 — Claude
+
+~~~~~
+Az escape-ek épek maradtak a forrásban. Most a betöltő és a selftest.
+~~~~~
+
+
+### 2026-10-30 20:59 — Claude
+
+~~~~~
+A tesztek zöldek. Megnézem, hogy az új teszt a régi `NAMES`-szel tényleg elbukott volna.
+~~~~~
+
+
+### 2026-10-30 21:01 — Claude
+
+~~~~~
+Az `rm`-et nem futtattam. Felesleges volt, mert a dumpok úgyis felülíródnak. Folytatom nélküle.
+~~~~~
+
+
+### 2026-10-30 21:02 — Claude
+
+~~~~~
+Az első beszúrásnál elrontottam a sztring-összefűzést, a `'+B+'` szó szerint bekerült. Javítom a fájlt.
+~~~~~
+
+
+### 2026-10-30 21:03 — Claude
+
+~~~~~
+A Go-mutáció nem fordul le: a `strings` import elhasználatlan marad, mert az volt az egyetlen használata. Hozzáadom nulla súllyal.
+~~~~~
+
+
+### 2026-10-30 21:04 — Claude
+
+~~~~~
+A seeded defect mindkét nyelven elbukik. Most a lényeg: a **differential** is lássa ezt a hibát, mert a review pont ezt hiányolta.
+~~~~~
+
+
+### 2026-10-30 21:05 — Claude
+
+~~~~~
+Mindkét review-pont igaz volt, javítottam és pusholtam (`355ed50`).
+
+**1. Unicode-rendezés**
+- **Hiba:** a `NAMES`-ben csak BMP-karakter volt, és ilyenkor a három rendezés azonos. A bájtsorrend és a kódpontsorrend érvényes UTF-8-nál eleve egyezik. A UTF-16 csak a U+E000–U+FFFF és a pótsík-pár esetén tér el.
+- **A korábbi állításom (komment és doc) téves volt.** A régi listában nulla ilyen pár volt.
+- **Javítás:** a generátor mezőnevei közé bekerült U+E000, U+FFFD, U+1F600 és U+10000. A tesztek ellenőrzik, hogy van eltérő rendezésű pár, és hogy sok elfogadott esetnél számít a rendezés. A közös korpuszban is van rá eset (`flat.names-sort-by-bytes-not-by-utf16`).
+- **Bizonyíték:** a UTF-16 szerinti rendezést beültettem a Rust-ba, és a differential most látja: 140 bemenet tér el, az engine-harness elhasal. A seeded defect mindkét nyelven (Rust, Go) a korpusztól is elbukik.
+
+**2. Ismételt azonosító**
+- **Hiba:** `out[d["id"]] = d` felülírta az ismétlődő azonosítót.
+- **Javítás:** a betöltő `DuplicateId`-t dob, és ezt kezeli a bemeneti fájlra, a Rust- és a Go-dumpra is. A selftest három új törést kapott: összesen 19 törés, mind pirosra fordul. Az azonos és a különböző tartalmú ismétlést is kipróbálja.
+
+Lokálisan zöld: clippy, a teljes Go-suite, a Python-tesztek, a seeded defect szövegek (294 illeszkedik), mindkét engine-harness (most 7 korpuszesettel). Az új CI-futás figyelője fut, az eredményt jelzem. A merge-hez explicit szó kell tőled.
+~~~~~
+
+
+### 2026-10-30 21:23 — Claude
+
+~~~~~
+A [#125](https://github.com/CentralInfraCore/cic-primitive-forms/pull/125) CI-ja a `355ed50` fejen zöld: 66 pass, 5 skipping, 0 fail. A PR mergelhető.
+
+A `parity` job logjában látom, hogy a javítások tényleg futottak:
+- **Egyezés:** a Rust, a Go és a referencia minden bemeneten egyezik. A friss névlistával 1817 elfogadott eset van.
+- **Selftest:** 19 törés, mind pirosra fordul. A három új közül az ismételt azonosító a bemenetben, a Rust-dumpban és a Go-dumpban is piros.
+- **Engine:** mindkét harness az 1817 elfogadott esetre egyezik, mindkét nyelv kimenetére.
+
+A review két kérése teljesült. A merge-hez explicit szó kell tőled. Utána mentem a naplót és a memóriát.
+~~~~~
+
+
+### 2026-10-30 21:26 — Felhasználó
+
+~~~~~
+mehet a merge
+~~~~~
+
+
+### 2026-10-30 21:26 — Claude
+
+~~~~~
+A #125 beolvadt `a595d62` néven. Merge előtt a `355ed50` fejen 66 pass volt, 5 skipping, és nem volt bukó vagy függő ellenőrzés.
+
+Mentem a naplót és a memóriát.
+~~~~~
