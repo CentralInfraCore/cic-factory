@@ -1,6 +1,6 @@
 # Thread-napló — 2026-10-21 (Forms P1–P3, ci-gate)
 
-Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T19:08:59Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl`, a 2026-10-28T22:48Z-tól induló szakasz: `7895b2db-5143-4537-8eaa-3624850e408c.jsonl` (a #106–#108 lezárása, a `diff_gate` vakfoltjai, a `diff-mutation-rust` megszakadása; a szakasz a session közben, lezárt PR-onként gyarapodik) (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
+Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T19:08:59Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl`, a 2026-10-28T22:48Z-tól induló szakasz: `7895b2db-5143-4537-8eaa-3624850e408c.jsonl` (a #106–#118: a `diff_gate` vakfoltjai, a `diff-mutation-rust` megszakadása, P4 duplikált esemény, a ReadDiff differential és fuzz, az inherit, P5-0 terv és a P5-1 kanonikus bájtok; a szakasz a session közben, lezárt PR-onként gyarapodik) (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
 
 
 ### 2026-10-21 05:57 — Claude
@@ -15877,4 +15877,394 @@ Ami hátravan:
 
 ~~~~~
 csináld
+~~~~~
+
+### 2026-10-29 22:56 — Claude
+
+~~~~~
+Dolgozom: a naplót és a memóriát lezártam, a #116 friss CI-ját ellenőrzöm.
+~~~~~
+
+
+### 2026-10-29 22:57 — Claude
+
+~~~~~
+A napló és a memória kész. A #116 két kezdeti bukását közben kijavítottam, és az új CI eddig tiszta.
+
+**Napló és memória.**
+- A napló új szakasza (26 blokk, maszkolás és titokminta nélkül) fent van a `main`-en.
+- A memória két új bekezdést kapott:
+  - a ReadDiff-bizonyításét (#113, #114, a talált eltérés és a döntés);
+  - a #115, #111 és #116 állapotáét, benne a tanulságokkal.
+- A `main` zöld az `5f7c073`-on (a `p1` és a `corpus` sikeres).
+
+**A #116 két bukása, és mi lett velük.** Az első változat a `corpus.yml`-t is kapuzta, és ezzel két, szándékos védelmi szabály pirosra váltott:
+1. **`UPSTREAM_VERIFY`** ("a corpus job nem állíthat `if:`-et"): ezt betartom. A `corpus` workflow érintetlen marad, mert a grammar-identitásnak minden futáskor a feltöltött upstream-bájtokból kell reprodukálódnia. Az a ~2 perc egy push-on tehát megmarad.
+2. **`test_the_cheap_checks_run_whatever_the_mode_is`** azt mondta ki, hogy az olcsó jobok mellett egyáltalán nincs `if`. Ezt a szabályt ez a PR szándékosan egy helyen enyhíti, ezért a teszt most pontosan az egy megengedett feltételt és a `needs: inherit`-et követeli, egy új teszt pedig rögzíti az `inherit` job viselkedését (csak push, csak a saját workflow). A PR leírásában kiemeltem, hogy a bíráló erre a sorra nézzen.
+
+**Állapot.** Az új CI 15 zölddel és 8 futóval áll, bukott nincs. A merge a te döntésed. A bekötés éles próbája az első merge utáni `main`-push lesz.
+~~~~~
+
+
+### 2026-10-29 23:12 — Felhasználó
+
+~~~~~
+mergelve
+~~~~~
+
+
+### 2026-10-29 23:16 — Claude
+
+~~~~~
+A #116 be van olvasztva (`cc79265`), és a `main` zöld: a `p1` és a `corpus` sikeres. Az `inherit` bekötése működik, de az első éles push a "nem örökölhető" ágat próbálta ki, nem azt, amelyért a PR készült.
+
+**Mi történt.** Az `inherit / decide` job lefutott, és `inherited=false`-t adott, mert a fák eltértek:
+- a merge-commit fája `06ebbd7061`,
+- a PR fejének fája `6ff14135ee`.
+
+Az ok: a #116 ága a #114 merge előtti `main`-ről indult, a squash-merge pedig a #114 változásait is hozta. A tesztelt fej és a leszállított állapot ezért valóban nem ugyanaz volt, és az ellenőrzések helyesen lefutottak. A döntés tehát jól működött, és ez az első valódi `false` eset éles adaton.
+
+**Mi bizonyított.** A hívás, az `if` kifejezések és a reusable workflow bekötése hibátlanul fut, indulási hiba nincs. Ugyanez igaz arra, hogy a döntés a helyes ágon kikényszeríti a futást.
+
+**Mi még nem.** A `true` ág éles működése: az átugrott cheap jobok, a `skipped` lezárás. Ez az első olyan merge-nél látszik, amelynél az ág naprakész a `main`-nel. A repó szabálya nem követeli meg a naprakészséget, ezért ez a tapasztalat szerint a squash-merge-ek többségénél igaz (a korábbi 14 merge mind `true`-t adott), de nem garantált. A következő PR merge-e dönt.
+
+**Egyéb:** a `nightly` sorba állt (a `p1.yml` változott, ezért a háttérben teljes futás indul, ahogy a 4.2 szakasz előírja). Ennek a lefutását érdemes megvárni, mielőtt a #116-ot "kész"-nek jelentem: az mutatja, hogy az új `inherit` job nem zavarja a nightly-hívott `p1`-et.
+~~~~~
+
+
+### 2026-10-29 23:17 — Felhasználó
+
+~~~~~
+öszintén haladjunk 5...
+~~~~~
+
+
+### 2026-10-29 23:18 — Claude
+
+~~~~~
+Rendben, P5-0. Először megnézem, mit rögzít már a repó róla, mielőtt bármit javasolnék.
+~~~~~
+
+
+### 2026-10-29 23:19 — Claude
+
+~~~~~
+Elkészült a P5-0 előfelmérés. A legfontosabb lelet: a P5 nagy részét a `cic-primitive-engine` repó már előre rögzítette, és a terv ehhez kötött.
+
+**A nightly** (`cc79265`) még sorban áll, nem futott le. A P5 nem függ tőle, de a #116 "kész" jelentése addig nyitva marad.
+
+## Amit a `cic-primitive-engine` repóban találtam
+
+- **Az engine nem materializál, csak ellenőriz.** A `MATERIALIZATION-SPEC.md` "Scope correction" szakasza kimondja: a `Parse`, `Normalize`, `Resolve`, `Validate` lépések "permanently the environment's job". Az engine a kész jelöltet fogadja (`MaterializedObject::try_new`), kanonikus bájtokat (A szakasz) és digesteket számol.
+- **Receipt-gyártó sehol nincs.** A `RECEIPT-SCHEMA.md` és a `RECEIPT-VERIFIER.md` szó szerint kimondja: "no receipt producer exists in this crate", és "anywhere else in the CIC ecosystem" sem. A szerződés (15 kötelező mező, egy `materialization` burkoló, rendezett bizonyítéklisták) le van zárva, és egy Rust- és Go-ellenőrző is van hozzá, megosztott differential-corpusszal.
+- **A forms a "környezet" oldala.** A P1–P3 már megvan (parse, validate, normalize, effektív szabály), tehát a P5 pontosan a hiányzó gyártó.
+
+## Mit jelent ez a P5-0-ra
+
+1. **A bizonyíték külső.** A P5 elfogadási kritériuma az, hogy az engine saját ellenőrzője elfogadja a forms receiptjeit. Ez erősebb, mint a saját tesztek (nem a saját olvasatunkat igazoljuk), de keresztrepós rögzítést kér, mint a `cic-primitives` pin.
+2. **Az első egység szűk lehet, és már most bizonyítható:** *Resolve nélküli* materializálás. A P3 `normalize` már követi minden érték eredetét (authored vagy default), ez közvetlenül az `applied_defaults` bizonyíték (`rule: "schema-default"`). A `derived_values` első körben `[]`. A `Resolve` (snapshot) későbbi egység.
+3. **A kanonikus bájtok kritikus.** Az `input_digest` az engine A7 digestje, amelyhez a forms-nak bájtra azonos kanonikus formát kell előállítania (számok, escape-ek, kulcssorrend, A2–A6). Ez a legnagyobb pontatlansági kockázat, itt találnánk első eltérést.
+
+## Döntések, amelyek a tiéd (ezeket nem hozom meg helyetted)
+
+- **A. Az engine ellenőrzője legyen-e a kapu?** Pin a `cic-primitive-engine`-re, és a CI futtatja az ellenőrzőt a forms receiptjein. (Ajánlott igen.)
+- **B. `PathBinding`.** A szerződés nem mondja meg a receipt-útvonal és az objektumkulcs közti leképezést (az ellenőrző ezért kéri kívülről). Ki rögzíti: a forms, vagy az engine?
+- **C. A D1-azonosítók** (`grammar_*`, `primitive_*`, `schema_*`, `engine_*`): a forms a grammar-pinjéből tudja a nagy részüket, de az `engine_identity` a forms implementációját nevezi-e meg (`cic-primitive-forms-rust/-go`)?
+- **D. Snapshot formátuma** a `Resolve`-hoz: nincs definiálva sehol. Ez későbbi egység, de a P5-0 ADR-nek legalább ki kell mondania, hogy kívül marad.
+
+Javaslat: P5-0 egy **tervdokumentum + ADR 0014 (proposed)**, ugyanabban a formában, mint a P4-0 volt (`docs/P5-...md`), az A–D döntésekkel és egy szűk, kifejezetten Resolve nélküli első egységgel. Írhatom?
+~~~~~
+
+
+### 2026-10-29 23:20 — Felhasználó
+
+~~~~~
+írd meg
+~~~~~
+
+
+### 2026-10-29 23:21 — Claude
+
+~~~~~
+Dolgozom: megírom a P5-0 tervdokumentumot és az ADR 0014-et (proposed), a felmérés tényeire alapozva.
+~~~~~
+
+
+### 2026-10-29 23:22 — Claude
+
+~~~~~
+Megírtam a P5-0-t, és megnyitottam a [#117](https://github.com/CentralInfraCore/cic-primitive-forms/pull/117)-et. Csak dokumentum van benne, kód nincs, az engine-hez sem nyúltam.
+
+**A PR tartalma:**
+- `docs/P5-RESOLVE-MATERIALIZE-RECEIPT.md`
+- `docs/adr/0014-materialize-and-receipt-first-units.md` (státusz: proposed)
+- a `PHASES.md` P5 sora frissítve
+
+**A dokumentum gerince:**
+- **Szerep.** A forms a *gyártó*, az engine szerződése a specifikáció, az engine ellenőrzője pedig a kapu. A saját olvasatunk így nem lesz saját bizonyíték.
+- **Sorrend.** P5-1 kanonikus bájtok és digest (engine A szakasz), P5-2 materializálás Resolve nélkül, P5-3 receipt, P5-4 Resolve. A snapshot-forma és a `derived` értékek az első egységekből kimaradnak.
+- **Öt hely, ahol a szerződés és a forms nem találkozik** (3. szakasz). A legkényesebbek: a fa és a lapos kulcsok közti leképezés (`PathBinding`) nincs specifikálva; a kanonikus formát bájtra pontosan kell egyeztetni, és ez a fázis legnagyobb pontatlansági kockázata; a listaelem-útvonal alakja ismeretlen.
+- **A–F döntések a tiéd** (8. szakasz), mindegyikhez javaslat, de egyiket sem hozta meg a PR. A legfontosabb az A: legyen-e az engine ellenőrzője, rögzített commiton, a P5 CI-kapuja? Ehhez kis harness kell, mert az engine CLI-je jelenleg csak a `read` parancsot ismeri.
+
+**Amit ellenőriztem és amit nem.** Az engine tényei az `93c793a` commit olvasásából jönnek, a fájlnevek a dokumentumban vannak. A 35 receipt-vektort és a CLI állítását listázással és grep-pel néztem meg. Semmit nem futtattam, mert nincs mit.
+
+Az ADR státusza *proposed*: az elfogadás a te merge-ed, a döntések A–F megválaszolásával vagy elhalasztásával az "Acceptance record"-ban.
+~~~~~
+
+
+### 2026-10-30 05:10 — Felhasználó
+
+~~~~~
+review 
+
+<pasted_content id="aa6b">
+## PR #117 — P5-0: Materialize és Receipt architektúra
+
+&#x20;CI sikeres
+
+[PR #117 – P5-0: Design note és ADR 0014](https://github.com/CentralInfraCore/cic-primitive-forms/pull/117?utm_source=chatgpt.com)
+
+HEAD: `7508cf60e34d6613e65d0b342a2ecf42da9c5512` · Nyitott, mergeable
+
+Ez már a P5 előkészítése, nem egyszerűen a P4 újabb javítása. A PR három dokumentumot módosít, implementációs kódot nem.
+
+| Ellenőrzés                    | Eredmény  |
+| ----------------------------- | --------- |
+| P1 workflow                   | Success   |
+| Corpus                        | Success   |
+| Rust / Go / parity            | Success   |
+| Diff és patch proof           | Success   |
+| ADR 0014                      | Proposed  |
+| Új materializer implementáció | Még nincs |
+
+A legfontosabb architekturális felismerés, amelyet a `cic-primitive-engine` megadott commitján külön is ellenőriztem:
+
+Az engine rendelkezik a `MaterializedObject` szerződésével, kanonikus bájtformátumával és Rust/Go receipt-verifierével, de nem ő végzi a Parse → Normalize → Resolve → Validate folyamatot.
+
+A #117 azt javasolja, hogy a Forms állítsa elő az engine által elfogadható objektumot és receiptet. Ez helyes felelősségi irány: nem duplikáljuk az engine már létező szerződését.
+
+## Amit különösen jónak tartok
+
+A javasolt fejlesztési sorrend logikus:
+
+P5-1 — Canonical bytes + digest
+
+P5-2 — MaterializedObject + evidence
+
+P5-3 — Receipt + engine verifier
+
+P5-4 — Snapshot-alapú Resolve
+
+Különösen helyes, hogy a P5-1 a bájtpontos egyezéssel kezdődik. Ha ez nem stabil, sem az `input_digest`, sem az `output_digest` nem lesz megbízhatóan reprodukálható.
+
+## Három fontos észrevételem
+
+1\. A kanonizálási értéktartomány nincs még pontosan összehangolva.
+
+Ezt a forráskódban ellenőriztem.
+
+A Forms `Node` Rustban és Go-ban is `i64` egész számokat támogat, de lebegőpontos és nagyobb egész értékeket nem. Az engine kanonizálása viszont `BigInt` és lebegőpontos értékekkel is dolgozik.
+
+Ezért a P5-1 nem tudja változtatás nélkül az engine összes kanonizálási vektorát lefedni.
+
+A döntendő kérdés: a Forms jelenleg támogatott értéktartományára korlátozzuk a P5-1-et, vagy bővítjük az adatmodellt? Én az elsőt választanám, kifejezetten dokumentált határral.
+
+2\. A `PathBinding` nélkül a receipt bizonyítása csak korlátozott.
+
+Az engine verifier egyértelműen elvárja a receipt útvonala és a materializált objektum lapos kulcsa közötti kötést.
+
+A Go verifier jelenlegi útvonalforma-ellenőrzése szintaktikailag megengedi a `$.routes[{to="b"}].metric` jellegű alakot, de ettől még nem tudja, melyik objektumkulcshoz tartozik. Ezt a kötést továbbra is explicit módon meg kell határozni.
+
+A P5-3 átmenetileg megvalósítható defaultok nélküli objektumokkal, de ez még nem bizonyítja az `applied_defaults` teljes láncát.
+
+3\. A receipt konzisztenciát bizonyít, nem eredetet.
+
+Az engine verifier ellenőrzi, hogy a receipt megfelel-e a neki átadott bemenetnek és kimenetnek. Nem igazolja, hogy valóban a megnevezett schema vagy grammar alapján futott a materializálás, illetve hogy a feltüntetett defaultokat ténylegesen a producer alkalmazta.
+
+A tervezet ezt helyesen elkülöníti. A CIC proof-chain szempontjából fontos, hogy a későbbi verziók se mossák össze az ellenőrzött tartalmi kötést a hitelesített végrehajtási bizonyítékkal.
+
+## Az ADR 0014 elfogadási döntései
+
+A dokumentum hat tulajdonosi döntést kér. Én ezeket így kezelném:
+
+| Döntés                              | Javaslatom                                                                    |
+| ----------------------------------- | ----------------------------------------------------------------------------- |
+| A — Engine verifier mint CI-kapu    | Elfogadom, pinned commit, Rust/Go ellenőrzés                                  |
+| B — PathBinding tulajdonosa         | Engine-szerződés határozza meg; P5-2/P5-3 teljes lezárása előtt rendezni kell |
+| C — Listaelem útvonalformája        | Célzott verifier-teszttel bizonyítani                                         |
+| D — Producer identity               | Külön Rust és Go identity elfogadható                                         |
+| E — Grammar és primitive azonosítók | Ugyanazon pinned release-ből, ellenőrzött megfeleltetéssel                    |
+| F — Snapshot                        | Halasztható P5-4-ig                                                           |
+
+Ehhez hozzátennék egy hetedik pontosítást: P5-1 értéktartománya, különösen `i64`, `BigInt`, float és a set-topology viszonya.
+
+## Merge-döntésem
+
+Feltételes GO
+
+A tervezési irányra GO-t adok, de az ADR 0014 normatív elfogadását még nem mondanám ki automatikusan.
+
+A #117-ben az A–F döntéseket explicit módon elfogadottként vagy halasztottként rögzíteném, és hozzáadnám a P5-1 támogatott értéktartományát. Ez dokumentációs pontosítás, nem új implementációs kör.
+
+Ezután merge-elhető a P5-0, és kezdődhet a P5-1: engine-kompatibilis canonical bytes + digest Rustban és Go-ban.
+
+A #117-et nem merge-eltem.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-30 05:10 — Claude
+
+~~~~~
+Először ellenőrzöm az 1. állítást (értéktartomány), mielőtt a dokumentumba írom.
+~~~~~
+
+
+### 2026-10-30 05:11 — Claude
+
+~~~~~
+Felvittem a review pontosításait a #117-be, és pusholtam. Csak dokumentum változott.
+
+**Az 1. állítás igaz.** A forms `Value` típusa `null`, bool, `i64`, string, sequence és map értéket tárol. A float és az `i64`-en túli egész `Unsupported`, amit a parser sosem állít elő. Az engine kanonizálója `BigInt` és `Float` értéket is kezel. Ezt a `93c793a` commiton néztem meg. Az engine `canonicalize` vektorai között ott van a `large_integer_beyond_i64`, a `float_exact_decimal_tie`, a `float_extreme_magnitude` és a `negative_zero`. A P5-1 tehát változtatás nélkül nem tudja mindet reprodukálni.
+
+**Mi került be:**
+- **Design note, 3. szakasz.** Új 6. pont az értéktartományról. A „öt hely" címe „hat hely" lett.
+- **G döntés.** A P5-1 a forms saját értéktartományára szűkül, dokumentált határral. A nem lefedett engine-vektorok névvel szerepelnek a listán, egy `Unsupported` értéket pedig névvel ellátott kóddal utasít vissza a kanonizáló, soha nem közelít. Az adatmodell bővítése külön döntés.
+- **H döntés (nyitott).** Az engine tömbsorrendje „ahogy adott", ezért egy halmazt (`set`) addig nem lehet digestelni, amíg nincs meghatározva a kanonikus sorrendje. A review „set-topology" megjegyzését így értelmeztem. Ezt még nem néztem meg az engine vektoraiban, ezért nyitva hagytam.
+- **Válaszrekord a 8. szakasz végén.** A–G a review válaszaival, H nyitott. Mivel az elfogadás a te merge-ed, a rekord ezt mondja ki.
+- **ADR 0014.** Új 6. döntési pont, és az elfogadási rekord A–H-ra frissült.
+
+A D, E és F döntésre ugyanazt javasoltam, mint a review (D: egy identity nyelvenként, E: ugyanabból a pinned release-ből ellenőrzött megfeleltetéssel, F: P5-4-ig halasztva). A B-nél és a C-nél csak a rekord szövegét igazítottam hozzá (B: az engine szerződése rendezi, C: célzott verifier-teszt).
+
+**A te döntésed:** a rekord a review válaszait tartalmazza, nem a tieidet. Ha valamelyiket másképp látod, szólj, mielőtt mergelsz.
+
+A CI-t még nem néztem meg az új commiton.
+~~~~~
+
+
+### 2026-10-30 05:15 — Felhasználó
+
+~~~~~
+mergelve mehet a megvalósítás
+~~~~~
+
+
+### 2026-10-30 05:16 — Claude
+
+~~~~~
+Elkezdtem a P5-1-et: az engine string-író szabályát olvasom, utána jön a Rust és Go kanonizáló.
+~~~~~
+
+
+### 2026-10-30 05:17 — Claude
+
+~~~~~
+Most a közös vektortáblát és az engine-vektorokat ellenőrző eszközt írom (Python), utána jönnek a Rust és Go tesztek.
+~~~~~
+
+
+### 2026-10-30 05:18 — Claude
+
+~~~~~
+Mutációs futás helyi kör: a mutáns-másolat nem látja a `testdata/`-t, ezért `CIC_FORMS_ROOT`-tal megadom a gyökeret.
+~~~~~
+
+
+### 2026-10-30 05:21 — Claude
+
+~~~~~
+Teszt-hiba (üres fake engine). Adok neki egy vektort, és felveszem a tesztet a CI selftest-sorba.
+~~~~~
+
+
+### 2026-10-30 05:21 — Claude
+
+~~~~~
+Megnyitottam a [#118](https://github.com/CentralInfraCore/cic-primitive-forms/pull/118)-at, ez a P5-1 első fele. A CI-t még nem néztem meg rajta.
+
+**Mi van benne:**
+- **Kanonizáló Rustban és Go-ban.** Az engine A1–A7 szabálya szerint, a G döntés tartományára (null, bool, `i64`, string, sequence, map). Float, `i64`-en túli egész és ismétlődő kulcs névvel ellátott okkal elutasítva (`unsupported_value`, `duplicate_key`; Go-ban még `not_utf8`), nem közelítve.
+- **Közös vektortábla** (`testdata/p5/canonical-vectors.tsv`, 26 sor), mindkét nyelv olvassa:
+  - 7 sor az engine `conformance/canonicalize` vektora.
+  - 6 engine-vektor név szerint `out_of_range`; mindkét nyelv azt ellenőrzi, hogy a parser elutasítja őket.
+  - 13 saját sor.
+- **Engine-ellenőrzés a CI-ban.** A `rust` job a rögzített `93c793a` commiton kicheckouttolja az engine-t, és a `tools/p5/engine_vectors.py` ezzel veti össze a táblát. Egy új, besorolatlan engine-vektor ezen elbukik, ezért a tartomány nem változhat észrevétlenül.
+- **A saját sorok** egy tőlük független Python-referenciával vannak ellenőrizve. Az eszköz tesztjei megmutatják, hogy az ellenőrzés tud bukni (rossz sor, hiányzó sor, besorolatlan vektor, rossz commit).
+
+**Amit lefuttattam:**
+- **Rust:** fmt, clippy, az új tesztek, és a `canonical.rs` mind a 23 mutánsa elbukott a tesztekön. Az első futásban 2 túlélt: nem volt újsor a vektorokban, és a hibaszöveget sem teszteltem. Mindkettőt pótoltam.
+- **Python:** az eszköz, a tesztjei, a `test_workflows` és a `test_diff_gate`.
+- **Go:** nem futott (nincs Go-toolchain), az első futása ez a CI. A kódot kézzel ellenőriztem, de egy gofmt- vagy fordítási hiba még kijöhet belőle.
+
+**Még hátravan a P5-1-ből:** Rust/Go differential generált értékeken, fuzz target, és az engine `digest` függvényének ellenőrzése az üres map-en túl. Ezeket külön PR-ba szántam, hogy ez a rész kicsi maradjon.
+
+**A H döntés (halmaz sorrendje) még nyitott.** Az engine A6 szakasza is kimondja, hogy a `TopologySet` kanonikus sorrendje nála sincs eldöntve. A P5-1 ezért nem is nyúl hozzá, a sequence-et úgy írja, ahogy kapja. A halmaz sorrendjét legkésőbb a P5-2 előtt el kell dönteni.
+~~~~~
+
+
+### 2026-10-30 05:33 — Felhasználó
+
+~~~~~
+bukott
+~~~~~
+
+
+### 2026-10-30 05:33 — Claude
+
+~~~~~
+Go-oldali fordítási/teszthiba gyanús; megnézem a `go` job naplóját.
+~~~~~
+
+
+### 2026-10-30 05:34 — Claude
+
+~~~~~
+Van Go-toolchain, és a gofmt két fájlt jelez. Formázok, majd lefuttatom a teszteket.
+~~~~~
+
+
+### 2026-10-30 05:34 — Claude
+
+~~~~~
+Javítottam és pusholtam. A Go-oldal mind a négy új tesztje most már lokálisan is zöld.
+
+**Mi bukott:** két dolog, mind Go-oldali.
+- A `writeCanonical` és a `writeCanonicalString` már létezett a `go/diffcanonical.go`-ban, ezért a csomag nem fordult (ez bukatta a legtöbb jobot). Átneveztem a sajátjaimat `writeValueBytes`, `writeValueString` és `writeValueEscape` névre.
+- A gofmt egy záró üres sort jelzett a `canonical.go` végén. Ezt `gofmt -w`-vel javítottam.
+
+**Amit most tudok és korábban nem:** letöltöttem egy Go-toolchaint a scratchpad-be (`gotc/`, 1.25.0), így a Go-t ezentúl lokálisan is futtatom. A teljes Go-suite egyelőre nem fut itt, mert a `CIC_PRIMITIVES_ROOT` hiányzik. A saját négy tesztem és a gofmt viszont átment.
+
+Az új CI-futás eredményét még nem láttam. A `parity`, `diff-proof` és `edit-proof` bukását ugyanennek a fordítási hibának tulajdonítom, de ez még nincs megerősítve.
+~~~~~
+
+
+### 2026-10-30 05:47 — Felhasználó
+
+~~~~~
+kérem merget
+~~~~~
+
+
+### 2026-10-30 05:47 — Claude
+
+~~~~~
+A head megegyezik a lokális HEAD-del, és egyetlen check sem bukott vagy függ. Mergelem.
+~~~~~
+
+
+### 2026-10-30 05:48 — Claude
+
+~~~~~
+A [#118](https://github.com/CentralInfraCore/cic-primitive-forms/pull/118) mergelve, a merge commit `c47e7ff`. Merge előtt a head `2b123a7` volt, és minden check zöld vagy skipped volt, egy sem bukott vagy függött. A PR-ban az engine-vektor ellenőrzés (`tools/p5/engine_vectors.py`) is zöld volt.
+
+Még nem néztem meg, hogy a `main`-en a push-futás is zöld-e. A fa nem azonos a PR-fejjel (squash), ezért az `inherit` itt nem ugorja át a futást.
+
+Hátravan a P5-1 második fele: a Rust/Go differential generált értékeken, a fuzz target, és az engine `digest` függvényének ellenőrzése az üres map-en túl. A H döntés (halmaz sorrendje) a P5-2 előtt még eldöntendő. A naplót és a memóriát a #117/#118 lezárása után még nem frissítettem. Mehet a P5-1 második fele?
+~~~~~
+
+
+### 2026-10-30 05:49 — Felhasználó
+
+~~~~~
+mehetsz tovább ne feledd a factory mentését
 ~~~~~
