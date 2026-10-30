@@ -16821,3 +16821,331 @@ A naplót és a memóriát a #120 lezárása után még nem frissítettem. Mehet
 ~~~~~
 csináld a naplót és a memóriát
 ~~~~~
+
+### 2026-10-30 16:12 — Claude
+
+~~~~~
+Az utolsó naplózott üzenet 07:21:22, onnan folytatom.
+~~~~~
+
+
+### 2026-10-30 16:13 — Claude
+
+~~~~~
+A napló és a memória frissítve.
+
+- **Napló.** A `theads` napló a #119–#120 szakaszával bővült, a commit `8260dca`, pusholva. Titok nem került bele (a maszkoló nem talált semmit).
+- **Memória.** A `project_p3_closed_p3b_state` és a `MEMORY.md` index frissült:
+  - P5-1 lezárva (#118, #119, #120).
+  - A H döntés nyitott a P5-2 előtt, a javaslatommal együtt.
+  - Hat tanulság:
+    - A Python `set`-bejárás hash-seedtől függ.
+    - A `nightly` a `p1.yml` módosítására is elindul.
+    - A `DOES NOT BUILD` seeded defect okai.
+    - A nyers U+2028/2029 forrásban.
+    - A lokális upstream-checkoutok és a környezeti változók.
+    - Az, hogy a `gh pr merge`-hez kifejezett kérés kell.
+
+A P5-1 lezárt. A P5-2 előtt a H döntés a tiéd: a halmaz kanonikus sorrendje. Javaslatom, hogy a P5-2 halmaz nélküli dokumentumokra szorítkozzon, a halmaz pedig külön döntést kapjon az engine oldalával egyeztetve.
+~~~~~
+
+
+### 2026-10-30 16:15 — Felhasználó
+
+~~~~~
+milyen döntés vár rám?
+~~~~~
+
+
+### 2026-10-30 16:15 — Claude
+
+~~~~~
+Három döntés vár rád, és van néhány kisebb, ami nem blokkol.
+
+**1. H: a halmaz kanonikus sorrendje (blokkol a P5-2 előtt).**
+- A kérdés: ha a dokumentum halmaz-topológiájú kollekciót tartalmaz, milyen sorrendben kerüljön a kanonikus bájtokba? Az engine A6 szakasza ezt sem döntötte el.
+- **A.** A P5-2 csak halmaz nélküli dokumentumokra szól, a halmaz külön döntést kap az engine oldalával egyeztetve. Ezt javaslom, mert nem építünk olyan szabályra, amit az engine később máshogy dönthet.
+- **B.** A forms maga dönt (például a kanonikus bájtok szerinti rendezés), és az engine-nek jelzi. Gyorsabb, de eltérés kockázata van.
+- **C.** A séma szerinti sorrend. Ehhez a sémának kell hordoznia a sorrendet, amit most nem tud.
+
+**2. A `nightly` indítása a `p1.yml` módosításakor.** Most minden PR, ami a `p1.yml`-hez nyúl, merge után egy teljes FULL-t indít (a #118 és a #119 is ezt tette). A szabály útvonal alapú, nem hatás alapú. A kérdés, hogy marad-e, vagy szűkítjük arra az esetre, amikor a FULL-specifikus jobok változnak. Ha nem szólsz, marad.
+
+**3. A Go `CanonicalBytes(nil)` pánikja.** Ez API-döntés: pánik marad (a hívó hibája), vagy hibát ad. A hiba okához új kód kellene, mert a három meglévő egyike sem illik rá. Alacsony súlyú, nem blokkol.
+
+**Kisebb, nem blokkoló tételek:**
+- **Az ADR 0014 A–G döntései** a #117 merge-ével elfogadottnak számítanak, a válaszrekordban a review válaszaival. Ha valamelyikkel nem értesz egyet, most kell szólni, mert a P5-2 és P5-3 ezekre épül. A legkonkrétabbak: B (a `PathBinding` az engine szerződésében dől el) és C (a listaelem-útvonal alakját a verifierrel kell megmérni).
+- **A #111 és #115 issue** (a 6 régi Rust-mutáns, illetve a `diff_gate` nem-UTF-8 fájlon összeomlik) nyitva van, és nem kezdtem el. Ha akarod, ezek közül bármelyik mehet a P5-2 előtt.
+
+A H a lényeges. A többit alapértelmezetten hagyom.
+~~~~~
+
+
+### 2026-10-30 16:17 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+Én ezeket a döntéseket hoznám meg. A cél, hogy a P5-2 elindulhasson anélkül, hogy olyan szemantikai szabályt vezetnénk be, amelyet később az Engine-nel ütközve kell megváltoztatni.
+
+## Döntéseim
+
+| Kérdés                              | Döntés                                | Indok                                                             |
+| ----------------------------------- | ------------------------------------- | ----------------------------------------------------------------- |
+| H — Halmazok kanonikus sorrendje    | A — elfogadva                         | A P5-2 első egysége nem kezel set-topológiájú gyűjteményeket      |
+| Nightly FULL `p1.yml` módosításakor | Marad a jelenlegi szabály             | Egyelőre konzervatív, fail-closed működés                         |
+| Go `CanonicalBytes(nil)`            | Hibát adjon, ne pánikot               | Publikus könyvtári API-nál a hibát szabályozottan kell visszaadni |
+| ADR 0014 A–G                        | Elfogadva                             | A #117-ben rögzített döntéseket fenntartjuk                       |
+| #111 — Régi Rust-mutánsok           | Halasztva                             | Nem blokkolják a P5-2-t                                           |
+| #115 — Nem UTF-8 diff gate          | Külön javító PR, lehetőleg P5-2 előtt | CI-infrastruktúra robusztussága                                   |
+
+### 1. A H döntésnél egy fontos kikötés
+
+Nem egyszerűen arról van szó, hogy egy setet nem rendezünk.
+
+A P5-2 nem állíthat elő szemantikai digestet olyan dokumentumról, amelynek set-topológiáját nem tudja kanonikusan értelmezni.
+
+Például:
+
+```
+routes:
+  - to: a
+    metric: 10
+  - to: b
+    metric: 20
+```
+
+És ugyanez fordított elemsorrendben, ha a séma szerint `routes` halmaz, akkor ugyanazt a logikai állapotot reprezentálja.
+
+A jelenlegi canonical writer azonban a sorrendet megtartja, ezért eltérő digest keletkezne.
+
+Ez a CIC szempontjából lényeges szerződéses probléma: ugyanarra az állapotra nem szeretnénk két eltérő identitást.
+
+Ezért a P5-2-ben előírom:
+
+- A sémából kötelező megállapítani a kollekció topológiáját.
+- Set-topológiánál a materializálás szabályozott hibával álljon meg, még a szemantikai digest előállítása előtt.
+- A kanonizáló generikus, sorrendmegőrző függvénye változatlan maradhat.
+- A setek végleges kanonizálási szabálya az Engine szerződéséhez kerül, külön ADR-ben.
+
+Ez pontosan elválasztja a bájtszintű kanonizálást a szemantikai kanonizálástól.
+
+### 2. A nightly FULL szabályát most nem szűkíteném
+
+Tudom, hogy a CIC CI-architektúrájának egyik alapelve a felesleges ellenőrzések kiküszöbölése.
+
+De a változás hatásának bizonyítása fontosabb, mint a puszta útvonalalapú optimalizálás.
+
+A későbbi szűkítéshez olyan osztályozó kellene, amely bizonyítja, hogy egy workflow-módosítás nem érinti a FULL viselkedését, és ismeretlen hatás esetén továbbra is FULL-t indít.
+
+Ez külön optimalizálási feladat. Nem keverném a P5-2-be.
+
+### 3. A Go `nil` kezelése
+
+Új, névvel ellátott hibát vezetnék be, például `nil_node`.
+
+Ez nem ADR 0007-es sémahiba, hanem canonical API-bemeneti hiba. A tesztnek top-level `nil` mellett a szekvencián vagy mapen belüli `nil` elemeket is ellenőriznie kell.
+
+Nem blokkoló, de a P5-2 új kódjánál már ne építsünk a pánikra.
+
+### 4. A PathBinding kapcsán nem engednék kompromisszumot
+
+A B döntés szerint a `PathBinding` szemantikáját az Engine határozza meg. Ezt fenntartom.
+
+A C döntés szerint a listaelem-útvonalakat a verifierrel teszteljük. Ez szükséges, de nem elég: az útvonal szintaktikai elfogadása nem bizonyítja a megfelelő objektumkulcshoz történő kötés helyességét.
+
+A P5-3 teljes lezárása előtt mindkettőre konkrét, géppel ellenőrizhető szerződés szükséges.
+
+## Javasolt következő fejlesztési sorrend
+
+\#115 — Diff gate javítása
+
+Kicsi, külön PR, nem UTF-8 bemenet regressziós tesztjével.
+
+P5-2 — MaterializedObject
+
+Első körben referencia- és setmentes, támogatott értéktartományú dokumentumokkal; engine `try_new` ellenőrzés és Rust/Go differential.
+
+P5-3 — Receipt
+
+Engine verifier mint független kapu, rendezett evidence, PathBinding, input/output digest és tamper-próbák.
+
+A legfontosabb döntésem: H = A, de fail-closed módon. Nem csendben kihagyjuk a seteket, hanem kifejezetten visszautasítjuk azt a szemantikai materializálást, amelynek az identitását még nem tudjuk helyesen bizonyítani.
+
+Ezzel szerintem mehet tovább a P5-2.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-30 16:17 — Claude
+
+~~~~~
+Ezt a döntéslistát a te döntésedként kezelem. A sorrend: előbb a #115 (kis PR), a Go `nil_node` és a döntések rögzítése, utána a P5-2 előellenőrzése. Kezdem a #115-tel.
+~~~~~
+
+
+### 2026-10-30 16:18 — Claude
+
+~~~~~
+A #115 javítása fent van ([#121](https://github.com/CentralInfraCore/cic-primitive-forms/pull/121)). Most a Go `nil_node` hibát és a döntések rögzítését csinálom, külön PR-ban.
+~~~~~
+
+
+### 2026-10-30 16:20 — Claude
+
+~~~~~
+A döntéseidet két PR-ban vittem át, mindkettő nyitva, a CI-juk még fut.
+
+**[#121](https://github.com/CentralInfraCore/cic-primitive-forms/pull/121): #115 javítása.**
+- A `diff_gate` a nem UTF-8 szövegfájlt (például egy `0xff` fuzz-seedet) `surrogateescape`-pel olvassa, és nem omlik össze.
+- Három teszt készült hozzá: a nem UTF-8 fájl nem dönti el a gate-et, a verdikt azonos az UTF-8 megfelelőjével, és a termékkód-tartományok megmaradnak. Mindhárom elbukik a régi kódon (`UnicodeDecodeError`), és átmegy az újon.
+- Mivel a `diff_gate.py` build-konfiguráció, a PR teljes (full) módban fut.
+
+**[#122](https://github.com/CentralInfraCore/cic-primitive-forms/pull/122): `nil_node` és a döntések rögzítése.**
+- A Go `CanonicalBytes(nil)` hibát ad `nil_node` okkal, a tetején és a sequence vagy map belsejében is. A Rustnak nincs megfelelője, mert ott nem lehet nil referencia.
+- Egy új elültetett hiba (`a nil node is not refused`) mellé került, ami elkapódik.
+- A tervdokumentum és az ADR 0014 új 7. pontja rögzíti a döntéseidet: H = A fail-closed módon (a séma topológiája kötelező, set esetén szabályozott hiba még a szemantikai digest előtt, soha nem csendes kihagyás), A–G elfogadva, a B és C géppel ellenőrizhető szerződése a P5-3 lezárása előtt, a nightly marad, a #111 halasztva.
+
+**Újdonság:** az eddig nem futtatott teljes Go-suite most lefut lokálisan, a rögzített upstream checkoutokkal és a helyi Go-toolchainnel, és zöld.
+
+A P5-2 előellenőrzését a #121 és #122 után kezdem: az engine `MaterializedObject` / `try_new` szerződése, és hogy a forms `value_origins`-ából mi állítható elő. A két PR közül egyik sem blokkolja, de a #121 merge-e után van értelme ráállni, hogy a `diff_gate` ne omoljon össze új fájlokon.
+~~~~~
+
+
+### 2026-10-30 16:24 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## CIC Primitive Forms — aktuális PR-áttekintés
+
+A [CentralInfraCore/cic-primitive-forms](https://github.com/CentralInfraCore/cic-primitive-forms?utm_source=chatgpt.com) repóban jelenleg két nyitott PR van. Mindkettő a legutóbbi döntéseinket valósítja meg.
+
+| PR                                                                                              | Tartalom                              | Állapot  |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------- | -------- |
+| [#120](https://github.com/CentralInfraCore/cic-primitive-forms/pull/120?utm_source=chatgpt.com) | P5-1 seeded defects                   | Mergelve |
+| [#121](https://github.com/CentralInfraCore/cic-primitive-forms/pull/121?utm_source=chatgpt.com) | Nem UTF-8 diff gate javítása          | Nyitott  |
+| [#122](https://github.com/CentralInfraCore/cic-primitive-forms/pull/122?utm_source=chatgpt.com) | `nil_node`, H döntés, ADR pontosítása | Nyitott  |
+
+A `main` jelenlegi HEAD-je `7abc026d`, amely már tartalmazza a #120-at.
+
+Az új két PR egymástól függetlenül indul erről a `main` állapotról, és nem láttam köztük közvetlen fájlütközést.
+
+## #121 — Nem UTF-8 diff gate javítás
+
+[PR #121](https://github.com/CentralInfraCore/cic-primitive-forms/pull/121?utm_source=chatgpt.com)
+
+Kódreview: GO
+
+A javítás két helyen használ `surrogateescape` dekódolást/enkódolást: a Git-kimenet olvasásánál és a `rust.patch` írásánál. Ez a korábbi `UnicodeDecodeError` megszüntetésének megfelelő iránya.
+
+Három új regressziós tesztet tartalmaz: a `0xff` bájtos fuzz seedet, a nem UTF-8 és UTF-8 bemenet azonos scope-döntését, valamint a termékkódban módosított sorok helyes megőrzését nem UTF-8 fuzz seed jelenlétében.
+
+Értékelés: a javítás szűk, nem változtatja meg a diff gate kiválasztási politikáját, és az ismert hibát kezeli. A PR leírása szerint a három új teszt az eredeti kódon elbukott.
+
+A CI lekérdezésekor a Corpus már sikeres volt, a P1 FAST FULL még futott, hibás job nélkül.
+
+## #122 — `nil_node` és az elfogadott P5-döntések
+
+[PR #122](https://github.com/CentralInfraCore/cic-primitive-forms/pull/122?utm_source=chatgpt.com)
+
+Kódreview: GO
+
+A Go `CanonicalBytes` most már `nil_node` hibával utasítja el a `nil` node-ot — a dokumentum gyökerében, szekvenciában és mapben is. A megoldás rekurzívan ugyanott ellenőriz, ahol a node feldolgozása történik, ezért mindhárom esetet lefedi.
+
+Az új seeded defect eltávolítja ezt az ellenőrzést, és megköveteli, hogy a tesztrendszer észlelje a hibát. Ez megfelel a CIC bizonyítási szemléletének.
+
+A dokumentációba bekerült a H = A, fail-closed döntés is: a P5-2 első egysége nem materializálhat set-topológiájú kollekciót, és nem adhat róla szemantikai digestet. Ez még nem implementáció, hanem a következő fejlesztési kör kötelező szerződése.
+
+## CI és merge-döntés
+
+| Ellenőrzés                    | #121        | #122           |
+| ----------------------------- | ----------- | -------------- |
+| HEAD szerinti P1              | Folyamatban | Folyamatban    |
+| Corpus                        | Sikeres     | Folyamatban    |
+| Scope                         | Sikeres     | Sikeres        |
+| Rust és Go alaptesztek        | Sikeres     | Sikeres        |
+| Quality gate                  | Sikeres     | Még nem teljes |
+| Teljes FAST FULL mutációs kör | Még fut     | Még fut        |
+
+A #121 45 `diff_gate` tesztje átment. A #122 Go tesztjei is átmentek, beleértve a race-detectorral végzett futást.
+
+Mindkét PR-t a CI FULL módba sorolta. Ez helyes: a #121 a diff gate-et, a #122 a seeded-defect infrastruktúrát módosítja.
+
+### Egy kisebb dokumentációs észrevétel
+
+A #122-ben az ADR 0014 továbbra is `Status: proposed` értéket visel, noha a #117 merge-je már elfogadta. Érdemes `accepted` állapotra frissíteni, hogy a normatív státusz és az elfogadási rekord összhangban legyen.
+
+Ez nem blokkoló kódhiba.
+
+## Javasolt sorrend
+
+\#121 — diff gate
+
+Feltételes GO
+
+Teljes P1 siker után merge.
+
+\#122 — API és ADR
+
+Feltételes GO
+
+Teljes P1 és Corpus siker után merge; az ADR státuszát célszerű pontosítani.
+
+P5-2 — Materialize
+
+Ezután
+
+Setek kizárása fail-closed módon, sémaalapú topológiaellenőrzéssel és engine-konform objektum-előállítással.
+
+Összkép: mindkét új PR megfelel a korábbi technikai döntéseinknek. Új, érdemi architekturális problémát nem találtam. Egyelőre a futó CI-k miatt nem adnék feltétel nélküli merge-engedélyt.
+
+Egyiket sem merge-eltem.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-30 16:25 — Claude
+
+~~~~~
+A review észrevétele jogos volt: az ADR 0014 még `proposed`-et mutatott, noha a #117 merge-e elfogadta. Javítottam a #122-ben (új commit):
+
+- Az ADR státusza `accepted`, az elfogadási rekord a #117 merge-ére hivatkozik.
+- A `PHASES.md` P5 sora most „P5-1 done, P5-2 next", és az ADR-t elfogadottnak jelöli.
+
+A review többi része egyezik a saját mérésemmel, új ellenvetésem nincs. Ezt a #122 push miatt újra futó CI-ra nem néztem még.
+
+A #121 CI-ja: 30 check sikeres, 33 még fut, 5 kihagyott, bukott egy sem. Mergelés előtt megvárom, hogy a teljes P1 és a Corpus lefusson mindkét PR-on. Mindkettőhöz kifejezett kérés kell tőled, ahogy eddig.
+~~~~~
+
+
+### 2026-10-30 16:55 — Felhasználó
+
+~~~~~
+mergelheted a #121 és #122
+~~~~~
+
+
+### 2026-10-30 16:55 — Claude
+
+~~~~~
+Mindkettő teljesen zöld az aktuális fején. Mergelem a #121-et, majd a #122-t.
+~~~~~
+
+
+### 2026-10-30 16:56 — Claude
+
+~~~~~
+Mindkét PR mergelve:
+
+- **[#121](https://github.com/CentralInfraCore/cic-primitive-forms/pull/121):** `f6aaac2`. A `diff_gate` már nem omlik össze nem UTF-8 szövegfájlon, így az #115 issue lezárható.
+- **[#122](https://github.com/CentralInfraCore/cic-primitive-forms/pull/122):** `0fadedb`. A Go `nil_node` hibát ad, az ADR 0014 `accepted`, a döntéseid rögzítve vannak.
+
+Merge előtt mindkettőnél a head egyezett a lokálissal, és nem volt nem-zöld check. A #122 a #121 merge-e után már nem a legfrissebb `main`-re épült, de a GitHub tisztán mergelte.
+
+Hátravan: a #115 issue lezáró kommentje (csak az #121 hivatkozásával, nem kezdtem el), a napló és a memória a #121–#122 szakaszával, és a P5-2 előellenőrzése. Melyikkel kezdjem? Javaslatom: előbb a napló és a memória, utána a P5-2 előellenőrzése.
+~~~~~
+
+
+### 2026-10-30 16:56 — Felhasználó
+
+~~~~~
+csináld a naplót és a memóriát
+~~~~~
