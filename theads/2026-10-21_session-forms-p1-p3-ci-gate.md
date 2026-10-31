@@ -20234,3 +20234,327 @@ Szólj, ha a doksi-pontosítást és a gamma-túlélőket egy kis előkészítő
 ~~~~~
 frissítsd a naplót
 ~~~~~
+### 2026-10-31 19:37 — Claude
+
+~~~~~
+Csak commit-hash-ek jönnek ki, titok nincs. Hozzáfűzöm és commitolom.
+~~~~~
+
+
+### 2026-10-31 19:37 — Claude
+
+~~~~~
+A napló frissítve és commitolva a workdir repóban: `077060d`. A `theads/2026-10-21_session-forms-p1-p3-ci-gate.md` fájlhoz 802 sort fűztem, a 10:04-es bejegyzés utáni részt, a mostani kérésedig. Más fájlhoz nem nyúltam. A commitban nincs `Co-Authored-By`, és a Vault-aláírás hook lefutott.
+
+Hozzáfűzés előtt titokmintákra szűrtem (`ghp_`, kulcsblokk, `vault:v1`, `hvs.`, JWT, hosszú [MASKED:private-repo]). Csak három commit-hash jött ki ([MASKED:private-commit] és [MASKED:private-commit] teljes hash-e), titok nincs.
+
+**Push nincs.** A commit helyi, a GitHubra csak a kérésedre megy. Most két helyi napló-commit áll mögötte: a korábbiak (e845436, 7f9bf35) még nincsenek kitolva, és ez a 077060d is csak helyi.
+
+**Nightly FULL:** a legutóbbi ellenőrzéskor még sorban állt a 8b0ccc1-en, azóta nem néztem meg. Megnézzem, és jelentem az eredményt?
+~~~~~
+
+
+### 2026-10-31 19:38 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+Én rögtön a generált receipt differentiallal folytatnám. 😁 Nem készítenék külön előkészítő PR-t a hat gamma-túlélő miatt.
+
+Ellenőriztem: a [Forms #131](https://github.com/CentralInfraCore/cic-primitive-forms/pull/131?utm_source=chatgpt.com) valóban mergelve van, a `main` HEAD `8b0ccc1`, az Engine #63 pedig továbbra is nyitott.
+
+A mostani állapotban már van működő Rust és Go receipt-producer, közös referencia, valamint az Engine-verifierrel igazolt 7 pozitív és nyelvenként 82 negatív eset. A következő kérdés az, hogy ez a szerződés a generált bemenetek széles tartományában is megmarad-e.
+
+## Következő egység: P5-3 generált receipt differential
+
+GO a P5-3 következő egységére: generált Rust–Go receipt differential, a pinelt Engine mint független verifier.
+
+**Scope**
+
+1. Használd a P5-2 meglévő determinisztikus, 6000 esetes materializálási generátorát. Ne építs külön, párhuzamos corpusgenerátort.
+2. Minden receipt-képes, elfogadott bemenetből állíts elő receiptet a Rust és Go `[MASKED:private-repo]ture` implementációval.
+3. Hasonlítsd össze az összes közös szemantikai mezőt. Csak az `engine_identity` és `engine_version` térhet el a korábbi M döntés szerint.
+4. Mindkét producer tényleges kimenetét ellenőrizze a pinelt Engine saját receipt-verifierje, ugyanazon authored input, materialized object és path binding mellett.
+5. Az elutasított eseteknél is követeld meg a Rust–Go egyezést a szerződéses elutasításokban. Új eltérést ne normalizálj el.
+6. Bizonyítsd negatív esetekkel az input/output digest, a default evidence, a schema identity és a path binding kapcsolatát.
+7. Az eredmény legyen reprodukálható: seed, bemenetek, elvárt kimenetek, elfogadott/elutasított darabszámok és az Engine-verifier eredménye.
+8. Legyen olyan seeded-defect vagy differential self-test, amely igazolja, hogy a hibás receipt és az eltérő Rust–Go kimenet ténylegesen pirosra fordítja a kaput.
+
+**Határok**
+
+- Kizárólag [MASKED:private-repo]ture-alapú receiptek.
+- Production receipt továbbra is HOLD.
+- A hiányzó hiteles release a `cic-primitives` fejlesztői pinjéhez kapcsolódik; ezt pontosítsd a dokumentációban.
+- Az Engine #63 maradjon nyitva a teljes end-to-end bizonyításig.
+
+A hat cargo-gamma túlélőt dokumentáld külön. Különösen a `canonical_bytes` hibakezelésének `unwrap()`-ra cserélését vizsgáld: elérhetetlen hibaág vagy hiányzó negatív teszt? Ezt ne minősítsd automatikusan ekvivalens mutánsnak.
+
+A differential után külön, kisebb PR-ben jöjjenek a receipt fuzz célok, ahogy a P5-2 esetében is tettük.
+
+**DoD:** Rust/Go parity, független Engine-verifikáció, negatív bizonyítékok, format/lint/test, branch-coverage, mutation gate, teljes zöld CI.
+
+Commit és PR megnyitható. Merge csak külön review után.
+
+## A hat gamma-túlélőről
+
+A `cargo-gamma` árnyékmérés eredménye 99/105 = 94,3%, vagyis a 90%-os küszöb felett van. Ezeket nem tekinteném automatikus merge-blokkolónak, de elfelejteni sem szabad őket.
+
+Különösen érdekes, hogy a túlélők egy része a hibakezelési viselkedést érinti. Ha egy `Result` hibáját `unwrap()` váltja fel, és a tesztek ezt nem veszik észre, akkor vagy az adott hiba bizonyíthatóan elérhetetlen, vagy hiányzik egy negatív teszt. Ez jó célpont egy önálló, szűkített hardening-egységhez.
+
+A #131 után előírt nightly FULL eredményét jelenleg nem tudtam külön igazolni; annak sikerét továbbra is ellenőrizni kell, de a következő fejlesztési ág előkészítését nem blokkolnám miatta.
+
+A sorrend tehát: generált differential → receipt fuzz → B/C szerződéses bizonyítások → P5-3 végső lezárása.
+
+És közben változatlanul érvényes a CIC alapelve: az Engine által elfogadott receipt konzisztenciát bizonyít, nem eredethitelességet.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-31 19:38 — Claude
+
+~~~~~
+Elindítom a generált receipt differentialt. Először megnézem a nightly FULL állapotát és a P5-2 generátor meglévő szerkezetét, hogy arra építsek, ne külön corpusra.
+~~~~~
+
+
+### 2026-10-31 19:38 — Claude
+
+~~~~~
+Ez a meglévő P5-2 vezeték. Végigolvasom a részeit, mert a receipt differentialnak ugyanerre kell épülnie.
+~~~~~
+
+
+### 2026-10-31 19:39 — Claude
+
+~~~~~
+Az átemelés bájtra azonos kimenetet ad. Jön a Rust és a Go dump.
+~~~~~
+
+
+### 2026-10-31 19:42 — Claude
+
+~~~~~
+A Rust harness: az Engine `verify_receipt` mindkét nyelv mind az 1817 receiptjét elfogadja, és 7557 módosítást a megadott kóddal és szabállyal utasít el. Ugyanez a Go harnessben.
+~~~~~
+
+
+### 2026-10-31 19:43 — Claude
+
+~~~~~
+A CI-lépés megvan. Jön a dokumentáció: új §18, és a reviewer által jelzett pontosítás a hiányzó hiteles release helyéről.
+~~~~~
+
+
+### 2026-10-31 19:45 — Claude
+
+~~~~~
+Amíg a napló letöltődik, kiélezem a pin-megfogalmazást a doksiban.
+~~~~~
+
+
+### 2026-10-31 19:49 — Claude
+
+~~~~~
+A Go-teszt is zöld. Felveszem a valós hiányokat seeded defectként, hogy a tesztek bukása a kapu része maradjon. Megnézem a bejegyzések formáját.
+~~~~~
+
+
+### 2026-10-31 19:49 — Claude
+
+~~~~~
+Amíg a seeded-defect futás megy, megírom a dokumentációt.
+~~~~~
+
+
+### 2026-10-31 19:50 — Claude
+
+~~~~~
+A seeded-defect futás (30 receipt-hiba, köztük a 4 új) a monitoron fut. Közben nem nyúlok a munkafához. Amint kész, jön a teljes lokális kapu az új differentiallal, a diff-mutáció és a lefedettség.
+
+**Eddig kész és ellenőrzött az új egységben (`feat/p5-3-receipt-differential`, `main` 8b0ccc1-ről, még nem commitolva):**
+- Meglévő 6000 esetes P5-2 generátorra épül, külön corpus nincs.
+- Rust és Go receipt mind a 6000 esetre azonos, kivéve az `engine_identity`/`engine_version` mezőt, és egyezik a független Python-referenciával. 1817 receipt és 4183 elutasítás.
+- Az összehasonlító self-testje 59 hibára piros. Az első futás egy valódi rést talált az összehasonlítóban (az `engine_version` lehetett az identitás-szöveg), ezt javítottam.
+- Az Engine `verify_receipt` mindkét nyelv mind az 1817 receiptjét elfogadja, és 7557 módosítást a pontos kóddal és szabállyal utasít el, mind a négy Rust/Go-kombinációban.
+- A hat gamma-túlélőt egyenként elemeztem: kettő valódi hiányzó negatív teszt volt (lezárva), kettő szerkezetileg elérhetetlen, kettő ekvivalens. A részletes táblázat a doksi §18-ban van.
+- Doksi: a hiányzó hiteles release a `cic-primitives` `73ae469` pinhez kötődik, nem az Engine `a6a0680`-hoz.
+~~~~~
+
+
+### 2026-10-31 19:55 — Claude
+
+~~~~~
+30/30 receipt-hiba CAUGHT, mindkét alap zöld. Most a teljes lokális kapu: formázás, lint, tesztek, Python, harnessek, majd lefedettség és diff-mutáció.
+~~~~~
+
+
+### 2026-10-31 19:56 — Claude
+
+~~~~~
+A CI-lépés pontos sorrendje helyben végigfut. Jön a branch-coverage kapu, majd a diff-mutáció.
+~~~~~
+
+
+### 2026-10-31 19:57 — Claude
+
+~~~~~
+A diff-mutáció és a `receipt.rs` teljes mutációs mérése fut a háttérben. Az eredményre várok, számot addig nem állítok. A kapuk eddigi állása:
+
+- **Zöld:** `cargo fmt`, `clippy -D warnings`, 247 Rust-teszt, `go vet`, Go-tesztek (98,9%), 125 Python-teszt, a harnessek default módja (7 elfogad / 82 elutasít nyelvenként).
+- **A CI-lépés sorrendje helyben:** 6000 bemenet, két dump, összehasonlítás, 59 töréses self-test, és mind a négy Rust/Go–Engine kombináció 1817 elfogadott / 7557 elutasított.
+- **Seeded defect:** 30/30 CAUGHT (26 a #131-ből, 4 új).
+- **Branch-coverage:** PASS, Rust 94,99%, Go 97,43%.
+
+Commit és PR csak a mutációs mérés lezárása után jön, ahogy a GO-ban kérted.
+~~~~~
+
+
+### 2026-10-31 19:57 — Claude
+
+~~~~~
+Ez csak az indító parancs lezárása volt. A mérés még fut, a monitor jelez, ha kész.
+~~~~~
+
+
+### 2026-10-31 19:59 — Claude
+
+~~~~~
+A diff-mutáció `PASS`, de ezúttal nulla termék-mutánssal, mert a termékkód nem változott. A `receipt.rs` egész fájljára a `cargo-mutants` 15 mutánsból 11-et fogott, 4 unviable, ugyanaz a szám, mint a #131-nél. A gamma-túlélők viszont a `cargo-gamma` mutátoraiból jöttek, ezért megnézem, mérhető-e az helyben.
+~~~~~
+
+
+### 2026-10-31 19:59 — Claude
+
+~~~~~
+A `cargo-gamma@0.3.0` telepítése és futása a háttérben megy. Az eredménye dönti el, hogy a hat túlélőből a két lezárt tényleg elesett-e, és a maradék négy ugyanaz-e, amit elemeztem. Amíg ez fut, a munkafához nem nyúlok. Commit és PR a gamma-mérés után jön.
+~~~~~
+
+
+### 2026-10-31 19:59 — Claude
+
+~~~~~
+Ez csak az indító parancs lezárása. A telepítés és a gamma-futás még megy, a monitor jelez, ha kész.
+~~~~~
+
+
+### 2026-10-31 20:03 — Claude
+
+~~~~~
+A PR meg van nyitva: **https://github.com/CentralInfraCore/cic-primitive-forms/pull/132**. Az ág a `main` (8b0ccc1) tetejéről indul, a commit adaf9cf, `Co-Authored-By` nélkül. Termékkód nem változott, csak tesztek, eszközök, CI és doksi. A CI eredményét még nem láttam, a merge a te review-dra vár.
+
+**Amit a PR bizonyít (mind lokálisan mérve):**
+- **Rust–Go egyezés:** a P5-2 meglévő 6000 esetén, külön generátor nélkül. 1817 receipt és 4183 elutasítás. Rust, Go és a független Python-referencia minden esetben egyezik, csak az `engine_identity` és az `engine_version` térhet el.
+- **Engine mint harmadik olvasó:** a pinelt `verify_receipt` és `receipt.Verify` mind a négy kombinációban (Rust vagy Go receipt, Rust vagy Go Engine) 1817 receiptet elfogad, és 7557 módosítást a pontos kóddal és szabállyal elutasít.
+- **Negatív bizonyíték:** az összehasonlító self-testje 59 hibára piros. Seeded defect: 30/30 CAUGHT.
+- **Branch-coverage:** PASS (Rust 94,99%, Go 97,43%).
+
+**Amit jelezni kell:**
+- **Mutációs kapu:** a `DIFF MUTATION: PASS` nulla termék-mutánssal áll, mert nincs termékkód a diffben. Ezért külön megmértem az egész `receipt.rs`-t: `cargo-mutants` 11/11 (4 unviable), `cargo-gamma@0.3.0` 74/77 = 96,1%.
+- **Gamma-túlélők:** a hatból kettő valódi hiányzó negatív teszt volt (digest `all`→`any`, és a szerzői bemenet kanonikus hibája, amely ismételt kulccsal elérhető). Ezek le vannak zárva, mindkettőhöz seeded defect tartozik. A többi elérhetetlen vagy ekvivalens, indoklással a doksi §18-ban. A :217-es mutánst a helyi gamma „killed"-nek jelöli, de egy receipthez nem nyúló időzítési teszt miatt, ezért ezt nem tekintem bizonyítéknak, és a doksi is így rögzíti.
+- **Két saját hiba, menet közben kijavítva:** az összehasonlító az `engine_version`-t csak nem üres szövegként ellenőrizte. A Go harness a projekciót `UseNumber` nélkül olvasta, emiatt a 7-es eset hamisan bukott.
+- **Határ:** az Engine nem látja a séma-identitást, azt a Python-referencia és a self-test őrzi. A generátor csak sima mezőneveket és egyetlen [MASKED:private-repo]ture-release-t használ.
+- **Doksi:** a hiányzó hiteles release a `cic-primitives` `73ae469` pinhez tartozik, nem az Engine `a6a0680`-hoz.
+
+A #131 utáni nightly FULL a legutóbbi ellenőrzéskor még sorban állt, azóta nem néztem meg.
+~~~~~
+
+
+### 2026-10-31 20:11 — Claude
+
+~~~~~
+Két régi háttérfolyamatot leállított a rendszer, mert kevés volt a memória. Mindkettő elavult várakozó (`pgrep` ciklus) volt a korábbi seeded-defect futásokra, amelyek rég lefutottak.
+
+- `b4n0u0ftr` várt a schema identity seeded futásra. Az eredménye megvan a `seeded_si2.out`-ban, mind CAUGHT.
+- `[MASKED:private-repo]aqk` várt az első receipt seeded futásra. Annak eredményét a javítás utáni futások pótolták (30/30 CAUGHT).
+
+A PR #132 mérései, a push és a PR nyitása már megtörtént, ezeket a leállítás nem érinti. Nem indítom újra őket, ahogy a jelzés kéri. A rendszer memóriája szűk, ezért a következő nehezebb futást (például a teljes helyi mutáció) csak a kérésedre indítom.
+~~~~~
+
+
+### 2026-10-31 20:25 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+&#[MASKED:private-repo]20;MERGE GO
+
+Igen, a [Forms #132](https://github.com/CentralInfraCore/cic-primitive-forms/pull/132?utm_source=chatgpt.com) most már mergelhető. Frissen ellenőriztem a GitHubon.
+
+| Ellenőrzés       | Aktuális eredmény           |
+| ---------------- | --------------------------- |
+| P1 pipeline      | SUCCESS                     |
+| Corpus pipeline  | SUCCESS                     |
+| GitHub mergeable | `true`                      |
+| HEAD             | `adaf9cf`                   |
+| PR               | Nyitott, még nincs mergelve |
+
+A korábban futó két Go mutációs job is sikeresen lezárult, így a feltételes jóváhagyásom feltétele teljesült.
+
+Engedélyezem a merge-et, kizárólag az ellenőrzött `adaf9cf` HEAD-re, lehetőleg `--match-head-commit` védelemmel.
+
+Merge után a `p1.yml` változása miatt kötelező a nightly FULL ellenőrzése. A következő fejlesztési egység a P5-3 receipt fuzz.
+
+A merge-et nem hajtottam végre.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-31 20:25 — Claude
+
+~~~~~
+Ellenőrzöm, hogy a HEAD és a CI tényleg az, amit a review leírt, aztán mergelek a `--match-head-commit` védelemmel.
+~~~~~
+
+
+### 2026-10-31 20:25 — Claude
+
+~~~~~
+A HEAD `adaf9cf`, nincs bukott vagy függő check (73 lefutott), a PR mergelhető. Mergelek.
+~~~~~
+
+
+### 2026-10-31 20:25 — Claude
+
+~~~~~
+A merge-t az auto-mód szűrő blokkolta: a beillesztett review jóváhagyását nem tekinti a te kifejezett utasításodnak. Megkerülni nem próbálom. Ha a #132-t mergeltetni akarod, futtasd ezt a sort a promptban (a `!` a sessionben futtatja, a kimenet ide kerül):
+
+```
+! cd /tmp/claude-1000/-home-sinkog-sync-claude-factory-CIC-workdir/7895b2db-5143-4537-8eaa-3624850e408c/scratchpad/wtp && gh pr merge 132 --squash --match-head-commit adaf9cf154c946ea69bd14ca6a79fdd6f475fb13 --subject "test(p5-3): the generated receipt differential, Rust and Go against a Python reference, the engine verifier as the third reader (#132)" --body "" && gh pr view 132 --json state,mergeCommit --jq '.state+" "+.mergeCommit.oid'
+```
+
+A `--match-head-commit` miatt csak pontosan az ellenőrzött `adaf9cf` mergelődik: ha közben bármi változna a PR-on, a parancs elutasít.
+
+**Állapot a merge előtt, frissen ellenőrizve:** HEAD `adaf9cf`, `MERGEABLE`, 73 check lefutott, nincs bukott és nincs függő.
+
+Ha lefutott, szólj. Utána elintézem:
+- a nightly FULL ellenőrzését a `p1.yml` változása miatt,
+- a naplót és a memóriát a #131 és #132 lezárásáról,
+- a következő egységet, a receipt fuzz célokat külön, kisebb PR-ban.
+~~~~~
+
+
+### 2026-10-31 20:26 — Felhasználó
+
+~~~~~
+<bash-input> cd /tmp/claude-1000/-home-sinkog-sync-claude-factory-CIC-workdir/7895b2db-5143-4537-8eaa-3624850e408c/scratchpad/wtp && gh pr merge 132 --squash --match-head-commit adaf9cf154c946ea69bd14ca6a79fdd6f475fb13 --subject "test(p5-3): the generated receipt differential, Rust and Go against a Python reference, the engine verifier as the third reader (#132)" --body "" && gh pr view 132 --json state,mergeCommit --jq '.state+" "+.mergeCommit.oid'</bash-input>
+~~~~~
+
+
+### 2026-10-31 20:26 — Felhasználó
+
+~~~~~
+<bash-stdout>MERGED 314475ab14e096fabfc14d6a65a005b59b70f76c</bash-stdout><bash-stderr>
+Shell cwd was reset to [MASKED:home-path]/sync/claude_factory/CIC/workdir</bash-stderr>
+~~~~~
+
+
+### 2026-10-31 20:26 — Claude
+
+~~~~~
+A #132 mergelve: `314475a`. Megnézem a `main` futásait, köztük a #131 utáni nightly FULL-t.
+~~~~~
+
+
+### 2026-10-31 20:26 — Claude
+
+~~~~~
+A #131 utáni nightly FULL (8b0ccc1) **sikeres**. A 314475a-n a `p1`, `corpus` és `nightly` még fut. Frissítem a memóriát és a naplót.
+~~~~~
