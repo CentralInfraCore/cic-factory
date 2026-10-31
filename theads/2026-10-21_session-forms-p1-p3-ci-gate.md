@@ -20558,3 +20558,479 @@ A #132 mergelve: `314475a`. Megnézem a `main` futásait, köztük a #131 utáni
 ~~~~~
 A #131 utáni nightly FULL (8b0ccc1) **sikeres**. A 314475a-n a `p1`, `corpus` és `nightly` még fut. Frissítem a memóriát és a naplót.
 ~~~~~
+
+
+### 2026-10-31 20:27 — Claude
+
+~~~~~
+**A #132 mergelve:** `314475a`, squash, a `--match-head-commit` védelemmel az ellenőrzött `adaf9cf` HEAD-re.
+
+**A `main` futásai:**
+- **#131 utáni nightly FULL** (8b0ccc1): **SIKERES**. Ez a `p1.yml` változása miatt kért ellenőrzés, tehát lezárható.
+- **314475a** (a #132 merge): a `p1`, a `corpus` és a `nightly` még fut. Az eredményüket nem láttam, ezért nem állítom zöldnek.
+
+**Memória és napló frissítve:**
+- A `project_p3_closed_p3b_state.md` és a `MEMORY.md` a #132 leckéivel. Ezek: az összehasonlító self-testje talált rést magában az összehasonlítóban, a Go harnessnek `UseNumber` kell, és egy mutáns „elesett" egy nem kapcsolódó időzítési teszt miatt.
+- A napló commitja a workdir repóban: `54112f2`.
+- **Push nincs.** Három napló-commit áll helyben (e845436, 7f9bf35, 077060d) és most a 54112f2, a GitHubra csak a kérésedre megy.
+
+**Nyitva és következő:**
+- A **receipt fuzz célok** külön, kisebb PR-ban, ahogy a P5-2-nél. Indítsam?
+- Utána a B/C gépileg ellenőrzött szerződések és a P5-3 végponttól végpontig tartó lezárása. Az Engine #63 addig nyitva marad.
+- A production receipt továbbra is HOLD.
+~~~~~
+
+
+### 2026-10-31 20:29 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+**GO — P5-3 receipt fuzz, külön PR-ben.**
+
+A #132 utáni `main` (`314475a`) legyen a kiindulópont.
+
+**Scope:**
+
+1. Rust `cargo-fuzz` és Go natív fuzz target a `receipt_flat_fixture` / `ReceiptFlatFixture` API-khoz.
+2. Használd újra a P5-3 meglévő fixture-jeit és generátorait. Ne építs második, párhuzamos szerződést.
+3. Fuzzold a dokumentumértékeket, a schema source-byte bindingot, a capability-ket és a receipt-hez kapcsolódó strukturális határeseteket.
+4. Pozitív eredménynél a kanonikus receipt legyen determinisztikus, és a pinelt Engine verifierje fogadja el.
+5. Elutasított bemenetnél kontrollált hiba legyen, panic nélkül. A parser, materializer és receipt-builder hibahatárai ne mosódjanak össze.
+6. A seed corpus tartalmazzon default nélküli, egy defaultos és több defaultos sikeres esetet, valamint hibás schema identityt, duplikált kulcsot és nem támogatott értéket.
+7. Külön canary/hibainjektálás bizonyítsa, hogy a fuzz-property ténylegesen képes hibát találni.
+8. Futtasd a meglévő CI minőségkapukat, és dokumentáld a seedeket, a lefedett invariánsokat, a futtatási parancsokat és az eredményeket.
+
+**Határok:**
+- Fixture receipt only.
+- Nincs production receipt vagy új release-authenticity mechanizmus.
+- Engine #63 marad nyitva.
+- A korábbi generált differential bizonyítékait ne duplikáld, hanem egészítsd ki.
+
+A #131 utáni nightly FULL sikeres eredménye lezárható. A #132 utáni nightly FULL státuszát továbbra is ellenőrizni kell, és nem szabad előre sikeresnek tekinteni.
+
+**GO a commitra és a PR megnyitására. Merge csak külön review után.**
+
+A `theads/` helyi naplócommitjait ne pushold ezzel együtt; azok külön jóváhagyást kapnak.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-31 20:29 — Claude
+
+~~~~~
+Indulok. Először a #132 utáni nightly státuszát nézem, és a P5-2 fuzz célok szerkezetét, mert arra kell építeni.
+~~~~~
+
+
+### 2026-10-31 20:30 — Claude
+
+~~~~~
+A `p1` és a `corpus` a 314475a-n sikeres, a `nightly` még sorban áll, ezt nem tekintem sikeresnek. Megnézem a P5-2 materializáló fuzz célt, a Go megfelelőjét és a canary mechanizmust.
+~~~~~
+
+
+### 2026-10-31 20:32 — Claude
+
+~~~~~
+Megvan a terv. Egy forrásból (`tools/p5/receipt_fuzz_seeds.py`) készül a séma, a fixture-adatok, a magok és a Rust-corpus, így nincs párhuzamos szerződés. Előbb ezt írom meg.
+~~~~~
+
+
+### 2026-10-31 20:32 — Claude
+
+~~~~~
+Jön a Rust közös tulajdonság-modul, amelyet a fuzz-cél és a magokat visszajátszó teszt is használ.
+~~~~~
+
+
+### 2026-10-31 20:36 — Claude
+
+~~~~~
+Mindkét nyelven 20 000 mutált bemeneten áll a tulajdonság, és minden végállapot elérhető. Most az Engine a mutációs kör receipt-jein, és a Rust–Go kimenet összevetése.
+~~~~~
+
+
+### 2026-10-31 20:39 — Claude
+
+~~~~~
+Jöhet a cross-language összehasonlító script és a saját tesztje.
+~~~~~
+
+
+### 2026-10-31 20:40 — Claude
+
+~~~~~
+Működik, és a 21 eltérést kimondva, számolva listázza. Kitakarítom a script végén a zavaros ágat, és megírom a saját piros tesztjeit, hogy az összehasonlító bukni is tudjon.
+~~~~~
+
+
+### 2026-10-31 20:42 — Claude
+
+~~~~~
+Amíg a hibainjektálás fut (a repót nem érinti, másolaton dolgozik), bekötöm a CI-t.
+~~~~~
+
+
+### 2026-10-31 20:42 — Claude
+
+~~~~~
+Az indító lezárása volt, a hibainjektálás még fut. Közben bekötöm a CI-t.
+~~~~~
+
+
+### 2026-10-31 20:42 — Claude
+
+~~~~~
+A hibainjektálás kimenete pufferelt, megvárom a monitort. A doksit az eredmények ismeretében írom meg.
+~~~~~
+
+
+### 2026-10-31 20:42 — Claude
+
+~~~~~
+A hibainjektálás még fut, a monitor jelez, amint kész. Eddig a fuzz-egység állása (`feat/p5-3-receipt-fuzz`, a `main` 314475a-ról, még **nem commitolva**):
+
+- **Közös tulajdonság** Rust és Go oldalon (`rust/fuzz/receipt_check.rs`, `go/receipt_fuzz_test.go`), amelyet a fuzz-cél és egy rendes, magokat visszajátszó teszt is hív. A séma, a fixture-adatok és a magok egy scriptből (`tools/p5/receipt_fuzz_seeds.py`) származnak a már meglévő fájlokból, nincs párhuzamos szerződés.
+- **27 mag:** 0, 1 és több defaultos receipt, hibás séma-kötés, duplikált kulcs, nem támogatott érték, a hibák egymás közti sorrendje, capability-hibák. A magokon az Engine verifier mind a négy kombinációban elfogadja az 5 receiptet, és 27 módosítást elutasít.
+- **Determinisztikus mutációs kör** (5000 mutáció, azonos algoritmus mindkét nyelven): a tulajdonság minden bemeneten áll, a CI az elfogadott receipteket az Engine verifierrel is ellenőrzi.
+- **Lelet:** a két nyelv adatfolyama azonos, de **4 bemeneten (az 5000-ből) a Rust parser elutasít, a Go elfogad**. Ez egy idézett skalár oszlop-0-ban folytatott sora: `a: "x⏎y"`. A Go `x y`-t olvas, a Rust `invalid indentation in quoted scalar` hibát ad. Ez parser-eltérés, nem receipt-hiba. Nem normalizáltam el: az összehasonlító **csak ezt az egy, megnevezett osztályt** engedi át, számolva és listázva, minden mást piros. Az eltérés lezárása a parser differential dolga.
+
+Hátra van: a hibainjektálás eredménye, a teljes lokális kapu, a doksi (§19), a commit és a PR.
+~~~~~
+
+
+### 2026-10-31 20:43 — Claude
+
+~~~~~
+A hibainjektálás értékes eredményt hozott: a fuzz-tulajdonság önmagában a 30-ból 22-t fog meg, 8-at nem. Nézzük meg őket egyenként, mert hat közülük **a tulajdonság valódi hiánya**, nem csak a fuzz hatóköre:
+
+- **Séma-név/verzió értéke** és **engine-verzió értéke** (4 db): a tulajdonság csak azt ellenőrizte, hogy a kulcs egyszer szerepel, az értéket nem.
+- **Digest egy rossz karakterrel** (Rust `all`→`any`, Go első karakter, 2 db): a fuzz csak a `sha256:ABC` alakú hibás digestet gyártotta, az egy-karakteres hibát nem.
+- **Pont a mezőnévben** (2 db): a fuzz sémája rögzített, sima nevekkel. Ez nem hiány, hanem a hatókör határa (az egységtesztek és a generált differential fedik), és így is dokumentálom.
+
+A hatot javítom.
+~~~~~
+
+
+### 2026-10-31 20:44 — Claude
+
+~~~~~
+Ez még a javítás előtti futás eredménye. Újraindítom a javított tulajdonsággal.
+~~~~~
+
+
+### 2026-10-31 20:44 — Claude
+
+~~~~~
+Az újrafuttatás megy. Közben nem nyúlok a munkafához. A javított tulajdonság most már értéket is ellenőriz (séma-név, séma-verzió, engine-verzió, a release-mezők), és a hibás build hash három alakban jön: rossz hossz, utolsó és első karakter. Az eredményt a monitor hozza.
+~~~~~
+
+
+### 2026-10-31 20:44 — Claude
+
+~~~~~
+Ez csak az indító lezárása. A futás még megy, a monitor jelez, ha kész.
+~~~~~
+
+
+### 2026-10-31 20:45 — Claude
+
+~~~~~
+A javított tulajdonság a 30-ból **28-at** fog meg önmagában. A maradék kettő a pontos mezőnév („field name with a dot”): a fuzz sémája rögzített, sima nevekkel. Ez „a receipt-hez kapcsolódó strukturális határeset”, ezért inkább beveszem a fuzzba, mint hogy hatókör-korlátként hagyjam. Megnézem, hogyan épít ilyen sémát a meglévő egységteszt.
+~~~~~
+
+
+### 2026-10-31 20:47 — Claude
+
+~~~~~
+A javított, szigorúbb tulajdonság zöld, a hibainjektálás újra fut. Közben írom a doksi §19-et, a végleges számokat a futás után illesztem be.
+~~~~~
+
+
+### 2026-10-31 20:47 — Claude
+
+~~~~~
+A fuzz-only hibainjektálás még fut, két monitor figyeli. A tárolót addig nem módosítom, mert a futtató a futás elején másolatot készít, de a lokális kapuk is ugyanazt a fát használják. Az eredmény után jön: a teljes lokális kapu, a doksi §19, a commit és a PR.
+~~~~~
+
+
+### 2026-10-31 20:48 — Claude
+
+~~~~~
+A hibainjektálás eredménye: a fuzz-visszajátszás **önmagában mind a 30 receipt-hibát elfogja** (28 volt, a pontos mezőnév bevétele után 30). Jön a valódi fuzz-futás és a canary.
+~~~~~
+
+
+### 2026-10-31 20:49 — Claude
+
+~~~~~
+A Rust `cargo-fuzz` kísérlet a háttérben fut (telepítés, canary ki/be, 60 másodperc). A tárolót addig nem módosítom. Ha a stabil toolchain nem megy, azt kimondom, és a Rust cél logikáját a magokon és a mutációs körön futó teszt fedi, ahogy a P5-2-nél is dokumentáltam.
+~~~~~
+
+
+### 2026-10-31 20:49 — Claude
+
+~~~~~
+Ez az indító lezárása volt, a Rust fuzz-kísérlet még megy. A monitor jelez, ha a telepítés és a három futás kész.
+~~~~~
+
+
+### 2026-10-31 20:51 — Claude
+
+~~~~~
+A Rust `cargo-fuzz` működik a stabil toolchainen is: 179 979 végrehajtás 61 másodperc alatt, hiba nélkül. Megnézem a canary eredményét, és kitakarítom a fuzzer saját kimenetét a tárolóból (a `cargo-fuzz` a talált bemeneteket a magkönyvtárba írja).
+~~~~~
+
+
+### 2026-10-31 20:52 — Claude
+
+~~~~~
+Rendben, a corpus a 31 maggal egyezik. Teljes lokális kapu jön, sorban (a gép memóriája szűk).
+~~~~~
+
+
+### 2026-10-31 20:54 — Claude
+
+~~~~~
+Fut a teljes seeded-defect ellenőrzés. Közben a dokumentációs szakasz szövegét állítom össze (a doksi fájl a futtató másolatától független).
+~~~~~
+
+
+### 2026-10-31 20:54 — Claude
+
+~~~~~
+A doksi szakasz kész, a teljes seeded-defect futás még megy. Az eredményét a monitor hozza, addig a commitot nem készítem el.
+~~~~~
+
+
+### 2026-10-31 20:59 — Claude
+
+~~~~~
+A teljes futás is zöld: mindkét alapeset megy, 30/30 hiba elfogva. Átnézem, mi kerül a commitba, aztán commit, push és PR.
+~~~~~
+
+
+### 2026-10-31 21:00 — Claude
+
+~~~~~
+A PR meg van nyitva: **https://github.com/CentralInfraCore/cic-primitive-forms/pull/133**, commit `51a98fc`, a `main` 314475a-ról, `Co-Authored-By` nélkül. A `theads/` naplócommitokat nem toltam ki. Termékkód nem változott. A CI eredményét még nem láttam, a merge a te review-dra vár.
+
+**Mit tartalmaz**
+- **Fuzz-célok:** Go `FuzzReceipt` és Rust `receipt` cargo-fuzz cél. A séma, a fixture-adatok és a 31 mag egy scriptből származik a már meglévő fájlokból, nincs párhuzamos szerződés.
+- **Tulajdonság:** a rétegek nem keverednek (parser / identitás / receipt-elutasítás / materializáló / `path_not_one_segment` / kanonikus hiba), és egy létrejött receiptet a teljes szerződés ellen ellenőriz, az értékeket is.
+- **Visszajátszás minden buildben:** a magok és egy determinisztikus, 5000 elemű mutációs kör mindkét nyelven, azonos algoritmussal. A CI összeveti a két kört, és az elfogadott receipteket az Engine verifierrel is ellenőrzi.
+
+**Bizonyítékok (helyben mérve)**
+- **Hibainjektálás** csak a fuzz-tesztre: a 30 receipt-hibából **22**-t fogott el elsőre, a javított tulajdonsággal **30-at**. A hiányok: nem ellenőrizte az értékeket, a hibás hash csak hossz szerint volt hibás, a séma csak sima neveket tartalmazott.
+- **Canary:** Go és Rust is zöld kapcsoló nélkül, piros kapcsolóval.
+- **Valódi fuzz:** Go 45 s, 362 061 futás, Rust 60 s, 179 979 futás, hiba nélkül. A Rust a stabil toolchainen `RUSTC_BOOTSTRAP=1`-gyel ment, a CI a rögzített nightly-t használja.
+- **Teljes kapu:** fmt, clippy, 249 Rust-teszt, Go (98,9%), Python, a #132 differential változatlanul, branch-coverage PASS, a teljes seeded-defect futás 30/30.
+- **Engine:** a fuzz-receipteket (Rust 79, Go 82) mind a négy kombinációban elfogadja, 441 és 459 módosítást elutasít.
+- **Mutációs kapu:** nem alkalmazható erre a diffre, mert nincs benne termékkód.
+
+**Lelet, amit nem normalizáltam el:** a két nyelv ugyanazt a bemenetet kapta, de **a Rust parser elutasít, a Go parser elfogad** egy idézett skalárt, amelynek folytatósora az oszlop 0-ban kezdődik (`a: "x⏎y"`: Go `x y`, Rust `invalid indentation in quoted scalar`). Ez parser-eltérés, a receipt előtt keletkezett. Az összehasonlító **csak ezt az egy osztályt** engedi át, számolva és listázva (5 az 5000-ből), minden más piros. Javaslom, hogy ehhez külön issue és corpus-eset készüljön. Kéred, hogy megnyissam?
+
+**Nem ellenőrzött:** a #132 utáni nightly FULL még sorban állt, azóta nem néztem meg.
+~~~~~
+
+
+### 2026-10-31 21:06 — Felhasználó
+
+~~~~~
+p1 / branch-coverage (pull_request) Failing after 56s
+bukott
+~~~~~
+
+
+### 2026-10-31 21:06 — Claude
+
+~~~~~
+Megnézem a bukás okát a CI-naplóból.
+~~~~~
+
+
+### 2026-10-31 21:06 — Claude
+
+~~~~~
+Clippy tiszta. Most visszaállítom a CI feltételét: a crate másolata olyan helyen, ahol nincs mellette `testdata`, csak a `CIC_FORMS_ROOT` mutat a tárolóra. Ez előtt bukott volna.
+~~~~~
+
+
+### 2026-10-31 21:07 — Claude
+
+~~~~~
+Megerősítem az okot: ugyanazon a másolaton a **commitolt** (javítás előtti) verzió fordítási hibával bukik-e.
+~~~~~
+
+
+### 2026-10-31 21:09 — Claude
+
+~~~~~
+A hiba okát megtaláltam és javítottam, a javítás a #133-ra felkerült: `efbb5fa`. A PR HEAD-je a lekérdezés pillanatában még a régi `51a98fc` mutatta, a push után pár másodpercig ez normális. A CI újrafutásának eredményét még nem láttam.
+
+**Az ok:** a Rust replay-teszt `include_str!`-fal, fordítási időben, a fájlhoz képest relatív útvonalon olvasta a `testdata/p5/receipt-fuzz` fájljait. A CI branch-coverage eszköze a crate-et olyan helyen építi, ahol nincs mellette `testdata`, ezért a teszt nem fordult le (`couldn't read tests/../fuzz/../../testdata/...`). Nálam ez azért nem bukott, mert helyben a fán belül építettem.
+
+**Ellenőrzés:** a crate-nek olyan másolatán, ahol nincs mellette `testdata`, a régi verzió pontosan ezzel a hibával bukik, az új átmegy.
+
+**A javítás:**
+- Az adatot futásidőben olvassa, a `CIC_FORMS_ROOT` alapján, ahogy a többi teszt.
+- A fuzz-célnál, amelynek nincs ilyen változója, a manifest könyvtárából felfelé keresi a `testdata/p5/receipt-fuzz` mappát. Ezt a `cargo-fuzz` 15 s futása igazolja (72 477 futás, hiba nélkül).
+
+**Újra futtatva:** `fmt`, 249 Rust-teszt, a Rust–Go replay-összehasonlítás, a branch-coverage kapu (PASS). A fuzzer által írt corpus fájlokat itt is visszaállítottam a 31 magra.
+
+**Tanulság:** a CI-környezet eltér a helyitől abban, hogy a mérőeszközök máshol építenek. Ezt a hibaosztályt az első lokális ellenőrzésemnek kellett volna megfognia, ezért a következő új, adatot olvasó tesztnél előbb a „testdata nélküli másolat” próbát futtatom.
+
+Szólj, ha a CI újra lefutott, vagy nézzem meg én a `p1` eredményét.
+~~~~~
+
+
+### 2026-10-31 21:42 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## [Forms #133](https://github.com/CentralInfraCore/cic-primitive-forms/pull/133?utm_source=chatgpt.com) — újraellenőrzés
+
+Aktuális HEAD: `efbb5fad6123b799d62b8309e7432695aff192c0`
+
+Jó hír: a korábbi branch-coverage blokkoló megszűnt. Az új commit a Rust fuzz-property fixture-betöltését módosította: a `schema.yaml` és a `fixture.txt` immár futásidőben, a megfelelő projektgyökérből olvasható. Így az izolált mérőkörnyezet is működik.
+
+A friss CI-ben:
+
+| Ellenőrzés      | Eredmény                |
+| --------------- | ----------------------- |
+| Branch coverage | SUCCESS                 |
+| Rust / Go       | SUCCESS                 |
+| Parity          | SUCCESS                 |
+| Corpus          | SUCCESS                 |
+| P1 jobok        | 29 sikeres, 1 kihagyott |
+
+Viszont az új commit csak a `rust/fuzz/receipt_check.rs` fájlt módosította. Ezért különösen fontos, hogy a korábban kifogásolt comparator-viselkedést is újraértékeljem.
+
+### A friss CI már teljesen zöld
+
+[P1 #41242208676](https://github.com/CentralInfraCore/cic-primitive-forms/actions/runs/41242208676?utm_source=chatgpt.com): SUCCESS. A corpus is SUCCESS, és a PR GitHub szerint mergeable.
+
+Viszont két korábbi review-blokkoló még változatlan.
+
+| Review-pont                                           | Állapot                |
+| ----------------------------------------------------- | ---------------------- |
+| Branch coverage fordítási hibája                      | Javítva                |
+| Receipt trace és tényleges rekordok teljességi kötése | Hiányzik               |
+| Parsereltérés szigorú karanténja                      | Túl tág kivétel maradt |
+
+A comparator jelenleg a két receipt-rekordhalmaz metszetét és szimmetrikus különbségét vizsgálja. Ha mindkét nyelvből ugyanaz a rekord hiányzik, ezt nem észleli. A jelenlegi 5000-es körben a 74 Rust receipt bőven az 1500-as dumpkorlát alatt van, tehát ennél az eredménynél minden `Receipt` trace-bejegyzést számon lehet kérni. A 31 seed rekordját is külön ellenőrizni kell.
+
+A parsereltérésnél a kód jelenleg ezt engedi:
+
+```
+if "Left" in (a[1], b[1]) and quoted_line_break_at_column_zero(text):    explained.append(...)
+```
+
+Ez nem követeli meg, hogy Rust utasítsa el, és nem ellenőrzi a tényleges parserhiba okát. A kivétel így más hibát is elfedhet.
+
+A javításhoz két kis módosítást kérek:
+
+1. A comparator egyeztesse az elvárt és a tényleges receipt-azonosítókat, negatív self-testtel arra, amikor mindkét nyelvből ugyanaz a rekord hiányzik.
+2. A parsereltérést szűkítse a bizonyított esetre: vagy ellenőrzött Rust-parserhiba alapján, vagy egy pontosan rögzített, explicit karanténhalmazzal. Új, nem engedélyezett eltérés legyen piros.
+
+A külön parser-issue-t sem találtam még megnyitva.
+
+Döntésem: a #133 jelenleg még NO-GO a merge-re, de már csak a két comparator-bizonyítás miatt. A fuzz implementációval és a CI-vel nincs új problémám. Ezek javítása után nem látok okot a teljes P5-3 fuzz egység újratervezésére.
+
+Ez egyébként nagyon CIC-es pillanat: a pipeline zöld, de a bizonyíték teljességét még nem igazoltuk. Pontosan ezt a különbséget kell megőriznünk.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-31 21:43 — Claude
+
+~~~~~
+Jogos a két pont. Az első valódi hiány: az összehasonlító a két rekordhalmaz metszetét nézi, így az olyan rekordot nem veszi észre, amely **mindkét** nyelvből hiányzik. A második a kivétel szélessége. Javítom mindkettőt, a hozzájuk tartozó negatív self-testtel együtt.
+
+**Terv:**
+1. A trace bejegyzései és a dumpolt rekordok **teljességi kötése**: minden nyelv saját `Receipt`-trace-bejegyzéseihez rekordot kell adnia (a dumpkorlátig), és mind a 31 mag rekordja külön kötelező. Nincs extra, nincs hiányzó.
+2. A **parser-kivétel szűkítése** a bizonyított esetre: irány (csak Rust `Left` + Go nem `Left`), és a Rust trace-ben rögzített tényleges parserhiba-ok (`invalid indentation in quoted scalar`) is kell hozzá.
+~~~~~
+
+
+### 2026-10-31 21:44 — Claude
+
+~~~~~
+Működik az éles adatokon. Átírom a comparator tesztjeit az új szignatúrára, és hozzáadom a kért negatív eseteket, köztük azt, amikor **mindkét** nyelvből ugyanaz a rekord hiányzik.
+~~~~~
+
+
+### 2026-10-31 21:45 — Claude
+
+~~~~~
+Egy tesztem zavaros volt, és a végén `problems or True` üres állítást tartalmazott. Ez nem bizonyít semmit, kicserélem egy tiszta esetre: a karanténos esetben is kötelező a Go rekordja.
+~~~~~
+
+
+### 2026-10-31 21:45 — Claude
+
+~~~~~
+Most mindkét hibaültetésre pirosat ad a megfelelő teszt. A dokumentációban pontosítom a két érintett bekezdést.
+~~~~~
+
+
+### 2026-10-31 21:45 — Claude
+
+~~~~~
+Jöhet a teljes ellenőrzés az új comparatorral, köztük a branch-coverage a CI-hoz hasonló módon (ez bukott legutóbb).
+~~~~~
+
+
+### 2026-10-31 21:47 — Claude
+
+~~~~~
+A mindkét kért javítást megcsináltam, és felkerült a #133-ra: `95934b7`. A PR HEAD-je egyezik. A CI újrafutásának eredményét még nem láttam. A merge a te döntésed marad.
+
+**1. Rekord-teljességi kötés.**
+- Az összehasonlító eddig a két dumpot egymással vetette össze, ezért az olyan rekordot nem látta, amely **mindkét** nyelvből hiányzik.
+- Most maga kéri a rekordokat nyelvenként. Minden maghoz kell rekord. Minden mutációhoz is kell, amelyet a nyelv *saját* trace-e `Receipt`-nek jelöl (a 1500-as dumpkorlátig). A rekordnak receiptnek kell lennie, és nem lehet olyan rekord, amelyet a trace nem kér.
+- A mostani körben ez 74 Rust- és 79 Go-rekordot jelent a 31 mag mellett.
+- A negatív self-testek: rekord hiányzik az egyik nyelvből, mindkettőből (mutációs és mag), extra rekord, nem receipt-rekord, és a dumpkorlát hatása.
+
+**2. A parser-kivétel szűkítése.** Mostantól csak egy irányt enged át: a Rust `Left` és a Go olvassa. Ehhez kell a Rust trace-ben rögzített tényleges ok (`syntax: invalid indentation in quoted scalar`), és az is, hogy a bemenetben idézőjelen belüli sortörés legyen, utána nem szóköz karakterrel. Az ellenirány, egy másik Rust-ok és a sortörés nélküli bemenet piros. A mostani körben mind az 5 eset a Rust-okkal azonos, ellenirányú nincs.
+
+**A tesztek bizonyítása:** három hibát ültettem a comparatorba (kikapcsolt mutációs rekordkérés, kikapcsolt mag-rekordkérés, szélesre nyitott kivétel), és mindháromra piros lett a megfelelő teszt. Közben kiderült, hogy a mag-hiányos teszt az első változatban a hibás comparatoron is átment, mert csak a problémák számát nézte, nem a tartalmukat. Átírtam úgy, hogy a hibaüzenetet olvassa.
+
+**Újra futtatva:** `fmt`, clippy, 249 Rust-teszt, Go (98,9%), 25 Python-teszt, a seed-fájlok ellenőrzése, a replay-lánc a valódi adatokon, az Engine mind a négy kombinációban (79 és 82 receipt elfogadva), és a branch-coverage (PASS).
+
+**Nyitott:** a külön parser-issue még nincs megnyitva. Ahogy korábban jeleztem, ezt a te szavad nélkül nem teszem meg. Megnyissam, a Rust és Go minimális példájával, javasolt corpus-esettel?
+~~~~~
+
+
+### 2026-10-31 22:59 — Felhasználó
+
+~~~~~
+mehet a merge
+~~~~~
+
+
+### 2026-10-31 22:59 — Claude
+
+~~~~~
+A CI a 95934b7-en teljesen zöld: 70 pass, 5 skipping, 0 fail. Mergelem.
+~~~~~
+
+
+### 2026-10-31 22:59 — Claude
+
+~~~~~
+A #133 mergelve: `912f0faf` (squash). A merge a 95934b7-hez volt kötve, ahol a CI 70 pass, 5 skipping, 0 fail.
+
+- **Nightly FULL:** még nem néztem meg, sem a #132 (314475a), sem a #133 utánit. Nem feltételezem, hogy sikeres.
+- **Parser-issue:** még nincs megnyitva. Szólj, ha nyissam a minimális Rust/Go példával és a javasolt corpus-esettel.
+- **Memória és napló:** a memóriát (`project_p3_closed_p3b_state.md`, `MEMORY.md`) és a thread logot még nem frissítettem a #133-ra. A napló helyi commit lenne, a pusholás külön jóváhagyást kér, ahogy a négy korábbi is.
+
+Mi legyen a következő? Frissítsem a memóriát és a naplót, nézzem meg a nightly-t, nyissam meg a parser-issue-t, vagy mehet a B/C szerződések előkészítése?
+~~~~~
+
+
+### 2026-10-31 23:17 — Felhasználó
+
+~~~~~
+csináld
+~~~~~
