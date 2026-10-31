@@ -19244,3 +19244,191 @@ A napló és a memória mentése még hátravan (#64 engine-merge, forms #129, #
 ~~~~~
 csináld a naplót és a memóriát és mehet a 5-3
 ~~~~~
+
+### 2026-10-31 09:04 — Claude
+
+~~~~~
+Közben: a Rust modul lefordul. Most a Go-oldali párját és a két szerződéses tesztet írom, amelyek az engine golden vektorait futtatják a Forms-kódon.
+~~~~~
+
+
+### 2026-10-31 09:06 — Claude
+
+~~~~~
+Közben: a Rust és Go szerződéses teszt zöld. Most a „piros-bizonyítás" jön: ültetett hibák a `seeded_defects.py`-ba, hogy a tesztek bizonyíthatóan elbuknak rajtuk, nem csak zöldek.
+~~~~~
+
+
+### 2026-10-31 09:08 — Claude
+
+~~~~~
+A napló és a memória mentve (`e845436`, helyben), és a P5-3 első lépése megvan lokálisan. A 20 ültetett hibát futtatom a háttérben, és az eredményt jelzem, mielőtt PR-t nyitok.
+
+**P5-3 első lépés: a séma-identitás Forms-oldala.** Ez még nem receipt, hanem az előfeltétele:
+- **Kód:** `rust/src/schema_identity.rs` és `go/schemaidentity.go`, az engine-nel azonos nevekkel, szabályokkal és kódokkal.
+- **Azonos-forrás kötés:** a `schema_identity` / `SchemaIdentityOf` a `SchemaInput`-ból egyetlen fordítással építi fel a nevet, a verziót és a digestet. Nincs olyan paraméter, amelyen át másik fájl komponense bejuthatna.
+- **Engine vektorok:** mind a 23 vektor lefut a Forms kódján mindkét nyelven. A két golden fájl 314 és 313 bájtos, a tesztekben másodszor is rögzített digesttel. Mind a 314 bájt átbillentve a mismatch-szabályt adja.
+- **CI-megoldás:** a vektorok pillanatképe a `testdata/p5/schema_identity`-ben van, hogy minden job lássa. A `rust` job `diff -r`-rel bizonyítja, hogy bájtra egyezik az engine-pin vektoraival. Ezt azért választottam, mert a tesztek más jobokban is futnak (lefedettség, mutáció), ahol nincs engine-checkout.
+- **Lokálisan zöld:** fmt, clippy `-D warnings`, `cargo test`, gofmt, vet és `go test`.
+
+A receipt-előállító (`receipt_flat` és az engine-verifier mint kapu) a következő lépés.
+~~~~~
+
+
+### 2026-10-31 09:11 — Claude
+
+~~~~~
+A [forms #130](https://github.com/CentralInfraCore/cic-primitive-forms/pull/130) megnyitva (`b6759dc`, `feat/p5-3-schema-identity`). A CI-t háttérben figyelem.
+
+**Mi van benne**
+- **Kód:** a séma-identitás Forms-oldala mindkét nyelven, az engine nevei, szabályai és kódjai szerint.
+- **Azonos-forrás kötés:** a név, a verzió és a digest egyetlen fordításból jön a `SchemaInput`-ból. Másik fájl komponense nem juthat be.
+- **Engine vektorok:** mind a 23 lefut, a pillanatkép bájtra egyezik az engine-pinnel (CI-ben `diff -r`).
+- **Piros-bizonyítás:** a 20 ültetett hiba mind elbukik (10 Rust, 10 Go). Ezt a futást még a teszt-átállítás előtt indítottam, ezért a végleges tesztekkel újrafuttattam. Az eredménye még nincs meg.
+
+**Nincs benne:** a receipt-előállító és az engine-verifier mint kapu (a következő lépés), és az eredethitelességi kapu továbbra is zárva marad.
+
+Nem mergelek. A review-t és az explicit merge-szót várom. Ha a CI-ban a mutációs vagy lefedettségi kapu az új fájlokon elbukik, azt javítom, és jelzem.
+~~~~~
+
+
+### 2026-10-31 09:29 — Claude
+
+~~~~~
+Egy check bukott: a `branch-coverage`. A végleges tesztekkel újrafuttatott seeded run viszont mind a 20 hibát elkapta. Megnézem a coverage-hibát.
+~~~~~
+
+
+### 2026-10-31 09:30 — Claude
+
+~~~~~
+Ismert korlát: a branch-coverage eszköz nem tudja mérni a `let … else`-t. A P5-2-nél ugyanezt `match`-re cseréltem, most is azt teszem.
+~~~~~
+
+
+### 2026-10-31 09:31 — Claude
+
+~~~~~
+A `branch-coverage` hibája a `let … else` volt (`schema_identity.rs:114`), amit az eszköz nem tud mérni. `match`-re cseréltem, a seeded entry-t is hozzáigazítottam, és pusholtam (`a6335f7`). Lokálisan zöld az fmt, a clippy, a 7 szerződéses teszt, és a „hiányzó claim egyezésnek véve" hiba is elbukik rajta.
+
+Közben a végleges tesztekkel újrafuttatott seeded run mind a 20 hibát elkapta. A CI-t a háttérben figyelem, az eredményt jelzem. Nem mergelek, a review-t és az explicit merge-szót várom.
+~~~~~
+
+
+### 2026-10-31 09:50 — Claude
+
+~~~~~
+A [forms #130](https://github.com/CentralInfraCore/cic-primitive-forms/pull/130) CI-ja zöld az `a6335f7` fejen: 68 pass, 5 skipping, 0 fail, `MERGEABLE`. A korábbi `branch-coverage` hiba megszűnt.
+
+A mutációs és seeded kapuk is átmentek az új fájlokon. A branch-coverage a `let … else` cseréje után mér.
+
+Nem mergelek. A review-t és az explicit merge-szót várom. A merge után jön a P5-3 második lépése: a `receipt_flat` előállító, az engine-verifierrel mint kapuval. Ide tartozik a `Materialized` kulcskészletének ellenőrzése a séma deklarált neveivel szemben is.
+~~~~~
+
+
+### 2026-10-31 10:02 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## [Forms PR #130](https://github.com/CentralInfraCore/cic-primitive-forms/pull/130?utm_source=chatgpt.com) — review
+
+NO-GO a jelenlegi HEAD-re
+
+HEAD: `b6759dc2a032d185fb68f579f7416b2f0db54319`
+
+A P5-3 sémaazonosító implementációja szakmailag jó irányba halad, de a CI-ben konkrét blokkoló hibát találtam.
+
+### 1. A `branch-coverage` kapu piros
+
+[P1 CI futás](https://github.com/CentralInfraCore/cic-primitive-forms/actions/runs/41187666871?utm_source=chatgpt.com)
+
+A hibaüzenet:
+
+```
+rustbranch: src/schema_identity.rs:114:5:
+let-else is a decision that cic-branch/1 does not define;
+it cannot be measured
+```
+
+Ez nem hibás SHA-256 eredmény, hanem a projekt branch-coverage mérőjének szerződéses korlátja.
+
+Javítás: a `bind_schema_identity` függvény `let Some(claimed) = ... else` részét mérhető `match` szerkezetre érdemes átírni, a fail-closed viselkedés megtartásával. Utána újra kell futtatni a teljes P1-et, nem elegendő ezt a jobot kihagyni.
+
+A minőségkaput nem javaslom lazítani.
+
+### 2. Ami megfelelően van megvalósítva
+
+A két szint ténylegesen külön van választva:
+
+- `bind_schema_identity` / `BindSchemaIdentity`: az Engine szerződésének megfelelő ellenőrzés a megadott értékeken.
+- `schema_identity` / `SchemaIdentityOf`: a `SchemaInput` egyetlen ellenőrzött bájtsorozatából állítja elő a séma nevét, verzióját és digestjét.
+
+Ez fontos: a második API-ban nincs külön paraméter, amellyel másik sémafájl `kind` vagy `namespace` értékét lehetne becsempészni.
+
+A tesztek a 23 Engine-vektort (5 elfogadott, 18 elutasított) használják. A CI új `diff -r` lépése a másolatot a pinelt Engine eredeti vektoraihoz köti. Az eljárás megfelelő, a Rust és Go job jelenleg zöld.
+
+### 3. Még egy ellenőrizendő szerződéses rés
+
+A `SchemaIdentity` visszaadja a `schema_version` mezőt, de a mostani kódban nem látok explicit ellenőrzést az üres verzióra.
+
+Az Engine `Receipt::check_structure()` viszont megköveteli, hogy a `schema_version` nem üres string legyen.
+
+Ezért kérnék egy negatív tesztet hiányzó vagy üres `identity.version` esetre. Azt is rögzíteni kell, hogy ezt a jelenlegi identity API utasítja el, vagy majd a következő receipt-builder kapu. Nem szükséges önkényesen új Engine-szabályt bevezetni.
+
+### 4. Aktuális CI
+
+| Job             | Állapot        |
+| --------------- | -------------- |
+| Rust            | Success        |
+| Go              | Success        |
+| Corpus          | Success        |
+| Branch coverage | Failure        |
+| Teljes P1       | Még nem lezárt |
+
+### Végső döntésem
+
+\#130: NO-GO a merge-re, amíg a branch-coverage hiba nincs javítva és az új HEAD teljes CI-ja nem zöld.
+
+A szigorúbb same-source bindingot helyesnek tartom, a golden vektoros vizsgálat megfelelő, és nem látok okot az architektúra újratervezésére.
+
+A javítás után, mivel a PR a `p1.yml`-t is módosítja, a merge-et követő nightly FULL futás is kötelező a korábban rögzített szabály szerint.
+
+Nem merge-eltem.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-31 10:02 — Felhasználó
+
+~~~~~
+[Request interrupted by user]
+~~~~~
+
+
+### 2026-10-31 10:04 — Felhasználó
+
+~~~~~
+bocsi mergelheted
+~~~~~
+
+
+### 2026-10-31 10:04 — Claude
+
+~~~~~
+A [forms #130](https://github.com/CentralInfraCore/cic-primitive-forms/pull/130) squash-mergelve: `704c41d`. A merge az `a6335f7` fejhez volt kötve (CI 68 pass, 0 fail, `merge-tree` ütközésmentes).
+
+**A review pontjai**
+1. **`branch-coverage`:** a review a régi `b6759dc` fejre szólt. A `let … else` már `match` az `a6335f7`-ben, és a teljes CI zöld rajta.
+2. **Üres `schema_version`:** ez nincs lezárva, és ellenőriztem az engine-ben. A `receipt.rs` 288. sora szerint a verifier megköveteli, hogy a `schema_version` ne legyen üres. A mostani identity API az üres verziót szó nélkül visszaadja, ahogy szerzői. Ezt a receipt-builder kapujában kell elutasítani, az engine saját szabálya szerint, új szabály kitalálása nélkül. A következő lépésben negatív tesztet írok hiányzó és üres `identity.version`-re, és rögzítem, hogy a builder utasítja el.
+
+**Nightly FULL:** a `p1.yml`-t is módosította a PR (új `diff -r` lépés), ezért a rögzített szabály szerint a merge utáni nightly FULL futás kötelező. Ezt nem tudom magam elindítani. Szólj, ha nézzem meg az eredményét.
+
+**Még hátravan:** napló és memória a #130 miatt. Utána jön a `receipt_flat` az engine-verifier kapuval, és az üres-verzió negatív teszttel. Szólj, ha indítsam.
+~~~~~
+
+
+### 2026-10-31 10:04 — Felhasználó
+
+~~~~~
+csináld a naplót és a memóriát
+~~~~~
