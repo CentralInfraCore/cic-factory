@@ -18741,3 +18741,506 @@ A napló és a memória mentése még hátravan a #128 lezárása után. Szólj,
 ~~~~~
 csináld a naplót és a memóriát
 ~~~~~
+
+### 2026-10-31 06:40 — Claude
+
+~~~~~
+Titok nincs. A memória frissítése: a #128 mergelve ténye kerül be.
+~~~~~
+
+
+### 2026-10-31 06:40 — Claude
+
+~~~~~
+A napló és a memória mentve van.
+
+- **Napló:** a thread log új bejegyzésekkel bővült, a commit `20ff346`, helyben van, nem pusholtam. A szakaszban nincs titok és nincs nyers U+2028/2029.
+- **Memória:** a `project_p3_closed_p3b_state.md` leírása és a `MEMORY.md` 53. sora rögzíti, hogy a #128 `574b3bd`-vel mergelve van. A P5-3 kód az engine válaszára vár a cic-primitive-engine#63-on (N).
+
+A naplót csak akkor pusholom, ha kéred.
+~~~~~
+
+
+### 2026-10-31 06:40 — Felhasználó
+
+~~~~~
+pushold a naplót
+~~~~~
+
+
+### 2026-10-31 06:40 — Claude
+
+~~~~~
+A napló pusholva van: a `cic-factory` `main` ága `20ff346`-ra állt (`6b7e934..20ff346`). Ebbe a korábban csak helyben lévő `c0eef2c` is beletartozik. A helyi `main` és az `origin/main` megegyezik.
+~~~~~
+
+
+### 2026-10-31 06:41 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+
+### 2026-10-31 06:41 — Claude
+
+~~~~~
+Röviden: jelenleg nincs nyitott munka, és a P5-3 kód külső válaszra vár.
+
+**Kész és mergelve**
+- **P5-0, P5-1:** lezárva.
+- **P5-2 első egység:** a lapos materializálás kész (#124, #125, #126, `1a5652c`). Ebben van a Rust és a Go kód, a generált differential az engine-nel mint harmadik olvasóval, és a fuzz célok.
+- **P5-3 előellenőrzés:** #127 (`8139d16`), benne a tulajdonos L–O döntései.
+- **Engine-kérdés:** #128 (`574b3bd`) belinkeli a cic-primitive-engine#63-at, és a 15.2 szakasz külön tartja a két kaput (szerződéses megfelelőség, eredethitelesség).
+- **Napló:** pusholva (`20ff346`), a memória frissítve.
+
+**Nyitott**
+- A forms repóban nincs nyitott PR.
+- A cic-primitive-engine#63 nyitott, még nincs rajta komment. Két kérdés vár válaszra: mi a `schema_digest` bájtjai, és pontosan `namespace:kind` a `schema_name`.
+- A P5-3 kód addig nem indul, amíg az engine nem válaszol az #63-on. Utána is csak fixture-ökkel bizonyítható. Hiteles receipt nem állítható elő, mert a pinelt `73ae469` egy `devel` commit, amelyhez nincs aláírt kiadás.
+
+**Hosszabb távon**
+- A B/C gépileg ellenőrzött szerződések a P5-3 lezárása előtt kellenek.
+- Az engine `digest` az üres mapping fölött még nincs kezelve.
+- A #111 halasztva van.
+- Minden `p1.yml`-t érintő merge után le kell futtatni a nightly FULL futást.
+
+Amíg az engine nem válaszol, nincs kódolható következő lépés. Ha kell, megkérdezhetem az #63-on, hogy van-e várható időpont.
+~~~~~
+
+
+### 2026-10-31 06:48 — Felhasználó
+
+~~~~~
+ez a válasz a 63-ra elég?
+
+<pasted_content id="aa6b">
+Én a #63-on mindkét kérdést lezárnám tulajdonosi döntéssel. Mivel az Engine és a Forms is a miénk, nem szükséges további jóváhagyási kör.
+
+A javaslatom:
+
+- `schema_digest` = az eredeti, pinelt sémafájl teljes bájtsorozatának SHA-256 hash-e. Nem a parse-olt vagy normalizált YAML-é.
+- `schema_name` = `identity.namespace + ":" + identity.kind`, pontosan, normalizálás nélkül.
+
+Ez a Forms jelenlegi működésével is összhangban van: a `CompileSchema` már ellenőrzi a bemeneti sémabájtok SHA-256 értékét. Az egyetlen fontos feltétel, hogy a fordítónak átadott bájtok valóban megfeleljenek a pinelt forrásnak.
+
+A #63-ra ezt írnám angolul:
+
+## Owner decision — D1.3 schema identity contract
+
+Both questions are resolved as follows.
+
+### N1 — `schema_digest`: exact pinned source bytes
+
+**Decision: option (a).**
+
+`schema_digest` is the SHA-256 digest of the complete, original schema source file, exactly as pinned and supplied by its authoritative source.
+
+Normative definition:
+
+`schema_digest = "sha256:" + lowercase_hex(SHA256(raw_schema_file_bytes))`
+
+- Hash the complete file contents, not a Git blob header or Git object identifier.
+- Do not parse, normalize, reserialize or canonicalize the YAML before hashing.
+- Comments, whitespace, mapping order, line endings, and the presence of a final newline are part of the byte identity.
+- The digest must correspond to the pinned schema source. If preprocessing produces different bytes, the producer MUST NOT silently substitute their digest for the source digest.
+- A missing or mismatching source-byte binding MUST fail closed.
+
+This resolves the ambiguous phrase "canonical schema digest" in D1.3. Here, the schema digest represents **immutable source-content identity**, not semantic equivalence between differently formatted YAML documents.
+
+This is intentionally distinct from the Section A canonical digest of a materialized value.
+
+### N2 — `schema_name`: namespace and kind
+
+**Decision: yes.**
+
+Normative definition:
+
+`schema_name = identity.namespace + ":" + identity.kind`
+
+Both values are read from the pinned schema's `spec.identity` and used exactly as authored.
+
+- Both components MUST be non-empty strings.
+- `identity.namespace` MAY contain colon-separated namespace components, such as `cic:storage`; empty namespace components are invalid.
+- `identity.kind` MUST NOT contain a colon, so the final separator is unambiguous.
+- No trimming, case folding, escaping, or implicit normalization is permitted.
+- Invalid or missing identity components MUST cause the receipt producer to refuse materialization of the receipt, rather than inventing an identifier.
+
+Example:
+
+`identity.namespace = "cic:storage"`
+
+`identity.kind = "StorageResource"`
+
+Result:
+
+`schema_name = "cic:storage:StorageResource"`
+
+### Required proof before closing
+
+1. Update `docs/MATERIALIZATION-SPEC.md` D1.3 and `docs/RECEIPT-SCHEMA.md` with these normative definitions.
+2. Add golden test vectors covering the complete source-file digest, final-newline sensitivity, and namespace/kind composition.
+3. Include negative vectors for missing identity components, invalid separators and mismatching source bytes.
+4. Verify the Forms Rust and Go producers against the same vectors. No independent YAML canonicalization algorithm should be introduced.
+
+The Engine verifier remains a consistency verifier. It does not authenticate the source schema or the primitive release, and it does not need to become a schema parser.
+
+**Acceptance criterion:** the normative documentation and test vectors are merged, and both implementations agree on the resulting contract.
+
+This closes the two D1.3 ambiguities. It does not close the separate release-origin authenticity gate or authorize production receipts without verified release metadata.
+
+## Egy konkrét tesztvektor a döntéshez
+
+Az alábbi pontos, 314 bájtos UTF-8 sémafájlra (LF sorvégekkel, záró LF-fel) kiszámoltam az értéket.
+
+```
+
+spec:
+  identity:
+    atomic_ref: "cic:core:Identity@v0.2.0"
+    kind: StorageResource
+    namespace: "cic:storage"
+    version: v1.2.0
+  config_surface:
+    aggregate_ref: "cic:core:ConfigSurface@v0.2.0"
+    nodes:
+      - name: type
+        shape_type: scalar
+        scalar_type: string
+        mandatory: true
+
+```
+
+Elvárt `schema_digest`
+
+SHA-256 · pontos forrásbájtok
+
+&#x20;Másolás
+
+`sha256:a36e841db3d5f108a7d5e400f80a636d095bc5c9ddc670142b938d73d0d1a338`
+
+A záró LF eltávolítása már más digestet ad:
+
+`sha256:4fff76af7c6313eae102fc1f967b9d607db0f26c51f6f5f8eb11d7c0988b07f7`
+
+Ez jó regressziós teszt annak bizonyítására, hogy nem történik észrevétlen normalizálás.
+
+Fontos: a #63-as komment a tulajdonosi döntést dokumentálja, de önmagában még nem teljesíti a DoD-t. A normatív dokumentáció és a tesztvektorok merge-je zárja le ténylegesen az ügyet.
+
+Utána a P5-3 fixture-alapú implementációjára GO-t adnék. A hiteles production receipt külön kapu marad, amíg nincs hozzá ellenőrzött release-identitás.
+
+Nem küldtem még el a kommentet a GitHubra.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-31 06:49 — Claude
+
+~~~~~
+Igen, a szakmai tartalma elég a #63 lezárásához. Két dolgot ellenőriztem, kettőt javítanék.
+
+**Ellenőrizve**
+- **A tesztvektor stimmel.** A 314 bájtos fájl (LF sorvégek, záró LF, nincs vezető üres sor) SHA-256-ja `a36e841d…d1a338`. A záró LF nélküli, 313 bájtos változaté `4fff76af…07f7`. Mindkettőt újraszámoltam, egyezik. A kódblokk elején van egy üres sor. Ha valaki azt is bemásolja, 315 bájt lesz és más digest (`57e665cb…`), ezért a komment ne a másolt blokkal, hanem a hexa értékekkel és a bájtszámmal legyen pontos.
+- **A `CompileSchema` állítás igaz.** A `go/schema.go` elején a `SHA256Hex(in.Bytes) != in.SHA256` ellenőrzés fut, és eltérésnél `SCHEMA_DIGEST_MISMATCH`-et ad. A nyers bájtokat hasheli, nem normalizál. A döntés tehát nem ad hozzá új algoritmust.
+- **A `schema_name` példa egyezik az engine doksijával.** A `RECEIPT-SCHEMA.md` 145. sora is `cic:storage:StorageResource`.
+
+**Amit javítanék**
+1. **A bevezető mondat túlmegy.** "Nem szükséges további jóváhagyási kör" nem igaz a DoD-re: a komment csak a döntés, a lezáráshoz kell a doksi- és vektor-PR az engine-ben.
+2. **Pin-mozgatás hiányzik.** Az engine-doksi módosítása az engine `main`-jén nem változtatja meg a Formsban pinelt `93c793a`-t. A P5-3 kód csak akkor hivatkozhat az új normatív szövegre, ha a pint egy ezt tartalmazó commitra emeljük. Ezt a komment "Required proof" részébe is beírnám.
+
+**Kisebb észrevételek**
+- A `SHA256Hex` a kódban nyers hexát ad. A `sha256:` előtagot a receipt-író rétegnek kell hozzátennie, és ezt is vektor fedje.
+- A "namespace tartalmazhat kettőspontot, a kind nem" szabályt a mostani `compileWith` nem ellenőrzi, a `strMember`-rel csak kiolvassa. A receipt-előállítónak kell fail-closed ellenőriznie, tehát ez P5-3 munka.
+- Az "option (a)" jelölésnél ellenőrizd, hogy a #63 eredeti szövegében is így címkéztük az opciókat. Én nem néztem vissza.
+
+Ha a két javítással rendben van, mehet a komment. Nem teszem ki GitHubra, amíg nem mondod.
+~~~~~
+
+
+### 2026-10-31 06:54 — Felhasználó
+
+~~~~~
+csináld
+~~~~~
+
+
+### 2026-10-31 06:54 — Claude
+
+~~~~~
+Az opciócímkék egyeznek ((a) = teljes eredeti fájl). Kiteszem a kommentet.
+~~~~~
+
+
+### 2026-10-31 06:54 — Claude
+
+~~~~~
+A tulajdonosi döntés felkerült a cic-primitive-engine#63-ra: https://github.com/CentralInfraCore/cic-primitive-engine/issues/63#issuecomment-6540313705
+
+A komment tartalma:
+- **N1:** `schema_digest` az eredeti sémafájl nyers bájtjainak SHA-256-ja.
+- **N2:** `schema_name` pontosan `namespace:kind`.
+- **Tesztvektor:** a 314 bájtos fájl és a záró LF nélküli 313 bájtos párja, mindkét digesttel. Ide a vezető üres sor nélküli változatot tettem.
+- **Lezárás:** a DoD külön szerepel. A komment csak a döntést rögzíti, a doksi-PR, a vektorok, a Rust/Go egyezés és a forms pin mozgatása még hátravan.
+
+A két javítás benne van: nem állítja, hogy nincs további kör, és az engine-pin mozgatása bekerült a feltételek közé. Az issue nyitva maradt, mert a DoD még nem teljesült.
+
+A P5-3 fixture-alapú kód ettől még csak akkor indulhat, ha a doksi- és vektor-PR az engine-ben megvan, és a pin átállt. Az engine oldali doksi- és vektor-PR-t akarod, hogy elkészítsem?
+~~~~~
+
+
+### 2026-10-31 07:00 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+GO az Engine #63 implementálására, külön PR-ben.
+
+**Scope: kizárólag a két elfogadott D1.3 szerződés normatív rögzítése és gépileg ellenőrizhető bizonyítása.**
+
+1. `schema_digest`: az eredeti, teljes sémafájl nyers bájtjainak SHA-256-ja, `sha256:` előtaggal. Semmilyen YAML-normalizálás vagy újraszerializálás nincs.
+2. `schema_name`: pontosan `identity.namespace + ":" + identity.kind`, az elfogadott karakter- és elválasztási szabályokkal.
+3. Frissítsd a `MATERIALIZATION-SPEC.md` és `RECEIPT-SCHEMA.md` normatív szakaszait.
+4. Készíts golden vektorokat: eredeti 314 bájtos bemenet, 313 bájtos változat záró LF nélkül, mindkét elvárt digest, érvényes és hibás schema identity esetek.
+5. A golden vektorok valódi bájtjait és hashértékeit függetlenül számold újra, ne másold át ellenőrizetlenül az issue-kommentből.
+6. A Rust és Go ellenőrzések ugyanazokat a vektorokat használják. Mutasd meg, hogy hibás digest vagy identity esetén a szerződéses teszt pirosra fordul.
+7. Az Engine receipt verifier működését ne módosítsd. A verifier továbbra sem autentikálja a séma eredetét.
+
+**DoD:** format/lint/test, Rust–Go egyezés, golden és negatív vektorok, CI success, dokumentált bizonyíték.
+
+Implementáció → push → PR → review → CI → merge.
+
+Az #63-at ne zárd le pusztán a zöld CI miatt. A szerződéses PR merge-je után a Forms Engine-pinjének frissítése és az új szerződés átvétele külön ellenőrzendő lépés.
+
+Production receipt továbbra is HOLD, amíg nincs hitelesített release-metadata.
+
+A PR elkészülte után kérek review-t. Automatikus merge-t most nem engedélyezek.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-31 07:03 — Claude
+
+~~~~~
+Rust zöld. Go-teszt, release profil, majd a piros-bizonyítás (defektek ültetése).
+~~~~~
+
+
+### 2026-10-31 07:04 — Claude
+
+~~~~~
+Mind a 8 ültetett defekt pirosra fordít Rust-ban és Go-ban is, build-hiba nélkül. Most a normatív doksik jönnek.
+~~~~~
+
+
+### 2026-10-31 07:04 — Claude
+
+~~~~~
+Most beírom a normatív szöveget: a D1.3 pontot módosítom, a receipt-sémába új szakasz kerül.
+~~~~~
+
+
+### 2026-10-31 07:05 — Claude
+
+~~~~~
+A PR megvan, a CI-ra várok.
+
+**[cic-primitive-engine#64](https://github.com/CentralInfraCore/cic-primitive-engine/pull/64)** (`defb2f7`, `feat/schema-identity-contract`):
+- **Kód:** `engine/src/schema_identity.rs` és `go/schemaidentity`. A digest a meglévő A7 hash-függvényt használja a nyers bájtokon, új algoritmus nincs. A receipt verifier érintetlen.
+- **Vektorok:** 23 db (5 elfogadott, 18 elutasított), a valódi forrásbájtokkal. A `.gitattributes` `-text`-re állítja őket, és a `git ls-files --eol` szerint az index bájtjai sértetlenek (LF, záró LF nélküli, CRLF).
+- **Doksi:** a `MATERIALIZATION-SPEC.md` D1.3 pontja és új "Schema identity contract" szakasz a `RECEIPT-SCHEMA.md`-ben.
+
+**Bizonyíték:**
+- **Független újraszámolás:** a 314 és 313 bájtos digestet a lemezen lévő fájlokból `sha256sum`-mal és `openssl`-lel számoltam újra, nem az issue-kommentből másoltam. Egyezik vele.
+- **Lokális kapuk:** fmt, clippy `-D warnings`, `cargo test` debug és release, gofmt, vet, `go test -race` mind tiszta.
+- **Piros-bizonyítás:** 8 ültetett defekt (CRLF-normalizált hash, levágott záró LF, elfogadott eltérés, kettőspontos kind, üres névtér-komponens, trim, kisbetűsítés, hiányzó claim egyezésnek véve) mindegyike pirosra fordította a Rust és a Go tesztet is, build-hiba nélkül. Mindkét nyelv mind a 314 golden bájtot átbillenti, és megköveteli az eltérés-szabályt.
+
+A CI háttérben fut, az eredményt jelzem. Nem mergelek és az #63-at sem zárom le. A merge után a forms pin frissítése külön lépés. A review-t várom tőled.
+~~~~~
+
+
+### 2026-10-31 07:07 — Claude
+
+~~~~~
+A [#64](https://github.com/CentralInfraCore/cic-primitive-engine/pull/64) CI-ja zöld a `defb2f7` fejen:
+- `gate` és `gate (go)`: pass.
+- `mergeable`: MERGEABLE.
+- Más check nem futott.
+
+Az eredmény egyezik a lokális futásokkal. Nem mergelek, az #63 nyitva marad. A review-t és az explicit merge-szót tőled várom.
+~~~~~
+
+
+### 2026-10-31 07:13 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## [Engine PR #64](https://github.com/CentralInfraCore/cic-primitive-engine/pull/64?utm_source=chatgpt.com) — műszaki review
+
+&#x20;GO a merge-re
+
+Ellenőrzött HEAD: `defb2f7e1b831c63ed81bca22c5b505ce9368a90`
+
+Átnéztem a Rust és Go implementációkat, a normatív dokumentáció változásait, a differential-teszteket és a CI-eredményeket.
+
+| Ellenőrzési terület               | Értékelés              |
+| --------------------------------- | ---------------------- |
+| Nyers bájtok SHA-256 digestje     | Megfelelő              |
+| `namespace:kind` képzése          | Megfelelő              |
+| Hiányzó/hibás értékek elutasítása | Megfelelő              |
+| Rust–Go szerződéses egyezés       | Megfelelő              |
+| 23 golden/negatív vektor          | Megfelelő              |
+| Receipt verifier változatlansága  | Igazolt a diff alapján |
+| CI                                | 2/2 sikeres job        |
+| Mergeable                         | `true`                 |
+
+A két golden SHA-256 értéket én is külön újraszámoltam a megadott 314 és 313 bájtos tartalomból. Mindkettő egyezik az elvárt értékkel.
+
+A kód valóban a bájtsorozatot hash-eli, nem a parse-olt YAML-t. A Rust `canonical::digest(source)` és a Go `canonical.Digest(source)` közvetlen SHA-256 műveletet végez az átadott bájtokon.
+
+Ez lezárja az N1 algoritmusának bizonytalanságát. Az N2-nél pedig a két implementáció ugyanazt az elutasítási sorrendet és hibakódokat használja.
+
+### Egy fontos integrációs megkötés
+
+A `bind_schema_identity` ellenőrzi, hogy a megadott digest egyezik-e a forrásbájtok hashével, de nem ellenőrzi, hogy a `namespace` és a `kind` ténylegesen ugyanabból a sémafájlból származik-e.
+
+Ez nem rejtett hiba: a PR dokumentálja, hogy az Engine nem sémabeolvasó. A tesztekben is látható ez a határ.
+
+Ezért a Forms P5-3 átvételekor kötelezőnek tekinteném azt az invariánst, hogy a sémaazonosító komponensei és a digest ugyanahhoz az ellenőrzött forrásfájlhoz legyenek kötve. A Forms `CompiledSchema` és `SchemaInput` adatai erre alkalmas kiindulópontok, de az összekötést külön bizonyítani kell.
+
+### Végső döntés
+
+MERGE GO a #64-re. Nem találtam a PR elfogadott scope-jában blokkoló hibát.
+
+A következő sorrendet kérem:
+
+1. \#64 merge a jelenlegi, zöld HEAD-ről.
+2. Forms Engine-pin frissítése külön PR-ben.
+3. Rust–Go szerződéses tesztek a frissített pin ellen, valamint az azonos forrásból származó név és digest ellenőrzése.
+4. Engine #63 lezárása csak a vállalt DoD teljesülése után.
+
+A production receipt eredethitelességi kapuja változatlanul zárva marad.
+
+A merge-t engedélyezem, de nem hajtottam végre.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-10-31 07:13 — Claude
+
+~~~~~
+A review a `defb2f7` fejre ad GO-t, és a merge-t kifejezetten engedélyezi. Ellenőrzöm a fejet, és mergelek.
+~~~~~
+
+
+### 2026-10-31 07:14 — Claude
+
+~~~~~
+A merge-t a jogosultság-szűrő blokkolta, mert nem látta a merge-re vonatkozó saját utasításodat (a review-szöveg nem számít annak). Nem kerülöm meg. Ezt a sort futtasd a promptban, a `!` előtaggal:
+
+```
+! gh pr merge 64 --repo CentralInfraCore/cic-primitive-engine --merge --match-head-commit defb2f7e1b831c63ed81bca22c5b505ce9368a90
+```
+
+Ellenőrizve: a fej `defb2f7`, `MERGEABLE`, a `merge-tree` ütközésmentes, a CI 2/2 zöld. A `--match-head-commit` megvédi attól, hogy közben új commit kerüljön be. A repo eddigi stílusa merge commit, ezért `--merge`.
+
+Ha inkább azt szeretnéd, hogy én futtassam, írd ki egy mondatban, hogy "mergeld te a #64-et", és megteszem.
+
+Az #63 nyitva marad, a lezárása csak a pin-frissítés és a forms-oldali ellenőrzés után jön. A review kötelező invariánsát, hogy a név és a digest ugyanahhoz a forrásfájlhoz van kötve, felvettem a P5-3 követelményei közé.
+~~~~~
+
+
+### 2026-10-31 07:15 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 64 --repo CentralInfraCore/cic-primitive-engine --merge --match-head-commit defb2f7e1b831c63ed81bca22c5b505ce9368a90</bash-input>
+~~~~~
+
+
+### 2026-10-31 07:15 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-10-31 07:15 — Claude
+
+~~~~~
+A [#64](https://github.com/CentralInfraCore/cic-primitive-engine/pull/64) mergelve van: merge commit `a6a0680`. A merge a `defb2f7` fejhez volt kötve. A cic-primitive-engine#63 szándékosan nyitva maradt.
+
+A review sorrendje szerint ezek jönnek:
+1. **Forms pin-frissítés:** külön PR-ben, a `93c793a`-ról egy olyan engine-commitra, amely tartalmazza az `a6a0680`-at. Előtte megnézem, mi van az engine `main`-jén az `a6a0680` után, és a #62 óta mi változott. A pin mozgása más változásokat is behozhat.
+2. **Átvétel:** a Rust/Go szerződéses tesztek az új pin ellen, és a név-digest forráskötés bizonyítása. Ez utóbbit a review kötelező invariánsként kérte: a `namespace`/`kind` és a digest ugyanahhoz az ellenőrzött forrásfájlhoz tartozik. A Forms `CompiledSchema` és `SchemaInput` a kiindulópont.
+3. **#63 lezárása:** csak ezek után, lezáró kommenttel.
+
+A production receipt eredethitelességi kapuja zárva marad. Szólj, ha indítsam a pin-frissítő PR-t. A napló és a memória mentése is hátravan, ha kéred.
+~~~~~
+
+
+### 2026-10-31 07:23 — Felhasználó
+
+~~~~~
+csináld
+~~~~~
+
+
+### 2026-10-31 07:24 — Claude
+
+~~~~~
+A [forms #129](https://github.com/CentralInfraCore/cic-primitive-forms/pull/129) megnyitva (`1b9eb59`, `chore/engine-pin-d1-3`). Ez csak pin-mozgatás és doksi:
+
+- **Pin:** `testdata/p5/engine-pin.txt` a `93c793a`-ról az `a6a0680`-ra (a #64 merge) állt.
+- **Mi változott az engine-ben:** a `93c793a..a6a0680` tartományban az `engine/` és `go/` alatt csak az új `schema_identity` modul, a két új hibakód és az új tesztek jöttek be. A receipt verifier és a `MaterializedObject` változatlan, azok ellen bizonyítottuk a P5-2-t.
+- **Lokálisan futtatott (a CI parancsaival, az új pin ellen):**
+  - kanonikus vektorok: 27 vektor, 0 hiba;
+  - mindkét engine-harness a korpuszon: 7 elfogadott eset;
+  - a 6000 esetes materializálási differential: Rust, Go és a referencia egyezik, az engine mint harmadik olvasó mind az 1817 elfogadott esetben egyezik.
+- **Doksi:** új 15.3 szakasz a P5-jegyzetben. Rögzíti a mozgást, és hogy mi marad hátra.
+
+**Nincs benne**, külön változás lesz:
+- A review kötelező invariánsa, hogy a név és a digest ugyanahhoz a forrásfájlhoz van kötve.
+- A Forms szerződéses tesztjei a golden vektorokra.
+
+A CI-t háttérben figyelem. Nem mergelek, az #63 és a termelési receipt kapuja zárva marad.
+~~~~~
+
+
+### 2026-10-31 07:43 — Claude
+
+~~~~~
+A [forms #129](https://github.com/CentralInfraCore/cic-primitive-forms/pull/129) CI-ja zöld az `1b9eb59` fejen: 68 pass, 5 skipping, 0 fail, `MERGEABLE`.
+
+Nem mergelek. A merge-hez az explicit szavad kell, és a review-t is várom. Ezzel a pin az `a6a0680`-ra állna, de a név-digest forráskötés és a Forms szerződéses tesztek még hátravannak, ezek a következő változás. Az engine #63 nyitva marad.
+~~~~~
+
+
+### 2026-10-31 09:01 — Felhasználó
+
+~~~~~
+mergelheted
+~~~~~
+
+
+### 2026-10-31 09:01 — Claude
+
+~~~~~
+A [forms #129](https://github.com/CentralInfraCore/cic-primitive-forms/pull/129) squash-mergelve: `bab0c0b`. A merge az `1b9eb59` fejhez volt kötve, és a `merge-tree` ütközésmentes volt. A forms engine-pinje mostantól az `a6a0680`.
+
+**Hol tartunk**
+- **Engine:** #64 mergelve (`a6a0680`), a D1.3 szerződés kész, vektorokkal, Rust és Go oldalon.
+- **Forms:** a pin átállt. Az engine #63 szándékosan nyitva van.
+
+**Még hátravan, a review sorrendje szerint**
+1. **Forms szerződéses tesztek:** a golden vektorok a Forms saját előállítóin át az új pin ellen.
+2. **Forráskötés:** a név és a digest bizonyítottan ugyanabból az ellenőrzött forrásfájlból jön. Ez kötelező invariáns, és ide tartozik egy negatív eset is, ahol az összetevők másik fájlból származnak.
+3. **#63 lezárása:** a lezáró kommenttel, csak a fentiek után.
+4. **P5-3 kód:** ezután indulhat, fixture-ökkel. A termelési receipt eredethitelességi kapuja zárva marad.
+
+A napló és a memória mentése még hátravan (#64 engine-merge, forms #129, #63 döntés, a PR-ben talált ellenőrzések). Szólj, ha csináljam, vagy indítsam a 1–2. pontot.
+~~~~~
+
+
+### 2026-10-31 09:02 — Felhasználó
+
+~~~~~
+csináld a naplót és a memóriát és mehet a 5-3
+~~~~~
