@@ -22083,3 +22083,343 @@ csináld a memória és napló frissítését
 ~~~~~
 Keresem, hogyan generáltam a napló korábbi frissítéseit (a maszkoló paraméterek miatt), hogy ugyanúgy tegyem.
 ~~~~~
+
+
+### 2026-11-01 15:07 — Claude
+
+~~~~~
+A titokminta-keresés 1 találatot adott. Megnézem, honnan jön, még mielőtt tovább lépnék.
+~~~~~
+
+
+### 2026-11-01 15:07 — Claude
+
+~~~~~
+Ez a találat a napló egy régi mondata, amely magát a szűrést írja le, nem titok. Az előző commitban is ugyanez az egy van. Jöhet a memória.
+~~~~~
+
+
+### 2026-11-01 15:08 — Claude
+
+~~~~~
+A memória és a napló frissítve.
+
+**Napló** (`theads/2026-10-21_session-forms-p1-p3-ci-gate.md`)
+- **Commit:** helyi, `362dd35`. A tool ugyanazzal a hívással futott, mint legutóbb (`--private-repo`), és a "csináld" üzenet pontos időbélyegétől generált. Így nincs átfedés a meglévő résszel.
+- **Tartalom:** az új szakasz a #134–#137 menetét tartalmazza, a visszavont resolve-követelménytől a két review-javításig. A fájl 22 085 sor lett.
+- **Titokkeresés:** 1 találat van, ugyanaz a régi mondat, amely a szűrést írja le. Az előző commitban is pontosan ez az egy volt, nem titok.
+- **Nincs pusholva.** Most már több helyi `theads/` commit vár külön jóváhagyásra (`49390fb` óta).
+
+**Memória**
+- **`project_p3_closed_p3b_state.md`:** új felső blokk a #134–#137 pontos headjeivel. Tartalmazza a release-origin mért tényeit és a tanulságokat: a checker ne a saját bemenetéből olvassa a követelményeit, és egy önállított jelzés (`receipt: false`) ne érjen többet a szerkezeti bizonyítéknál. A `description` is frissült.
+- **`MEMORY.md`:** a P3/P5 sor kiegészítve.
+- **Nem bővítettem:** a tanulságot a meglévő [[feedback_gate_blind_spot]] jegyzetre hivatkozva rögzítettem, külön feedback-fájlt nem hoztam létre.
+
+**Nyitott maradt**
+- **Nightly FULL a `033b671`-en:** sorban állt, amikor utoljára néztem. Eredményt nem tudok róla, és nem feltételezem, hogy sikeres.
+- **Rust/Go idézett-skalár parser-eltérés:** továbbra sincs hozzá GitHub issue, mert nem kaptam rá engedélyt.
+- **Pin-döntés:** új `cic-primitives` release a pinelt commitból, vagy a Forms pin mozgatása egy kiadott commitra? Ez a tiéd.
+- **HOLD és nyitott kapuk:** production receipt HOLD, Engine #63 nyitva, P5-4/F nyitott.
+~~~~~
+
+
+### 2026-11-01 15:33 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Döntésem: új `cic-primitives` release készüljön a jelenlegi grammar pin alapján.
+
+Nem mozgatjuk vissza a Forms pint a `v0.2.0` release-re.
+
+Ellenőriztem közben, hogy a #136 és a #137 már mergelve van. A Forms `main` jelenlegi HEAD-je `f4e5b44`, tehát a dokumentációs kör lezárult.
+
+### Miért az új release?
+
+A #137 előellenőrzése alapján a `v0.2.0` és a jelenlegi `73ae469` pin között lényegi eltérés van: a 12 pinelt fájlból 4 hiányzik a régi release-ből, további 5 pedig eltér.
+
+A régi release-hez való visszatérés ezért nem egyszerű verziócsere lenne, hanem funkcionális visszalépés. Ráadásul a P3/P5 bizonyítási láncot is újra kellene minősíteni az eltérő grammar alapján.
+
+A helyes irány az, hogy a bizonyított grammar-változat kapjon szabályosan hitelesített release-eredetet.
+
+### Az új munkacsomag
+
+1. Release candidate rögzítése. A `73ae4692f0680a316d367179ce057195a0031688` legyen a kiinduló source commit. Ha a kiadási folyamat más commitot igényel, a 12 pinelt fájl byte-azonosságát külön bizonyítani kell.
+2. Reprodukálható release-előellenőrzés. A release → source commit → mind a 12 grammar fájl → Forms pin kapcsolatot gépi ellenőrzéssel igazoljuk. Nem elegendő a két jelenleg külön kezelt grammar digest.
+3. Bizalmi lánc tisztázása. Külsőleg pinelt Root CA, az aláíró jogosultsága, a countersignature felhatalmazása és a tanúsítványok érvényessége. A 2026. december 31-i lejáratot még a production út előtt kezelni kell.
+4. Digest-szerződés. A release rekord base64 SHA-256 és a receipt `sha256:` hex reprezentációja közötti normatív megfeleltetés, Rust/Go golden tesztekkel.
+5. Release előállítása. Csak az előző feltételek bizonyított teljesülése után következhet a release tényleges aláírása, taggelése és publikálása.
+
+GO a release-előkészítésre, de HOLD a tényleges release aláírására és publikálására, amíg a bizalmi és tartalmi kapuk nincsenek igazolva. Production receipt szintén HOLD marad.
+
+A parser-eltérésre külön GitHub issue megnyitását is jóváhagyom. A javításról viszont csak a Rust/Go viselkedés normatív összevetése után döntsünk. A helyi `theads/` commitok pusholását továbbra sem engedélyezem ezzel.
+
+A `033b671` nightly FULL eredményét még nem tekintem igazoltnak; az külön ellenőrizendő.
+
+A következő konkrét PR tehát egy új release candidate előellenőrzése legyen a `cic-primitives` repositoryban, nem Forms-kódmódosítás. Ezzel a már bizonyított rendszert visszük előre, nem igazítjuk vissza egy régebbi állapothoz.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 15:33 — Claude
+
+~~~~~
+Három dolgot viszek: a nightly ellenőrzését, a parser-issue megnyitását reprodukcióval, és a `cic-primitives`-beli előellenőrzést helyi munkaként. Először a nightly és a parser-eltérés reprodukálása.
+~~~~~
+
+
+### 2026-11-01 15:34 — Claude
+
+~~~~~
+Röviden: a parser-eltérést két nyelven reprodukáltam, a próbafájlokat töröltem. Most megnyitom az issue-t, utána jön a `cic-primitives` előellenőrzés.
+~~~~~
+
+
+### 2026-11-01 15:35 — Claude
+
+~~~~~
+Elkészítem az eszközt egy külön worktree-ben a `devel` tetején. Az eszköz nem ír alá és nem tagel, csak a release-rekord és a Forms pin közti kapcsolatot ellenőrzi.
+~~~~~
+
+
+### 2026-11-01 15:36 — Claude
+
+~~~~~
+Futtatom a valós adatokon: a pinelt jelölten, a devel-fejen és a v0.2.0 rekordon (ez utóbbinak a #137 szerint bukni kell).
+~~~~~
+
+
+### 2026-11-01 15:36 — Claude
+
+~~~~~
+Valós adaton megerősíti a #137-et: a v0.2.0 rekord pontosan úgy bukik, ahogy leírtam. Jönnek a tesztek, ideiglenes git-repókkal.
+~~~~~
+
+
+### 2026-11-01 15:37 — Claude
+
+~~~~~
+Elsőre mind zöld, ezért bizonyítom, hogy a tesztek hibát is tudnak találni: beültetek 9 hibát az eszközbe.
+~~~~~
+
+
+### 2026-11-01 15:38 — Claude
+
+~~~~~
+Egy mutáns életben maradt, de az egyenértékű: Pythonban a kódpont-sorrend megegyezik az UTF-8 bájtsorrenddel. Valódi mutáns a UTF-16 és a soronkénti rendezés, ezt külön tesztelem.
+~~~~~
+
+
+### 2026-11-01 15:38 — Claude
+
+~~~~~
+Az 86 hiba környezeti (`mocker` fixture hiányzik), nem az enyém. A CI-éval megegyező függőségekkel futtatom, egy scratchpad-venvben.
+~~~~~
+
+
+### 2026-11-01 15:39 — Claude
+
+~~~~~
+A teljes csomag zöld (185 teszt, lefedettség 90,45% a 88%-os küszöb felett). Jön a kétnyelvű doksi.
+~~~~~
+
+
+### 2026-11-01 15:40 — Claude
+
+~~~~~
+Három dolog történt. A parser-issue fent van, a `cic-primitives` előellenőrzés helyben elkészült, és a `033b671` nightly még fut.
+
+**1. Parser-issue:** [#138]([MASKED:private-repo]), a jóváhagyásod szerint.
+- **Reprodukció:** `a: "x⏎y"` esetén (a folytatósor a 0. oszlopban) a Rust `Syntax("invalid indentation in quoted scalar")` hibát ad, a Go beolvassa `"x y"`-ként. Ugyanez igaz az aposztrófos formára és a beágyazott kulcsra. A behúzott folytatósoron megegyeznek.
+- **Referencia:** a PyYAML mindhárom esetet `"x y"`-ként olvassa. Ezt az issue kifejezetten nem normatív adatként jelöli, nem döntés arról, melyik parser a helyes.
+- **Javítás:** nincs javasolva. A sorrend: normatív döntés az `docs/P1-SUPPORTED-SUBSET.md` és a YAML 1.2 szabály alapján, majd a négy eset a közös corpusba, és csak utána a javítás a karantén eltávolításával.
+
+**2. Release candidate előellenőrzés** (`cic-primitives`, ág `feat/release-candidate-precheck`, commit `84a20e1`). **Nincs pusholva, PR nincs.**
+- **Eszköz:** a `tools/release_candidate_precheck.py` csak olvas, nem ír alá, nem tagel és nem publikál. A `candidate` mód a release előtt, a `record` mód a release után fut.
+- **Mit bizonyít:** hogy mind a 12 pinelt fájl bájtra azonos a manifesttel. A manifest-digestet és a pin nevét újraszámolja. Ellenőrzi, hogy a release-nek kiszemelt commit tartalmazza-e a fájlokat. A rekordban megmondja, melyik fájlt digesteli maga a rekord, és melyik támaszkodik csak a `source_commit`-ra.
+- **Valós adaton:**
+  - A `73ae469` jelölt 12/12 azonos.
+  - **A `devel` azóta továbbhaladt a pinelt `P0-4-MIGRATION.md`-ben** (3 doksi-commit), tehát a `devel` fejéről vágott release nem a pin lenne. A release-nek a `73ae469`-ből vágott ágon kell futnia.
+  - A `v0.2.0` rekordon az eszköz bukik: 4 fájl hiányzik, 5 eltér, és a rekord 4 saját digestje sem egyezik. Ez megerősíti a #137 állítását, immár reprodukálható eszközzel.
+  - Egy új release rekordjában is 6 a 12 pinelt fájlból csak az aláírt `source_commit`-ra (git SHA-1 azonosító) támaszkodik. Hogy ez elég-e, vagy a rekord mind a tizenkettőt digesztelje, a te döntésed.
+- **Bizonyítás:** 32 teszt zöld. A 11+2 beültetett hibából minden valódi hibát elkapott. Egy mutáns egyenértékű volt (a kódpont-sorrend megegyezik az UTF-8 bájtsorrenddel), ezért külön tesztet kapott a UTF-16 és a digest szerinti rendezés. Az egész repo-suite 185 teszt, a lefedettség 90,45% a 88%-os küszöbhöz képest, a CI-vel megegyező függőségekkel futtatva.
+- **Doksi:** kétnyelvű (`docs/en`, `docs/hu`). A nyitott kapuk végig `OPEN` sorok maradnak: külső trust anchor, aláíró jogosultsága, tanúsítvány-érvényesség, digest-szerződés, aláírás.
+
+**3. Nightly FULL a `033b671`-en:** a futás (`41318207112`) még `in_progress`, ezért nem tekintem igazoltnak.
+
+**Amire a szavadat várom:** pusholhatom a `feat/release-candidate-precheck` ágat a `cic-primitives`-be, és megnyithatom a PR-t `devel` bázissal? Az aláírás és a publikálás HOLD marad. A production receipt HOLD, az Engine #63 nyitva, a `theads/` naplócommitok nincsenek pusholva.
+~~~~~
+
+
+### 2026-11-01 15:47 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Döntés: GO a pushra és a PR megnyitására. A release továbbra is HOLD.
+
+A leírt eredmények alapján engedélyezem a `feat/release-candidate-precheck` ág pusholását és a PR megnyitását a `cic-primitives` `devel` ágára, az alábbi határok mellett.
+
+- Push + PR: GO. A `84a20e1` commit változtatásai review-ra kerülhetnek.
+- Merge: HOLD. A PR megnyitása nem jelent automatikus merge-jóváhagyást.
+- Release signing és publication: HOLD.
+- Production receipt: HOLD.
+- Engine #63: OPEN.
+- `theads/` naplócommitok: maradjanak lokálisan.
+- 033b671 nightly FULL: PENDING, amíg a `41318207112` futás ellenőrzött végeredménye nem áll rendelkezésre.
+
+A `#138` parser-issue kezelését is jóváhagyom: előbb normatív döntés, utána közös corpus, majd implementációs javítás. A PyYAML viselkedése összehasonlítási adat, nem önmagában felhatalmazás a Rust parser megváltoztatására.
+
+## Döntés a 6 hiányzó digest ügyében
+
+Mind a 12 pinelt fájl saját digestje szerepeljen a release recordban.
+
+A `source_commit` maradjon kötelező, de ne helyettesítse a fájlszintű digesteket.
+
+Ennek oka a CIC bizonyítási modellje:
+
+1. A `source_commit` a forrásállapot azonosítására és visszakeresésére szolgál.
+2. A fájlszintű digest az adott artifact bájtazonosságát rögzíti.
+3. A manifest digest a teljes pinhalmaz integritását köti össze.
+4. Az aláírás a megfelelően definiált rekordhoz kapcsolja az aláíró állítását.
+
+A recordnak önmagában is hordoznia kell a 12 fájl ellenőrzéséhez szükséges digestértékeket és azok algoritmusát. Nem akarok olyan bizonyítási láncot, amelynek ellenőrzése kizárólag egy Git-objektum későbbi elérhetőségén múlik.
+
+Fontos: ez nem követeli meg az aláírási vagy publikálási mechanizmus mostani módosítását. A teljes digest-lefedettség legyen explicit release-követelmény, és maradjon nyitott kapu, amíg a record-szerződés ezt nem teljesíti.
+
+## Két további feltétel
+
+A PR világosan különítse el az előellenőrző eszköz által igazolt tulajdonságokat a még nyitott bizalmi feltételektől. Különösen: a `12/12 PASS` nem bizonyítja az aláíró jogosultságát vagy egy release hitelességét.
+
+A `73ae469` release-jelöltet a `devel` jelenlegi állapotától külön kell kezelni. A PR célozhatja a `devel` ágat, de ez nem ad felhatalmazást arra, hogy a release-t az időközben megváltozott `devel` HEAD-ből vágjuk.
+
+A v0.2.0 rekordnál feltárt eltérések pedig maradjanak reprodukálható negatív bizonyítékok, ne legyenek csendben kijavítva vagy elfedve.
+
+Összegzés: mehet a push és a PR. A 12/12 digest-követelményt rögzítsük, a megmaradt trust gate-eket ne zárjuk le bizonyíték nélkül.
+
+És egy dolgot különösen értékelek ebben a munkában: az előellenőrzés már képes kimondani, hogy a korábbi v0.2.0 release record nem állja ki a most definiált konzisztenciaellenőrzést.
+
+Ez pontosan az a viselkedés, amit a CIC-től elvárok: a bizonyítás nem a korábbi döntéseink védelmét szolgálja, hanem azok ellenőrizhetőségét — akkor is, ha az eredmény kellemetlen.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 15:48 — Claude
+
+~~~~~
+Rögzítem a 12/12 digest-követelményt az eszközben és a doksiban, tesztekkel. A v0.2.0 negatív bizonyítékot befagyasztott fixture-rel teszem reprodukálhatóvá. Utána jön a push és a PR.
+~~~~~
+
+
+### 2026-11-01 15:49 — Claude
+
+~~~~~
+Most a doksi. A határok külön szakaszt kapnak: mit igazol az eszköz, mit nem, és a `73ae469` jelölt viszonya a `devel` jelenlegi fejéhez.
+~~~~~
+
+
+### 2026-11-01 15:50 — Claude
+
+~~~~~
+A PR fent van: [cic-primitives #22](https://github.com/CentralInfraCore/cic-primitives/pull/22), `devel` bázissal, HEAD `831b02c`. A `gate` CI most fut, ezért zöldet nem állítok. Merge nincs.
+
+**A 12/12 digest-követelmény rögzítve**
+- **`record` mód:** hibát ad, ha a rekord nem hordozza mind a 12 pinelt fájl saját digestjét. A `source_commit` kötelező marad, és teljes digest mellett sem pótolható vele. A hiba akkor is megmarad, ha a commit mind a 12 fájlt tartalmazza.
+- **`candidate` mód:** a `record digest coverage` nyitott kapuként marad. A mostani compiler rekordja konstrukció szerint legfeljebb 6 fájlt digesteltethet, ezért új release a rekord-szerződés változása nélkül nem teljesítheti. Ilyen szerződést nem találtam ki: az eszköz a meglévő helyeket olvassa (`specs`, `provenance.grammar_*`).
+
+**A PR szétválasztja, mit bizonyít az eszköz, és mit nem**
+- A bizonyított rész: bájtazonosság, manifest-aritmetika, a verzió érvényessége és a rekord saját digestjei.
+- A nem bizonyított rész: az aláíró jogosultsága, a trust anchor, a tanúsítvány-érvényesség és a digest-kódolás. Ezek minden futáson `OPEN` sorként jelennek meg. Minden futás egy `scope` sorral zár, amely kimondja, hogy a 12/12 PASS nem a release hitelességét állítja. A `scope` sort teszt védi: ha eltávolítom, két teszt bukik.
+- **A `73ae469` és a `devel`:** a doksi és a PR leírása külön szakaszban mondja ki, hogy a `devel`-re célzó PR nem ad felhatalmazást a release `devel`-fejről vágására. A `candidate --release-head <devel-fej>` a megváltozott fájlon bukik.
+
+**A v0.2.0 negatív bizonyíték reprodukálható**
+- A `tests/fixtures/forms-pin-73ae469.yaml` a pin befagyasztott másolata. A teszt (`test_release_v020_does_not_hold_the_pinned_grammar`) rögzíti: 4 fájl hiányzik, 5 eltér, a rekord 4 saját digestje hibás, és 2 a 12-ből digesztelt.
+- Teljes történet és tag nélkül a teszt kihagyódik, nem megy át. A CI sekély checkoutján ezért nem fut. Itt lokálisan fut és zöld.
+
+**Ellenőrzések**
+- 36 teszt zöld az eszközre, az egész csomag 189 teszt, lefedettség 90,48% a 88%-os küszöbhöz képest.
+- A beültetett hibák mind pirosra fordították a teszteket. Egy életben maradt mutáns egyenértékű volt (a kódpont-sorrend azonos az UTF-8 bájtsorrenddel), ezért kapott külön tesztet a UTF-16 és a digest szerinti rendezés.
+
+**Nyitott és HOLD**
+- **Nightly FULL a `033b671`-en:** a futás (`41318207112`) még `in_progress`, PENDING.
+- **HOLD:** merge (#22), release-aláírás és publikálás, production receipt. Az Engine #63 nyitva, a `theads/` naplócommitok helyiek.
+- **#138:** a sorrend megmarad: előbb normatív döntés, utána közös corpus, majd javítás. A PyYAML csak összehasonlítási adat.
+- **Memória és napló:** a #138-ra és a #22-re még nem frissítettem őket.
+~~~~~
+
+
+### 2026-11-01 16:21 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Állapotértékelés: PR #22 – review alatt, merge HOLD
+
+A jelentés alapján a korábban meghatározott feltételek teljesültek a PR megnyitásához, és különösen fontos, hogy nem próbáltad a hiányzó release-bizonyítékokat mesterségesen előállítani.
+
+Három döntést hozok:
+
+1\. A 12/12 digest-követelmény marad kötelező. Helyes, hogy a jelenlegi compiler által előállítható, legfeljebb 6 digestet tartalmazó rekord nem kap felmentést. A compiler és a record-szerződés közötti hiányosságot külön kell megoldani.
+
+2\. A v0.2.0 negatív teszt CI-beli kihagyása nem elfogadható végleges állapotként. Helyben reprodukálható a hiba, de a CI jelenleg nem bizonyítja ugyanezt. Olyan megoldást kérek, amelyben a teszt determinisztikusan futtatható, például teljes Git-történettel rendelkező célzott jobbal vagy megfelelően befagyasztott tesztadatokkal. Ha ez most nem fér bele, legyen explicit, nyomon követett review-feltétel.
+
+3\. A memória és a napló frissítése mehet, de kizárólag a tényleges állapot rögzítésével: #138 OPEN, #22 PR megnyitva, CI PENDING, merge HOLD, production receipt HOLD. A naplófrissítés nem jelent automatikus engedélyt a `theads/` commitok pusholására.
+
+## Egy további szakmai észrevétel
+
+A `#138` issue-t a GitHubon is ellenőriztem: valóban nyitott, és megfelelően dokumentálja a négy reprodukciót, a karantén határát, valamint a javítás előtti normatív döntés követelményét.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+A `#22` PR tartalmát viszont nem sikerült közvetlenül lekérnem, így annak tényleges diffjét és CI-eredményét még nem minősítem.
+
+A legfontosabb architekturális eredmény most az, hogy a release candidate megfelelősége és a release hitelessége két külön állítás lett, külön bizonyítási feltételekkel.
+
+A következő lépésnél nem lazítanék a kapukon. A compiler record-szerződésének kibővítését külön változtatásként kezelném, mert ez már a bizonyíték formátumát érinti, nem pusztán az ellenőrző eszközt.
+
+Végső státusz: PR #22 REVIEW; merge HOLD; release HOLD. A megadott 189 zöld teszt és 90,48%-os lefedettség erős lokális ellenőrzési eredmény, de nem helyettesíti a GitHub CI lezárt futását és a nyitott trust gate-ek bizonyítékait.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 16:21 — Claude
+
+~~~~~
+Két teendő van: a v0.2.0 teszt determinisztikus futtatása a CI-ban, majd a memória és a napló. Először a gate-et nézem meg.
+~~~~~
+
+
+### 2026-11-01 16:21 — Claude
+
+~~~~~
+A #22 `gate`-je zöld az `831b02c`-n (17 s), de a v0.2.0 teszt ott kimaradt. Ezt javítom: teljes történet a checkoutban, és a CI-ban a hiányzó történet hiba legyen, ne kihagyás.
+~~~~~
+
+
+### 2026-11-01 16:21 — Claude
+
+~~~~~
+A szimuláció a régi, commitolt tesztet futtatta, mert a klón csak a commitot látja. Commitolom, és újra megcsinálom.
+~~~~~
+
+
+### 2026-11-01 16:21 — Claude
+
+~~~~~
+A viselkedés a kívánt: sekély klónon a követelménnyel hiba, követelmény nélkül kihagyás, teljes történettel 37 zöld. Pusholom, és megnézem a CI-t.
+~~~~~
+
+
+### 2026-11-01 16:22 — Claude
+
+~~~~~
+Ez még a régi futás (`41323251223`). Megvárom az új HEAD-ét.
+~~~~~
+
+
+### 2026-11-01 16:22 — Claude
+
+~~~~~
+A `gate` zöld a `6a4749e`-n. Azt is ellenőrzöm a naplóból, hogy a v0.2.0 teszt tényleg lefutott-e, nem kimaradt.
+~~~~~
