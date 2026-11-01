@@ -23032,3 +23032,360 @@ Konkrét döntésem: GO a post-merge gate ellenőrzésére, utána GO a compiler
 A `73ae469` release-jelölt érintetlen marad; aláírás, publikálás és production receipt továbbra is HOLD.
 </pasted_content id="aa6b">
 ~~~~~
+
+
+### 2026-11-01 17:22 — Claude
+
+~~~~~
+Az első lépés (post-merge gate) már megvan: sikeres. Ezt a naplóba is bevezetem, utána jön a szerződés. Először a napló.
+~~~~~
+
+
+### 2026-11-01 17:23 — Claude
+
+~~~~~
+A napló lezárva (helyi commit `ab4f25e`). Most a szerződés: elolvasom, hogyan áll össze a v2 rekord és a `build_hash`, hogy a v3 pontosan erre épüljön.
+~~~~~
+
+
+### 2026-11-01 17:24 — Claude
+
+~~~~~
+A példa mind a négy értéke független shell-számolással egyezik, és a doksiban nincs nem-ASCII vagy `\u` karakter. Jön a magyar összefoglaló, a helyi commit és az issue.
+~~~~~
+
+
+### 2026-11-01 17:25 — Claude
+
+~~~~~
+Három lépés megtörtént: a post-merge gate ellenőrzése, a napló lezárása és a szerződés megírása. A szerződés issue-ja fent van, a specifikáció még csak helyi commit.
+
+**1. Post-merge CI.** A `3437b3d` `devel` push-futása (`41328925855`) sikeres: 204 teszt, 0 kihagyott. A #22 a naplóban is lezárva, helyi commit `ab4f25e`, nem pusholt. A release marad HOLD.
+
+**2. Compiler és rekord-szerződés.**
+- **Issue:** [cic-primitives #23](https://github.com/CentralInfraCore/cic-primitives/issues/23), a 7 követelményeddel, a trust gate-ek kizárásával és a lépéssorral.
+- **Specifikáció:** `docs/en/RELEASE-RECORD-CONTRACT.md` a normatív forrás, `docs/hu/` az összefoglaló. Helyi ág `spec/release-record-contract`, commit `c5aa823`, **nincs pusholva és PR sincs**.
+- **Kulcsdöntések a specben:**
+  - **Envelope 3:** a `build_hash` szabálya változatlan: a teljes csomagot fedi, az `release.sign`, a `release.build_hash` és a `cic_countersign` kivételével. Az új `artifacts` blokkot a meglévő aláírás ezért már köti, és nincs új aláírási mechanizmus. Az új verziószám csak a verifiernek jelzi, hogy a rekord megfelel-e a szerződésnek.
+  - **Digest-forma:** `sha256:` plusz 64 kisbetűs hex, a git blob nyers bájtjaiból, szűrés és normalizálás nélkül. Ez azonos a receipt mezőivel, ezért a fogyasztónak nem kell átkódolnia, és a digest-kódolási kapu a rekord oldalán szerződéssé válik.
+  - **Fogyasztóktól független:** az artifact-halmazt a termelő deklarálja a `project.yaml`-ban, és a forráscommit fájából oldódik fel, nem a munkakönyvtárból. A compiler nem olvas fogyasztói `pins.yaml`-t. A fogyasztó (Forms) a saját 12 fájlját ellenőrzi ebből a halmazból.
+  - **Egyediség és rend:** a `source_path` és az `artifacts` útvonalak egyediek. A verifier elutasítja a duplikátumot, nem hagyja felülírni, és a rendezetlen listát elutasítja, nem rendezi csendben.
+  - **Régi rekordok:** az envelope 1 és 2 érvényes marad a saját jelentésében, de nem írható át, és `envelope_too_old` indokkal elutasítja őket a szerződésnek való megfelelést kérő verifier. A v0.2.0 negatív eset marad.
+  - **Indokazonosítók:** 10 rekord-szintű és 3 commit-függő, a vektorlistával együtt. Minden negatív vektornak planted-defect futással kell bizonyítania, hogy hibát kap.
+  - **Példa:** a három fájlos worked example digestjeit és a manifest-digestet (`39e02257…2ec53`) független shell-számolással ellenőriztem.
+- **Nincs eldöntve:** a glob-dialektus, a `project.yaml` kulcsnevei az `include`/`exclude` felett, és az envelope 2 ellenőrzés megtartásának időtartama.
+
+**3. Trust gate-ek:** később és külön, a szerződésbe nem kevertem. A `73ae469` jelölt érintetlen.
+
+**Mire várok:** pusholhatom a `spec/release-record-contract` ágat és megnyithatom a specifikáció PR-ját a `cic-primitives` `devel`-re? Implementáció nem indul a szerződés rögzítéséig.
+
+A HOLD-ok változatlanok: release-aláírás és publikálás, production receipt, Engine #63, #138, a `theads/` push.
+~~~~~
+
+
+### 2026-11-01 20:10 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Döntés: GO a specifikáció pusholására és a PR megnyitására
+
+Engedélyezem a `spec/release-record-contract` ág pusholását és a PR megnyitását a `cic-primitives` `devel` ágára, a `c5aa823` commit alapján.
+
+Amit viszont különválasztanék:
+
+| Művelet                       | Döntés                        |
+| ----------------------------- | ----------------------------- |
+| Specifikációs ág push         | GO                            |
+| Specifikációs PR megnyitása   | GO                            |
+| Specifikációs PR merge        | HOLD – review szükséges       |
+| Compiler implementáció        | HOLD – elfogadott szerződésig |
+| Release aláírás és publikálás | HOLD                          |
+| Production receipt            | HOLD                          |
+| `theads/` push                | HOLD                          |
+
+A leírt szerződéses döntések alapvetően jó irányt képviselnek. Különösen az, hogy a producer deklarálja az artifact-halmazt, a consumer pedig ellenőrzi a saját követelményeit, és hogy a történeti rekordokat nem próbáljuk utólag az új szerződésnek megfeleltetni.
+
+## A specifikációs review három kötelező kérdése
+
+A [GitHub #23 issue](https://github.com/CentralInfraCore/cic-primitives/issues/23?utm_source=chatgpt.com) tartalmát is ellenőriztem. Az issue valóban OPEN, és a követelmények összhangban állnak a leírt céllal.
+
+A PR review-ján három kérdést mindenképpen eldöntenék:
+
+1\. Glob-dialektus: nem maradhat implementációfüggő. Pontosan definiálni kell a `**`, `*`, `?`, rejtett fájlok, könyvtárhatárok és az include/exclude ütközések működését. Alternatíva: az első szerződésverzió kizárólag explicit fájllistát támogasson.
+
+2\. A `project.yaml` deklarációs szerkezete: a kulcsnevek és a feloldási szabályok legyenek normatívak. Különösen fontos, hogy hiányzó fájl, üres artifact-halmaz vagy duplikált találat esetén pontosan milyen hibát kell adni.
+
+3\. Envelope 2 kompatibilitás: a régi rekordok változatlanul ellenőrizhetők maradjanak a saját szerződésük szerint. A támogatás későbbi megszüntetése külön verziózott döntés legyen, ne legyen ennek a PR-nak rejtett mellékhatása.
+
+Egy további fontos megkötés: az Envelope 3 új `artifacts` blokkja csak akkor tekinthető a meglévő aláírással lefedettnek, ha a tényleges kanonikalizálás, `build_hash`-számítás és aláírás-ellenőrzés ezt golden tesztekkel igazolja. A leírt szabály jó kiindulás, de az állítást bizonyítani kell.
+
+Javaslatom: az első verzióban explicit artifact-útvonalakat használnék, glob-támogatás nélkül. Ez csökkenti a kétértelműséget, és előbb stabilizálhatjuk a bizonyítási szerződést.
+
+Tehát: GO push + PR, de spec merge HOLD, amíg ezek a kérdések nincsenek eldöntve és tesztekkel alátámasztva. Implementáció továbbra sem indulhat.
+
+A `73ae469` release-jelöltet és valamennyi release-HOLD-ot változatlanul megtartjuk.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 20:11 — Claude
+
+~~~~~
+A specifikáció PR-ja nyitva van: https://github.com/CentralInfraCore/cic-primitives/pull/24. Az alap a `devel`, a tartalom a `c5aa823`, és az ág pusholva van. Közben semmi más nem változott.
+
+A PR leírása a három kérdésedet és egy negyediket nyitott kérdésként rögzíti:
+1. **Glob-dialektus:** vagy pontosan definiált, vagy az első verzió csak explicit útvonalakat támogat.
+2. **`project.yaml` szerkezet:** a kulcsnevek és a feloldási szabályok normatívak legyenek. Hiányzó fájlra, üres halmazra és duplikált találatra pontos hibát kell adni.
+3. **Envelope 2:** a régi rekordok a saját szerződésük szerint ellenőrizhetők maradnak. A támogatás megszüntetése külön verziózott döntés.
+4. **Aláírás-lefedettség:** az új `artifacts` blokk csak akkor számít lefedettnek, ha ezt golden tesztek bizonyítják a valódi kanonikalizálással, `build_hash`-sel és aláírás-ellenőrzéssel.
+
+Ezek eldöntéséig a PR nem mergelhető. Az explicit útvonalas javaslatod szerintem jó. Ezzel a glob-kérdés kikerül a szerződésből, és az 1. és 2. pont is egyszerűsödik. A spec most még glob-mintákat és `include`/`exclude` kulcsokat ír le, ezért ezt át kell írnom. Ezt csak a GO-dra teszem meg.
+
+A HOLD-ok változatlanok:
+- a PR merge-e,
+- a compiler-implementáció,
+- a release aláírása és publikálása,
+- a production receipt,
+- a `theads/` push,
+- a `73ae469` jelölt.
+
+Mire várok: a javaslat szerint átírhatom a specet explicit útvonalakra (a második commit a PR ágára kerül), és a negyedik pontra felvehetem a golden tesztvektor-követelményeket?
+~~~~~
+
+
+### 2026-11-01 20:12 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Döntés: GO mindkét módosításra a PR #24-ben
+
+Engedélyezem a specifikáció átírását explicit artifact-útvonalakra, valamint az aláírás-lefedettség golden tesztvektor-követelményeinek felvételét.
+
+A módosítás mehet második commitként a `spec/release-record-contract` ágra, a meglévő PR #24 részeként.
+
+Ez továbbra is specifikációs munka, nem compiler-implementációs engedély.
+
+### 1. Artifact-deklaráció: explicit útvonalak
+
+Az Envelope 3 első verziójában:
+
+- Nincs glob, `include` vagy `exclude`.
+- A `project.yaml` explicit, repo-gyökeréhez viszonyított fájlútvonalakat deklarál.
+- A fájlok feloldása kizárólag a rögzített `source_commit` Git-fájából történik.
+- Minden útvonal egyedi, szabályos és determinisztikusan rendezett.
+- Hiányzó fájl, duplikált útvonal, nem szabályos útvonal és üres artifact-halmaz: FAIL.
+- A compiler nem olvas fogyasztói pin-manifestet.
+
+A normatív szöveg pontosítsa a Git-fájlfa szerinti útvonalkezelést is: szimbolikus link, submodule, abszolút útvonal, `..`, valamint a fájl és könyvtár megkülönböztetése.
+
+A glob-támogatás későbbi, külön szerződésverziózott bővítés lehet.
+
+### 2. Aláírás-lefedettség: kötelező golden vektorok
+
+Kérek legalább egy pozitív és célzott negatív vektorokat, amelyek igazolják, hogy az `artifacts` blokk része a meglévő `build_hash` által lefedett, kanonikalizált tartalomnak.
+
+A negatív vektorok fedjék le az artifact útvonalának, digestjének, elemszámának, sorrendjének és a `source_commit` értékének módosítását.
+
+A kívánt eredmény: a megváltoztatott, de újra nem hitelesített rekord nem mehet át a megfelelő integritás- és aláírás-ellenőrzéseken.
+
+Nem kérünk új aláírási mechanizmust. A meglévő mechanizmus lefedettségét kell igazolni.
+
+### 3. Envelope 2 kompatibilitás
+
+Az Envelope 1 és 2 rekordok maradjanak ellenőrizhetők a saját szabályaik szerint.
+
+Az Envelope 3 megfelelőséget kérő ellenőrzés viszont utasítsa el őket `envelope_too_old` indokkal.
+
+A régi rekordok átírása, újraaláírása vagy automatikus migrációja nem megengedett.
+
+### 4. Elfogadási feltétel
+
+A [PR #24](https://github.com/CentralInfraCore/cic-primitives/pull/24?utm_source=chatgpt.com) OPEN állapotát GitHubon is megerősítettem.
+
+A következő commit után azt szeretném látni, hogy a normatív specifikáció, a worked example, a hibakódok és a későbbi golden tesztvektorok követelményei egymással összhangban vannak.
+
+A golden vektorok követelményeinek rögzítése most GO; a tényleges tesztimplementáció külön lépés.
+
+PR #24 merge HOLD. Compiler-implementáció HOLD. Release és production receipt HOLD. `theads/` push HOLD.
+
+A `73ae469` jelölt érintetlen marad.
+
+Ezzel az Envelope 3 első verziója tudatosan szűkebb, viszont lényegesen könnyebben bizonyítható szerződés lesz. Ez a CIC-nél fontosabb, mint az, hogy már az első verzió minden lehetséges artifact-kiválasztási módszert támogasson.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 20:13 — Claude
+
+~~~~~
+Átírtam a specifikációt, a PR #24-re felkerült a második commit, és a gate futása most folyik rajta.
+~~~~~
+
+
+### 2026-11-01 20:14 — Claude
+
+~~~~~
+A PR #24 második commitja (`6d47c62`) fent van a `spec/release-record-contract` ágon. A gate sikeres, és ez csak doksi-változásra vonatkozik. A PR leírását frissítettem a négy review-kérdés válaszaival. Nem mergeltem, és nem indítottam implementációt.
+
+**Amit a commit változtat (az angol `docs/en/RELEASE-RECORD-CONTRACT.md` a normatív, a magyar `docs/hu/` az összefoglaló):**
+- **Explicit útvonalak (6–7. szakasz):**
+  - Nincs glob, `include` vagy `exclude`; a compiler az ilyen kulcsot elutasítja. A pattern-nyelv később, külön verziózott bővítés lehet.
+  - A `project.yaml` kulcsa `compiler_settings.release_artifacts.paths`.
+  - Az útvonalak kizárólag a `source_commit` Git-fájából oldódnak fel, a compiler nem olvas fogyasztói manifestet.
+  - Könyvtár, szimbolikus link, submodule, abszolút útvonal, `..`, nem szabályos és duplikált útvonal, hiányzó fájl és üres halmaz mind elutasítás. A compiler oldali hibakódok külön listán vannak (`declaration_*`, `declared_path_*`).
+  - Az útvonal nincs link mentén feloldva.
+- **Aláírás-lefedettség (12. szakasz):**
+  - **Mit kell mutatni:** az aláírt rekordon, a `build_hash` és a `release.sign` érintetlenül hagyásával egyenként módosítom az útvonalat, a digestet, az elemszámot (hozzáadás és törlés), a sorrendet és a `source_commit`-ot. Az integritás-ellenőrzés önmagában `build_hash_mismatch`-ot ad, és egyik módosított rekord sem megy át az integritás- és aláírás-ellenőrzésen.
+  - **Második sorozat:** a `build_hash` újraszámolva, de újra alá nem írva `signature_invalid`-ot ad, a ellenjegyzésre `countersign_invalid`-ot. Új aláírási mechanizmus nincs.
+  - **Új hibakódok:** a `build_hash_mismatch`, a `signature_invalid` és a `countersign_invalid` az envelope 2 változatlan ellenőrzései. Most a hibakód-táblába is bekerültek.
+  - **4. szakasz:** kimondja, hogy a lefedettség követelmény, nem bizonyított tulajdonság, amíg a vektorok nem léteznek.
+- **Envelope 2 (9. szakasz):** a régi rekordok a saját szabályaik szerint ellenőrizhetők maradnak. Átírás, újraaláírás és automatikus migráció tiltott. A szerződésnek való megfelelést kérő ellenőrzés `envelope_too_old` indokkal utasítja el őket. A megszüntetés külön verziózott döntés.
+
+**Összhang:** a worked example (manifest-digest `39e02257…2ec53`) változatlan, ezért a kézi shell-számítás továbbra is érvényes. A glob-ra utaló szöveg az angol dokumentumban már csak a „nincs glob" mondatban és a „nincs eldöntve" listában szerepel. Az angol és a magyar változat hibakódlistája egyezik.
+
+**HOLD-ok:** a PR #24 merge-e, a compiler-implementáció, a golden és negatív vektorok tényleges megírása (a követelmény rögzítve van, a megvalósítás külön lépés), a release aláírása és publikálása, a production receipt és a `theads/` push. A `73ae469` érintetlen.
+
+Mire várok: a PR #24 reviewjára. A vektorok megírása csak az elfogadott szerződés után indul.
+~~~~~
+
+
+### 2026-11-01 20:17 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## PR #24 review — 6d47c62
+
+Átnéztem a [PR #24](https://github.com/CentralInfraCore/cic-primitives/pull/24?utm_source=chatgpt.com) aktuális normatív angol specifikációját. A PR továbbra is OPEN, merge nem történt.
+
+A négy korábbi review-kérdésre adott válaszokat elfogadhatónak tartom. Az explicit útvonalas modell, a producer által deklarált artifact-halmaz, az Envelope 2 kompatibilitás és a golden vektorok követelménye megfelelő irány.
+
+Van azonban egy fontos, eddig kimaradt probléma a kanonikus manifest-formátumban, amit merge előtt javítanék.
+
+### 1. A manifest útvonalai nem tartalmazhatnak sortörést
+
+Merge előtt javítandó
+
+A 7. szakasz megengedi azokat a Git-fájlneveket is, amelyek LF vagy CR karaktereket tartalmaznak. A 8. szakasz viszont soralapú manifestet definiál:
+
+`<sha256-hex><két szóköz><path><LF>`
+
+Egy Git-fájlnév tartalmazhat sortörést, ezért ez a reprezentáció nem garantálja az egyértelmű sorhatárokat.
+
+Javaslatom: az Envelope 3 útvonalszerződése tiltsa a vezérlőkaraktereket, legalább a `U+000A` és `U+000D` karaktereket. Legyen külön negatív teszt és egyértelmű `artifact_path_form` / `declaration_path_form` hiba.
+
+Ez nem igényel új manifest-formátumot.
+
+### 2. Envelope-verziók közötti eltérés
+
+A 4. szakasz előírja, hogy `provenance.envelope` és `release.envelope` egyaránt `3` legyen.
+
+A 11. szakasz hibakódtáblája azonban nem írja le, mi történik, ha az egyik `3`, a másik `2`, vagy valamelyik nagyobb, mint `3`.
+
+Javaslatom: külön `envelope_mismatch` és `envelope_unsupported` indok, meghatározott ellenőrzési sorrenddel. Az `envelope_too_old` maradjon a ténylegesen régi rekordokra.
+
+### 3. A golden vektorok eredményének pontosítása
+
+A 12. szakasz két ellenőrzési sorozata jó, de a második sorozatnál pontosítani kell, hogy a `signature_invalid` és a `countersign_invalid` hogyan igazolható külön-külön.
+
+Ha a verifier az első hibánál megáll, ugyanazon futás nem feltétlenül mutatja ki mindkettőt.
+
+A követelmény legyen az, hogy mindkét kriptográfiai ellenőrzést külön bizonyítsuk. Nem kell ehhez megváltoztatni a production verifier hibakezelési sorrendjét.
+
+## Review-összegzés
+
+| Terület                             | Döntés                   |
+| ----------------------------------- | ------------------------ |
+| Explicit artifact-útvonalak         | Elfogadva                |
+| Producer/consumer szétválasztás     | Elfogadva                |
+| Git-blob alapú digest               | Elfogadva                |
+| Duplikátumok és rendezés            | Elfogadva                |
+| Envelope 2 kompatibilitás           | Elfogadva                |
+| Golden vektorok követelménye        | Elfogadva, pontosítással |
+| Manifest útvonalak karakterkészlete | Javítandó                |
+| Envelope-verziók hibakezelése       | Pontosítandó             |
+
+Döntésem: GO a három pontosításra egy harmadik dokumentációs commitban. A PR #24 merge továbbra is HOLD.
+
+Nem kérnék újabb architekturális áttervezést. Ezek a meglévő szerződés lezárásához szükséges pontosítások.
+
+Ami különösen tetszik: a szerződés most már világosan elválasztja a rekord önmagában ellenőrizhető integritását a forráscommit rendelkezésre állása esetén elvégezhető bájtellenőrzéstől. Az előbbi nem bizonyítja önmagában, hogy a deklarált fájlok ténylegesen léteztek a Git-fában.
+
+Ez fontos határ, és helyesen szerepel a 11. szakaszban.
+
+A compiler-implementáció, a golden vektorok megírása, a release és a production receipt változatlanul HOLD.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 20:18 — Claude
+
+~~~~~
+A harmadik commit (`3529252`) fent van a PR #24 ágán, a gate sikeres. Ez csak doksi-változásra vonatkozik. Merge nem volt, és semmi más nem változott.
+
+**1. Útvonalak karakterkészlete (7. szakasz)**
+- Az útvonal nem tartalmazhat vezérlőkaraktert: U+0000–U+001F (LF, CR, TAB és NUL is) és U+007F tiltott.
+- Az indok a szövegben áll: a manifest soralapú, és egy sortörés az útvonalban kétértelművé tenné a sorhatárt. A 8. szakasz kimondja, hogy ezért minden sor a saját LF-jénél ér véget. Új manifest-formátum nem kell.
+- A hibakód a rekordoldalon `artifact_path_form`, a compilerben `declaration_path_form`.
+- A 12. szakasz negatív vektorai kiegészültek LF, CR, TAB és U+007F útvonallal, a compilerre is.
+
+**2. Envelope-verziók (4. és 11. szakasz)**
+- Az ellenőrzési sorrend: `envelope_mismatch`, `envelope_unsupported`, `envelope_too_old`. Az elsőnél megáll az ellenőrzés.
+  - `envelope_mismatch`: a `provenance.envelope` és a `release.envelope` eltér. Az egyik hiánya is eltérés.
+  - `envelope_unsupported`: a két érték egyenlő, de nem egész szám (string, boolean, float, `null`), vagy 3-nál nagyobb egész, vagy mindkettő hiányzik.
+  - `envelope_too_old`: a két érték egyenlő, és 3-nál kisebb egész.
+- Új vektorok: 3/2, 2/3, 3/hiányzó, 3/4 (mismatch); 4/4, `"3"`, `true`, `null`, mindkettő hiányzik (unsupported).
+
+**3. Golden vektorok, a két kriptográfiai ellenőrzés külön (12. szakasz)**
+- A második sorozatban az újraszámolt `build_hash` mellett:
+  - (a) érvényes `release.sign` és elavult ellenjegyzés: egyedül a `countersign_invalid` jelenik meg.
+  - (b) érvényes ellenjegyzés és elavult `release.sign`: egyedül a `signature_invalid` jelenik meg.
+  - (c) mindkettő elavult: a teljes verifier elutasít, azzal az indokkal, amelyet a sorrendje előbb elér.
+- Mindegyik a referencia-verifier per-check belépési pontján, vagy olyan rekorddal fut, amelyben csak az az egy ellenőrzés bukhat. A production verifier sorrendje és hibakezelése nem változik.
+- Az (a)–(b) vektorokhoz teszt-aláíró kulcs és teszt-ellenjegyző kulcs kell. A tesztkulcsok kezelése a vektorok megírásakor, külön lépésben dől el.
+
+A magyar összefoglaló követi az angol normatív szöveget. Az angol dokumentumban nincs nem-ASCII karakter vagy `\u` szekvencia. A worked example változatlan, ezért a manifest-digest (`39e02257…2ec53`) továbbra is érvényes.
+
+**HOLD-ok:** a PR #24 merge-e, a compiler-implementáció, a vektorok megírása, a release aláírása és publikálása, a production receipt és a `theads/` push. A `73ae469` érintetlen.
+
+Mire várok: a PR #24 következő reviewjára vagy az explicit merge-szóra.
+~~~~~
+
+
+### 2026-11-01 20:19 — Felhasználó
+
+~~~~~
+GO a PR #24 squash merge-re, kizárólag a 3529252 HEAD-re.
+~~~~~
+
+
+### 2026-11-01 20:19 — Claude
+
+~~~~~
+A PR #24 squash merge-ölve van a `devel` ágra. A merge commit teljes azonosítója: `dd4380bb0ca318d1630830d24f8403f58eed0db0`.
+
+- **Megelőző ellenőrzés:** a merge előtt a PR OPEN volt, a HEAD pontosan a `35292526050e9fdb28e9ecc92876bb306400e547`, a bázis a `devel`, a merge-állapot `clean`, és ezen a HEAD-en a gate sikeres volt. A merge `--match-head-commit` védelemmel ment.
+- **Merge utáni gate:** a `dd4380b` `devel` push-futása sikeres. Ez csak doksi-változásra vonatkozik, nem release-felhatalmazás.
+- **Mi változott:** a `devel`-re csak a `docs/en|hu/RELEASE-RECORD-CONTRACT.md` került. Kód, compiler, pre-check és fixture nem változott.
+- **Issue #23:** nyitva maradt, mert csak a szerződés rögzült, az implementáció nem.
+
+**HOLD-ok:**
+- compiler-implementáció,
+- golden és negatív vektorok megírása,
+- release aláírása és publikálása,
+- production receipt,
+- `theads/` push,
+- trust gate-ek,
+- Engine #63 és forms #138,
+- a `73ae469` jelölt érintetlen.
+
+A memóriát és a naplót még nem frissítettem a #23, a #24 és a szerződés állapotával. Frissítsem az igazi állapottal?
+
+Következő lépés a szerződés szerint a megfelelőségi vektorok és a record-only referencia-verifier. Ez külön PR, és a compiler módosítása előtt kell készülnie. Mehet a terv, vagy előbb a memória- és naplófrissítés?
+~~~~~
+
+
+### 2026-11-01 20:20 — Felhasználó
+
+~~~~~
+Igen, GO a memória- és naplófrissítésre az igazi állapottal.
+~~~~~
