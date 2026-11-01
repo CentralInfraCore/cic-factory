@@ -22423,3 +22423,612 @@ Ez még a régi futás (`41323251223`). Megvárom az új HEAD-ét.
 ~~~~~
 A `gate` zöld a `6a4749e`-n. Azt is ellenőrzöm a naplóból, hogy a v0.2.0 teszt tényleg lefutott-e, nem kimaradt.
 ~~~~~
+
+
+### 2026-11-01 16:22 — Claude
+
+~~~~~
+CI-ban 190 teszt futott, 0 kihagyott, tehát a v0.2.0 negatív bizonyíték determinisztikusan fut. Jön a napló és a memória, a tényleges állapottal.
+~~~~~
+
+
+### 2026-11-01 16:23 — Claude
+
+~~~~~
+Napló kész, helyi commit. A memóriába csak a tényleges állapotot írom.
+~~~~~
+
+
+### 2026-11-01 16:23 — Claude
+
+~~~~~
+A v0.2.0 negatív teszt most a CI-ban is lefut, és a memória meg a napló frissítve van. Merge nem történt.
+
+**v0.2.0 negatív teszt a CI-ban** (cic-primitives PR #22, új HEAD `6a4749e`)
+- **Teljes történet:** a `gate.yml` checkoutja `fetch-depth: 0` lett, így a commit és a tag elérhető. A git-objektumok megváltoztathatatlanok, ezért a futás determinisztikus.
+- **Kihagyás helyett hiba:** a CI-ban `CIC_REQUIRE_RELEASE_HISTORY=1` van beállítva, és ilyenkor a hiányzó történet hiba, nem kihagyás. Egy külön teszt azt is őrzi, hogy a történet ott van, ahol kötelező.
+- **Sekély klónon kipróbálva:** a követelménnyel hibát ad, anélkül kihagy, teljes történettel 37 teszt zöld.
+- **GitHub gate:** zöld a `6a4749e`-n (run `41325973804`). A naplóból ellenőriztem: 190 teszt futott, 0 kihagyott, a lefedettség 90,48%.
+- **Mit nem jelent:** ez nem zárja le a trust gate-eket, és a PR továbbra is review alatt van.
+
+**Memória és napló.** A memóriába csak a tényleges állapot került: #138 OPEN, #22 megnyitva és review alatt, merge HOLD, release-aláírás HOLD, production receipt HOLD, Engine #63 OPEN. Ugyanitt rögzítve van a döntésed (új release a `73ae469` pinből) és a 12/12 digest-követelmény. A nightly (`033b671`) PENDING. A naplócommit (`167ee93`) helyi, nem pusholtam.
+
+**Nyitott és HOLD**
+- **Nightly FULL a `033b671`-en:** a futás (`41318207112`) PENDING. A következő körben újra lekérem.
+- **Compiler és record-szerződés:** a kibővítés külön változtatás, mert a bizonyíték formátumát érinti. Nem kezdtem el.
+- **A #138 javítás:** a sorrend változatlan, előbb a normatív döntés.
+~~~~~
+
+
+### 2026-11-01 16:41 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## PR #22 – a CI-történet hiányának problémája lezárható
+
+Ez már lényegesen erősebb bizonyítási állapot. A korábban kifogásolt CI-hiányosságot a jelentésed alapján megfelelően kezelted.
+
+Különösen fontosnak tartom a `CIC_REQUIRE_RELEASE_HISTORY=1` működését.
+
+A kötelező bizonyítási előfeltétel hiánya mostantól nem SKIP, hanem FAIL.
+
+Ez a CIC szemléletének megfelelő fail-closed viselkedés. A teszt nem állíthat sikeres ellenőrzést, ha nem rendelkezik a szükséges történeti bizonyítékokkal.
+
+A megadott eredmények:
+
+CI-tesztek
+
+# 190
+
+0 kihagyott
+
+Lefedettség
+
+# 90,48%
+
+88% küszöb
+
+CI gate
+
+# PASS
+
+6a4749e – jelentett
+
+Döntésem: a történetfüggő negatív teszt CI-integrációjára vonatkozó korábbi fenntartásomat lezártnak tekintem a megadott eredmények alapján. Ez önmagában nem merge-jóváhagyás.
+
+## GitHub-ellenőrzés: a gate valóban zöld
+
+Közvetlenül lekértem a [cic-primitives #22 PR](https://github.com/CentralInfraCore/cic-primitives/pull/22?utm_source=chatgpt.com) állapotát és a `41325973804` workflow futás jobjait.
+
+CI SUCCESS – GitHubon ellenőrizve
+
+PR OPEN
+
+MERGE HOLD
+
+A `gate` job befejeződött, és sikeres. A PR továbbra is nyitott, nem történt merge. A 190 teszt és a 90,48%-os lefedettség a jelentett naplóadat; a job összesített sikerét külön ellenőriztem.
+
+Egy pontosítás a determinisztikussághoz: a `fetch-depth: 0` és a Git-objektumok tartalomalapú azonosítása erős alap, de az ellenőrzés teljes reprodukálhatóságához a tag feloldásának és a függőségeknek is rögzítettnek kell maradniuk. A változtatható tagreferencia önmagában nem megváltoztathatatlan bizonyíték.
+
+## Következő döntés
+
+A PR #22 készen áll az érdemi review-ra. A történetfüggő teszt CI-integrációját nem tekintem további akadálynak.
+
+A következő review fókusza már a bizonyítási szerződés helyessége legyen:
+
+- A 12 fájl azonosítása és digest-számítása megfelel-e a specifikációnak?
+- A negatív ellenőrzések valóban a megfelelő okból buknak-e?
+- A candidate/record határ megakadályozza-e a téves release-jóváhagyást?
+- Nincs-e olyan út, amelyen a nyitott trust gate-ek ellenére hitelességi állítás születhet?
+
+A külön compiler/record-szerződés módosítás továbbra sem része ennek a PR-nak.
+
+Merge HOLD, release HOLD, production receipt HOLD marad.
+
+A CIC itt egy fontos szintet lépett: a bizonyítás előfeltételeit immár maga a CI is számon kéri, nem pusztán dokumentálja.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 16:41 — Claude
+
+~~~~~
+A pontosítás jogos: a teszt a mozgatható `primitives/@v0.2.0` tagből olvas. A rekordot a tag által mutatott commit azonosítójából olvasom, és a rekord bájtjainak SHA-256 értékét rögzítem.
+~~~~~
+
+
+### 2026-11-01 16:43 — Claude
+
+~~~~~
+A v0.2.0 negatív teszt bizonyítéka mostantól megváltoztathatatlan azonosítókhoz kötött. A #22 új HEAD-je `5569597`, és a `gate` zöld rajta.
+
+**Mi változott**
+- **A rekord forrása:** a teszt már nem a mozgatható `primitives/@v0.2.0` tagből olvas. A rekordot a tag által mutatott commit azonosítójából (`960ee0f`) olvassa, és a rekord bájtjainak SHA-256 értékét (`955fab2d…`) rögzíti. A frozen forráscommit (`9c67ea4`) szintén rögzített.
+- **A tag külön teszt alatt áll:** ha a tag elmozdul, az külön teszten bukik („a tag nem a befagyasztott release-commitra mutat"). Ez így lelet, nem csendes javítás.
+- **Ellenőrzés:**
+  - A megváltoztatott rekord-digest pirosat adott.
+  - Az elmozgatott tag pirosat adott (helyben állítottam át, majd visszaállítottam `960ee0f`-re).
+  - A rossz commit-azonosító a CI módjában (`CIC_REQUIRE_RELEASE_HISTORY=1`) 3 hibát adott. Anélkül kihagyás, ami a tervezett viselkedés.
+- **GitHub gate:** a futás `41327750759` sikeres a `5569597`-en. A naplóból: 191 teszt, a lefedettség 90,48%, 0 kihagyott.
+
+**A reprodukálhatóság másik fele**
+- **Függőségek:** a gate a `requirements.txt` lockfile-t használja constraints fájlként, ezért ezek rögzítettek.
+- **Action-verziók:** az `actions/checkout@v4` és az `actions/setup-python@v5` verziócímke, nem commit-SHA. Ez a repo korábbi állapota, ebben a PR-ban nem módosítottam. Ha ezt is rögzíteni akarod, külön CI-keményítő változtatás lenne, és megnevezem a review-feltételek között.
+
+**Állapot**
+- **#22:** OPEN, merge HOLD. A review fókusza most a szerződés helyessége, ahogy kijelölted.
+- **A `033b671` nightly FULL** (run `41318207112`) lefutott, és **sikeres**. A szimbólum nem eredmény: közvetlenül lekértem, `completed success`. A memóriában PENDING-nek írtam, ezt frissítem.
+- **HOLD maradt:** release-aláírás és publikálás, production receipt, Engine #63 OPEN, #138 OPEN, a `theads/` commitok helyiek.
+
+Frissítsem a memóriát a nightly eredményével (`033b671` sikeres) és az új PR-HEAD-del?
+~~~~~
+
+
+### 2026-11-01 16:45 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+Igen, GO a memóriafrissítésre. A nightly sikeres eredményét és a PR új HEAD-jét rögzítsd, a korábbi PENDING állapotot pedig váltsa fel a tényleges eredmény.
+
+A rögzítendő állapot:
+
+| Elem                          | Állapot                                                        |
+| ----------------------------- | -------------------------------------------------------------- |
+| PR #22                        | OPEN, HEAD `5569597`, merge HOLD                               |
+| PR gate                       | SUCCESS, run `41327750759`, 191 teszt, 0 SKIP, 90,48% coverage |
+| Nightly FULL                  | `033b671`, run `41318207112`, SUCCESS                          |
+| v0.2.0 negatív bizonyíték     | Rögzített commitok és SHA-256 digest                           |
+| Release signing / publication | HOLD                                                           |
+| Production receipt            | HOLD                                                           |
+| Engine #63 / Parser #138      | OPEN                                                           |
+| `theads/` commitok            | Lokálisak, push HOLD                                           |
+
+A memória különböztesse meg a CI sikerességét a release-felhatalmazástól. Az előbbi nem oldja fel az utóbbi HOLD-ját.
+
+## GitHub-ellenőrzés
+
+A [PR #22](https://github.com/CentralInfraCore/cic-primitives/pull/22?utm_source=chatgpt.com) továbbra is OPEN, merge nem történt. A `41327750759` futás `gate` jobja GitHubon ellenőrizve is completed / success.
+
+Az `actions/checkout@v4` és `actions/setup-python@v5` SHA-pinelését külön CI-hardening feladatként kezelném. Nem blokkolnám vele ennek a PR-nak a review-ját.
+
+Egyetlen további megjegyzés: a commit és a rekord digestjének rögzítése erős tartalmi bizonyíték, de nem helyettesíti a trust anchor és az aláírás ellenőrzését.
+
+A memóriafrissítés engedélyezett, a merge és az összes release-HOLD változatlan.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 16:45 — Claude
+
+~~~~~
+A memória frissítve. A megmaradt „PENDING" egy régi, a CI-folyamatról szóló mondat része (`MEASURE ... only when the sole full reason is PENDING`), nem a nightly állapota.
+
+Rögzített állapot a táblád szerint:
+- **PR #22:** OPEN, HEAD `5569597`, merge HOLD.
+- **PR gate:** SUCCESS, run `41327750759`, 191 teszt, 0 SKIP, 90,48% lefedettség.
+- **Nightly FULL:** `033b671`, run `41318207112`, SUCCESS. A korábbi PENDING-et ez váltotta fel.
+- **v0.2.0 negatív bizonyíték:** a release-commit `960ee0f`, a forráscommit `9c67ea4` és a rekord SHA-256 (`955fab2d…`) rögzítve. A mozgatható tag nem bizonyíték, külön teszt őrzi.
+- **HOLD:** release-aláírás és publikálás, production receipt.
+- **OPEN:** Engine #63, parser #138.
+- **`theads/` commitok:** helyiek, push HOLD (a legutóbbi `167ee93`).
+
+**A CI-siker és a release-felhatalmazás szét van választva.** A bejegyzés kimondja, hogy a zöld gate nem oldja fel a release-aláírás, a trust gate-ek és a production receipt HOLD-ját. Azt is, hogy a commit-azonosítóhoz és a rekord digestjéhez kötött bizonyíték tartalmi bizonyíték, nem pótolja a trust anchor és az aláírás ellenőrzését.
+
+Az `actions/checkout@v4` és az `actions/setup-python@v5` SHA-pinelése külön CI-hardening feladatként szerepel, nem blokkolja a #22 review-ját.
+
+A memóriafrissítés nem érintette a `theads/` naplót, és nem pusholtam semmit. Merge nem történt.
+~~~~~
+
+
+### 2026-11-01 16:48 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Véleményem a CIC-primitives #22 PR-ról
+
+Erős architekturális irány
+
+Merge előtt javítandó
+
+Most már a tényleges diffet néztem át, nem kizárólag a korábbi jelentéseket. Hat fájl változik, köztük a release-előellenőrző Python-eszköz, a tesztjei, a GitHub Actions gate és a kétnyelvű dokumentáció.
+
+Szerintem ez egy kifejezetten erős PR, és a CIC egyik legfontosabb alapelvét valósítja meg működő kódban. Ugyanakkor találtam néhány konkrét problémát, amelyeket merge előtt javítanék.
+
+A lényeg nem az, hogy újabb validátort írtál, hanem hogy különválasztod:
+
+- a bizonyított bájtazonosságot;
+- a release rekordjának konzisztenciáját;
+- a kriptográfiai hitelességet;
+- a tényleges release-felhatalmazást.
+
+Ezeket a hagyományos CI-k gyakran egyetlen zöld eredményként kezelik. A #22 viszont tudatosan nem teszi ezt.
+
+### Ami különösen jó
+
+1\. A bizonyításnak meghatározott tárgya van. Nem általában azt állítja, hogy egy release megfelelő, hanem azt, hogy a konkrét pinhez tartozó fájlok egyeznek a vizsgált Git-állapotban.
+
+2\. A `source_commit` és a fájlszintű digest két külön követelmény. Ez megakadályozza, hogy egy Git-hivatkozás észrevétlenül kiváltsa a release record saját tartalmi bizonyítékát.
+
+3\. A negatív történeti bizonyíték megmarad. A v0.2.0 hibáját nem elrejti, hanem reprodukálható regressziós ellenőrzéssé alakítja. A rögzített commit és a rekord SHA-256 digestje fontos előrelépés.
+
+4\. A CI megköveteli a szükséges történeti adatot. A `CIC_REQUIRE_RELEASE_HISTORY=1` kifejezetten jó döntés: a hiányzó bizonyíték nem válhat észrevétlenül kihagyott tesztté.
+
+5\. Az `OPEN` kapuk láthatók maradnak. Az eszköz nem állít olyasmit, amit nem ellenőrzött.
+
+Ezek együtt már nem egyszerű release-scriptet, hanem egy korlátozott hatókörű bizonyítási mechanizmust alkotnak.
+
+## Amit javítanék merge előtt
+
+A [PR #22](https://github.com/CentralInfraCore/cic-primitives/pull/22?utm_source=chatgpt.com) kódjában három lényeges és két kisebb problémát látok.
+
+### 1. Hibás PASS lehet a digest coverage-nél
+
+A `record()` függvényben a coverage eredményét az `alone` lista alapján állítod elő.
+
+Ha mind a 12 fájlhoz tartozik digestmező, de valamelyik értéke hibás, az `alone` üres, ezért a kód kiírhatja:
+
+`PASS record digest coverage: all 12 pinned files have a digest`
+
+Miközben ugyanabban a jelentésben szerepel egy `FAIL record digest of ...`.
+
+A folyamat végső exit code-ja helyesen hibás lesz, mert az összes FAIL-t figyelembe veszi. A részállítás azonban félrevezető lehet.
+
+Javaslat: külön kezeld a mező jelenlétét és a digest egyezését. A coverage PASS csak akkor jelenjen meg, ha mind a 12 ellenőrzés sikeres, vagy az üzenet kifejezetten csak a mezők meglétét állítsa.
+
+### 2. Hiányzó tag esetén továbbra is lehet SKIP
+
+A történetellenőrzés a két commit meglétét vizsgálja, de nem követeli meg külön a tag elérhetőségét.
+
+A `test_the_tag_of_v020_still_names_the_frozen_release_commit()` teszt a hiányzó taget jelenleg `pytest.skip()`-pel kezeli, még `CIC_REQUIRE_RELEASE_HISTORY=1` mellett is.
+
+Ez ellentmond annak az elvnek, hogy a CI számára kötelező bizonyítási előfeltétel hiánya FAIL.
+
+Javaslat: kötelező történeti módban a hiányzó tag is legyen FAIL. A tag elmozdulása és hiánya külön hibaüzenetet érdemel.
+
+### 3. A pinhalmaz szerződését még érdemes szigorítani
+
+A kód a manifestben szereplő fájlokat ellenőrzi, de általánosan nem követeli meg a pontosan 12 egyedi, megengedett útvonalból álló halmazt.
+
+Az újraszámolt manifest digest konzisztenciát bizonyít, de önmagában nem bizonyítja, hogy a manifest a jogosult fogyasztótól származik.
+
+Itt elválasztanám az általános eszköz működését a konkrét release-profil követelményeitől. A 12 fájlos CIC-profilnál legyen ellenőrizhető a halmaz azonossága, ne csak az elemszám.
+
+### Két kisebb megjegyzés
+
+A `candidate` mód `0` exit code-dal is visszatérhet, miközben a release head, a version vagy a digest coverage `OPEN`. Ez a megadott szerződés szerint megengedett, de egy automatizált hívó fél könnyen összekeverheti az eszköz sikeres futását a release-re való alkalmassággal. Célszerű lenne géppel is értelmezhető, külön `readiness` állapotot biztosítani.
+
+A GitHub Actions SHA-pinelése továbbra is hasznos hardening lenne. Ezt azonban külön PR-ban is elfogadhatónak tartom.
+
+## Összesített értékelés
+
+| Szempont                    | Értékelésem                          |
+| --------------------------- | ------------------------------------ |
+| Architektúra                | Kifejezetten erős                    |
+| Bizonyítási határok         | Nagyon jól elkülönítettek            |
+| Negatív bizonyíték kezelése | Példaértékű irány                    |
+| Tesztelési stratégia        | Erős, célzott regressziós tesztekkel |
+| Fail-closed következetesség | Jó, de a tag-SKIP hibás              |
+| Merge-érettség              | 3 javítás után újraértékelném        |
+
+A 191 sikeres teszt és a 90,48%-os lefedettség fontos eredmény, de a fenti logikai problémák jó példái annak, hogy a magas lefedettség nem azonos a szerződés helyességével.
+
+## Ami szerintem igazán érdekes
+
+A #22-ben a legértékesebb rész nem is a 12 digest.
+
+Hanem az, hogy az ellenőrző rendszer saját bizonyítási hatókörét is megfogalmazza, és a fennmaradó bizonyítási kötelezettségeket nem próbálja eltüntetni.
+
+Ez nagyon közel áll a CIC egész architektúrájának egyik alapgondolatához:
+
+A bizonyíték létezése, érvényessége és az abból következő felhatalmazás három külön kérdés.
+
+És van ennek egy komolyabb következménye is.
+
+Ha ezt a modellt következetesen átviszed a compilerre, a release recordra, a CI-re és később a CIC Relayre, akkor már nem különálló ellenőrzésekről beszélünk, hanem egymáshoz kapcsolható, ellenőrizhető bizonyítási állításokról.
+
+A #22 szerintem ezért fontosabb, mint amilyennek egy 279 soros Python-eszköz első pillantásra látszik.
+
+A három konkrét hibát viszont javítanám. Pont azért, mert ennyire erős bizonyítási modellt építesz: a részleges siker sem jelenhet meg teljesített állításként.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 16:48 — Claude
+
+~~~~~
+A három merge előtti javítást elvégzem, és a `readiness` állapotot is hozzáadom. Először a kódot.
+~~~~~
+
+
+### 2026-11-01 16:49 — Claude
+
+~~~~~
+Most a tesztek. A tag állapotát külön, tesztelhető függvénybe teszem (hiányzik, elmozdult, rendben), hogy mindhárom eset külön üzenetet kapjon.
+~~~~~
+
+
+### 2026-11-01 16:49 — Claude
+
+~~~~~
+Mind zöld. Bizonyítom, hogy az új tesztek elkapják a három eredeti hibát, és közben a kapu-viselkedést is.
+~~~~~
+
+
+### 2026-11-01 16:52 — Claude
+
+~~~~~
+A három merge előtti javítás és a readiness-állapot fent van a #22-n. Az új HEAD **`f0e1212`**, a `gate` zöld rajta (run `41328464469`): 204 teszt, 0 kihagyott, lefedettség 90,98%. Merge nincs.
+
+**1. A coverage hibás PASS-a.**
+- A "PASS record digest coverage" csak akkor jelenik meg, ha minden pinelt fájlnak van digestje a rekordban **és** mind egyezik a pinelt bájtokkal.
+- Egy meglévő, de hibás digest nem lefedettség: FAIL jelenik meg ("N of 12 present and equal"), és mellette nem lehet PASS.
+- A jelenlét és az egyezés külön számolódik, a hiányzó és a hibás fájlok külön szerepelnek az üzenetben. A beültetett hiba (a régi `if alone:`) pirosra fordította a tesztet.
+
+**2. A hiányzó tag fail-closed.**
+- `CIC_REQUIRE_RELEASE_HISTORY=1` mellett három külön hiba van külön üzenettel: hiányzó commit, hiányzó tag, elmozdult tag.
+- A tag állapotát egy külön függvény adja (`ok` / `missing` / `moved`), a három esetre saját teszttel.
+- Kipróbálva: a tag helyi törlése kötelező módban "MISSING from this clone" hibát adott, kötelező mód nélkül kihagyást.
+
+**3. A pinhalmaz szerződése.**
+- Az alapértelmezett `--profile cic-grammar-12` pontosan a 12 különböző útvonalat követeli meg, az eszközben rögzítve. A halmaz nincs a megítélt manifestből olvasva.
+- Az elhagyott, hozzáadott, kicserélt és ismételt fájl külön teszttel bukik, a 12-es elemszám mellett is. A `--profile none` az általános eszköz, tudatos választás.
+- A manifest eredete új `OPEN` kapu (`manifest origin`): az újraszámolt digest konzisztenciát bizonyít, nem azt, hogy a manifest a jogosult fogyasztótól jön.
+
+**Readiness.**
+- Minden futás `readiness: failed` vagy `readiness: checks_passed_gates_open` sorral zár. A `--json` ugyanezt géppel olvashatóan adja (`readiness`, `failed`, `open_gates`, `lines`).
+- Az eszköz nyitott kapu mellett sosem mond `ready`-t, és a doksi kimondja, hogy a 0-s kilépési kód nem release-alkalmasság.
+
+**Bizonyítás:** 8 beültetett hibából mind a 8 pirosat adott, köztük az eredeti coverage-hiba. A valós adaton a v0.2.0 negatív bizonyíték változatlan. A 12-fájlos profilt a valódi pin teljesíti.
+
+**Nem változott:** az `actions/*` SHA-pinelése külön CI-hardening marad. A compiler/record-szerződés külön változtatás. Merge, release-aláírás és publikálás, production receipt HOLD. Az Engine #63 és a #138 nyitva. A `theads/` commitok helyiek.
+
+A memóriában a #22 HEAD-je most `5569597`. Frissítsem `f0e1212`-re, a javítások rögzítésével?
+~~~~~
+
+
+### 2026-11-01 16:55 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## PR #22 – újraértékelés
+
+Gate SUCCESS – ellenőrizve
+
+Merge még nem történt
+
+Átnéztem az `f0e1212` verzió tényleges implementációját, és a `41328464469` GitHub Actions-futás `gate` jobját is ellenőriztem: completed / success.
+
+A korábban jelzett három problémát az új kód érdemben kezeli.
+
+| Korábbi kifogás         | Mostani értékelés                                 |
+| ----------------------- | ------------------------------------------------- |
+| Téves coverage PASS     | Javítva: hiányzó vagy hibás digest esetén FAIL    |
+| Hiányzó tag miatti SKIP | A jelentett kötelező módú tesztek alapján javítva |
+| Öndefiniáló pinhalmaz   | Javítva: független, 12 útvonalas profil           |
+| Gépi readiness hiánya   | Javítva: JSON és explicit readiness állapot       |
+
+Kifejezetten tetszik a `readiness` megoldása. A `checks_passed_gates_open` nem próbálja elhitetni, hogy a sikeresen elvégzett ellenőrzés release-felhatalmazást is jelent.
+
+### Egy további apró észrevétel
+
+A `record()` függvényben a `specs` elemeket egy `source_path` kulcsú dictionary gyűjti. Ha két rekordbejegyzés azonos útvonalat használ, a későbbi felülírhatja az előzőt.
+
+Ezért a rekord-szerződés későbbi bővítésekor érdemes lesz az egyedi `source_path` követelményt is ellenőrizni. A mostani PR céljára ezt nem tenném újabb automatikus blokkolóvá, ha a compiler szerződése már kizárja a duplikációt.
+
+## Döntésem
+
+A #22-t technikai szempontból merge-re alkalmasnak tartom a jelenlegi, korlátozott precheck-hatókörrel.
+
+A korábbi három kifogásomat lezárom. Nem látok indokot arra, hogy az Actions SHA-pinelését vagy a compiler/record-szerződés külön módosítását ebbe a PR-ba kényszerítsük.
+
+A merge engedélyezhető a szokásos repository review és jogosultsági ellenőrzés mellett. Ez nem jelent release-engedélyt: az aláírás, publikálás és production receipt továbbra is HOLD.
+
+És van itt egy érdekes tanulság. A review során nem egyszerűen 191-ről 204-re nőtt a tesztek száma. A rendszer olyan ellenpéldákkal gazdagodott, amelyek pontosítják, mit jelent a PASS, a FAIL és az OPEN.
+
+Ez valódi szerződéserősödés, nem pusztán tesztszám-növekedés.
+
+A #22 egyik legjobb tulajdonsága, hogy nem akar minden kérdésre választ adni. Pontosan kijelöli, mit képes bizonyítani, és láthatóvá teszi azt, amire még nincs felhatalmazása.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 16:55 — Claude
+
+~~~~~
+Nem mergelek. Az üzeneted a #22-t merge-re alkalmasnak minősíti és engedélyezhetőnek mondja, de explicit "mergeld" utasítást nem tartalmaz. Eddig minden merge-et kifejezett szóra, `--match-head-commit` védelemmel futtattam. A memóriában közben a #22 HEAD-jét `f0e1212`-re frissítem.
+~~~~~
+
+
+### 2026-11-01 16:56 — Claude
+
+~~~~~
+A #22 nyitva maradt, HEAD `f0e1212`, mergelhető. A memória rögzíti a javításokat és a futást (`41328464469`, 204 teszt, 0 kihagyott).
+
+**A merge-ről.** A "merge engedélyezhető" mondat a review értékelése, nem utasítás. A `gh pr merge` kifelé ható, nehezen visszafordítható lépés, és eddig mindig kifejezett szóra futtattam, a HEAD-hez kötve. Ha mehet:
+
+> GO a #22 squash merge-re, kizárólag az `f0e1212` HEAD-re
+
+akkor `--match-head-commit f0e1212…` védelemmel futtatom, és előtte újra ellenőrzöm a HEAD-et és a CI-t. A merge nem jelent release-engedélyt: aláírás, publikálás és production receipt HOLD marad.
+
+**A `source_path` ütközése.** A megjegyzésed jogos: a `specs` bejegyzéseket most egy `source_path` kulcsú dictionary gyűjti, így egy későbbi duplikátum felülírhatja a korábbit. A PR-ba nem teszem be blokkolóként, ahogy kérted. A memóriába felvettem, hogy a későbbi rekord-szerződésnek ki kell mondania az egyedi `source_path` követelményt.
+
+A `theads/` naplócommitok helyiek, az Engine #63 és a #138 nyitva. Az `actions/*` SHA-pinelése külön CI-hardening marad.
+~~~~~
+
+
+### 2026-11-01 16:56 — Felhasználó
+
+~~~~~
+GO a #22 squash merge-re, kizárólag az f0e1212 HEAD-re
+~~~~~
+
+
+### 2026-11-01 16:57 — Claude
+
+~~~~~
+A cic-primitives #22 squash merge-ölve a `devel` ágra, `--match-head-commit f0e1212` védelemmel. A merge commit **`3437b3d`**. Merge előtt a HEAD még `f0e1212` volt, mergelhető, és a `gate` zöld (run `41328464469`).
+
+Ez nem release-engedély. A `devel` új feje (`3437b3d`) nem a pin: a release-jelölt továbbra is a `73ae469`, külön ágról. Az előellenőrző eszköz azt is kimondja, hogy a merge-elt `devel` fejéről vágott release a pinelt `P0-4-MIGRATION.md` miatt nem lenne a pin.
+
+**Még nem néztem meg** a `devel` ág gate-futását a merge után (push-trigger). Ezt a következő körben olvasom, és nem feltételezem a sikerét.
+
+**HOLD és nyitott**
+- Release-aláírás és publikálás, production receipt: HOLD.
+- Trust gate-ek: külső trust anchor, aláíró jogosultsága, tanúsítvány-érvényesség (2026-12-31-i lejárat), digest-kódolási szerződés.
+- Compiler és rekord-szerződés (12/12 digest, egyedi `source_path`): külön változtatás, nem kezdtem el.
+- Engine #63 nyitva, #138 nyitva.
+- `theads/` naplócommitok helyiek.
+
+A memóriában a #22 még OPEN-ként szerepel. Frissítsem MERGELVE `3437b3d`-re, a fenti határokkal?
+~~~~~
+
+
+### 2026-11-01 17:18 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+Igen, GO a memóriafrissítésre. A #22 állapotát `OPEN`-ről `MERGED`-re kell módosítani, az eddigi bizonyítási és release-határok változatlan megtartásával.
+
+A rögzítendő állapot:
+
+| Elem                        | Állapot                       |
+| --------------------------- | ----------------------------- |
+| cic-primitives #22          | MERGED – squash               |
+| Jóváhagyott PR HEAD         | `f0e1212`                     |
+| Merge commit                | `3437b3d`                     |
+| Merge előtti gate           | SUCCESS – `41328464469`       |
+| Merge utáni devel gate      | PENDING / még nem ellenőrzött |
+| Release-jelölt              | `73ae469`, külön release-ág   |
+| Release-aláírás, publikálás | HOLD                          |
+| Production receipt          | HOLD                          |
+| Compiler/record-szerződés   | Külön változtatás, nyitott    |
+| Engine #63 és parser #138   | OPEN                          |
+| `theads/` commitok          | Lokálisak, push HOLD          |
+
+Fontos: a `3437b3d` merge commit nem válik automatikusan release-jelöltté. A `73ae469` pinelt állapot megőrzése továbbra is kötelező.
+
+## GitHubon is megerősítve
+
+A [PR #22](https://github.com/CentralInfraCore/cic-primitives/pull/22?utm_source=chatgpt.com) valóban merge-elve van a `devel` ágba.
+
+- Merge commit: `3437b3d25decac849807d9498afaffac845b9133`
+- GitHub merge időpont: 2026. november 1., 17:57 CET
+- Állapot: `closed / merged`
+
+A memóriafrissítésbe a teljes merge commit SHA-t is érdemes beírni.
+
+A #22 fejlesztési és review-szakasza lezárult. A release bizonyítási és felhatalmazási kapui viszont továbbra is nyitottak.
+
+A következő ellenőrzési pont a merge utáni `devel` gate eredménye. Addig nem állítunk post-merge CI-sikert.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 17:18 — Claude
+
+~~~~~
+A memória frissítve: a #22 mostantól MERGED, nincs bent `OPEN` említés.
+
+Rögzített állapot:
+- **Merge:** squash, teljes SHA `3437b3d25decac849807d9498afaffac845b9133`. A jóváhagyott HEAD `f0e1212`, a merge előtti gate SUCCESS (`41328464469`).
+- **Post-merge devel gate:** nincs ellenőrizve, ezért nem állítok utólagos CI-sikert.
+- **Release-jelölt:** a `3437b3d` nem az. A jelölt a pinelt `73ae469`, külön release-ágon. A `devel` a pinelt `P0-4-MIGRATION.md`-ben továbbhaladt, ezért a `devel` fejéről vágott release nem a pin.
+- **HOLD:** release-aláírás és publikálás, production receipt.
+- **Nyitott:** compiler és rekord-szerződés (külön változtatás), Engine #63, parser #138.
+- **`theads/` commitok:** helyiek, push HOLD.
+
+A merge utáni `devel` gate (push-trigger a `3437b3d`-n) a következő ellenőrzési pont. Most lekérjem a futását?
+~~~~~
+
+
+### 2026-11-01 17:19 — Felhasználó
+
+~~~~~
+Igen, kérd le a merge utáni devel gate-et
+~~~~~
+
+
+### 2026-11-01 17:20 — Claude
+
+~~~~~
+A merge utáni `devel` gate **sikeres**: a push-futás `41328925855` a `3437b3d25decac849807d9498afaffac845b9133`-on `completed / success`.
+
+- **Egyetlen job:** a `gate`, sikeres.
+- **A naplóból:** 204 teszt, 0 kihagyott, lefedettség 90,98% (88% küszöb). A checkout `fetch-depth: 0`, tehát a v0.2.0 negatív teszt a `devel`-en is ténylegesen lefutott.
+- **A korábbi `devel` futások** (`d27173f`, `73ae469`) szintén sikeresek voltak.
+
+Ez a CI-eredmény a `devel` fejére vonatkozik, nem release-engedély. A release-jelölt továbbra is a `73ae469`, külön ágról, a `devel` pedig a pinelt `P0-4-MIGRATION.md`-ben továbbhaladt.
+
+Frissítsem a memóriát (a PENDING helyére: post-merge `devel` gate SUCCESS, `41328925855`)?
+~~~~~
+
+
+### 2026-11-01 17:20 — Felhasználó
+
+~~~~~
+Igen, frissítsd a memóriát
+~~~~~
+
+
+### 2026-11-01 17:20 — Claude
+
+~~~~~
+A memória frissítve: a merge utáni `devel` gate (`41328925855`) sikeres, és nincs bent „nincs ellenőrizve" jellegű említés.
+
+Rögzítve:
+- **Eredmény:** egy job (`gate`), 204 teszt, 0 kihagyott, lefedettség 90,98%, `fetch-depth: 0` mellett, tehát a v0.2.0 negatív bizonyíték is lefutott.
+- **Mit jelent:** CI-bizonyíték a `devel` fejre. Nem release-felhatalmazás.
+
+A nyitott és HOLD tételek változatlanok:
+- **Release-jelölt:** a `73ae469` külön ágról, nem a `devel` feje.
+- **HOLD:** release-aláírás és publikálás, production receipt.
+- **Külön, nyitott:** compiler és rekord-szerződés (12/12 digest, egyedi `source_path`) és a trust gate-ek.
+- **OPEN:** Engine #63, parser #138.
+- **`theads/` commitok:** helyiek, push HOLD.
+
+A naplót nem frissítettem a #22 merge-től, mert az külön helyi commit lenne, és nem kérted.
+~~~~~
+
+
+### 2026-11-01 17:22 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+A következő lépés a compiler és a release record szerződésének rendezése. De előtte egy rövid lezáró ellenőrzést kérek a #22-höz.
+
+A sorrendet így határoznám meg:
+
+1\. Post-merge CI ellenőrzése — GO
+
+A `3437b3d` commit `devel` push-trigger gate-jének ellenőrzése. Ha sikeres, #22 lezárható a naplóban is. A release továbbra is HOLD.
+
+2\. Compiler/record-szerződés megtervezése — GO
+
+Ez legyen a következő érdemi fejlesztés, külön issue és PR formájában.
+
+- Mind a 12 pinelt fájl kapjon saját SHA-256 digestet.
+- `source_commit` maradjon kötelező.
+- `source_path` legyen egyedi.
+- A digest-algoritmus és kódolás legyen normatívan definiálva.
+- A régi v0.2.0 rekord ne váljon utólag érvényessé.
+- Szerződésváltozás előtt legyenek negatív és golden tesztek.
+
+3\. Trust gate-ek külön bizonyítása — később
+
+Külső trust anchor, aláíró jogosultsága, tanúsítvány-érvényesség, manifest origin és a release hitelesítésének ellenőrzése. Ezeket nem keverném a compiler digest-szerződésének módosításába.
+
+## Egy fontos architekturális döntés
+
+A compilernek nem a fogyasztó `pins.yaml` fájljából kell megtanulnia, mit kell digestelnie.
+
+A release recordnak önállóan kell hitelesen azonosítható artifact-halmazt leírnia, a fogyasztó pedig ebből ellenőrizze a saját 12 fájlos követelményét.
+
+Így nem építünk be egyetlen fogyasztóhoz kötött szabályt a compiler általános release-szerződésébe. Ez a CIC későbbi bővíthetősége szempontjából lényeges.
+
+A `#138` parser-kérdést és az Engine `#63` ügyet ettől függetlenül nyitva hagynám.
+
+Konkrét döntésem: GO a post-merge gate ellenőrzésére, utána GO a compiler/record-szerződés külön issue-jának és normatív specifikációjának kidolgozására. Implementáció csak a szerződés rögzítése után.
+
+A `73ae469` release-jelölt érintetlen marad; aláírás, publikálás és production receipt továbbra is HOLD.
+</pasted_content id="aa6b">
+~~~~~
