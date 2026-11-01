@@ -23838,3 +23838,532 @@ A következő beszámolóban nem újabb általános tesztstatisztikát kérek, h
 Ez alapján lehet majd felelősen kiadni az implementációs GO-t.
 </pasted_content id="aa6b">
 ~~~~~
+
+
+### 2026-11-01 21:15 — Claude
+
+~~~~~
+A memória és a napló frissítve van, és elkészült a compiler-terv. Implementációt nem kezdtem, a terv alapján nem változott semmi a repóban.
+
+## Memória és napló
+
+- **Memória:** rögzítve a #24 (`dd4380b`) és a #25 (`d2d8ec7`) merge-e, a két sikeres post-merge CI (a #25-é a `41350473524`), a lezárt szerződés és mérce, a három review-döntés, a #23 nyitott állapota és a HOLD-ok. A CI-siker csak bizonyíték, nem release-felhatalmazás.
+- **Napló:** a 20:20-as blokktól a 21:13-as üzenetedig a transzkriptből generáltam, rekonstrukció nélkül. A commit `389b6df`, helyi, **nincs pusholva** (a `main` tíz committal van előrébb az `origin/main`-nél). A mostani válaszom blokkja a következő frissítéssel kerül be.
+
+## Compiler Envelope 3: módosítási terv
+
+A hivatkozott sorok a `tools/compiler.py`-ra vonatkoznak.
+
+### 1. Mely függvények változnak
+
+| Függvény | Változás |
+|---|---|
+| `RELEASE_ENVELOPE_VERSION` (83) | `2` helyett `3`. A `run_release` csak envelope 3-at ír; az envelope 2 írása megszűnik, az **ellenőrzése** marad. |
+| `_release_hash_payload` (85–117) | A 2-es ág `if envelope_version in (2, 3)`. Új kanonikalizálás nincs. |
+| `_collect_provenance` (120–137) | A `source_commit` kötelező: a jelenlegi `except … = None` helyett a compiler leáll, ha nem tudja meghatározni, vagy ha nem 40 kisbetűs hex. A három régi base64 digest (`dependency_lock`, `grammar`, `grammar_schema`) változatlan. |
+| **Új** `_git_tree(commit)` | `git ls-tree -r -t -z --full-tree <commit>`, kizárólag a commit fájából. |
+| **Új** `_validate_release_artifact_declaration(settings, tree)` | A 6–7. szakasz: `declaration_missing / empty / unknown_key / path_form / path_duplicate`, `declared_path_absent / not_regular`. |
+| **Új** `_build_artifacts_block(commit, paths, tree)` | `git cat-file blob <oid>` bájtjaiból `sha256:` + hex, a UTF-8 bájtok szerint rendezve, `manifest_digest`. Szűrés és munkakönyvtár nélkül. |
+| `run_release` (695–812) | A deklarációt a Vault-hívások előtt validálja (gyorsan bukik). Az `artifacts` blokkot a bundle összeállításakor illeszti be, még a `build_hash` előtt. A `specs[].source_path` egyediségét ellenőrzi. A `release.envelope` és `provenance.envelope` is 3. |
+| `run_verify_release` (935–) | A 1004–1005. soron az `envelope_version not in (1, 2)` helyett `(1, 2, 3)`. A régi rekordok ellenőrzése változatlan. Envelope 3-nál a "NOT proven" listán megjelenik, hogy az artifact-szerződés megfelelőségét a `release_record_conformance.py` ellenőrzi. |
+| `release.schema.yaml` | `release.envelope` enum: `[1,2,3]`. Új `artifacts` tulajdonság és feltételes `required` envelope 3-ra. Ez csak szerkezeti kapu, a normatív ítélet a verifieré. |
+| `project.schema.yaml` | `compiler_settings.release_artifacts`: `paths` (nemüres lista), `additionalProperties: false`. |
+
+A `tools/release_record_conformance.py`, a golden fixture-ök és az elvárt okok **nem** módosulnak.
+
+### 2. Adatfolyam az Envelope 3 rekordhoz
+
+```
+run_release
+ ├─ validate_release_prerequisites           (tiszta fa, release ág, verzió) - változatlan
+ ├─ commit = git rev-parse HEAD  → _collect_provenance (kötelező, forma-ellenőrzött)
+ ├─ tree = _git_tree(commit)
+ ├─ _validate_release_artifact_declaration(project.yaml, tree)  → FAIL esetén leáll, Vault előtt
+ ├─ specs (változatlan) + source_path egyediség
+ ├─ _build_artifacts_block: path → tree[path].oid → cat-file blob → sha256
+ │      → files rendezve (UTF-8 bájtok), manifest_digest = sha256("<hex>  <path>\n"…)
+ ├─ bundle = {…, provenance{envelope:3, source_commit, …}, artifacts{…}, release{envelope:3, createdBy}}
+ ├─ build_hash = b64(sha256(canonical(_release_hash_payload(bundle, 3))))   ← meglévő szabály
+ ├─ _vault_sign(build_hash) → release.sign                                  ← meglévő
+ └─ írás; a cic_countersign a külső szolgáltatás dolga, build_hash felett   ← változatlan
+```
+
+Tilos: munkakönyvtár olvasása a digesthez és a consumer `pins.yaml` olvasása.
+
+### 3. Mely rögzített vektor bizonyítja az egyes követelményeket
+
+| Követelmény | Bizonyíték |
+|---|---|
+| Artifact-feloldás csak a fából | A 24 `DECLARATIONS` vektor a compiler új függvényén is lefut ugyanazzal az adapter-táblával, mint a referencián. Új compiler-teszt: módosított vagy untracked munkafájl és `.gitattributes` `eol=crlf`, a digest mégis a blob bájtjaié. |
+| Saját digest, rendezés, manifest | A fixture-repóra a compiler `artifacts` blokkja bájtra egyezik a `golden.expected.json` független értékeivel (`sha256sum`-mal számolt digestek, `39e02257…2ec53`). A §12 golden követelmény, ami eddig nem volt tesztelhető: ugyanaz a deklarált halmaz más bemeneti sorrendben ugyanazt az kimenetet adja, ismételt futásra bájtazonos. |
+| A rekord megfelel a szerződésnek | A compiler kimenetén `verify()`: `record` PASS, `blobs` PASS a fixture-repón. A `crypto` az ellenjegyzés nélkül `INCOMPLETE`, a külső szolgáltatást a teszt-hatóság kulcsa imitálja a `build_hash` felett, ekkor `PASS`. |
+| Aláírás-lefedettség | A 8×4 = 32 coverage-vektor a golden helyett a **compiler által készített** rekordon. Ugyanazok a `parts`-minták várhatók (`build_hash_mismatch` / csak `signature_invalid` / csak `countersign_invalid`). |
+| Régi rekordok | A meglévő envelope 1 és 2 tesztek **változatlanul** zöldek (`test_envelope_v1_still_verifies`, `test_envelope_v2_verifies`, `test_unknown_envelope_version_is_rejected` stb.). A `test_release_writes_an_envelope_v2_bundle` és a `test_collect_provenance…` az **író** oldalról szól, ezeket kell átírni envelope 3-ra. A sandbox valódi git-repó lesz, mert a `source_commit` kötelező. |
+| Negatívok | A compiler-oldali hibák (`declaration_*`, `declared_path_*`, `source_commit` nem határozható meg, duplikált `source_path`) a compilerből kiváltva és a megfelelő vektorral. |
+
+### 4. A compiler nem igazolja saját magát
+
+- A compiler **nem importálja** a referencia-verifiert. Ezt AST-teszt őrzi.
+- A verifier csak a meglévő `_release_hash_payload`, `get_sha256_b64`, `to_canonical_json` és `_verify_cert_signature` függvényeket hívja, az újakat soha.
+- Egy közös kód a verifier és a compiler között (`_release_hash_payload`) vakfolt lehetne. Ezt a független kanonikus bájtok zárják: a compiler **által készített** rekord `build_hash`-ét a teszt a független implementációval is újraszámolja.
+- A golden fixture-ök, az `e3_vectors.py` elvárt okai és a verifier forrása változatlanságát egy befagyasztott digest-lista teszt őrzi. A compiler PR így nem módosíthatja csendben a mércét.
+
+### 5. Planted-defect a compilerre
+
+A #25 mutáns-keretét kiterjesztem a compilerre (`E3_COMPILER` betöltő, mint a `E3_VERIFIER`). Mutánsok a tervezett függvényekre:
+- digest a munkafából,
+- nincs rendezés,
+- a rendezés kódpont vagy UTF-16 szerint,
+- sorrend a bemenetből,
+- a `source_commit` hiánya `None`,
+- a deklaráció validálása kihagyva,
+- `build_hash` a v1 payload felett,
+- a manifest sorában egy szóköz.
+
+A célzott vektornak kell pirosra váltania, és minden mutáns előbb lefordul. Az egyenértékű mutánsok indoklással szerepelnek, és túl kell élniük.
+
+## Döntések, amik a te szavadra várnak
+
+1. **Mely útvonalak kerülnek a `project.yaml`-ba?** Ez a termelő közzétett felülete, nem a mechanizmus része. 18 YAML van a `schemas` alatt, és a Forms 12 fájlja ezeken kívül `LICENSE.md`-t és `proposals/atom-grammar/…` fájlokat is tartalmaz. Javaslat: külön, kis PR, az útvonallista tulajdonosi jóváhagyásával, a compiler-PR előtt. A compiler addig `declaration_missing`-gel érthetően megáll.
+2. **Csak envelope 3 az írási úton?** Javaslat: igen. A 2-es írást megszüntetem, az ellenőrzése marad.
+3. **Hívja-e a `verify-release` a referencia-verifiert?** Javaslat: nem, a független mérce marad külön. A `verify-release` csak figyelmeztet. Nem akarom, hogy a gyártási út a saját mércéjét importálja.
+4. **A countersign szolgáltatás** (külön repó) a `build_hash` stringet írja alá, és nem módosítom. Annak ellenőrzését, hogy semmit nem olvas az `envelope`-ból, a compiler-PR előtt külön megnézném. Ezt itt nem ellenőriztem.
+
+Az implementáció, a compiler-PR merge-e, a pre-check átállítása, a release aláírása és publikálása, a production receipt és a `theads/` push HOLD. A `73ae469` érintetlen, a #23, a forms #138 és az Engine #63 nyitva marad.
+
+Mire várok: a terv reviewjára és a fenti négy pontra. Az implementációt csak ezután indítom, külön ágon, teszt-először sorrendben: előbb a piros adapter-tesztek, utána a kód.
+~~~~~
+
+
+### 2026-11-01 21:31 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Compiler Envelope 3 – tervreview és döntések
+
+A tervet alapvetően elfogadom. Az adatfolyam, a producer/consumer szétválasztás, a független mérce és a teszt-először megközelítés megfelel az eddig rögzített CIC-elveknek.
+
+A négy kérdésből háromra elfogadom a javaslatodat. A közzétett artifact-halmaznál viszont egy fontos határt húznék.
+
+| Kérdés                                                     | Döntés                                                |
+| ---------------------------------------------------------- | ----------------------------------------------------- |
+| 1. `project.yaml` artifact-lista                           | GO külön, kisméretű PR-ra; tartalom jóváhagyása külön |
+| 2. Csak Envelope 3 írás                                    | GO                                                    |
+| 3. `verify-release` és referencia-verifier különválasztása | GO                                                    |
+| 4. Countersign szolgáltatás vizsgálata                     | GO, read-only audit                                   |
+
+### 1. Artifact-lista: ne a Forms 12 fájlja határozza meg
+
+A termelő közzétett felületének önálló szemantikája legyen.
+
+Nem azt javaslom, hogy mechanikusan vegyük fel az összes YAML-t, és nem is azt, hogy csak a Forms 12 fájlját másoljuk át.
+
+A lista kialakításának szabálya:
+
+Minden olyan fájl kerüljön bele, amelynek tartalma a kiadott primitive-csomag szerződését, értelmezését vagy reprodukálhatóságát befolyásolja.
+
+A `schemas/` alatti 18 YAML-t, a grammar implementációt, a hozzá tartozó normatív dokumentációt és a licencet külön-külön osztályoznám. A nem normatív példákat és belső fejlesztési segédanyagokat nem venném fel automatikusan.
+
+Az artifact-lista PR-ja legyen önálló, pontos indoklással a bevett és kihagyott fájlokra. A compiler-implementáció fejlesztését nem szükséges megakasztani miatta, ha a tesztek saját fixture-ökön futnak. A valós repository release-útja viszont maradjon `declaration_missing` állapotban, amíg a lista nincs jóváhagyva.
+
+### 2. Envelope 3 írás, Envelope 1–2 olvasás
+
+Elfogadom.
+
+- A `run_release` kizárólag Envelope 3 rekordot állíthat elő.
+- Az Envelope 1 és 2 rekordok meglévő ellenőrzése változatlan marad.
+- Nincs történeti rekord-átírás vagy automatikus migráció.
+- Az új artifact-szerződés csak Envelope 3-ra kötelező.
+
+Egy dolgot kérnék még: a régi rekordokra vonatkozó kompatibilitási tesztek tényleges, rögzített történeti mintákat is használjanak, ne csak mesterséges fixture-öket.
+
+### 3. Független reference verifier
+
+Elfogadom, hogy a `verify-release` ne importálja a `release_record_conformance.py` modult.
+
+Viszont fontos különbség van a két állítás között:
+
+- A `verify-release` a meglévő kriptográfiai ellenőrzési funkcióját végzi.
+- A referencia-verifier az Envelope 3 szerződésnek való megfelelést ellenőrzi.
+
+A production release-eljárás később mindkét eredményt megkövetelheti, de egyiknek sem kell importálnia a másikat. Az orkestráció külön réteg feladata.
+
+### 4. Countersign szolgáltatás
+
+GO a read-only vizsgálatra, módosítás nélkül.
+
+Pontosan azt kell igazolni, hogy a szolgáltatás a kapott `build_hash` értéket írja alá, és nem függ az envelope verziójától vagy az `artifacts` blokk belső szerkezetétől.
+
+Ha találunk ilyen függőséget, az külön kompatibilitási kérdés lesz, nem rejtett módosítás a compiler PR-ban.
+
+## Két pontosítás az implementáció előtt
+
+A tervben két technikai részletet még rögzítenék.
+
+A `project.yaml` forrása: ha az artifactokat a `source_commit` rögzíti, akkor a deklarációnak is ugyanabból a commitból kell származnia. Egy tiszta munkakönyvtár önmagában nem elég bizonyíték arra, hogy a betöltött konfiguráció a megfelelő commit tartalma. Ezt külön teszt védje.
+
+A befagyasztott mérce: helyes, hogy a compiler PR nem módosíthatja észrevétlenül a golden fixture-öket vagy a referencia-verifiert. A digest-listát azonban az elfogadott #25 merge-állapothoz kössük, ne a compiler változtatásaival együtt újragenerált értékekhez.
+
+A kódpont szerinti rendezés mutánsát ne várjuk el, hogy elbukjon, mert az érvényes Unicode-útvonalakon a kódpontsorrend és az UTF-8 bájtsorrend azonos. Az UTF-16 mutáns viszont valódi eltérést okozhat.
+
+## Végső döntés
+
+Compiler Envelope 3 implementáció
+
+GO
+
+Külön implementációs ág és PR
+
+GO
+
+Compiler PR merge
+
+HOLD
+
+Release és production receipt
+
+HOLD
+
+Indulhat a teszt-először implementáció. Előbb a piros adaptertesztek, utána a compiler módosítása, majd a teljes referencia-verifier és planted-defect bizonyítás.
+
+A compiler PR-t csak a teljes implementáció és a bizonyítékok ismeretében engedném merge-elni.
+
+A `73ae469` jelölt, a #23, a Forms #138 és az Engine #63 állapota változatlan.
+
+Egyébként itt jutottunk el a CIC egyik különösen fontos határához: a szerződés és a megfelelőségi mérce már a compiler implementációja előtt létezik. Most először ténylegesen ezen a területen is az implementációnak kell alkalmazkodnia az előzetesen bizonyított elvárásokhoz, nem fordítva.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 21:36 — Claude
+
+~~~~~
+A compiler már kész; a séma-módosításokat fejezem be (release és project), aztán futtatom a teszteket.
+~~~~~
+
+
+### 2026-11-01 21:39 — Claude
+
+~~~~~
+Az implementáció és a teszt-első sorozat zöld (541 teszt). Most jön a compiler planted-defect bizonyítása.
+~~~~~
+
+
+### 2026-11-01 21:39 — Claude
+
+~~~~~
+Most a mutáns-készlet és a futtató.
+~~~~~
+
+
+### 2026-11-01 21:47 — Claude
+
+~~~~~
+A compiler-PR (#26) nyitva van; várom a gate futását, és közben nézem, belefér-e az időkeretbe.
+~~~~~
+
+
+### 2026-11-01 21:50 — Claude
+
+~~~~~
+A compiler Envelope 3 implementációja kész, és nyitva van a PR #26: https://github.com/CentralInfraCore/cic-primitives/pull/26. A HEAD az `5ccc0dc9816ab8f18b17678ce2518d50d9205261`, a gate sikeres: 731 teszt, 0 kihagyott, lefedettség 89,95%, a futás 1:27. Nem mergeltem.
+
+## Teszt-első sorrend
+A `tests/test_compiler_envelope3.py` előbb készült el, mint a compiler-módosítás. A régi compilerre 107 bukás és 7 siker jött. A 7 siker azokra vonatkozik, amiknek előtte és utána is igaznak kell lenniük:
+- a valódi envelope 1 és 2 rekordok ellenőrzése,
+- az ismeretlen envelope elutasítása,
+- hogy a compiler nem importálja a referencia-verifiert.
+
+Csak utána írtam a kódot.
+
+## Mi változott
+- **`tools/compiler.py`:**
+  - Az írott envelope 3 lett, a hash-szabály a meglévő envelope 2-es.
+  - A `source_commit` kötelező, nem lehet `null`.
+  - Az új artifact-függvények: `_git_tree`, `_git_blob`, deklaráció-validálás, `_build_release_artifacts`, egyediség-ellenőrzés.
+  - A `run_release` a Vault előtt dönt a deklarációról, és az `artifacts` a `build_hash` előtt kerül a csomagba.
+  - A `verify-release` olvassa az 1, 2 és 3 envelope-ot, de nem importálja a verifiert, és a verifier sem hívja az új függvényeket.
+- **Sémák:** `release.schema.yaml` (envelope 3, `artifacts`, feltételes `required`) és `project.schema.yaml` (`release_artifacts.paths`, alatta semmi más).
+- **Deklaráció forrása:** a **forráscommit** `project.yaml`-ja, nem a munkakönyvtáré. Ezt két teszt védi: eltérő munkapéldány, és csak a munkakönyvtárban létező deklaráció (`declaration_missing`).
+
+## Melyik vektor melyik követelményt bizonyítja
+Ez a PR leírásában táblázatban is szerepel. A lényeg:
+- **Feloldás csak a fából:**
+  - a 24 deklarációs vektor a compiler saját függvényén is lefut, és egyezik a referenciával,
+  - a digest a blob bájtjaié akkor is, ha a munkakópia CRLF-es, megváltozott vagy hiányzik,
+  - `.gitattributes eol=crlf` és `core.autocrlf` mellett is.
+- **Digest, rendezés, manifest:**
+  - az `artifacts` blokk egyezik a `golden.expected.json` független értékeivel,
+  - mind a 6 bemeneti sorrend ugyanazt adja,
+  - a rendezés UTF-8 bájtok szerint van, nem UTF-16 szerint,
+  - két futás ugyanazt a `build_hash`-t adja.
+- **Megfelelés:** a compiler rekordján a referencia-verifier szerint `record`, `blobs` és `crypto` PASS (az ellenjegyzést a teszt-hatóság kulcsa imitálja). Ellenjegyzés nélkül INCOMPLETE. A 86 szerkezeti vektor a compiler rekordjára is lefut.
+- **Aláírás-lefedettség:** a 32 vektor a compiler rekordján ugyanazt a `parts`-mintát adja, mint a golden rekordon.
+- **Régi rekordok:** a valódi `cic-primitives-v0.1.5.yaml` (envelope 1) és a git-történetből a valódi v0.2.0 rekord (envelope 2, a sha256 ellenőrizve) rögzített órával ellenőrizhető. A v0.2.0 tanúsítványai 2026-12-31-kor lejárnak, ezért fixáltam az órát, hogy a teszt ne legyen időzített bomba.
+
+## A compiler nem igazolja magát
+- A #25 mércéje (verifier, vektorok, fixture-ök, planted-proof) befagyasztva: a `tests/test_conformance_frozen.py` digestjei a **`d2d8ec7` merge-commit blobjaiból** vannak kiszámolva, nem újragenerálva. Ezt külön elvártad.
+- Mivel a CI-ben van teljes történet, a teszt a listát a merge-commit blobjaival is összeveti.
+
+## Planted-defect a compilerre
+58 forrás-mutáns, ebből 50-nek a célzott tesztet kell pirosra váltania, 8 egyenértékű és túléli (pl. `--full-tree`, kódpont- és UTF-8 sorrend, submodule mód és típus). A mutánsok előbb lefordulnak. Néhány tanulságos eset:
+- Az "artifacts a hash után" mutánst a független `build_hash` fogja meg.
+- Az "artifacts a Vault után" mutánst a Vault-hívásszámláló.
+- Az egyik saját mutánsom a fixture véletlen egybeesése miatt egyenértékű volt, a harness jelezte, és lecseréltem.
+
+Ahogy kérted, a kódpont szerinti rendezés mutánsa egyenértékűként van dokumentálva, az UTF-16 viszont valódi eltérés, külön vektorral.
+
+## Countersign szolgáltatás (read-only)
+A `cic-countersign` (`devel` 8ce2427) a `build_hash`-t átlátszatlan, kész digestként kapja, "trusted as given, never recomputed". A `document` csak az audit-naplóba megy (a `kind` és a `version` kerül bele), nincs hash-elve vagy kanonikalizálva. Az envelope-ból és az `artifacts`-ból semmit nem olvas. Függőséget nem találtam, módosítást nem végeztem.
+
+## Amit külön jeleznem kell
+1. **`gate.yml` időkorlát 10 → 20 perc.** A csomag két planted-proofot hordoz, a gate-et nálam ~3,5 perc, a CI-ban 1:27. A megemelt korlát valószínűleg nem is kell, de óvatosságból tettem. Ha nem akarod, a másik commitból visszavehető.
+2. **A meglévő tesztekből csak az író oldalt írtam át:** a `test_compiler.py` sandboxa most valódi git checkout, és az envelope 2 *író* tesztek envelope 3-at állítanak. Az envelope 1 és 2 *ellenőrző* tesztek változatlanok.
+3. **Az artifact-lista PR-ja még nincs meg.** A `project.yaml`-ba ezért nem került deklaráció, így a valódi release-út `declaration_missing`-gel áll meg, ahogy kérted.
+
+## HOLD-ok
+A PR #26 merge-e, a release és a production receipt. A pre-check átállítása, a trust gate-ek, a `theads/` push, a forms #138 és az Engine #63 sem indul.
+
+Mire várok: a PR #26 reviewjára. Külön kérdés: induljon-e most az artifact-lista PR-ja a `project.yaml`-hoz? Ehhez a `schemas/` alatti 18 YAML, a grammar implementáció, a normatív doksik és a licenc fájlonkénti osztályozását kell elkészítenem a bevett és kihagyott fájlok indoklásával, a tartalom jóváhagyása a te szavadra.
+~~~~~
+
+
+### 2026-11-01 21:59 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## PR #26 – első review és következő döntés
+
+CI SUCCESS – ellenőrizve
+
+Merge HOLD
+
+Megnéztem a [PR #26](https://github.com/CentralInfraCore/cic-primitives/pull/26?utm_source=chatgpt.com) tényleges compiler-diffjét. A GitHubon a `5ccc0dc9816ab8f18b17678ce2518d50d9205261` HEAD-hez tartozó `41353832789` workflow `completed / success`.
+
+A megoldás architekturálisan jó irány, és a teszt-először bizonyítás lényegesen erősebbé teszi. Különösen tetszik, hogy a compiler a deklarációt és az artifactok bájtjait ugyanabból a Git-commitból veszi, és a #25 mércéje változatlanul ellenőrzi a kimenetét.
+
+Az öt legfontosabb teljesült elv:
+
+- Nincs fogyasztói manifest a compilerben.
+- A munkakönyvtár nem határozza meg az artifact digestjeit.
+- Az Envelope 3 a meglévő aláírási mechanizmust használja.
+- A régi Envelope 1 és 2 ellenőrzési út megmaradt.
+- A valós release deklaráció hiányában továbbra is fail-closed.
+
+A 731 sikeres teszt, 0 kihagyás és 89,95%-os lefedettség a jelentett futási adatok. A workflow sikerét külön is megerősítettem.
+
+## Egy lényeges review-fenntartás
+
+A `run_release()` részletesebb vizsgálatakor találtam egy határt, amelyet merge előtt tisztáznék.
+
+Az új `artifacts` blokk valóban a `source_commit` Git-fájából épül fel. Ugyanakkor a release többi része továbbra is használ munkakönyvtárból olvasott adatokat:
+
+- `load_project_config(full_config=True)`
+- `glob.glob(...)` a sémák összegyűjtésére
+- `open(schema_file, 'rb')` a `specs[].meta_hash` számítására
+- `_collect_provenance()` a régi digestmezőkhöz
+
+Ez nem feltétlenül szerződéssértés, mert a rögzített Envelope 3 követelmény az artifactok Git-blob alapú digesteléséről szól. Viszont azt jelenti, hogy a teljes release rekord még nem kizárólag a `source_commit` függvénye.
+
+Merge előtt ezért egy célzott ellenőrzést kérek: a release előfeltételei valóban kizárják-e a munkakönyvtár olyan eltérését, amely a `specs` vagy a provenance tartalmát befolyásolná. Ha nem, ezt külön dokumentált kockázatként és teszttel kell kezelni. Nem kérnék automatikusan teljes compiler-átépítést.
+
+A `gate.yml` 10-ről 20 percre növelt időkorlátját egyelőre elfogadom, de ha a futások tartósan ilyen rövidek maradnak, érdemes visszaállítani.
+
+## Artifact-lista: GO a felmérésre
+
+Igen, induljon most a `project.yaml` artifact-listájának fájlonkénti osztályozása.
+
+Ez legyen a következő párhuzamos, de elkülönített munkafolyamat. Kérek egy review-táblát az összes szóba jövő fájlról, `INCLUDE`, `EXCLUDE` vagy `REVIEW` javaslattal és rövid műszaki indoklással. A Forms 12 fájlja legyen ellenőrzött részhalmaz, de ne automatikusan a teljes producer-felület.
+
+A lista tartalmát a felmérés után hagyom jóvá. Addig ne kerüljön be a valódi `project.yaml` fájlba, és ne kapjon merge-engedélyt.
+
+## Végső döntések
+
+| Terület                               | Döntés                                 |
+| ------------------------------------- | -------------------------------------- |
+| PR #26 implementációs iránya          | Elfogadva                              |
+| PR #26 merge                          | HOLD – forráskonzisztencia ellenőrzése |
+| Artifact-lista osztályozása           | GO                                     |
+| Artifact-lista tartalmának elfogadása | HOLD                                   |
+| Pre-check Envelope 3 átállás          | HOLD                                   |
+| Release / production receipt          | HOLD                                   |
+| Trust gate-ek / `theads/` push        | HOLD                                   |
+
+A `73ae469` változatlan marad.
+
+A #26 legfontosabb eredménye az, hogy immár nemcsak a referencia-verifieren tesztelitek az Envelope 3 szerződését, hanem a valódi compiler kimenetén is. A szerződés, a független mérce és az implementáció egymástól elválasztott, ellenőrizhető rétegeket alkotnak.
+
+A merge előtti fennmaradó kérdésem tehát konkrét: bizonyított-e, hogy a munkakönyvtárból származó régi release-adatok nem kerülhetnek észrevétlenül ellentmondásba a commitból származó artifact-bizonyítékokkal?
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 22:03 — Claude
+
+~~~~~
+Zöldek a tesztek. Most a guard mutánsait adom hozzá, és újrafuttatom a planted-defect sorozatot.
+~~~~~
+
+
+### 2026-11-01 22:16 — Claude
+
+~~~~~
+A guard commit (`bb67999`) fent van a PR #26 ágán. Közben indítom az artifact-lista felmérést is; előbb a gate-et nézem.
+~~~~~
+
+
+### 2026-11-01 22:21 — Claude
+
+~~~~~
+A forrás-konzisztencia kérdésre nem volt bizonyítva a válasz, ezért javítottam. Ennek megfelelően frissült a PR #26, és elkészült az artifact-lista felmérés a PR #27-ben. Merge egyikre sem történt.
+
+## 1. PR #26: forrás-konzisztencia
+
+A válasz a kérdésedre eredetileg **nem** volt. A `specs` (tartalom és `meta_hash`), a három régi provenance-digest, valamint a `project.yaml` és a `commitment.yaml` a munkakönyvtárból jön. A `git status --porcelain` tiszta marad ignorált fájlnál, `assume-unchanged` és `skip-worktree` fájlnál, sorvég-szűrőnél és sparse checkoutnál. Ezt minden esetre külön teszt igazolja, és a teszt először a tiszta státuszt állítja premisszaként.
+
+- **Javítás (`bb67999`):** a `run_release` a Vault előtt minden ilyen bemenetet összevet a forráscommit blobjával, és a talált séma-fájlokat a commit fáján végzett kiválasztással. Eltérés esetén `worktree_differs_from_source_commit` hibával áll le, megnevezve a fájlt és az eltérést. Nem építettem át a compilert.
+- **Tesztek:** ignorált séma, `assume-unchanged`, CRLF-szűrő (`text eol=crlf`), `skip-worktree`, szimbolikus link, ignorált `commitment.yaml`, módosított `dependency.yaml`, grammar-fájl és `project.yaml`, hiányzó provenance-bemenet. Külön teszt vizsgálja, hogy a fa-oldali kiválasztás megegyezik a glob-kiválasztással (rejtett, üres, beágyazott fájl, `examples/`, más könyvtár).
+- **Planted-defect:** 72 mutáns a compilerre, ebből 63-nak pirosra kell váltania, 9 dokumentáltan egyenértékű. Az egyik mutáns, amit először egyenértékűnek hittem (hiányzó fájl), valójában tesztlyuk volt, ezért teszt készült hozzá.
+- **Futás:** a gate sikeres, 759 teszt, 90,16% lefedettség, a futás ~1:47.
+- **`gate.yml`:** a futások 2 perc alatt vannak, ezért az időkorlátot visszaállítottam 10 percre, ahogy javasoltad.
+
+**Nem fedi** (dokumentálva a PR leírásában és a `docs/*/RELEASE-COMPILER-ENVELOPE3.md`-ben):
+- A validációs kapuk (séma-, primitive- és grammar-kapu) is a munkakönyvtárat olvassák. Az ítéletük olyan fájlra is szólhat, ami nem része a rekordnak, és nem kerül bele.
+- Release-t friss klónból érdemes vágni.
+
+## 2. Artifact-lista felmérés: PR #27
+
+https://github.com/CentralInfraCore/cic-primitives/pull/27 (csak dokumentum, a `project.yaml` nem változott, a lista nincs alkalmazva).
+
+- **Kritérium:** egy fájl akkor kerül be, ha a tartalma a csomag **szerződését, értelmezését vagy reprodukálhatóságát** határozza meg. A Forms 12 fájlja ellenőrzött részhalmaz, jelölve a táblában, nem a kritérium. A javaslat mind a 12-t tartalmazza, de ez következmény.
+- **Eredmény:** a `devel` `d2d8ec7` 131 fájlja: **29 INCLUDE, 92 EXCLUDE, 10 REVIEW**, mindegyikhez műszaki indok.
+- **INCLUDE:** a 13 séma, a `schemas/index.yaml`, az `md.meta.schema.yaml`, a `release.schema.yaml`, a grammar és az access-modell vektoraival, a P0-4 dokumentumok, a `LICENSE.md`, a `dependency.yaml`, a record-szerződés angol szövege.
+- **A 10 REVIEW tulajdonosi igen/nem:**
+  - `project.yaml` (a deklarációt hordozza, de Vault-beállításokat is),
+  - `tools/compiler.py`,
+  - a referencia-verifier,
+  - `kubernetes-pod.yaml` (a release grammar-kapu ellenőrzi),
+  - a két licenc-metaadat fájl,
+  - `project.schema.yaml`,
+  - `requirements.in/txt`,
+  - `check_access_vectors.py`.
+- **Felmérés közben talált tények:**
+  - A `P0-4-ACCESS-GRAMMAR.md` fejléce maga `Status: proposed`. A Forms ezt a fájlt pinneli, tehát egy javaslat-szöveg a közzétett felület része lenne.
+  - A `p0-4-contradiction-matrix.md` saját fejléce szerint "munkaanyag, nem normatív", ezért EXCLUDE.
+  - A `dependencies/template-schema-*.yaml`-t egyetlen eszköz sem olvassa.
+  - A `commitment.yaml` tartalma már a rekordban van.
+  - A pin (`73ae469`) a `devel` őse; a 12-ből 11 bájtra azonos a `devel` fején, a `P0-4-MIGRATION.md` eltér. A listába vétel ezt nem oldja meg: a Forms-pinnek megfelelő release a pin blobjait tartalmazó forráscommitból vágandó.
+- **Javaslat, nem döntés:** egy termelői ellenőrzés (`specs[].source_path` ⊆ `artifacts.files`) elfelejtett séma-fájlokat fogna meg. Ez nincs megvalósítva.
+
+A javasolt `paths` blokk szövegként szerepel a dokumentumban. A `project.yaml` változatlan.
+
+## Memória és napló
+Még nem frissítettem a #26-tal, a guard-dal és a #27-tel. Szólj, ha mehet, a naplóblokkokat a transzkriptből töltöm.
+
+## HOLD-ok
+A PR #26 és #27 merge-e, az artifact-lista tartalmának elfogadása, a pre-check átállítása, a release aláírása és publikálása, a production receipt, a trust gate-ek és a `theads/` push. A `73ae469` érintetlen, a #23, a forms #138 és az Engine #63 nyitva.
+
+Mire várok: a #26 újabb reviewjára (a guard elég-e a forráskonzisztencia kérdésre?), és a #27 REVIEW soraira adott igen/nem válaszokra.
+~~~~~
+
+
+### 2026-11-01 22:33 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Review-döntés: #26 és #27
+
+Átnéztem a [compiler PR #26](https://github.com/CentralInfraCore/cic-primitives/pull/26?utm_source=chatgpt.com) módosított guardját és a [artifact-felmérés PR #27](https://github.com/CentralInfraCore/cic-primitives/pull/27?utm_source=chatgpt.com) 131 fájlos osztályozását.
+
+A #26 forráskonzisztencia-javítása érdemben megoldja az eredeti kifogásomat. Már nem a `git status` tisztaságára támaszkodik, hanem közvetlenül összehasonlítja a munkakönyvtárból felhasznált bájtokat a forráscommit Git-blobjaival.
+
+Különösen jó, hogy a guard olyan eseteket is vizsgál, amelyeket a szokásos Git-státusz nem feltétlenül jelez: `assume-unchanged`, `skip-worktree`, ignorált fájlok, CRLF-transzformáció és sparse checkout.
+
+Van még két pontosítás, amit kérnék, de teljes compiler-átépítést nem.
+
+### #26 – fennmaradó két kérdés
+
+1\. Hiányzó bemenet kezelése
+
+A `_check_release_inputs_match_commit()` jelenleg azzal az esettel is számol, amikor egy fájl sem a munkakönyvtárban, sem a commitban nem létezik, és továbblép.
+
+A `commitment.yaml` esetében ezt különösen ellenőrizném: ha az adott release-út kötelező bemenete, akkor a kétoldali hiány nem tekinthető teljesített konzisztenciának. Lehet, hogy egy későbbi ellenőrzés már elutasítja, de ezt célzott end-to-end teszttel szeretném látni.
+
+2\. A validációs kapuk hatóköre
+
+A dokumentált korlátot elfogadom, de szeretnék egy explicit esetet, ahol egy kizárólag munkakönyvtárban létező validációs bemenet befolyásolja a gate-et.
+
+Ennek a tesztnek nem kell új viselkedést kikényszerítenie. A cél az, hogy a fennmaradó határt pontosan lássuk, és később se állítsuk azt, hogy minden release-előfeltétel teljesen commit-alapú.
+
+A #26 merge-jét addig HOLD-on tartanám.
+
+## PR #27 – döntés a tíz REVIEW fájlról
+
+A közzétett primitive-felületet nem keverném össze a release elkészítéséhez használt teljes toolchainnel.
+
+A tíz döntésem:
+
+| Fájl                                  | Döntés  | Indok                                                                               |
+| ------------------------------------- | ------- | ----------------------------------------------------------------------------------- |
+| `LICENSE.meta.yaml`                   | EXCLUDE | A licencszöveg az elsődleges szerződés                                              |
+| `LICENSE.yaml`                        | EXCLUDE | Nem látok igazolt fogyasztói függőséget                                             |
+| `project.schema.yaml`                 | EXCLUDE | Buildkonfigurációt validál                                                          |
+| `project.yaml`                        | EXCLUDE | Operatív konfiguráció is; a deklarált halmaz magában az aláírt rekordban megjelenik |
+| `check_access_vectors.py`             | INCLUDE | Az Access referencia-viselkedésének reprodukálható futtatásához szükséges           |
+| `requirements.in`                     | EXCLUDE | Fejlesztői függőségleírás                                                           |
+| `requirements.txt`                    | EXCLUDE | Toolchain-lock, nem a primitive-ok szerződése                                       |
+| `kubernetes-pod.yaml`                 | EXCLUDE | Példa, nem normatív primitive-specifikáció                                          |
+| `tools/compiler.py`                   | EXCLUDE | Release-előállító eszköz                                                            |
+| `tools/release_record_conformance.py` | EXCLUDE | A release ellenőrzésének eszköze, nem annak tartalma                                |
+
+Jóváhagyott artifact-halmaz a jelenlegi felmérés alapján
+
+# 30 fájl
+
+29 korábbi INCLUDE + 1 új INCLUDE
+
+Ez a 30 fájlos javaslat a közzétett felület tartalmi döntése, nem release-engedély.
+
+Két követelményt még hozzátennék:
+
+- A compiler által létrehozott összes `specs[].source_path` legyen benne az `artifacts.files` halmazban. Hiány esetén FAIL, aláírás előtt. Ez megakadályozza, hogy közzétett séma maradjon ki az artifact-manifestből.
+- Ellenőrizzük, hogy az `access_policy.py` és a `check_access_vectors.py` futtatásához a deklarált felületen kívüli függőségek kellenek-e. Ha igen, azt a közzétételi döntés előtt rendezzük.
+
+### Egy fontos figyelmeztetés a 73ae469 miatt
+
+A jóváhagyott útvonallista önmagában nem elegendő a történeti pinből történő release-hez.
+
+Mivel az Envelope 3 compiler a `source_commit`-ból olvassa a `project.yaml` deklarációját, a release-ágon szükség lesz egy olyan új commitra, amely már tartalmazza a jóváhagyott deklarációt, de megtartja mind a 12 korábban pinelt fájl pontos bájtjait.
+
+Ez megfelel a korábbi célnak: a kiadás a `73ae469` állapotából indul, nem a megváltozott `devel` fejéből. Az új release source commit ugyanakkor már nem lesz szó szerint `73ae469`, amit a pre-checknek megfelelően ellenőriznie kell.
+
+## Állapot és következő lépés
+
+A GitHubon a jelenleg lekért futások is sikeresek:
+
+- \#26: `41356662840` – SUCCESS
+- \#27: `41356464656` – SUCCESS
+
+Döntés: GO a #27 osztályozási dokumentumának frissítésére a tíz döntés alapján. A tényleges `project.yaml` módosítása külön, célzott PR-ba kerüljön, a `specs ⊆ artifacts` ellenőrzéssel összehangolva.
+
+GO a memória és a napló pontos állapotfrissítésére is, de a `theads/` commitok ne legyenek pusholva.
+
+A #26 és #27 merge-e egyelőre HOLD. A release, trust gate-ek, production receipt, pre-check átállítás és a `73ae469` alapú release-eljárás szintén változatlanul HOLD.
+
+A lényeg: most már nemcsak azt vizsgáljuk, hogy a compiler helyesen digesteli-e a deklarált fájlokat, hanem azt is, hogy a termelő egyáltalán teljes és szemantikailag indokolható felületet deklarált-e. Ez a két külön ellenőrzés együtt teszi a bizonyítási láncot érdemivé.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 22:37 — Claude
+
+~~~~~
+A meglévő mutánsok szövegét kell igazítani a most beszúrt sorhoz; javítom, és újrafuttatom a sorozatot.
+~~~~~
+
+
+### 2026-11-01 22:42 — Claude
+
+~~~~~
+Közben a #27-et frissítem a tíz döntéssel; előbb az access-eszközök önállóságát ellenőrzöm egy tiszta mappában, ami csak a jóváhagyott 30 fájlt tartalmazza.
+~~~~~
