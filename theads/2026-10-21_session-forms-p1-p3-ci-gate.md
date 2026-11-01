@@ -21034,3 +21034,1052 @@ Mi legyen a következő? Frissítsem a memóriát és a naplót, nézzem meg a n
 ~~~~~
 csináld
 ~~~~~
+
+
+### 2026-10-31 23:17 — Claude
+
+~~~~~
+A találat egy korábbi, prózában említett mintalista, nem titok. Most a memória.
+~~~~~
+
+
+### 2026-10-31 23:18 — Claude
+
+~~~~~
+A #133 lezárásához tartozó három dolgot elvégeztem. A parser-issue-t és a B/C szerződéseket még nem kezdtem el.
+
+- **Nightly FULL:** a 314475a-n (#132) sikeres. A 912f0fa-n (#133) még `queued`, ezért azt nem tudom. Nem tekintem sikeresnek.
+- **Thread log:** a #131-es follow-uptól a #133 mergeléséig tartó rész hozzáfűzve, titokminta-átnézés után. A helyi commit az `49390fb`. Nem pusholtam, ahogy az előző négy sem megy fel jóváhagyás nélkül.
+- **Memória:** a `project_p3_closed_p3b_state.md` és a `MEMORY.md` frissítve a #133-mal, a nightly eredményeivel és a nyitott pontokkal.
+
+A parser-issue és a B/C szerződések a te szavadra várnak. A "csináld" szerintem nem fedte le az issue megnyitását, mert az kifelé látszik a GitHubon. Szólj, ha nyissam a minimális Rust/Go példával és a javasolt corpus-esettel. A B/C-t is akkor indítom, ha mondod.
+~~~~~
+
+
+### 2026-11-01 08:14 — Felhasználó
+
+~~~~~
+A következő fő lépés: P5-3 B/C gépileg ellenőrzött szerződések és end-to-end bizonyítás. Az Engine #63 és a production receipt HOLD marad.
+~~~~~
+
+
+### 2026-11-01 08:16 — Claude
+
+~~~~~
+Közben a két harness futtatását indítom a valódi Engine verifier ellen (Rust és Go).
+~~~~~
+
+
+### 2026-11-01 08:16 — Claude
+
+~~~~~
+16 eset mindkét nyelven az Engine verifier szerint alakult. A mérés csak akkor ér valamit, ha tud bukni, ezért egy elvárást szándékosan elrontok.
+~~~~~
+
+
+### 2026-11-01 08:16 — Claude
+
+~~~~~
+Mindkét kontrollra pirosra váltott a mérés, mindkét nyelven. Következik a doksi (§20), utána a helyi commit.
+~~~~~
+
+
+### 2026-11-01 08:17 — Claude
+
+~~~~~
+A B/C mérési fele kész és helyben committolva: `f434090`, ág: `feat/p5-3-bc-contracts`. Nem pusholtam, PR-t sem nyitottam, mert ehhez a szokásos GO-d kell. Az end-to-end bizonyítás még hátravan, az Engine #63 és a production receipt HOLD marad.
+
+**Mit csináltam.** A `testdata/p5/receipt-paths.json` 16 esetet tartalmaz. Mindkét Engine-harness (Rust `verify_receipt`, Go `receipt.Verify`, pin a6a0680) beolvassa, és minden esetre ellenőrzi a verdiktet. A 16 eset elsőre mindkét nyelven az írt verdiktet adta. Termékkód nem változott. A mérés tud bukni: egy elfogadó és egy elutasító elvárást megfordítottam, és mindkét nyelven piros lett.
+
+**Mit mutat.**
+- **C (listaelem útvonala):**
+  - A verifier csak az üres szegmenst és a hiányzó `$.` gyökeret utasítja el.
+  - Az ADR 0006 szelektoros alakja (`$.routes[{to="b"}].metric`) átmegy a formai ellenőrzésen, és kötve elfogadott. Köttetlenül `E_RECEIPT_UNBOUND`.
+  - A verifier nem értelmezi a szelektort. A szelektorértékben lévő pont két nem üres szegmensre vágja az útvonalat, ezt a formai ellenőrzés nem látja.
+- **B (útvonal és kulcs kapcsolata):**
+  - A verifier az útvonalat átlátszatlan szövegnek veszi. A `$.label` kötése az `enabled` kulcshoz elfogadott.
+  - Hibás kötést csak az érték-digesten át lát. Két alapértelmezett mező keresztkötése eltérő értékekkel `R-RECEIPT-EVIDENCE-VALUE`.
+
+**Korlát (forrásból olvasva, nem futtatva).** Két alapértelmezett mező azonos értékkel megcserélhető a kötésben, és a verifier ezt elfogadja. A kötés helyességét tehát nem a verifier bizonyítja, hanem a könyvtár saját levezetése. Ez az §20 szerint a ki nem készült fél.
+
+**Döntésed kell hozzá (a doksi §20-ban javaslatként):**
+1. **B:** a P5-3 csak lapos dokumentumra záruljon (`$.mező → mező`, a Python-referenciával összevetve), a nem lapos kötés külön egység legyen, miután az Engine szerződése definiálja?
+2. **C:** a könyvtár ne írjon listaelem-útvonalat receiptbe, amíg az Engine szerződése nem mondja meg, hogyan lesz a szelektorból kulcs?
+3. **Pusholjam és nyissam a PR-t** erre a mérési felére, külön a végponttól végpontig bizonyítástól?
+
+Ha elfogadod a javaslatokat, a következő egység a végponttól végpontig bizonyítás. Egy dokumentum szövegből parse, resolve, materialize és receipt útján jut el az Engine verifierig, egyetlen futásban, mindkét nyelven.
+~~~~~
+
+
+### 2026-11-01 09:23 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+**GO — P5-3 B/C mérési PR**
+
+Pusholhatod a `feat/p5-3-bc-contracts` ágat, a `f434090` commitot, és megnyithatod a PR-t.
+
+A PR kizárólag a mérési egységet tartalmazza:
+
+- 16 B/C szerződésvizsgálati eset.
+- Mindkét pinelt Engine-verifier eredménye.
+- Pozitív és negatív verdict-flip bizonyítás.
+- A mért Engine-viselkedés és a Forms által vállalt szerződés világos megkülönböztetése.
+- Dokumentált, nyitott szemantikai korlátok.
+
+**Elfogadott scope-döntések:**
+
+B: P5-3 kizárólag a lapos `$.field → field` kötésre zárható. A bindinget a Forms ugyanabból a schema/materialization forrásból vezesse le, és független referenciával ellenőrizze. Azonos értékű defaultok felcserélt kötése sem tekinthető helyesnek.
+
+C: Listaelem-szelektort a Forms nem állíthat elő receipt evidence-útvonalként, amíg az Engine normatív szerződése nem definiálja a szelektor és az objektumkulcs kapcsolatát. Nem támogatott bemenetnél explicit elutasítás szükséges.
+
+A nem lapos binding külön szerződéses egység.
+
+A mérési PR után külön PR-ben készülhet az end-to-end bizonyítás:
+
+`source bytes → parse → resolve → materialize → receipt → Engine verify`
+
+A teljes út egyetlen összefüggő végrehajtásból származó értékeket használjon. Ne külön fixture-ekből utólag összerakott, látszólag összefüggő bizonyítékot.
+
+Rust és Go alatt is bizonyítani kell az adat- és identitáskapcsolatot, a negatív eseteket, valamint a független Engine-verifikációt.
+
+Az Engine #63 nyitva marad, a production receipt HOLD.
+
+**Commit és PR: GO. Merge: csak külön review után.**
+
+A helyi `theads/` naplócommitokat továbbra se pushold.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 09:24 — Claude
+
+~~~~~
+A PR meg van nyitva: **#134**, a HEAD `63df78a`. Ez az `f434090` mérési commit és egy doksi-commit, amely a §20-ban rögzíti az elfogadott B/C scope-döntéseket. A `theads/` helyi napló-commitjait nem pusholtam, és nincs automatikus merge.
+
+A PR kizárólag a mérési egységet tartalmazza:
+- a 16 eset mindkét pinelt Engine-verifieren (Rust és Go),
+- a mért Engine-viselkedést külön a Forms vállalásától,
+- a nyitott korlátot: azonos értékű defaultok felcserélt kötését a verifier elfogadja, ezért a kötés helyességét a Forms levezetése és független referenciája adja. Ezt a `check_entry` forrásából olvastam, nem futtattam.
+
+A #134 CI-eredményét még nem láttam, ezért egyelőre nem tudom, hogy zöld-e. Szólok, ha lefutott, és a merge a külön review után a te szavad.
+
+Az end-to-end PR nem indult el. A tervem:
+- Egy bemeneti szövegből (bájtokból) egyetlen futás állítja elő a parse, resolve, materialize és receipt értékeit, mindkét nyelven.
+- Az Engine verifier ugyanazokat az értékeket kapja, nem külön fixture-ökből összerakottakat.
+- Negatív esetek: elrontott forrásbájt, schema-azonosság, kötés.
+- A futás kikényszeríti, hogy az `input_digest` az ugyanazon bájtokból parse-olt dokumentumra vonatkozzon.
+
+Elindítsam a #134 CI-vel párhuzamosan, külön ágon?
+~~~~~
+
+
+### 2026-11-01 09:36 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## [Forms PR #134]([MASKED:private-repo]) — B/C szerződésmérés
+
+Aktuális HEAD: `63df78acdc459217fb7ab4b21ade2180f93dbb6f`
+
+A PR már két commitból áll. A helyi `f434090` óta csak a dokumentáció pontosítása változott.
+
+A 16 eset valóban a pinelt Engine-viselkedést méri, nem próbál új szerződést bevezetni. Ez megfelel az előző döntésünknek.
+
+| Vizsgált terület                      | Eredmény                                 |
+| ------------------------------------- | ---------------------------------------- |
+| Útvonal-formátum                      | 5 negatív teszteset                      |
+| Listaelem-szelektor                   | Elfogadott kötve, elutasított kötetlenül |
+| Félrevezető útvonal–kulcs kötés       | Az Engine elfogadhatja                   |
+| Hiányzó vagy rossz provenance-ű kulcs | Elutasított                              |
+| Keresztkötés eltérő defaultértékekkel | Elutasított                              |
+| Két nyelv, ugyanaz a 16 eset          | A harness implementációja megvan         |
+| Termékkód módosítása                  | Nincs                                    |
+
+A legfontosabb megállapítást a §20 megfelelően különíti el: az Engine által elfogadott `PathBinding` nem bizonyítja, hogy az útvonal valóban a megfelelő sémaelemhez tartozik.
+
+Ez a B/C munka lényegi eredménye.
+
+### Egy új lelet: a 16 eset teljessége nincs bizonyítva
+
+A Rust harness végén ez áll:
+
+```
+assert_eq!(path_cases, paths["cases"].as_array().unwrap().len());
+```
+
+Ez lényegében tautológia: annyi esetet futtat, amennyi a táblában van, majd ellenőrzi, hogy valóban annyit futtatott. A Go harness még ezt sem követeli meg, csak kiírja a darabszámot.
+
+Ha a JSON-ból minden eset eltűnne, mindkét harness sikeresen lefuthatna nulla B/C méréssel. Duplikált azonosítók mellett pedig ugyanaz az eset többször helyettesíthetne másokat.
+
+A javítás kicsi: mindkét harness ellenőrizze a 16 elvárt, egyedi esetazonosítót, és legyen negatív self-test hiányzó, illetve duplikált esetre.
+
+### CI jelenleg
+
+Corpus PASS
+
+P1 folyamatban
+
+A legutóbbi ellenőrzéskor a P1-ben 10 sikeres, 14 futó, 5 sorban álló és 1 kihagyott job volt; hibás még nem. Tehát a teljes pipeline sikerét még nem állítom.
+
+## Döntés: javítás szükséges, merge még NO-GO
+
+A B/C mérési tartalmat elfogadom. A 16 konkrét verdict összhangban van az Engine forráskódjával. Nem kérek új szerződéstervezést vagy termékkód-változtatást.
+
+A merge-hez két feltétel maradt: a mérési tábla teljességi védelme negatív önellenőrzéssel, valamint a teljes P1 sikeres lezárása az új HEAD-en.
+
+Az azonos értékű defaultok felcserélésének elfogadását a PR helyesen forráskódból levont következtetésként, nem lefuttatott mérésként jelöli. Ennek szemantikai elutasítását a következő Forms-oldali end-to-end bizonyításba tenném.
+
+A #134 jó irányban van, de a bizonyítási eszköznek azt is garantálnia kell, hogy egyetlen kötelező mérése sem tűnhet el észrevétlenül.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 09:36 — Claude
+
+~~~~~
+Igazad van, a darabszám-ellenőrzés tautológia. A mindkét harnessbe beépítem a 16 elvárt, egyedi azonosító ellenőrzését, hozzá negatív önteszttel (hiányzó, duplikált, extra eset).
+~~~~~
+
+
+### 2026-11-01 09:37 — Claude
+
+~~~~~
+A teljességi védelem benne van, és felkerült a #134-re: HEAD `fe62e6e`. A CI-t ezen a HEAD-en még nem láttam, ezért nem állítom, hogy zöld. A merge a külön review után a te szavad.
+
+**Javítás.** A tautologikus darabszám-ellenőrzés helyett mindkét harnessben ott van a 16 elvárt esetazonosító, mindegyik pontosan egyszer. Leáll a futás, ha a tábla egy esetet elvesztett, egy másikat megismételt a helyén, vagy olyat kapott, amit a harness nem ismer. A Rust harness ezen kívül azt is ellenőrzi, hogy mind a 16 eset tényleg lefutott.
+
+**Negatív self-test.**
+- A Rust `cargo test` 5 tesztje és a Go `go test` ellenőrzése lefedi az üres, a hiányzó, a duplikált és az ismeretlen esetet.
+- Ezeken kívül a valódi táblát is megrontottam, és mindkét harness megállt:
+  - üres tábla: "plain-bound is missing"
+  - kihagyott eset: "selector-unbound is missing"
+  - duplikált eset: "plain-bound is repeated"
+- A sértetlen tábla után mindkét nyelven lefut a 16 eset, az Engine pedig 7 receiptet fogad el és 82 megváltoztatottat utasít el, ahogy eddig.
+- A CI-be új lépésként került be a `cargo test` és a `go test` a harness könyvtáraiban. Ezek eddig nem futottak, így a self-test nélkülük csak helyben létezett volna.
+
+A javítás csak a mérőeszközt érinti, termékkódot nem. A §20 leírja a védelmet.
+
+Az azonos értékű defaultok felcserélt kötésének szemantikai elutasítása az end-to-end PR-ba kerül. Az end-to-end ágat a #134 lezárása után indítom, hacsak nem szólsz, hogy induljon párhuzamosan.
+~~~~~
+
+
+### 2026-11-01 09:38 — Felhasználó
+
+~~~~~
+pusholtad
+~~~~~
+
+
+### 2026-11-01 09:38 — Claude
+
+~~~~~
+Igen, pusholtam. A #134 HEAD-je a GitHubon `fe62e6e`, vagyis a teljességi védelem commitja. Csak a `feat/p5-3-bc-contracts` ág ment fel, a `theads/` napló-commitok nem.
+
+A CI még fut ezen a HEAD-en: 6 pass, 45 pending, 8 skipping, hibás egy sincs. Zöldnek addig nem mondom, amíg mind le nem fut.
+~~~~~
+
+
+### 2026-11-01 11:33 — Felhasználó
+
+~~~~~
+mit mond a CI?
+~~~~~
+
+
+### 2026-11-01 11:33 — Claude
+
+~~~~~
+A CI zöld a #134-en, a HEAD `fe62e6e`: 53 pass, 8 skipping, 0 fail, 0 pending. Az 53 pass között ott van az új `cargo test` és `go test` lépés is, a skipping pedig a szokásos feltételes kihagyás. A merge a külön review után a te szavad.
+~~~~~
+
+
+### 2026-11-01 11:39 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+**GO — P5-3 end-to-end proof, Rust + Go**
+
+Kiindulópont: `main` @ `541ad60`, a #134 merge után.
+
+**Cél:** gépileg bizonyítani a teljes összefüggő végrehajtási láncot:
+
+`schema source bytes → schema compile / identity binding`
+
+`document source → parse → resolve → materialize → receipt_flat_fixture → pinned Engine verify`
+
+**Kötelező bizonyítékok**
+
+1. A resolve legyen tényleges művelet, ne identitástranszformáció. Használjon egy ellenőrzött referencia-snapshotot, amelynek megváltoztatása a végső eredményt is megváltoztatja.
+
+2. A materializált objektum, a receipt, a `PathBinding` és az összes digest ugyanahhoz a futáshoz és ugyanahhoz a verified schema compile-hoz legyen kötve. Ne lehessen egyik futás materializációját egy másik futás receiptjével összekeverni.
+
+3. Mivel a fixture receipt-builder maga is materializál, bizonyítsd, hogy az általa belül előállított materializáció pontosan egyezik a lánc korábbi materialize lépésével. Ne állíts egyetlen materializálási végrehajtást, ha kettő történt.
+
+4. Legyen 0, 1 és több defaultot tartalmazó sikeres eset. A Python referencia függetlenül ellenőrizze a kanonikus byte-okat, az identitást, a default evidence-et és a `$.field → field` bindinget.
+
+5. A Rust és Go producer kimenetét mindkét pinelt Engine-verifier fogadja el. Mind a négy kombináció szükséges.
+
+6. Negatív esetek: megváltoztatott schema source, resolve snapshot, authored input, output, digest, default evidence, hibás binding, valamint két azonos értékű default felcserélt bindingje.
+
+7. Az azonos értékű defaultok felcserélése különösen fontos: demonstráld, hogy az Engine konzisztenciaellenőrzése ezt elfogadhatja, miközben a Forms független szemantikai bizonyítása elutasítja.
+
+8. Nem lapos dokumentum, illetve listaelem-szelektor esetén maradjon explicit refusal. Nincs automatikus útvonal-feloldás.
+
+**A bizonyítás saját bizonyítása**
+
+Legyen negatív önellenőrzés arra is, hogy egy pipeline-lépés kihagyása, egy köztes artefaktum másik futásból történő behelyettesítése vagy egy kötelező bizonyíték hiánya pirosra fordítja a kaput.
+
+DoD: fmt, lint, test, Rust–Go differential, független Engine-verifikáció, seeded defects, branch coverage, releváns mutation gate, zöld P1 és corpus.
+
+**Határok**
+
+- Fixture-only.
+- Production receipt: HOLD.
+- A hiteles release-origin kérdése nincs megoldva.
+- Engine #63 marad nyitva.
+- Nem módosítjuk önkényesen az Engine B/C szerződését.
+- A `theads/` helyi commitjait nem pusholjuk.
+
+GO a commitra, pushra és külön PR megnyitására. Merge csak újabb review után.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 11:48 — Claude
+
+~~~~~
+Mielőtt bármit építek, megkérdezem, mit szeretnél pontosítani. A kérdés a resolve-lépésről szólt: a könyvtárban ma nincs referencia-feloldás, a snapshot meghatározása pedig (F) halasztott döntés.
+
+Írd le, mi nem volt világos, vagy mit gondolsz másképp. Eddig nem módosítottam semmit az end-to-end ágon (`feat/p5-3-end-to-end`, `541ad60`).
+~~~~~
+
+
+### 2026-11-01 11:48 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+**Döntés: 4 — a P5-3 end-to-end scope pontosítása.**
+
+Az előző utasítás referencia-resolve követelményét visszavonom.
+
+A P5-3 end-to-end bizonyítás tényleges lánca:
+
+`schema source bytes → verified compile / identity`
+
+`authored document → parse → materialize → receipt_flat_fixture → Engine verify`
+
+A capability továbbra is **explicit, ellenőrzött hívói bemenet**, a jelenlegi P5-2 szerződés szerint.
+
+**Kötelező bizonyítékok:**
+
+1. Egyetlen összefüggő végrehajtási lánc, Rust és Go alatt.
+2. Ugyanaz a verified schema compile és authored input kerüljön minden lépéshez.
+3. A capability-map módosítása változtassa meg a materializált objektumot, az `output_digest` értékét és a receiptet.
+4. A capability hiánya, ismeretlen értéke és nem deklarált mezője kontrollált elutasítás legyen.
+5. Az `input_digest` ne változzon pusztán capability-változtatástól, mert az authored input nem változott.
+6. A megváltozott materializációhoz a korábbi receipt már ne legyen érvényes.
+7. A Forms-oldali binding szemantikai helyességét független referencia ellenőrizze, beleértve az azonos értékű defaultok felcserélését.
+8. Mindkét producer kimenetét mindkét pinelt Engine-verifier vizsgálja.
+
+**Tilos:**
+- Új snapshot- vagy referencia-resolve szerződést kitalálni.
+- A `ResolveRule` eredményét mesterségesen a materializációhoz kapcsolni.
+- A capability-map forrását hitelesítettnek állítani.
+- Az F döntést vagy a P5-4-et lezártnak tekinteni.
+
+A dokumentáció mondja ki, hogy ez **P5-3 end-to-end proof without reference resolution**.
+
+A P5-4/F változatlanul nyitott architekturális határ.
+
+Production receipt HOLD, Engine #63 nyitva.
+
+**GO a scope szerint folytatott implementációra.**
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 11:48 — Claude
+
+~~~~~
+Rendben, ez a scope tiszta: **P5-3 end-to-end proof without reference resolution**. Először megnézem, milyen API-kon és adatokon épül a lánc.
+~~~~~
+
+
+### 2026-11-01 11:50 — Claude
+
+~~~~~
+Most a Rust láncot fordítom és futtatom (a forrás-kötés, capability-hibák és a Python-referencia ellen), utána jön a Go-tükör.
+~~~~~
+
+
+### 2026-11-01 11:52 — Claude
+
+~~~~~
+Most az ellenőrzőt írom (Python): a két dumpot a Python-referenciához köti, és kimondja, ha egy lépés hiányzik vagy másik futás terméke került a láncba.
+~~~~~
+
+
+### 2026-11-01 11:53 — Claude
+
+~~~~~
+Az `|` jel a `sed` kifejezésben ütközött a mintával. Python-alapú mutálásra váltok.
+~~~~~
+
+
+### 2026-11-01 11:54 — Claude
+
+~~~~~
+Mind a négy kombináció (Rust/Go producer × Rust/Go Engine-verifier) elfogadja a láncot. Most a CI-be kötöm, a terméktesztekbe (seeded defects) is bevonom, és megírom a §21-et.
+~~~~~
+
+
+### 2026-11-01 11:55 — Claude
+
+~~~~~
+A háttérben futó seeded-defects futás lefutott. Az eredményt olvasom.
+~~~~~
+
+
+### 2026-11-01 11:57 — Claude
+
+~~~~~
+Az end-to-end teszt, az ellenőrző és az Engine-harness készen áll. Most a seeded-defects futás eredményét várom, utána commit és push.
+~~~~~
+
+
+### 2026-11-01 11:57 — Claude
+
+~~~~~
+A seeded-defects futás még tart. Mindkét figyelő a futás végére vár, addig nincs más teendő.
+~~~~~
+
+
+### 2026-11-01 12:05 — Felhasználó
+
+~~~~~
+hol tart ?
+~~~~~
+
+
+### 2026-11-01 12:05 — Claude
+
+~~~~~
+Az end-to-end bizonyítás megvan és fent van: **PR #135**, ág `feat/p5-3-end-to-end`. A CI-t még nem láttam, ezért nem állítom, hogy zöld. A merge külön review után a te szavad.
+
+**Mit csináltam.** Csak tesztek és eszközök készültek, termékkód nem változott. A lánc futásonként és nyelvenként egy végrehajtás: `schema source bytes → verified compile / identity`, majd `document → parse → materialize → receipt_flat_fixture → Engine verify`. A capability-map továbbra is explicit hívói bemenet, a forrását nem állítom hitelesítettnek. A `ResolveRule`-t nem kötöttem a materializációhoz, és új snapshot- vagy resolve-szerződést nem találtam ki.
+
+**Amit helyben lefuttattam:**
+- **Két materializálás.** Az receipt-builder belül újra materializál, ezért két végrehajtás van, amelyeket mező szinten összevetek. Ezt a doksi (§21) és az ellenőrző is kimondja.
+- **Python-referencia.** Négy eset fut, mindegyik kétszer: 0, 1, 4 és két azonos értékű default, a második futásban egy capability megváltoztatva. A kanonikus bájtok, az identitás, a default evidence és a kötés Pythonban számolódnak.
+- **Capability-változtatás.** Megváltozik az objektum, az `output_digest` és a receipt, a receipt pedig csak az `output_digest`-ben tér el. Az `input_digest`, a séma-identitás és a kötés nem változik.
+- **Régi receipt.** Az Engine elutasítja (`R-RECEIPT-BINDS-OUTPUT`) a régi receiptet az új objektumra, mind a négy kombinációban (Rust/Go producer × Rust/Go verifier).
+- **Capability-hibák.** A hiányzó, ismeretlen (`Implemented`, `unverified`) és nem deklarált capability kontrollált elutasítást ad, a standalone lépésben és a receipt-builderben is.
+- **Futás-kötés.** Minden rekord `chain` digestet hordoz, amely a séma, az input, az output, a receipt és a capability-map digestjéből áll. Másik futás artefaktuma ezt eltöri.
+- **A 7. pont (azonos értékű defaultok).** Az Engine **elfogadja** két azonos értékű default felcserélt kötését, mindkét verifierrel lefuttatva. Eddig ezt csak a forrásból olvastam. A különböző értékűek felcserélését elutasítja (`R-RECEIPT-EVIDENCE-VALUE`), a Python-referencia pedig a felcserélt kötést is elutasítja.
+- **Nem lapos séma.** `not_flat` elutasítást kap.
+
+**A bizonyítás bizonyítása:**
+- Az ellenőrzőnek 23 önellenőrző tesztje van. Ezek az üzenetet olvassák, nem a darabszámot, és lefedik a kihagyott lépést, a másik futás artefaktumát, a hiányzó esetet mindkét nyelvből, a felcserélt kötést és az elvesztett iker-esetet.
+- Az ellenőrzőbe ültetett 10 hibából mind a 10 pirosra fordított egy tesztet.
+- A seeded defects 30-ból 30-at elkapott.
+
+**Lokális kapuk:** fmt, clippy és vet tiszta, a Rust 253 tesztje zöld, a Go 98,9%-os lefedettséggel zöld, a Python-tesztek zöldek.
+
+**Amit nem futtattam helyben:**
+- A branch-coverage és a diff-mutation kapu. A változás csak teszt és eszköz, ezért nincs mutálható termékkód, a CI viszont mérni fogja.
+- A teljes P1 és a corpus. Ezek a PR CI-n futnak.
+
+A production receipt HOLD marad, a release-rekord a §17 fixture, az Engine #63 nyitva, az F és a P5-4 nyitott. A `theads/` helyi napló-commitjait nem pusholtam.
+~~~~~
+
+
+### 2026-11-01 12:12 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## [Forms PR #135]([MASKED:private-repo]) — end-to-end review
+
+Vizsgált HEAD: `4ed557e6c69c7254745f0dfc802dabe9970bce17`
+
+A diffet és a Rust, Go, Python bizonyítási kódot átnéztem. Az end-to-end megközelítést elfogadom. Valóban csak tesztek, eszközök, fixture és dokumentáció változik; termékkód nem.
+
+A fő követelmények megvalósítása:
+
+| Ellenőrzés                                           | Review                         |
+| ---------------------------------------------------- | ------------------------------ |
+| Schema source → identity → materialization → receipt | Megvan                         |
+| Két materializálás mezőszintű összehasonlítása       | Megvan                         |
+| Független Python-referencia                          | Megvan                         |
+| 0, 1, 4 és azonos értékű defaultok                   | Megvan                         |
+| Capability-változás és régi receipt elutasítása      | Megvan                         |
+| Rust/Go producer × Rust/Go verifier                  | Mind a négy kombináció bekötve |
+| 23 negatív checker-önellenőrzés                      | Kód alapján megfelelő lefedés  |
+| Production receipt                                   | HOLD marad                     |
+
+Kifejezetten jó, hogy az azonos értékű defaultok felcserélt kötését most ténylegesen az Engine ellen vizsgáljátok. Ez már nem pusztán a verifier forrásából levont következtetés.
+
+A PR-ben azonban két ponton pontosítanám a bizonyítás erősségét.
+
+### 1. A `chain_digest` nem köti magához a `PathBinding` értékét
+
+Javítandó
+
+A `tools/parity/check_receipt_e2e.py` jelenleg öt adatból számít láncdigestet:
+
+```
+schema_digest
+input_digest
+output_digest
+receipt_digest
+capabilities
+```
+
+A `PathBinding` kimaradt. Márpedig az Engine számára ez külön, a receipten kívül átadott bemenet.
+
+Ennek következménye, hogy két azonos értékű default kötése felcserélhető úgy, hogy a `chain_digest` változatlan marad.
+
+A Python-referencia ezt már felismeri, tehát a teljes teszt nem lesz tévesen zöld. De a láncdigest önmagában nem bizonyítja a kötés változatlanságát.
+
+Javaslatom: kerüljön bele a binding determinisztikus, kanonikus reprezentációjának digestje is. Kérnék hozzá negatív tesztet, amely a bindinget változtatja meg, minden más mezőt érintetlenül hagy, és igazolja, hogy a láncdigest ellenőrzése piros.
+
+### 2. Nemcsak két materializálás, hanem három schema compile is történik
+
+A Rust láncban:
+
+- `schema_identity()` belül `compile_schema()`-t hív.
+- A `run()` ezután külön meghívja a `compile_schema()`-t.
+- A `receipt_flat_fixture()` ismét meghívja a `compile_schema()`-t.
+
+Ez önmagában nem hiba. Ugyanazok a source byte-ok és ugyanaz a digest kerülnek mindhárom művelethez. Viszont egy közös, egyszer létrehozott compiled schema példány újrafelhasználását nem bizonyítja.
+
+A §21-ben ezt ugyanúgy pontosítanám, ahogy a két materializálásnál már megtörtént. Termékkódot emiatt most nem módosítanék.
+
+### Friss CI
+
+| Workflow                                                                                                                       | Állapot     |
+| ------------------------------------------------------------------------------------------------------------------------------ | ----------- |
+| [Corpus #41304813872]([MASKED:private-repo]) | SUCCESS     |
+| [P1 #41304813634]([MASKED:private-repo])     | Folyamatban |
+| GitHub mergeable                                                                                                               | `true`      |
+
+Az utolsó ellenőrzéskor a P1-ben 4 sikeres, 5 futó, 20 sorban álló és 1 kihagyott job volt. Hibás jobot nem láttam, de teljes zöld eredményt még nem igazolhatok.
+
+## Döntés
+
+A #135 architektúrájára GO. A merge-re egyelőre HOLD.
+
+Két kicsi javítást kérek: a binding bevonását a láncdigestbe, megfelelő negatív önellenőrzéssel; illetve a három schema compile dokumentálását. Utána az új HEAD teljes CI-jének zöldnek kell lennie.
+
+Azt viszont már most kimondanám: ez nem igényel új P5-3 architektúrát. A lényegi bizonyítás összeállt.
+
+Ha a két pontosítás és a CI is rendben van, a P5-3 fixture-alapú end-to-end egysége lezárható. Az F/P5-4, az Engine #63 és a production receipt HOLD ettől függetlenül megmarad.
+
+Nem merge-eltem a #135-öt.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 12:12 — Claude
+
+~~~~~
+Mindkét pontosítás jogos. A kötést bevonom a láncdigestbe (Rust, Go, Python), és negatív teszttel igazolom, hogy önmagában a kötés módosítása pirosra fordítja a láncdigest-ellenőrzést. A három schema compile-t a §21-ben dokumentálom.
+~~~~~
+
+
+### 2026-11-01 12:13 — Claude
+
+~~~~~
+A kötés kivétele a láncdigestből pontosan az új tesztet buktatta. A Rust- és a Go-dump a Python újraszámításával is egyezik. Következik a doksi.
+~~~~~
+
+
+### 2026-11-01 12:13 — Claude
+
+~~~~~
+Mindkét pontosítás felkerült a #135-re. Az új HEAD **`c7921e5`**.
+
+**1. A kötés bekerült a láncdigestbe.**
+- A `chain` digest most a kötés kanonikus alakjának digestjét is tartalmazza, Rustban, Góban és a Python-ellenőrzőben. A Rust- és a Go-dump újragenerálva a Python újraszámításával egyezik.
+- Új negatív teszt: csak a kötést cseréli fel az iker-esetben, minden más mezőt érintetlenül hagy, és a láncdigest-üzenetet olvassa.
+- A teszt a referencia kötés-ellenőrzése nélkül is pirosra fordul, tehát a láncdigest önmagában fogja meg a cserét.
+- A digestből szándékosan kivett kötés pontosan ezt az egy tesztet buktatta, ami 24 teszt közül jelent egyet.
+- Az Engine mind a négy kombinációban újra elfogadja a láncokat, 32 módosított vagy kevert rekordot elutasít, és ugyanúgy mér: az azonos értékű csere elfogadott, a különböző értékű elutasított.
+
+**2. A három schema compile a §21-ben.** A `schema_identity`, a lánc saját `compile_schema` hívása és a `receipt_flat_fixture` külön-külön fordít. Ugyanazt a forrást és pin-digestet kapják, és az identitás egyezése ellenőrzött. Egy megosztott fordított példányt viszont nem állítok és nem bizonyítok, mert az az API módosítása lenne. A termékkód nem változott.
+
+A CI az új HEAD-en még épp indul (8 pending, 1 skipping), ezért zöldet nem állíthatok. A merge továbbra is a külön review után a te szavad.
+~~~~~
+
+
+### 2026-11-01 13:30 — Felhasználó
+
+~~~~~
+GO a #135 squash merge-re, kizárólag a fent ellenőrzött HEAD-re, --match-head-commit védelemmel.
+~~~~~
+
+
+### 2026-11-01 13:30 — Claude
+
+~~~~~
+Merge előtt újra megnézem, hogy a HEAD még a c7921e5, és hogy a CI mit mond.
+~~~~~
+
+
+### 2026-11-01 13:30 — Claude
+
+~~~~~
+A HEAD még a `c7921e5`, nyitott és mergelhető, és minden futtatott job zöld (a skipping jobok szándékosan kimaradnak). Futtatom a merge-t.
+~~~~~
+
+
+### 2026-11-01 13:30 — Claude
+
+~~~~~
+A #135 squash merge-ölve, `--match-head-commit c7921e5` védelemmel. A merge commit a `main`-en **`b56bb42`**.
+
+A merge előtt újra ellenőriztem: a HEAD még a `c7921e5` volt, a PR nyitott és mergelhető volt, és minden futtatott job zöld volt. Ezek közé tartozik a branch-coverage, a corpus, a parity, a Rust/Go differential és mutation, a seeded-defects mind a 8 shardja és a fuzz. A `plan`, a `quality-mutation-*`, a `shadow-gamma` és az `inherit` szándékosan kimaradt (skipping).
+
+Még nem tettem meg, és a te szavadra várok:
+- **Nightly FULL:** a `912f0fa`, az `541ad60` és a `b56bb42` utánit még nem néztem meg, ezért nem állítom, hogy sikeres.
+- **Memória és napló:** a #134 és #135 még nincs bevezetve. A `theads/` napló-commitokat nem pusholom.
+- **Rust/Go idézett-skalár parser-eltérés:** erre továbbra sincs GitHub issue, mert nem kaptam rá engedélyt.
+- **Engine #63:** nyitva marad.
+- **Production receipt:** HOLD marad.
+- **P5-4/F döntés:** nyitott.
+- **Nem-lapos kötés:** külön szerződéses egység.
+~~~~~
+
+
+### 2026-11-01 14:01 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+**GO — P5-3 closeout + release-origin pre-check**
+
+Kiindulópont: `main` @ `b56bb42a539d99904efbcd8a8b58037febf0351f`.
+
+**Első egység: P5-3 closeout**
+
+- Ellenőrizd a merge utáni main `nightly FULL` eredményét.
+- Állíts össze géppel ellenőrizhető lezárási összesítőt a P5-1, P5-2 és P5-3 bizonyított szerződéseiről.
+- Különítsd el: bizonyított, fixture-only, nem bizonyított, elhalasztott.
+- A P5-3-at kizárólag flat, fixture-alapú receiptként zárd.
+- Dokumentációs PR, termékkód-változtatás nélkül.
+
+**Második, külön egység: L release-origin pre-check**
+
+- Vizsgáld meg a jelenlegi `cic-primitives` pint és az elérhető release-metaadatokat.
+- Keress ténylegesen ellenőrizhető aláírt release-t, ne feltételezd a létezését.
+- Írd le az autentikált release-rekord minimális adatait, azok forrását és az ellenőrző fél felelősségét.
+- Bizonyítsd vagy dokumentáltan cáfold a release → source commit → grammar file digests → Forms pin kapcsolatot.
+- Válaszd szét a kriptográfiai eredetellenőrzést és az Engine receipt-konzisztenciaellenőrzését.
+- Sorold fel a fail-closed feltételeket.
+
+**Határok:** nincs kitalált release, nincs új production receipt API, nincs automatikus P5-4 implementáció. Engine #63 marad nyitva, amíg külön nem igazolt a lezárása.
+
+GO az előellenőrzésre és külön PR-javaslatra. Implementáció és merge csak új review után.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 14:01 — Claude
+
+~~~~~
+Az első egységgel kezdem: a merge utáni main nightly FULL állapotával.
+~~~~~
+
+
+### 2026-11-01 14:01 — Claude
+
+~~~~~
+A `b56bb42` nightly FULL-ja most van sorban (`queued`). 541ad60 és 912f0fa zöld. Közben megnézem a doksi szerkezetét a lezárási összesítőhöz.
+~~~~~
+
+
+### 2026-11-01 14:02 — Claude
+
+~~~~~
+Az első egység alapja megvan. Elkészítem a gépi ellenőrzésű összesítőt: egy JSON-főkönyvet, egy ellenőrzőt és a negatív önteszteket. A termékkódhoz nem nyúlok.
+~~~~~
+
+
+### 2026-11-01 14:02 — Claude
+
+~~~~~
+Most megírom a főkönyvet.
+~~~~~
+
+
+### 2026-11-01 14:04 — Claude
+
+~~~~~
+A `b56bb42` nightly FULL-ja még sorban áll, így azt a doksiba csak a mért eredmény után írom be. Megírom a §22-t.
+~~~~~
+
+
+### 2026-11-01 14:04 — Claude
+
+~~~~~
+Az extra elem a `.gitattributes`. Az ellenőrzőt a vektor-könyvtárakra szűkítem, mert az az állítás tárgya.
+~~~~~
+
+
+### 2026-11-01 14:05 — Claude
+
+~~~~~
+27 teszt zöld. Ellenőrzöm, hogy az ellenőrző hibáit a tesztek tényleg észreveszik: elrontok benne egyenként 8 szabályt.
+~~~~~
+
+
+### 2026-11-01 14:05 — Claude
+
+~~~~~
+12 beültetett hibából 12 piros. Bekötöm a CI-ba, és ellenőrzöm a nightly állapotát.
+~~~~~
+
+
+### 2026-11-01 14:06 — Claude
+
+~~~~~
+Az első egység kész, a nightly még sorban áll. Közben jön a második egység, a release-origin előellenőrzés, csak olvasással: a pin, a tagek, a GitHub release-ek és az aláírások.
+~~~~~
+
+
+### 2026-11-01 14:08 — Claude
+
+~~~~~
+Röviden: az első egység kész, commitolom; utána a második egység doksiját írom meg külön ágon.
+~~~~~
+
+
+### 2026-11-01 14:09 — Claude
+
+~~~~~
+Mindkét egység helyben commitolva. A nightly FULL fut, megvárom a végét.
+~~~~~
+
+
+### 2026-11-01 14:19 — Claude
+
+~~~~~
+Mindkét egység helyben elkészült. A `b56bb42` nightly FULL még fut, ezért erről egyelőre nincs eredmény. Még semmit nem pusholtam.
+
+**1. P5-3 closeout** (`docs/p5-closeout`, commit `7e86d09`, termékkód nélkül)
+- **Főkönyv:** a `docs/p5-closeout.json` 25 bejegyzést tartalmaz: 7 *proved*, 6 *fixture_only*, 5 *not_proved* és 7 *deferred*. A doksi új §22-je ugyanezt emberi nyelven mondja el.
+- **Ellenőrző:** a `tools/p5/closeout_check.py` ténylegesen beolvassa a bizonyítékot. Ellenőrzi a fájlokat, a megnevezett szövegeket, a darabszámokat (például 16 útvonal-eset, 4 end-to-end eset, 27 canonical vektor), a CI-lépések nevét, a doksi szakaszait és a pineket.
+- **P5-3 szabály:** a P5-3 receipt-bejegyzések csak `fixture_only` lehetnek. A teszt egy hibát talált: a `receipt: false` jelzést a szerző maga állítja, így bármely receipt-bejegyzés „proved"-ra emelhető lett volna. Ezért a szabály szerkezeti lett: a `proved` bejegyzés nem támaszkodhat receipt- vagy end-to-end fájlra.
+- **Nyitott tételek:** a tulajdonos által nyitva tartott 12 tétel nem hagyható el és nem léptethető „proved"-ra.
+- **Önteszt:** 27 teszt zöld. Az ellenőrzőbe beültetett 12 hibából mind a 12 pirosra fordította a teszteket.
+- **CI:** két új lépés került a `p1.yml`-be.
+- **Nem futott:** a teljes P1 CI csak a PR-on fut le.
+- **Nightly:** az `541ad60` és a `912f0fa` nightly FULL-ja sikeres volt. A `b56bb42` push-futása (`41311587765`) 99 jobbal kész és 19 még fut. Ha lefut, a §22-be beírom a mért eredményt. Egy háttérfeladat figyeli.
+
+**2. Release-origin pre-check** (`docs/p5-release-origin-precheck`, commit `[MASKED:private-commit]`, `docs/P5-RELEASE-ORIGIN-PRECHECK.md`)
+- **Van aláírt release:** a `primitives/@v0.2.0`. Az upstream `verify-release` nálam lefutott rajta: a `build_hash` újraszámolva egyezik, a release-aláírás és a CIC Source CA ellenjegyzése érvényes, és az ellenjegyző tanúsítvány a rekordban szereplő root-ig láncol. A git tag és a commit viszont **nincs aláírva**, tehát eredetbizonyítéknak nem használható.
+- **A pin nincs kiadva:** a `73ae469` egyetlen tagnek sem őse (15 tagből 0). A v0.2.0 `source_commit`-ja (`9c67ea4`) a `main` őse, de nem a piné. A 12 pinelt fájlból 3 azonos a v0.2.0-val, 5 eltér, 4 hiányzik. A release–forrás–grammar-digest lánc a v0.2.0-n belül igazolt, de a **Forms pinhez vezető utolsó láncszem cáfolt**. Ebből a pinből most nem állítható elő autentikus receipt.
+- **Háromból két leletet külön jelzek:**
+  - A v0.2.0 három tanúsítványa 2026-12-31-én lejár, tehát egy lejárati ellenőrzés két hónap múlva fordulna át.
+  - A release-rekord base64 digesteket tárol, a receipt `sha256:`+hex formát vár. A konverziót semmilyen dokumentum nem rögzíti szerződésként.
+  - A release-aláíró (Developer CA) tanúsítvány nincs láncolva a rekordban semmihez, és a rekordban nincs külső trust anchor.
+- **A doksi tartalmazza még:** a minimális autentikált rekord adatait forrással és ellenőrző féllel, a kriptográfiai eredet és az Engine-konzisztencia szétválasztását, valamint 11 fail-closed feltételt.
+- **Technikai megjegyzés:** a `verify-release`-hez egy üres `semver` helyettesítőt tettem a `PYTHONPATH`-ra, mert az csak release-készítéshez kell. Hálózati telepítés nem történt.
+
+**Mire várok tőled**
+- Pusholhatom a két ágat, és megnyithatom a két külön PR-t? Az utasításod PR-javaslatot mond, ezért nem tettem meg.
+- A PR-okban nincs `Co-Authored-By`, a globális szabályod szerint.
+- A pin kérdése (új release a pinelt commitból, vagy a pin mozgatása egy kiadott commitra) a tiéd. A doksi csak a tényeket rögzíti.
+- Engine #63 nyitva marad. Production receipt API és P5-4 nem készült.
+- A `theads/` naplócommitokat továbbra sem pusholtam.
+~~~~~
+
+
+### 2026-11-01 14:19 — Claude
+
+~~~~~
+A `b56bb42` nightly FULL-ja még nem fejeződött be. 120 jobból 117 kész, 3 fut, és eddig egy sem bukott el. A háttérfigyelő időtúllépés miatt állt le, nem a futás végén. Ezért nem állítom, hogy a run sikeres.
+
+Ezt tudom biztosan:
+- Az `541ad60` és a `912f0fa` nightly FULL-ja sikeres.
+- A `b56bb42`-re a P1 push-futás (`41311587765`) sikeres. A nightly-é, ami ugyanezzel az azonosítóval fut, még tart.
+
+A két helyi commit (`7e86d09`, `[MASKED:private-commit]`) változatlanul nincs pusholva. A nightly végeredményét a closeout §22-be a futás lezárulása után írom be, mert addig nincs mit beírni. Mehet a két ág pusholása és a két PR megnyitása?
+~~~~~
+
+
+### 2026-11-01 14:29 — Felhasználó
+
+~~~~~
+lefutott a nightly
+~~~~~
+
+
+### 2026-11-01 14:30 — Claude
+
+~~~~~
+A nightly FULL a `b56bb42`-n sikeres: 122 jobból egy sem bukott, a többi kész vagy szándékosan kimaradt. Beírom a §22-be.
+~~~~~
+
+
+### 2026-11-01 14:30 — Claude
+
+~~~~~
+A `b56bb42` nightly FULL-ja (`41311587765`) sikeres: 122 jobból egy sem bukott. Ez ugyanaz az egy futás, amely előbb még tartott.
+
+A closeout §22 most ezt mondja ki:
+- a `b56bb42` futása sikeres;
+- a `912f0fa` és az `541ad60` futása szintén sikeres;
+- a főkönyv CI-eredményt nem rögzít, mert az offline nem ellenőrizhető.
+
+A closeout ága (`docs/p5-3-closeout`) két helyi commitot tartalmaz: `7e86d09` és `[MASKED:private-commit]`. A checker és a 27 teszt zöld.
+
+A release-origin ág (`docs/p5-release-origin-precheck`, `[MASKED:private-commit]`) változatlan. Egyik ág sincs pusholva, és PR sincs megnyitva. Mehet a push és a két külön PR megnyitása?
+~~~~~
+
+
+### 2026-11-01 14:32 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+GO mindkét ág pusholására és a két külön PR megnyitására. A merge továbbra is külön review-hoz kötött.
+
+A nightly FULL kapcsán a [41311587765]([MASKED:private-repo]) futás első 30 jobját külön is lekérdeztem: mind a 30 sikeres. A teljes 122 jobos eredményt a lekérdezés lapozási korlátja miatt önállóan még nem igazoltam, ezért azt a közölt futási eredményként kezelem.
+
+A két PR szerepét így választanám szét:
+
+| Ág                                            | Döntés       | Merge-feltétel                                |
+| --------------------------------------------- | ------------ | --------------------------------------------- |
+| `docs/p5-3-closeout` — `7e86d09`, `[MASKED:private-commit]`   | Push + PR GO | §22, főkönyv és bizonyítékhatárok review-ja   |
+| `docs/p5-release-origin-precheck` — `[MASKED:private-commit]` | Push + PR GO | Release-eredet állításainak forrásellenőrzése |
+
+Kifejezetten helyesnek tartom, hogy a gépileg ellenőrizhető, offline főkönyv nem örökli automatikusan a GitHub CI sikerállapotát. A §22 külön rögzítheti a futásazonosítót, commitot és az ellenőrzés dátumát, de ez nem helyettesít saját, reprodukálható bizonyítékot.
+
+A release-origin PR esetén pedig az előellenőrzés nem válhat észrevétlenül production receipt engedélyezéssé. Az Engine #63, a hiteles release-rekord és a P5-4 szerződéses hiányai továbbra is külön kapuk.
+
+Tehát mehet mindkét PR. Nem kell további helyi munka pusztán a PR megnyitásához. Ha fent vannak, a tényleges diffet és CI-t külön-külön ellenőrzöm, és csak utána adok merge GO-t.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 14:32 — Claude
+
+~~~~~
+Mindkét ág fent van, és megnyitottam a két PR-t. Merge nem történt.
+
+| PR | Ág | HEAD | Tartalom |
+|---|---|---|---|
+| [#136]([MASKED:private-repo]) | `docs/p5-3-closeout` | `[MASKED:private-commit]` | §22, főkönyv, ellenőrző, CI-lépések |
+| [#137]([MASKED:private-repo]) | `docs/p5-release-origin-precheck` | `[MASKED:private-commit]` | release-origin előellenőrzés (csak doksi) |
+
+- **#136:** a leírásban szerepel, hogy a CI-eredmény nincs a főkönyvben. A nightly futásazonosító, a commit és a dátum csak a §22-ben van, futási tényként.
+- **#137:** a leírás kimondja, hogy az előellenőrzés nem engedélyezi a production receiptet. Az Engine #63, a hiteles release-rekord és a P5-4 külön kapuk maradnak.
+- **A nightly lapozás:** az én lekérdezésem a futás mind a 122 jobját végigolvasta, mert a `bad` lista üres volt. A számot ezért a futásból olvastam, nem feltételeztem.
+- **CI:** mindkét PR CI-ját most indítja a GitHub. Ellenőrzöm, amint lefutott, és zöldet csak a teljes eredmény után állítok.
+- **Nem történt:** a merge, valamint a `theads/` naplócommitok pusholása. Az Engine #63 nyitva marad.
+~~~~~
+
+
+### 2026-11-01 14:41 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## A két PR első review-ja
+
+| PR                                                                                                                         | Aktuális CI                              | Review-döntés                |
+| -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ---------------------------- |
+| [#136 — P5 closeout]([MASKED:private-repo])              | P1 SUCCESS, Corpus SUCCESS               | Egy javítás szükséges        |
+| [#137 — Release-origin pre-check]([MASKED:private-repo]) | Corpus SUCCESS; a P1 legutóbb még futott | Forrásellenőrzés folyamatban |
+
+### #136 — találtam egy bizonyítási rést
+
+A főkönyv 25 bejegyzése és a négy állapot (`proved`, `fixture_only`, `not_proved`, `deferred`) jól elkülönül. A production receipt helyesen nem kap `proved` státuszt.
+
+Viszont a 12 kötelezően nyitva tartandó tétel listája ugyanabban a módosítható JSON-fájlban található, amelyet ellenőrzünk:
+
+`docs/p5-closeout.json → required_not_proved_or_deferred`
+
+A checker jelenleg ebből olvassa, hogy mely tételeknek kell megmaradniuk.
+
+Ha valaki egy nyitott tételt egyszerre töröl az `entries` és a `required_not_proved_or_deferred` tömbből, a checker nem érzékeli a hiányát.
+
+Ez ugyanannak a hibacsaládnak egy új változata, amelyet a korábbi CI- és receipt-comparator review-kban is kerestünk: az ellenőrzött bemenet maga csökkentheti az ellenőrzés követelményeit.
+
+Javítás: a 12 kötelező nyitott azonosító legyen az ellenőrzőben rögzített, független elvárás, és kapjon negatív tesztet a mindkét JSON-listából történő egyidejű törlésre.
+
+Ezzel a #136 merge-re alkalmasnak látszik; termékkód-módosítás nem szükséges.
+
+### #137 — a release-origin előellenőrzés érdemben rendben van
+
+TARTALMI GO
+
+A forrásrepo ellenőrzése megerősíti a legfontosabb állítást: a `primitives/@v0.2.0` release-rekord létezik, de a release és a jelenlegi `73ae469` grammar pin eltérő állapotot képvisel.
+
+A GitHub commit-összehasonlítása is mutatja, hogy a pinben szereplő `access_policy.py` és `P0-4-ACCESS-GRAMMAR.md` nincs meg a release változatában, míg a `check_grammar.py` és az `instance-grammar.schema.yaml` módosult.
+
+Az upstream `verify-release` forrásában külön ellenőriztem, hogy az aláírások ellenőrzése és a külső `--trust-root` használata két külön kérdés. A dokumentum helyesen nem azonosítja a belsőleg érvényes aláírást a függetlenül hitelesített eredettel.
+
+Egy további, nem blokkoló pontosítást javaslok a későbbi implementációhoz: mondjuk ki normatívan, hogy a megbízható CIC countersignature önmagában jogosítja-e fel a release-kiadást, vagy a release-aláíró tanúsítványához is külön, megbízható delegációs lánc szükséges. A dokumentum már feltárja, hogy az issuer tanúsítványa nincs ilyen lánccal igazolva.
+
+### A #137 CI-je is befejeződött
+
+| Folyamat                                                                                                                       | Eredmény                          |
+| ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
+| [P1 #41316719897]([MASKED:private-repo])     | SUCCESS — 21 sikeres, 9 kihagyott |
+| [Corpus #41316719692]([MASKED:private-repo]) | SUCCESS                           |
+
+## Végső döntés
+
+| PR   | Merge                                                                         |
+| ---- | ----------------------------------------------------------------------------- |
+| #136 | NO-GO — a kötelező nyitott tételek elvárását függetleníteni kell a főkönyvtől |
+| #137 | GO tartalmilag és CI alapján; a merge sorrendjében a #136 után helyezném el   |
+
+A #137 ugyanis már a #136-ban bevezetett §22-re hivatkozik. Ezért a következő sorrendet kérem: #136 célzott javítása → új CI → #136 merge → #137 merge az aktualizált base mellett.
+
+A production receipt változatlanul HOLD. A mostani release-origin dokumentum egyik legfontosabb értéke éppen az, hogy bizonyíthatóvá teszi: a jelenlegi pinhez nincs igazolt release-eredet, és ezt nem próbálja egy zöld Engine-verifikációval helyettesíteni.
+
+A két PR egyikét sem mergeltem.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 14:41 — Claude
+
+~~~~~
+Igaza van: a követelményt az ellenőrzött fájl adja. Ugyanez igaz a `required_phrases`-ra és a `doc_sections_without_a_contract`-ra is, mert a lefedettségi ellenőrzés kikerülhető, ha egy szakaszt ide írnak. Mindhármat az ellenőrzőbe rögzítem, és kiveszem a főkönyvből.
+~~~~~
+
+
+### 2026-11-01 14:42 — Claude
+
+~~~~~
+A javítás jó, de be is kell bizonyítani, hogy az új teszt tényleg elkapja a régi hibát. Visszaültetem a régi viselkedést.
+~~~~~
+
+
+### 2026-11-01 14:42 — Claude
+
+~~~~~
+A #136 javítása fent van. Az új HEAD **`f5b84bc`**, a CI most indult (8 pending, 1 skipping), így zöldet még nem állíthatok.
+
+**A rés lezárva.** A 12 kötelező nyitott azonosító most az ellenőrzőben van (`REQUIRED_OPEN`), nem a főkönyvben. Ugyanezt a hibafamíliát két másik mezőnél is megszüntettem, amelyek ugyanígy a saját követelményüket csökkenthették volna:
+- A `required_phrases` és a `doc_sections_without_a_contract` is az ellenőrzőbe került (`REQUIRED_PHRASES`, `NO_CONTRACT_SECTIONS`). Az utóbbi azért volt kikerülhető, mert egy szakaszt oda írva a lefedettségi ellenőrzés nem látta volna.
+- A három mező kikerült a főkönyvből. Egy teszt azt is ellenőrzi, hogy ott nem szerepelnek.
+
+**Negatív tesztek.** Az egyik teszt egyszerre törli a nyitott tételt az `entries`-ből és a főkönyvi követelménylistából, mind a 12 azonosítóra, és mindig a „hiányzik" hibát olvassa. A többi teszt a kimentett szakaszt és a kiürített fordulatlistát fedi le. Összesen 32 teszt zöld.
+
+**Bizonyítás a javításról.** Visszaültettem mindhárom régi viselkedést (a követelmény a főkönyvből jön), és mindegyik pirosra fordította a teszteket. Az eredeti javításnál a teszt tehát kapta el a hibát, nem csak a javított kód ment át.
+
+**Sorrend a kérésed szerint:** #136 új CI → #136 merge a te szavad és új review után → #137. A #137 a #136 §22-re hivatkozik, és merge előtt rebase-t kap az aktualizált mainre. A nem blokkoló javaslatot a #137 későbbi implementációs szakaszába vezetem be: normatívan kimondandó, hogy a megbízható CIC countersignature önmagában feljogosít-e, vagy a release-aláíró tanúsítványához külön delegációs lánc kell. Ezt nem csináltam meg, mert a #137 jelenleg GO.
+
+Az Engine #63 nyitva marad, a production receipt HOLD, és a `theads/` naplócommitok továbbra sincsenek pusholva.
+~~~~~
+
+
+### 2026-11-01 14:50 — Felhasználó
+
+~~~~~
+1. #136: squash merge GO, kizárólag a f5b84bcd20a77d0aab0f49361fc47d7088ffee12 HEAD-re, commit-egyezés ellenőrzésével.
+
+2. #137: a korábbi tartalmi GO érvényes. A #136 merge után frissítsd a #137 alapját a mainhez, és ellenőrizd az aktualizált CI-t, mielőtt mergelnéd.
+~~~~~
+
+
+### 2026-11-01 14:50 — Claude
+
+~~~~~
+A HEAD `f5b84bc`, minden futott job zöld (23 pass, 9 szándékosan kimaradt), nincs függő. Mergelek.
+~~~~~
+
+
+### 2026-11-01 14:50 — Claude
+
+~~~~~
+Most a #137 alapját frissítem a mainhez.
+~~~~~
+
+
+### 2026-11-01 14:51 — Claude
+
+~~~~~
+Mindkét lépés megtörtént, a #137 CI-ja még fut.
+
+**#136 mergelve.** A main-en `033b671`. A merge `--match-head-commit f5b84bc` védelemmel ment. A HEAD a merge előtt még `f5b84bc` volt, és minden futott job zöld volt (23 pass, 9 szándékosan kimaradt, nem volt függő job).
+
+**#137 frissítve.**
+- Rebase-eltem az új mainre, a HEAD **`432a759`** lett. Mivel a rebase átírta a commitot, `--force-with-lease`-szel pusholtam, amely csak a saját korábbi `[MASKED:private-commit]` állapotot írhatta felül. Más változás nincs, a diff továbbra is az egy doksi (108 sor).
+- A PR mergelhető. A frissített CI most indult (8 pending, 1 skipping). Ezen az új HEAD-en még nincs eredmény, ezért zöldet nem állítok.
+
+**Következő lépés:** amint az új HEAD CI-ja teljesen lefutott és zöld, jelzem, és a merge-et az új HEAD-re, `--match-head-commit` védelemmel futtatom, ahogy kérted. A mostani GO a #137-re is érvényes („mielőtt mergelnéd" az aktualizált CI-ra vonatkozik), ezért külön szót nem kérek, kivéve ha a CI bármit mutat.
+
+Az Engine #63 nyitva marad, a production receipt HOLD, a `theads/` naplócommitok nincsenek pusholva.
+~~~~~
+
+
+### 2026-11-01 15:05 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+&#x20;PR #137 — MERGE GO
+
+Frissen ellenőriztem a GitHubon: a [#137 release-origin pre-check]([MASKED:private-repo]) új HEAD-jén mindkét pipeline sikeresen lefutott.
+
+| Ellenőrzés                                                                                                        | Eredmény                          |
+| ----------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| [P1]([MASKED:private-repo])     | SUCCESS — 21 sikeres, 9 kihagyott |
+| [Corpus]([MASKED:private-repo]) | SUCCESS                           |
+| #136                                                                                                              | MERGED                            |
+| #137 mergeable                                                                                                    | `true`                            |
+
+A #137 már a #136 merge-commitjára épül (`033b6716`), tehát a korábban kért sorrend is teljesült.
+
+Ellenőrzött HEAD: `432a759de7b502b9d4daf758733cc19cb0a080ff`.
+
+Az új HEAD diffjét is ellenőriztem: továbbra is kizárólag az előellenőrzési dokumentumot adja hozzá. Nem vezet be termékkódot vagy production receipt API-t.
+
+Döntés: GO a #137 squash merge-re, kizárólag a `432a759d` HEAD-re, commit-egyezés ellenőrzésével.
+
+Ezzel a P5-3 closeout és a release-origin előellenőrzés dokumentációs köre lezárható.
+
+A következő önálló architekturális döntés: új `cic-primitives` release készüljön a jelenlegi pinből, vagy a Forms pint igazítsuk egy hiteles release-hez?
+
+Addig a production receipt HOLD, az Engine #63 és a P5-4/F továbbra is nyitott.
+
+A merge-et nem hajtottam végre.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 15:06 — Claude
+
+~~~~~
+A #137 squash merge-ölve, `--match-head-commit 432a759` védelemmel. A merge commit a main-en **`f4e5b44`**. Merge előtt újra ellenőriztem: a HEAD még `432a759` volt, és minden futott job zöld volt (23 pass, 9 szándékosan kimaradt).
+
+A P5-3 closeout (#136, `033b671`) és a release-origin előellenőrzés (#137) dokumentációs köre ezzel lezárt.
+
+**Még nem néztem meg** a `f4e5b44` és a `033b671` utáni nightly FULL-t. A `p1.yml` változása (#136) miatt a push nightly-t indíthat. Ezt a következő körben olvasom, és nem feltételezem a sikerét.
+
+**Nem történt meg, és nem is az enyém:**
+- A pin-döntés (új `cic-primitives` release a pinelt commitból, vagy a Forms pin áthelyezése egy kiadott commitra) a tiéd. A doksi a tényeket rögzíti, a döntést nem hozza meg.
+- A production receipt HOLD.
+- Az Engine #63 nyitva marad.
+- A P5-4/F nyitott.
+- A `theads/` naplócommitok nincsenek pusholva.
+- A Rust/Go idézett-skalár parser-eltérésre nincs GitHub issue, mert nem kaptam rá engedélyt.
+
+**Karbantartás, amit még nem végeztem el:** a memóriát és a szál-naplót nem frissítettem a #134–#137 lezárásával. Ezt a következő körben megteszem, a naplót csak helyi commitként.
+~~~~~
+
+
+### 2026-11-01 15:06 — Felhasználó
+
+~~~~~
+csináld a memória és napló frissítését
+~~~~~
+
+
+### 2026-11-01 15:07 — Claude
+
+~~~~~
+Keresem, hogyan generáltam a napló korábbi frissítéseit (a maszkoló paraméterek miatt), hogy ugyanúgy tegyem.
+~~~~~
