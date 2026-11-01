@@ -23389,3 +23389,452 @@ Következő lépés a szerződés szerint a megfelelőségi vektorok és a recor
 ~~~~~
 Igen, GO a memória- és naplófrissítésre az igazi állapottal.
 ~~~~~
+
+
+### 2026-11-01 20:20 — Claude
+
+~~~~~
+Most a naplóba fűzöm az új blokkokat (17:22-es Claude-választól a 20:20-as üzenetig). A memória már frissítve van.
+~~~~~
+
+
+### 2026-11-01 20:21 — Claude
+
+~~~~~
+A memória és a napló frissítve van az igazi állapottal. A napló új commitja nem tartalmaz titkot: a három titokminta nem talál benne semmit. A mintakeresés egyetlen találata a napló korábbi, már commitolt részében van, nem az új sorokban.
+
+**Memória:**
+- A `project_p3_closed_p3b_state.md` új, legfelső bejegyzése rögzíti a következőket:
+  - A #24 mergelve van, squash `dd4380bb0ca318d1630830d24f8403f58eed0db0`, a jóváhagyott HEAD `35292526050e9fdb28e9ecc92876bb306400e547`. A gate előtte és utána is sikeres volt, csak doksi-változásra, és ez nem release-felhatalmazás.
+  - A szerződés tartalma: envelope 3, explicit útvonalak glob nélkül, vezérlőkarakter-tilalom az útvonalakban, az envelope-ellenőrzések sorrendje, az envelope 1 és 2 a saját szabályaik szerint érvényes marad.
+  - Az aláírás-lefedettség követelmény, nem bizonyított tulajdonság.
+  - Ami nincs kész: vektorok, referencia-verifier, compiler, pre-check áttérés, trust gate-ek.
+  - A HOLD-ok. A #23 nyitva van.
+- A `MEMORY.md` indexsora is frissült.
+
+**Napló** (`theads/2026-10-21_session-forms-p1-p3-ci-gate.md`):
+- A commit helyi, `b31a239`, 357 új sorral. A 17:22-es Claude-választól a 20:20-as üzenetig tartalmazza a beszélgetést.
+- **Nincs pusholva.** A `main` kilenc committal van az `origin/main` előtt, ezek mind helyi naplócommitok.
+- Az utolsó blokk a te mostani üzeneted. Erre a válaszomra szóló bejegyzés a következő frissítéssel kerül be.
+
+**HOLD-ok:** compiler, vektorok, release-aláírás és publikálás, production receipt, `theads/` push, trust gate-ek, forms #138, Engine #63. A `73ae469` érintetlen.
+
+Következő lépés a szerződés szerint a megfelelőségi vektorok és a record-only referencia-verifier, külön PR-ban. Mehet a terv?
+~~~~~
+
+
+### 2026-11-01 20:25 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Döntés: GO a megfelelőségi vektorok és a referencia-verifier tervezésére
+
+Igen, mehet. A #24 specifikáció lezárása után ez a helyes következő lépés.
+
+Viszont szeretném, ha ezt nem egyszerűen egy újabb tesztcsomagként kezelnénk, hanem az Envelope 3 szerződés független megfelelőségi bizonyításaként.
+
+A következő munkafázis határai:
+
+| Tevékenység                                     | Döntés                   |
+| ----------------------------------------------- | ------------------------ |
+| Golden és negatív vektorok tervezése            | GO                       |
+| Vektorok és referencia-verifier implementációja | GO, külön ágon és PR-ban |
+| Planted-defect / mutation ellenőrzések          | GO                       |
+| Compiler implementáció                          | HOLD                     |
+| Release pre-check módosítása                    | HOLD                     |
+| Release signing / publication                   | HOLD                     |
+| Production receipt                              | HOLD                     |
+| `theads/` push                                  | HOLD                     |
+
+A cél az, hogy amikor majd a compilert módosítjuk, ne a compiler mondja meg, hogy helyes-e a saját kimenete. Egy már létező, rögzített szerződésnek és tesztvektoroknak kell megfelelnie.
+
+## A következő PR elfogadási követelményei
+
+1\. Független golden vektorok
+
+Rögzített bemenetek, elvárt digestek, kanonikus bájtok, `build_hash` és tesztaláírások. Az elvárt értékeket ne a vizsgált compiler állítsa elő.
+
+2\. Negatív vektorok és reason ID-k
+
+Minden normatív elutasítási oknak legyen legalább egy célzott negatív esete, különös tekintettel a duplikált útvonalakra, hibás digestekre és envelope-verziókra.
+
+3\. Planted-defect bizonyítás
+
+Nem elég, hogy egy hibás rekordot elutasít a verifier. Bizonyítani kell, hogy a megfelelő ellenőrzés kiiktatása vagy elrontása a célzott tesztet pirosra fordítja. Az egyenértékű mutánsokat dokumentálni kell.
+
+4\. Valódi aláírás-lefedettség ellenőrzése
+
+Az új `artifacts` mező minden releváns módosítása legyen kimutatható a kanonikalizálás és az Envelope 2-ből örökölt kriptográfiai ellenőrzések segítségével.
+
+A reference verifier ne használjon egyszerűen egy kitalált aláírás-ellenőrzési modellt a valódi helyett.
+
+## Két további megkötés
+
+A referencia-verifier maradjon read-only. Ne hozzon létre release rekordot, ne írjon alá, ne publikáljon, és ne módosítsa a forrásadatokat.
+
+A bizonyítási státuszok legyenek szétválasztva. Külön jelenjen meg a record-only conformance, a rendelkezésre álló Git-fából elvégezhető blob-ellenőrzés és az aláírás integritásának ellenőrzése. Egyik sikerét sem szabad automatikusan a másik sikerének tekinteni.
+
+A [PR #24](https://github.com/CentralInfraCore/cic-primitives/pull/24?utm_source=chatgpt.com) merge-jét GitHubon is megerősítettem, a merge commit `dd4380bb0ca318d1630830d24f8403f58eed0db0`.
+
+Javasolt munkasorrend: először a vektorok és az elvárt reason ID-k, utána a record-only referencia-verifier, végül a planted-defect és kriptográfiai lefedettségi futások. A PR csak a tényleges bizonyítékokkal legyen merge-re jelölhető.
+
+A `73ae469` továbbra is érintetlen. A #23 nyitva marad, és egyetlen release-HOLD sem oldódik fel.
+
+A lényeg: most nem a release-t akarjuk elkészíteni, hanem azt a mércét, amely alapján később egyáltalán el lehet dönteni, hogy a release megfelel-e a szerződésének.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 20:27 — Claude
+
+~~~~~
+Most a referencia-verifier modult írom (read-only, három szétválasztott réteggel); utána jönnek a fixture-ök, a vektorok és a planted-defect futások.
+~~~~~
+
+
+### 2026-11-01 20:30 — Claude
+
+~~~~~
+A golden fixture-öket sha256sum, openssl és tiszta git parancsok függetlenül megerősítették. Most a vektorok és a tesztek jönnek.
+~~~~~
+
+
+### 2026-11-01 20:33 — Claude
+
+~~~~~
+Az alap vektorkészlet zöld (174 teszt). Most a planted-defect bizonyítás jön: check-eltávolítási mátrix és forrás-mutánsok.
+~~~~~
+
+
+### 2026-11-01 20:42 — Claude
+
+~~~~~
+A PR #25 megnyitva. A gate futását várom, mielőtt jelentenék.
+~~~~~
+
+
+### 2026-11-01 20:43 — Claude
+
+~~~~~
+A megfelelőségi vektorok és a referencia-verifier PR-ja nyitva van: https://github.com/CentralInfraCore/cic-primitives/pull/25. Ez a HEAD a `ffe82bfdcd1de07784da6c63a6fbee6f3b265745`, az alap a `devel`, és a gate sikeres. A gate az új tesztekkel együtt futott; lokálisan 460 teszt ment át, a lefedettség 89,78% a 88%-os küszöb felett. Nem mergeltem.
+
+**A verifier** (`tools/release_record_conformance.py`) csak olvas: nem készít rekordot, nem ír alá, nem publikál. Három réteget jelent külön, összesített ítélet nélkül:
+- **record:** a rekord önmagában.
+- **blobs:** a `source_commit` Git-fájából. Ha nincs commit vagy repó, `NOT_RUN`, nem sikeres.
+- **crypto:** a `build_hash`, a `release.sign` és a `cic_countersign` külön-külön, a compiler saját függvényeivel. Mindhárom mindig lefut, hogy az egyik hiba ne takarja el a másikat. Hiányzó ellenjegyzésnél `INCOMPLETE` jön, sosem `PASS`.
+
+A kimenet végén mindig ott van, mi nincs bizonyítva: ki írta alá, hitelesség, kiadhatóság.
+
+**Független elvárt értékek:** a digestek, a manifest-digest, a kanonikus bájtok SHA-256-ja és a `build_hash` sha256sum-mal és openssl-lel újraszámolva egyeznek. A worked example forrás-commitja (`f0cf873c…`) a tiszta `git write-tree` és `commit-tree` futásból ugyanaz. A teszt-kulcsok rögzített címkékből származnak, privát kulcsfájl nincs.
+
+**Reason ID-k:** a verifier okkészlete egy teszttel egyenlő a szerződés szövegével, és minden okhoz van legalább egy célzott negatív vektor. Ide tartozik az envelope, a vezérlőkarakter és UTF-8/UTF-16 sorrend, a digest és manifest, a blob (link, submodule, link alatti útvonal) és a deklaráció.
+
+**Aláírás-lefedettség:** az aláírt rekordon egyenként módosítottam az útvonalat, a digestet, az elemszámot (hozzáadás és törlés), a sorrendet, a `source_commit`-ot, a manifest-digestet és egy `meta_hash`-t. Az eredmények:
+- Semmit sem számoltam újra: `build_hash_mismatch`. A két aláírás ilyenkor még érvényes a régi hashre, ezért az újraszámolás hordozza a bizonyítást.
+- A hash újraszámolva, de senki sem írta alá: `signature_invalid` és `countersign_invalid`.
+- Csak az egyik aláírás elavult: pontosan az az egy ok jelenik meg. Ez a három `parts` mintázat külön vektor.
+- Kontroll: ugyanez a módosítás újrahitelesítve érvényesen aláírt rekord, tehát a hibát az elavult aláírás okozza.
+
+**Planted-defect:** minden ellenőrzés kikapcsolva, és 68 forrás-mutáns, a célzott vektornak kell pirosra váltania. Nyolc mutáns egyenértékű, indoklással felsorolva, és a teszt megköveteli, hogy túléljék. Ilyen például a kódpont- és UTF-8 bájtsorrend, vagy a submodule mód és típus kettős ellenőrzése. Az UTF-16 sorrend nem egyenértékű, külön vektorpárja van.
+
+A munka közben a futás két valódi eredményt hozott:
+- A `blob-submodule-mode` mutáns először túlélte, mert a típusellenőrzés önmagában is elutasítja a submodule-t. Ezt egyenértékűnek dokumentáltam, és hozzáadtam egy kombinált mutánst, ami már pirosat ad.
+- Egy rossz kill-lista a `path-control-characters` mutánsnál saját hiba volt, javítottam.
+
+**A szerződés hézagai** (nem módosítottam, a `docs/en|hu/RELEASE-RECORD-CONFORMANCE.md`-ben vannak, a következő revízióra):
+1. A hiányzó `manifest_digest`-hez nincs név. A verifier `artifact_digest_form`-nak olvassa.
+2. A valódi envelope 1 rekord (`cic-primitives-v0.1.5.yaml`) nem hordoz envelope mezőt. A szerződés táblája szerint ez `envelope_unsupported`, nem `envelope_too_old`. Csak az explicit `1` éri el az utóbbit.
+3. A hiányzó ellenjegyzés a szerződésben nem elutasítás, a verifier `INCOMPLETE`-et ad.
+4. A crypto réteg függetlensége a record rétegtől: ez kellett ahhoz, hogy a két aláírás külön bizonyítható legyen.
+5. A `countersign_invalid` itt csak a `build_hash` feletti aláírás. A lánc és a rögzített gyökér trust gate, nincs ellenőrizve.
+
+**HOLD-ok:** a PR #25 merge-e, a compiler-implementáció, a pre-check módosítása, a trust gate-ek, a release aláírása és publikálása, a production receipt és a `theads/` push. A `73ae469` érintetlen, a #23 nyitva marad.
+
+Mire várok: a PR #25 reviewjára. A fenti 1–3. hézagra érdemes külön döntést hozni, mert a compiler módosítása előtt a szerződés szövegét ezek miatt még pontosítani kell.
+~~~~~
+
+
+### 2026-11-01 20:47 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## PR #25 – első érdemi review
+
+GitHub gate SUCCESS
+
+Merge HOLD
+
+Átnéztem a [PR #25](https://github.com/CentralInfraCore/cic-primitives/pull/25?utm_source=chatgpt.com) tartalmát, a referencia-verifier implementációját, a planted-defect tesztelését és a megfelelőségi dokumentációt.
+
+A GitHubon megerősítettem, hogy a `ffe82bfdcd1de07784da6c63a6fbee6f3b265745` commitra a `41348219327` futás sikeresen befejeződött.
+
+A véleményem: ez már egy komoly megfelelőségi keretrendszer, nem pusztán tesztkészlet. Különösen értékes, hogy a referencia-verifier megvizsgált ellenőrzéseit célzottan elrontjátok, és a teszteknek ezt észre kell venniük.
+
+A három réteg elválasztása helyes:
+
+| Réteg    | Mit bizonyít                                             |
+| -------- | -------------------------------------------------------- |
+| `record` | Az Envelope 3 rekord strukturális megfelelősége          |
+| `blobs`  | A commit Git-fájában található artifactok bájtazonossága |
+| `crypto` | A build hash és a két aláírás matematikai ellenőrzése    |
+
+A `NOT_RUN` és `INCOMPLETE` külön státusza nagyon fontos. Nem engedi, hogy a nem vizsgált tulajdonságot sikeresnek tekintsük.
+
+Ugyanakkor a három szerződéses hézagot valóban most kell eldönteni, a compiler módosítása előtt.
+
+## Döntés a három hézagról
+
+1\. Hiányzó `manifest_digest`: új reason ID legyen.
+
+Vezessük be az `artifact_manifest_digest_form` indokot a hiányzó, rossz típusú vagy hibás alakú manifest digestre. Az `artifact_digest_form` maradjon a fájlszintű digestek hibája.
+
+2\. Hiányzó Envelope 1 mező: `envelope_too_old`.
+
+Ha mindkét envelope-mező hiányzik, és a rekord a dokumentált legacy Envelope 1 formátumot képviseli, az Envelope 3 megfelelőség-ellenőrzés adjon `envelope_too_old` hibát.
+
+Ha csak az egyik mező hiányzik, az `envelope_mismatch` maradjon. Ismeretlen vagy jövőbeli verzióra `envelope_unsupported`.
+
+Fontos, hogy egy tetszőleges, hiányos rekord ne legyen automatikusan érvényes legacy rekordnak tekinthető. A legacy azonosítás szabályát normatívan rögzítsük.
+
+3\. Hiányzó `cic_countersign`: `INCOMPLETE`.
+
+Ezt elfogadom a referencia-verifier rétegmodelljében. A hiányzó ellenjegyzés nem azonos a hibás ellenjegyzéssel.
+
+Viszont ha egy későbbi release-policy kötelező ellenjegyzést ír elő, akkor a crypto réteg `INCOMPLETE` állapota nem teljesítheti az adott release-kaput. A `--require crypto` jelenlegi viselkedése ezt már támogatja.
+
+## Két további review-megállapítás
+
+### A kriptográfiai ellenőrzés értelmezése helyes
+
+A kódban a `build_hash`, `release.sign` és `cic_countersign` ellenőrzése külön eredményt ad.
+
+Az egyik legfontosabb részlet, amit helyesen kezeltetek: ha az artifact megváltozik, de a `build_hash` érintetlen marad, a régi hash fölötti aláírások még lehetnek matematikailag érvényesek. Ilyenkor a `build_hash_mismatch` hordozza a bizonyítékot.
+
+Ezért fontos, hogy mindhárom ellenőrzés fusson, és egyik eredménye se helyettesítse a másikét.
+
+### Az alapértelmezett CLI exit code félreérthető lehet
+
+A `main()` jelenleg `0`-val is visszatérhet, ha valamelyik réteg `NOT_RUN` vagy `INCOMPLETE`, és a hívó nem adott meg `--require` feltételt.
+
+Ez dokumentált működés, nem feltétlenül hiba. Viszont automatizált CI-hívásnál kötelezővé tenném a kívánt rétegek explicit megadását, például:
+
+`--require record,blobs,crypto`
+
+Egy további negatív teszttel igazolnám, hogy bármelyik kötelező réteg `NOT_RUN` vagy `INCOMPLETE` állapota nem adhat sikeres CI-kaput.
+
+## Következő döntés
+
+A PR #25-öt nem mergelném még, de nem kérnék újratervezést sem.
+
+A következő körre engedélyezem:
+
+1. A #23 szerződésének célzott pontosítását a három elfogadott döntéssel.
+2. A #25 vektorainak és referencia-verifierének hozzáigazítását.
+3. A teljes gate és a releváns planted-defect tesztek újrafuttatását.
+
+A compiler-implementáció és a pre-check átállítása továbbra is HOLD.
+
+| Elem                           | Állapot              |
+| ------------------------------ | -------------------- |
+| #25 specifikációs megfelelőség | Review alatt         |
+| #25 merge                      | HOLD                 |
+| #23 szerződés                  | Pontosítás szükséges |
+| Compiler implementáció         | HOLD                 |
+| Release és production receipt  | HOLD                 |
+| `73ae469` jelölt               | Érintetlen           |
+
+Összességében a #25 jóval érdekesebb, mint amit a tesztek száma önmagában mutat. Most már nemcsak a release állításait akarjátok ellenőrizni, hanem azt is, hogy az ellenőrző mechanizmus képes-e észrevenni saját ellenőrzési képességének elvesztését.
+
+Ez a CIC bizonyítási modelljének egyik legerősebb gyakorlati eleme.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 20:47 — Claude
+
+~~~~~
+Most a kódot, a vektorokat, a teszteket és a HU/konformancia-dokumentumokat igazítom a döntésekhez.
+~~~~~
+
+
+### 2026-11-01 20:49 — Claude
+
+~~~~~
+Egy szintaktikai hibát javítok az új mutánsok között (többsoros string), majd futtatom a teljes sorozatot.
+~~~~~
+
+
+### 2026-11-01 20:54 — Claude
+
+~~~~~
+Mindkét commit felkerült a PR #25 ágára; frissítem a PR leírását, és várom a gate-et.
+~~~~~
+
+
+### 2026-11-01 20:56 — Claude
+
+~~~~~
+A három szerződéses döntést átvezettem. A PR #25 új HEAD-je a `4364b5528484e982643ff7ab9ac4db185fda7c4c`, a gate sikeres. Lokálisan 498 teszt ment át, a lefedettség 89,54%. A PR leírását is frissítettem. A #25 merge-e HOLD.
+
+**1. A szerződés pontosítása** (külön commit, `ca9ded6`, csak specifikáció, a #25 ágán). Ezt a PR #25-ön tettem, nem külön PR-ban, mert a vektorok a szerződés szövegét is ellenőrzik. Ha külön PR kell, szólj.
+- **`artifact_manifest_digest_form`:** új ok a hiányzó, rossz típusú vagy rossz alakú `manifest_digest`-re. Az `artifact_digest_form` csak a fájlszintű digestekre marad.
+- **Legacy envelope 1:** az a rekord legacy, és csak az, amelyben nincs `provenance` tag, a `release` leképezés `envelope` nélkül van, és a `release.build_hash` meg a `release.sign` nem üres szöveg. Ez `envelope_too_old`.
+  - Ha mindkét mező hiányzik, de a feltételek nem teljesülnek, az `envelope_unsupported`.
+  - Ha pontosan az egyik hiányzik, az `envelope_mismatch`.
+  - A valódi `release/cic-primitives-v0.1.5.yaml` vektor, és `envelope_too_old`-ot ad.
+- **Hiányzó `cic_countersign`:** nem elutasítás és nem siker. A verifier `INCOMPLETE`-nek jelenti, és egy ellenjegyzést előíró policy nem teljesül tőle.
+
+**2. Verifier és vektorok** (`4364b55`):
+- **`--require` kötelező** (`record,blobs,crypto` vagy `none`). Ismeretlen réteg vagy hiányzó érték használati hiba, kilépési kód 2, és semmit sem ellenőriz előtte.
+- **Kilépési kódok:** `NOT_RUN` vagy `INCOMPLETE` kötelező rétegre 3-as kód, `FAIL` 1, bármit is kérnek.
+- **Új negatív tesztek, mind igazolva:**
+  - blobs repó nélkül,
+  - crypto olyan könyvtárból, ahol a compiler nem importálható,
+  - crypto `INCOMPLETE` hiányzó ellenjegyzéssel,
+  - mind a három együtt.
+- **Planted-defect:** 68 helyett 79 forrás-mutáns, ebből 8 egyenértékű, indoklással, és ezeknek túl kell élniük. A tesztek ellenőrzik, hogy az összes mutáns érvényes Python (egy szintaktikai hiba így nem számítható "kimutatásnak"). Közben egy saját mutánsom szintaktikailag hibás volt, és emiatt "halt meg", a guard ezt most kizárja.
+- A teljes sorozatot újrafuttattam: minden planted-defect teszt zöld.
+
+A második és ötödik korábbi megjegyzés (a crypto réteg függetlensége a record rétegtől, és a `countersign_invalid` jelentése) a konformancia-dokumentumban "Left as it is" alatt marad, mert nem szerződés-hézag.
+
+**HOLD-ok:** a #25 merge-e, a compiler-implementáció, a pre-check módosítása, a trust gate-ek, a release aláírása és publikálása, a production receipt és a `theads/` push. A `73ae469` érintetlen, a #23 nyitva marad.
+
+Mire várok: a PR #25 újabb reviewjára vagy az explicit merge-szóra a `4364b55` HEAD-re.
+~~~~~
+
+
+### 2026-11-01 21:08 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## PR #25 – review döntés
+
+GO – squash merge engedélyezett
+
+A [cic-primitives #25](https://github.com/CentralInfraCore/cic-primitives/pull/25?utm_source=chatgpt.com) aktuális állapotát és a `4364b5528484e982643ff7ab9ac4db185fda7c4c` HEAD kódját ellenőriztem.
+
+A GitHub Actions `41349263610` futása completed / success. A PR még OPEN, nem merge-elt.
+
+A három korábbi kifogásomat lezárom:
+
+| Review-pont                        | Döntés    |
+| ---------------------------------- | --------- |
+| `artifact_manifest_digest_form`    | Elfogadva |
+| Legacy Envelope 1 felismerése      | Elfogadva |
+| Hiányzó countersign → INCOMPLETE   | Elfogadva |
+| Kötelező `--require`               | Elfogadva |
+| Planted-defect szintaktikai guard  | Elfogadva |
+| Szerződés és vektorok közös PR-ban | Elfogadva |
+
+A 79 forrásmutánsból 8 dokumentált egyenértékű mutáns kezelése és a szintaktikai ellenőrzés különösen hasznos: nem számítjátok bizonyítéknak azt, amikor egy mutáns pusztán azért bukik, mert érvénytelen Python-kódot állít elő.
+
+### Merge-felhatalmazás
+
+GO a #25 squash merge-re, kizárólag a teljes `4364b5528484e982643ff7ab9ac4db185fda7c4c` HEAD-re, a következő feltételekkel:
+
+- A merge pillanatában a HEAD változatlan, a required gate sikeres, és a PR mergelhető.
+- A merge után a `devel` push-trigger CI külön ellenőrzendő; sikerét előre nem feltételezzük.
+- A #23 issue nyitva marad, mert a compiler és a pre-check integráció még hiányzik.
+- A v0.2.0 történeti bizonyíték és a `73ae469` jelölt változatlan.
+
+### Következő lépés
+
+Sikeres merge és post-merge CI után a compiler Envelope 3 implementációja következhet külön PR-ban, immár a rögzített szerződés és a független golden/negatív vektorok alapján.
+
+A compiler feladata nem újabb bizonyítási szabályok kitalálása, hanem a már elfogadott szerződés teljesítése.
+
+A release-aláírás, publikálás, production receipt, trust gate-ek és a `theads/` push továbbra is HOLD.
+
+A #25-tel a CIC eljutott oda, hogy a compiler jövőbeli kimenetét egy előzetesen rögzített és mutációkkal is vizsgált megfelelőségi mérce alapján lehet számon kérni. Ez valódi architekturális mérföldkő.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-01 21:10 — Claude
+
+~~~~~
+A PR #25 squash merge-ölve van a `devel` ágra. A merge commit teljes azonosítója: `d2d8ec7422490053644779d3cca9fce388bb2886`.
+
+- **Merge előtt:** a PR OPEN volt, a HEAD pontosan a `4364b5528484e982643ff7ab9ac4db185fda7c4c`, a merge-állapot `clean`, a gate sikeres. A merge `--match-head-commit` védelemmel ment.
+- **Merge után:** a `devel` push-triggerű futás (`41350473524`) a `d2d8ec7`-en sikeres. Ezt külön lekértem, nem feltételeztem.
+- **Ez csak CI-bizonyíték:** nem release-felhatalmazás.
+- **Issue #23:** nyitva maradt, mert a compiler és a pre-check integráció hiányzik.
+- **A v0.2.0 történeti bizonyíték és a `73ae469` jelölt** nem változott.
+
+A `devel`-en most ott van az Envelope 3 szerződés (#24) és a mérce (#25): a referencia-verifier, a golden és negatív vektorok, és a planted-defect bizonyítás.
+
+**HOLD-ok:** release-aláírás és publikálás, production receipt, trust gate-ek, `theads/` push, forms #138, Engine #63.
+
+Két nyitott kérdésem van a következő lépéshez:
+1. **Compiler-terv:** mehet a compiler Envelope 3 implementációjának tervezése, külön ágon és PR-ban, a rögzített szerződés és a vektorok alapján? Implementáció és merge csak a te szavadra.
+2. **Memória és napló:** frissítsem az igazi állapottal? A #24, #25 és a post-merge CI még nincs bent, és a napló új blokkjai sincsenek lekérve.
+~~~~~
+
+
+### 2026-11-01 21:13 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Döntés: GO mindkét kérdésre
+
+1\. GO a compiler Envelope 3 implementációjának megtervezésére, külön ágon.
+
+2\. GO a memória és a napló frissítésére a tényleges állapot alapján.
+
+Az implementáció megkezdésére és a merge-re azonban még nem adok felhatalmazást. Először a compiler-tervet szeretném látni.
+
+A #24 és #25 után a munkának új szakasza kezdődik: már nem a szerződést kell meghatározni, hanem azt kell megtervezni, hogyan teljesíti a compiler a rögzített követelményeket.
+
+### Compiler-terv – elvárt tartalom
+
+A tervnek öt dolgot kell lefednie:
+
+1. Artifact-feloldás: `compiler_settings.release_artifacts.paths` feldolgozása, kizárólag a `source_commit` Git-fájából. Sem munkakönyvtár, sem fogyasztói manifest nem használható.
+2. Envelope 3 rekord előállítása: minden deklarált artifact saját `sha256:` digestje, determinisztikus rendezés és manifest digest.
+3. Kompatibilitás: az Envelope 1 és 2 ellenőrzése maradjon működőképes. A történeti rekordok változatlanok.
+4. Aláírás-lefedettség: a meglévő kanonikalizálás, `build_hash`, `release.sign` és `cic_countersign` mechanizmus használata, a már elfogadott golden vektorokkal.
+5. Bizonyítás: a compiler által készített rekordot a #25 referencia-verifier és vektorok ellenőrizzék, beleértve a negatív és a planted-defect eseteket.
+
+Külön figyelmet kérek arra, hogy a compiler ne saját magával igazolja a saját kimenetének helyességét.
+
+## GitHub-ellenőrzés
+
+A [PR #25](https://github.com/CentralInfraCore/cic-primitives/pull/25?utm_source=chatgpt.com) merge-jét és a `41350473524` post-merge futást is ellenőriztem.
+
+PR #25 MERGED
+
+Post-merge CI SUCCESS
+
+A merge commit: `d2d8ec7422490053644779d3cca9fce388bb2886`.
+
+### Memória és napló
+
+Rögzítsd a #24 és #25 merge-állapotát, a sikeres post-merge CI-ket, a lezárt specifikációt és megfelelőségi mércét, valamint a #23 nyitott állapotát.
+
+A `theads/` új blokkjait a tényleges beszélgetésből töltsd ki; a korábban nem rögzített üzeneteket ne rekonstruáld találgatással. A naplócommitok továbbra is helyiek maradnak.
+
+## A következő döntési határ
+
+Compiler Envelope 3
+
+Tervezés GO
+
+Implementáció
+
+HOLD
+
+Compiler PR merge
+
+HOLD
+
+Release / production receipt
+
+HOLD
+
+A `73ae469` jelölt érintetlen marad. A Forms #138 és Engine #63 nyitva marad.
+
+A következő beszámolóban nem újabb általános tesztstatisztikát kérek, hanem egy konkrét compiler-módosítási tervet: mely függvények változnak, milyen adatfolyamaton keresztül jön létre az Envelope 3 rekord, és melyik már rögzített vektor bizonyítja az egyes követelményeket.
+
+Ez alapján lehet majd felelősen kiadni az implementációs GO-t.
+</pasted_content id="aa6b">
+~~~~~
