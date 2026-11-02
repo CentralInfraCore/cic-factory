@@ -24590,3 +24590,277 @@ A `73ae469` érintetlen marad.
 Most egy újabb lényeges elválasztáshoz értünk: a compiler és az artifact-deklaráció már lehet műszakilag megfelelő, miközben a konkrét release-jelölt még nem igazolt. A következő bizonyításnak pontosan ezt a szakadékot kell áthidalnia – aláírás vagy publikálás nélkül.
 </pasted_content id="aa6b">
 ~~~~~
+
+
+### 2026-11-02 13:48 — Claude
+
+~~~~~
+Befűzöm a naplóba a 22:46-os blokktól (a 22:42-es már benne van), és helyi commitként rögzítem.
+~~~~~
+
+
+### 2026-11-02 13:48 — Claude
+
+~~~~~
+Mindhárom PR mergelve van, a memória és a napló frissítve, és kész a release-ág terv. Az ág még nincs létrehozva.
+
+## Merge-ek és post-merge CI
+| PR | Merge commit | Post-merge `devel` futás |
+|---|---|---|
+| #27 | `a2aee15e4d034d04a0cfcb4b21ee8d19d745af2c` | `41404217890` SUCCESS |
+| #26 | `3e94bb2f978b0e2a1badda7837b5823e8a141928` | `41404392155` SUCCESS (782 teszt, 0 kihagyott, 90,24%) |
+| #28 | `331f4a6ee5fd8cf915eb07005929175fbdf2005f` | `41455267020` SUCCESS |
+
+Mindhárom `--match-head-commit` védelemmel ment, clean állapotban, sikeres gate mellett. A post-merge futásokat külön kértem le. Ez CI-bizonyíték, nem release-felhatalmazás.
+
+- **Memória:** frissítve az igazi állapottal.
+- **Napló:** a helyi commit `83679ed`, nincs pusholva (a `main` tizenkét committal előrébb van).
+
+## A release-ág terve a `73ae469`-ből
+
+Nem hoztam létre az ágat és semmit nem pusholtam. A mérésekhez egy **helyi, eldobott száraz futást** csináltam: leválasztott worktree a scratchpadben, ami már törölve van. Ennek commit-azonosítói nem valódiak (a cherry-pick más committert és időt kap), ezért nem szerepelnek a tervben.
+
+### 1. Leszármazás
+A `73ae469` és a mai `devel` között 9 commit van.
+- **Nem része az infrastruktúrának:** `040f1d8`, `9d05bed` és a merge `d27173f`. Ezek csak két doksit érintenek: `P0-4-MIGRATION.md` és `p0-4-contradiction-matrix.md`.
+- **Infrastruktúra, ebben a sorrendben:** `3437b3d` (#22 pre-check), `dd4380b` (#24 szerződés), `d2d8ec7` (#25 mérce), `a2aee15` (#27 osztályozás), `3e94bb2` (#26 compiler), `331f4a6` (#28 deklaráció).
+- **Ág:** a release-ág a `73ae469`-ből indul, rá a fenti 6 commit kerül, a mai `devel` nem mergelődik bele. Az ág a `validate_release_prerequisites` szerint `primitives/releases/vX.Y.Z` alakú, és nem mergel vissza (a meglévő release-modell: nincs release-ág visszamerge).
+
+### 2. Átvezetés: cherry-pick, nem fájlátvétel
+A hat squash-commit **tisztán, konfliktus nélkül** cherry-pickelhető `-x`-szel, a fenti sorrendben. A kapott fa a `devel` fájával **pontosan két fájlban tér el**: `P0-4-MIGRATION.md` és `p0-4-contradiction-matrix.md`, mást nem.
+- **Indok:** a cherry-pick megőrzi a commit-azonosságot (a `-x` hivatkozik az eredetire), és a bizonyítás maga a kapott fa összevetése a `devel` fájával.
+- **Tartalék:** konfliktus esetén célzott fájlátvétel, de azt külön indokolni kell.
+
+### 3. Bájtazonosság (mérve)
+- **12/12 pinelt fájl:** a `git rev-parse <commit>:<path>` blob-azonossága és a SHA-256 is egyezik a pinnel, a Forms fixture-rel összevetve.
+- **Pre-check `candidate` mód:** a 12/12 PASS. A nyitott kapuk (OPEN) változatlanok. Az Envelope 3 átállása külön, HOLD.
+- **Ajánlás a pre-checkhez:** a `devel` verzióját futtassuk a release-jelölt ellen, ne vigyük át a release-ágra.
+
+### 4. A release-ág teljessége (mérve)
+- **794 teszt** sikeres a jelölt fáján, benne a deklarációs teszt, a befagyasztott mérce és a v0.2.0 történeti ellenőrzés.
+- **A 30 útvonal mind létezik.** A 30-ból 28 azonos a `73ae469` és a `devel` között, kettő eltér: a `release.schema.yaml` (a #26 envelope 3 sémája, szándékos) és a `docs/en/RELEASE-RECORD-CONTRACT.md` (a `73ae469`-ben nem létezik, a #24-gyel jön).
+- **A compiler a régi forrásállapoton**, mockolt Vaulttal és tesztkulcsokkal, aláírás nélkül:
+  - egy envelope 3 rekordot ír 30 artifacttal és 13 specc-el,
+  - a 12 pinelt fájl digestje a rekordban 12/12 egyezik a pinnel,
+  - a referencia-verifier: `record` PASS, `blobs` PASS, `crypto` PASS.
+
+## Nyitott tulajdonosi döntések
+1. **A `P0-4-MIGRATION.md` a pin bájtjaival marad.** Ezt a pin kényszeríti ki. Csakhogy a pinelt szöveg elavult állításokat tartalmaz: "34 occurrences" és azt, hogy a registry hibája javítatlan, holott a `cic-schema-registry#162` javította és a szám 33. Nem pótoltam a `devel` verziójával. Lehetőségek: így kiadni, vagy új pinnel később. Ez külön döntés.
+2. **Verzió:** a legutóbbi tag a `v0.2.0`, a szigorú +1 szabály szerint a `0.2.1` vagy a `0.3.0` lehetséges.
+3. **CI az ágon:** a `gate.yml` csak `main`/`devel` pushra és PR-ra fut, de van `workflow_dispatch` is. Ajánlás: a jelölt ágra dispatch-csel futtatjuk.
+4. **Folyamat:** forráscommit `S` a jelölt, utána a rekord commitja `R`, azon a tag. A rekord `source_commit`-ja `S`, ezért a 12 fájl bájtazonosságát `S`-en és `R`-en is igazolni kell.
+
+## HOLD-ok
+- A release-ág létrehozása és a tényleges release.
+- A pre-check Envelope 3 átállítása.
+- Aláírás, publikálás, production receipt, trust gate-ek.
+- A `theads/` push.
+- A `73ae469` érintetlen. A #23, a forms #138 és az Engine #63 nyitva marad.
+
+Mire várok: a terv reviewjára, és az 1. és 2. pont döntésére. Az ágat csak ezután, külön GO-ra hozom létre.
+~~~~~
+
+
+### 2026-11-02 13:54 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Release-ág terv – döntés
+
+A tervet technikailag elfogadom, de a tényleges release-re még nem adok GO-t.
+
+A száraz futás eredményei alapján a cherry-pick stratégia megfelelő: a `73ae469` történeti állapot megőrizhető, miközben az Envelope 3 infrastruktúra átvezethető. A 12/12 blob- és digestegyezés, a 30 artifact, a 13 spec és a referencia-verifier három PASS eredménye erős műszaki alátámasztás.
+
+A két tulajdonosi kérdésben így döntenék:
+
+| Kérdés                     | Döntés                                      |
+| -------------------------- | ------------------------------------------- |
+| Pinelt `P0-4-MIGRATION.md` | A történeti bájtok maradjanak változatlanok |
+| Verzió                     | v0.2.1                                      |
+| Release-ág létrehozása     | Külön GO-ig HOLD                            |
+| Aláírás és publikálás      | HOLD                                        |
+
+### 1. A történeti dokumentum megtartása
+
+A `P0-4-MIGRATION.md` ismert, elavult állításait nem javítanám csendben a release-ágon.
+
+A döntés indoka: ebben a folyamatban most nem a legfrissebb dokumentációt akarjuk visszamenőleg hitelesnek beállítani, hanem a Forms által rögzített artifact-készlet reprodukálhatóságát akarjuk bizonyítani.
+
+Viszont a későbbi kiadás dokumentációjában kifejezetten szerepelnie kell, hogy a pinelt dokumentum történeti állapotot tartalmaz, és nem tekinthető a registry aktuális állapotáról szóló kijelentésnek.
+
+Ez nem engedély arra, hogy a jelenleg ismert hibás állításokat magyarázat nélkül publikáljuk.
+
+### 2. Verzió: v0.2.1
+
+A `v0.2.1`-et választanám, mert a cél egy történetileg rögzített primitive-készlet kiadhatóvá tétele, nem új primitive-szemantika bevezetése.
+
+Van azonban egy fontos megkülönböztetés: az Envelope 3 rekordformátumának változása a kiadási protokoll szintjén jelentős. Ezért a verziójavaslat csak akkor marad érvényes, ha a meglévő verziózási szabályok és a fogyasztói kompatibilitás ezt megengedik.
+
+A rekord `envelope: 3` értéke önállóan jelzi az új rekord-szerződést; a `0.2.1` nem helyettesíti ezt.
+
+## A tervhez két további feltétel
+
+A hat cherry-pickes átvezetést elfogadom. A `-x` kapcsoló dokumentálja az eredeti commitot, de nem őrzi meg annak SHA-ját. Az új commitoknak saját azonosítójuk lesz; a folytonosság bizonyítéka a szülőlánc, a forráscommit-hivatkozások és a kapott Git-fa ellenőrzése.
+
+A verziószabályt a compilerben is megnéztem: a `validate_release_prerequisites()` valóban megengedi a `0.2.0 → 0.2.1` lépést. A `primitives/releases/v0.2.1` tehát a megfelelő tervezett ágnév.
+
+A száraz futás bizonyítéka és a majdani tényleges commit bizonyítéka nem ugyanaz. Ezért a valódi ág létrehozása után meg kell ismételni a teljes ellenőrzést az új HEAD-en. A 794 sikeres teszt és a referencia-verifier eredménye nem vihető át automatikusan.
+
+A két ellenőrzési pontot külön tartanám:
+
+- S – release source commit: hat cherry-pick után; 12/12 pin, 30 artifact, 13 spec, CI, pre-check candidate, valamint a forráskonzisztencia.
+- R – release record commit: csak egy későbbi, külön engedélyezett release-művelet után; S változatlan fájlbájtjai, Envelope 3 rekord és újabb ellenőrzés.
+
+Az S és R közötti átmenetre most nincs GO.
+
+A `workflow_dispatch` használatát elfogadom, de a tényleges release-ágon futtatott CI csak akkor számít bizonyítéknak, ha a futás pontos `head_sha` értéke az S commitra mutat.
+
+## Következő engedélyezhető művelet
+
+A terv review-ja elfogadva. Következő lépésként a release-ág létrehozására külön, végrehajtási GO adható, kizárólag a következő korlátokkal: `73ae469` alap, hat megnevezett cherry-pick, nincs `devel` merge, nincs aláírás, tag, rekordcommit vagy publikálás.
+
+Addig a release-ág létrehozása HOLD marad.
+
+Egyúttal a pre-check Envelope 3 áttérését is külön PR-ként kezelném, mert a jelenlegi dokumentált record-mód még a régi digesthelyekre épül. A candidate-ellenőrzés sikerét nem szabad a teljes Envelope 3 record-megfelelőség helyettesítőjének tekinteni.
+
+Összesített döntés: a történeti pin marad, a tervezett verzió `v0.2.1`, a hat cherry-pickes eljárás elfogadva. A CI-futás és a release-aláírás továbbra is két külön döntési határ.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-02 13:54 — Claude
+
+~~~~~
+A döntéseket rögzítettem; a release-ág létrehozására még nem adtál végrehajtási GO-t, ezért semmi nem készült.
+
+## A döntések, ahogy értelmezem
+| Tétel | Döntés |
+|---|---|
+| Pinelt `P0-4-MIGRATION.md` | A történeti bájtok változatlanok, a release-dokumentációban kifejezett megjegyzéssel |
+| Verzió | `v0.2.1`, ág: `primitives/releases/v0.2.1` |
+| Cherry-pick | 6 megnevezett commit, a `-x` a hivatkozást őrzi, nem a SHA-t |
+| Ellenőrzési pontok | S (forráscommit) és R (rekordcommit) külön, az S→R átmenet HOLD |
+| Pre-check Envelope 3 | külön PR, HOLD |
+
+Egy pontosítás a saját tervemhez: az előző válaszomban a `-x`-et "commit-azonosság megőrzéseként" írtam. Helyesen: az új commitok új SHA-t kapnak, a folytonságot a szülőlánc, a `(cherry picked from …)` hivatkozások és a kapott git-fa egyezése bizonyítja a `devel`-lel (két doksi kivételével).
+
+## Egy kérdés, amit a végrehajtás előtt el kell dönteni
+A pinelt dokumentum történeti állapotáról szóló megjegyzésnek a **kiadás dokumentációjában** kell szerepelnie, de az S-nek csak a hat cherry-pickből szabad állnia, különben az S nem a tervezett fa. Három hely jöhet szóba:
+1. **Release-jegyzet az R-ben** (a rekord commitjában), egy olyan fájlban, ami nincs a 30 deklarált útvonal között. Ezt javaslom: az S változatlan marad, és a jegyzet a rekorddal együtt kerül a tagre.
+2. **Annotált tag üzenete** az R-en, ez önmagában is rögzíti.
+3. **Külön docs-commit az S és az R között.** Ez megváltoztatná az S-et, ezt nem javaslom.
+
+Az 1. és 2. együtt ajánlott. Melyiket válasszam?
+
+## Mit csinálnék a végrehajtási GO után
+Kizárólag a megadott korlátokkal: `73ae469` alap, a 6 commit a megadott sorrendben, `devel`-merge nincs, aláírás, tag, rekordcommit és publikálás nincs.
+1. **Ág:** helyi `primitives/releases/v0.2.1` a `73ae469`-ből, hat cherry-pick `-x`-szel, hookok és aláírás nélkül.
+2. **S-ellenőrzés az új HEAD-en**, nem a száraz futásból átvéve:
+   - a szülőlánc és a kapott fa összevetése a `devel`-lel (csak a két doksi térhet el),
+   - a 12 pinelt útvonalra külön `git rev-parse <S>:<path>` blob-azonosság és SHA-256,
+   - a 30 útvonal létezése és a 13 `specs[].source_path` részhalmaza,
+   - a teljes tesztcsomag és a forráskonzisztencia-guard,
+   - a pre-check `candidate` mód, a `devel` verziójával futtatva,
+   - a compiler aláírás nélküli, tesztkulcsos és mockolt Vault-os futása, majd a referencia-verifier.
+3. **CI:** a `workflow_dispatch` futás csak akkor számít, ha a `head_sha` pontosan az S.
+4. **Push:** az ág pusholása külön kérés, mert a távoli ág publikáció. Addig csak a helyi eredmény.
+
+## HOLD-ok
+- A release-ág létrehozása (külön GO-ig).
+- Az S→R átmenet.
+- Aláírás, tag, rekordcommit, publikálás.
+- A pre-check Envelope 3 átállítása.
+- Production receipt, trust gate-ek, `theads/` push.
+- A `73ae469` érintetlen, a #23, a forms #138 és az Engine #63 nyitva.
+
+Mire várok: a release-jegyzet helyére (1., 2. vagy mindkettő), és a végrehajtási GO-ra az S-ig. Frissítsem addig a memóriát a mai döntésekkel?
+~~~~~
+
+
+### 2026-11-02 13:56 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Döntés: GO a release-ág létrehozására és az S bizonyítására
+
+A döntéseket helyesen értelmezted. Engedélyezem a `primitives/releases/v0.2.1` helyi ág létrehozását, a hat cherry-picket és az S forráscommit teljes ellenőrzését.
+
+A release előállítására, aláírására és publikálására továbbra sincs felhatalmazás.
+
+### 1. Release-jegyzet: az 1. és 2. megoldást választom
+
+A kettőnek eltérő szerepet adnék.
+
+1\. Elsődleges: release-jegyzet az R commitban.
+
+A jegyzet:
+
+- Rögzítse, hogy a `P0-4-MIGRATION.md` a Forms által pinelt történeti változat.
+- Nevezze meg a dokumentum két ismert elavult állítását: a 34 előfordulást és a javítatlan registry-hibát.
+- Hivatkozzon a `cic-schema-registry#162` javítására és a későbbi, 33-as eredményre.
+- Tegye egyértelművé, hogy a dokumentumot a pin bájtazonosságának megőrzése miatt nem módosítottuk.
+
+A jegyzet ne szerepeljen a 30 deklarált artifact között. Az S commitot nem módosítjuk miatta.
+
+2\. Másodlagos: annotált tag üzenete.
+
+A tag üzenete foglalja össze a történeti korlátozást, és hivatkozzon az R-ben található release-jegyzetre.
+
+Fontos: az annotált tag üzenete önmagában nem helyettesíti a release-jegyzetet. A tag és a release-rekord létrehozása továbbra is HOLD.
+
+A harmadik megoldást elvetem: nem lesz köztes dokumentációs commit az S és az R között.
+
+### 2. Végrehajtási felhatalmazás: S-ig
+
+| Művelet                                                         | Döntés |
+| --------------------------------------------------------------- | ------ |
+| Helyi release-ág létrehozása `73ae469` alapján                  | GO     |
+| Hat megnevezett squash-commit cherry-pickelése `-x` kapcsolóval | GO     |
+| S commit teljes bizonyítása                                     | GO     |
+| Tesztkulcsos, mockolt Vault-os ellenőrzés                       | GO     |
+| Git-fa, pin és artifact összehasonlítás                         | GO     |
+| Release-ág push                                                 | HOLD   |
+| Valódi Vault-aláírás                                            | HOLD   |
+| R rekordcommit, release-jegyzet létrehozása, tag                | HOLD   |
+| Release publikálás, production receipt                          | HOLD   |
+
+A cherry-pickek sorrendje marad:
+
+`3437b3d → dd4380b → d2d8ec7 → a2aee15 → 3e94bb2 → 331f4a6`
+
+Konfliktus esetén ne alkalmazz automatikus feloldást. Az eltérést előbb vizsgáljuk meg.
+
+### 3. Az S elfogadási feltétele
+
+A végrehajtás után az új S commiton kérem a bizonyítékokat:
+
+- A szülőlánc valóban `73ae469`-ből indul.
+- A `devel` fájához képest kizárólag a két korábban azonosított dokumentum tér el.
+- A Forms pin mind a 12 fájlja bájtra azonos, Git-blob ID és SHA-256 alapján.
+- A 30 deklarált artifact mind létezik, a 13 spec a halmaz részét képezi.
+- A teljes tesztcsomag sikeres, kihagyások nélkül.
+- A pre-check candidate-módja sikeres, de a nyitott trust gate-eket továbbra is OPEN-ként jelenti.
+- A tesztkulcsos Envelope 3 rekord record/blobs/crypto eredményei megfelelőek.
+
+A `workflow_dispatch` futásához push szükséges. Ezért amíg a push HOLD, a távoli CI nem kötelező S-elfogadási bizonyíték. A helyi futást rögzítsük, a távoli futás külön engedélyezett lépés lesz.
+
+### 4. Memória és napló: GO
+
+Frissítsd a memóriát a mai döntésekkel, a release-jegyzet választott elhelyezésével, a `v0.2.1` verzióval és az S-ig terjedő engedéllyel.
+
+A napló a tényleges transzkriptből készüljön. A `theads/` commitok továbbra is helyiek maradnak, push nélkül.
+
+A következő döntési pont az S commit ellenőrzött állapota.
+
+Ott nem a tesztzöldség alapján döntünk automatikusan. Azt vizsgáljuk meg, hogy az új forráscommit valóban a történeti pin pontos bájtjait és a bizonyított Envelope 3 infrastruktúrát egyesíti-e, és hogy mi marad bizonyítatlan.
+
+GO az S előállítására és bizonyítására. R, aláírás, tag és publikálás továbbra is HOLD.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-02 13:57 — Claude
+
+~~~~~
+Az S lineage és fa rendben (6 lineáris commit, mind azonos patch-id, két dokumentum az eltérés). Jönnek a bájtazonosság, a teljesség, a teszt és a compile-futás egy tiszta worktree-ben.
+~~~~~
