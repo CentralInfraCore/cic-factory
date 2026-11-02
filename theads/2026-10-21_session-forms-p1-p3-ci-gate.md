@@ -24367,3 +24367,226 @@ A meglévő mutánsok szövegét kell igazítani a most beszúrt sorhoz; javíto
 ~~~~~
 Közben a #27-et frissítem a tíz döntéssel; előbb az access-eszközök önállóságát ellenőrzöm egy tiszta mappában, ami csak a jóváhagyott 30 fájlt tartalmazza.
 ~~~~~
+
+
+### 2026-11-01 22:46 — Claude
+
+~~~~~
+A #26 fennmaradó két kérdése megoldva, a #27-be a tíz döntés bekerült. Mindkét PR gate-je sikeres, merge nincs.
+
+## PR #26 (HEAD `83e30eaaac0f4ec878e3b81b9f3e752f9358059f`)
+
+**1. Kétoldali hiány kezelése:** a `commitment.yaml`, a `project.yaml` és a két grammar-fájl **kötelező bemenet**. Ha egyik sem létezik sem a munkakönyvtárban, sem a commitban, a guard maga megnevezi, nem hagyja továbbmenni. A `dependency.yaml` az egyetlen opcionális, nélküle a régi digest `null`, mint eddig.
+- **End-to-end, a valódi commitment-loaderrel:** mind a négy fájlra külön teszt, `Vault`-hívás és `release/` nélkül.
+  - A `commitment.yaml`-t maga a guard nevezi meg.
+  - A `project.yaml`-t a `declaration_missing`.
+  - A grammar-fájlokat a grammar-kapu.
+- **Két külön teszt:** a valódi loader is megállna hiányzó `commitment.yaml`-nál, és a guard minden kötelező bemenetet megnevez.
+- **Önhivatkozási hiba:** az első tesztverzióm a követelményt a vizsgált konstansból olvasta, ezért két planted-defect túlélte. Ugyanaz a tanulság, mint a #136-nál. Most a követelmény a tesztbe van írva.
+
+**2. A validációs kapuk határa, két jellemző teszttel** (nem kikényszerített viselkedés, a docstring ezt kimondja):
+- A commitban lévő, grammar által elutasított példa kimaradhat a munkakönyvtárból (`skip-worktree`, tiszta `git status`). A kapu átmegy, a release elkészül. A teszt ezután visszateszi a fájlt, és megmutatja, hogy ugyanaz a kapu elutasítja.
+- Fordítva: egy ignorált rossz példa, amit a commit nem tartalmaz, megállít egy jó commitot.
+- A dokumentum most nem állítja, hogy minden előfeltétel commit-alapú.
+
+**3. Az új követelményed:** minden `specs[].source_path` benne kell legyen az `artifacts.files`-ban (`spec_not_in_artifacts`), a Vault előtt. Ez termelői oldali elutasítás, nem rekord-szerződési szabály. Rekordszintű ellenőrzés a szerződést és a befagyasztott mércét módosítaná, ezt nem tettem meg. Ha kell, külön szerződés-revízió.
+
+**Mérőszámok:** 782 teszt, 90,24% lefedettség. A compilerre 82 planted-defect: 72-nek pirosra kell váltania, 10 dokumentáltan egyenértékű.
+
+## PR #27 (HEAD `5924b07de5271f9eedcdaef5717985aa7cea64ff`)
+
+- **A tíz döntés alkalmazva:** **30 INCLUDE, 101 EXCLUDE, 0 REVIEW.** A `check_access_vectors.py` bent, a többi kilenc kint.
+- **Access-eszközök kívülről:** csak a 30 fájlt tartalmazó mappában, izolált Pythonnal: `check_access_vectors.py` 187 eset, 0 hiba; `--self-test` 50/50; `check_grammar.py --self-test` 53/53. Mindent, amit olvasnak, a lista tartalmaz. Kívülről csak a **PyYAML** és a **jsonschema** csomag kell, ami nem a repó fájlja és nem része a felületnek.
+- **A 73ae469 figyelmeztetés a dokumentumban:** a jóváhagyott lista önmagában nem elég a pinből induló release-hez. A release-ágon kell egy új commit, amely már tartalmazza a deklarációt, és megtartja mind a 12 pinelt fájl bájtjait. Ez nem szó szerint a `73ae469`, a pre-checket ellene kell futtatni. A pre-check és a `73ae469`-alapú eljárás változatlan, HOLD.
+- **A `project.yaml` változatlan.** Előkészítésként megnéztem, hogy a későbbi módosítása nem töri-e a provenance-kaput: a `check_provenance.py` a `project.yaml`-t "seeded, not pinned"-ként kezeli, tehát nem.
+
+## Memória és napló
+A memóriafájl frissítve. A napló helyi commitja: `5ef29a1`, a transzkriptből, nem pusholva. A `main` tizenegy committal előrébb van.
+
+## HOLD-ok
+- A PR #26 és #27 merge-e.
+- A `project.yaml` tényleges módosítása: külön, célzott PR, még nem nyitottam meg.
+- A pre-check átállítása, a `73ae469`-alapú release-eljárás.
+- Release, aláírás, production receipt, trust gate-ek, `theads/` push.
+- A `73ae469` érintetlen. A #23, a forms #138 és az Engine #63 nyitva.
+
+Mire várok:
+- A #26 és #27 reviewjára.
+- Megnyithatom-e a `project.yaml` deklarációs PR-ját a jóváhagyott 30 útvonallal? Ez nyitott, de nem mergelt PR lenne, és a `devel`-en addig a compiler még a régi (#26 merge nélkül a deklaráció még nem lépne életbe).
+~~~~~
+
+
+### 2026-11-02 07:06 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Review lezárva – PR #26 és #27
+
+\#26 CI SUCCESS
+
+\#27 CI SUCCESS
+
+A GitHubon megerősítettem, hogy mindkét PR OPEN, a HEAD-ek egyeznek, és a hozzájuk tartozó workflow-k sikeresek.
+
+| PR                                                                                                            | Ellenőrzött HEAD | Döntés          |
+| ------------------------------------------------------------------------------------------------------------- | ---------------- | --------------- |
+| [#26 Compiler Envelope 3](https://github.com/CentralInfraCore/cic-primitives/pull/26?utm_source=chatgpt.com)  | `83e30ea`        | GO squash merge |
+| [#27 Artifact-osztályozás](https://github.com/CentralInfraCore/cic-primitives/pull/27?utm_source=chatgpt.com) | `5924b07`        | GO squash merge |
+
+A #26 eredeti forráskonzisztencia-kifogását lezárom. A kötelező bemenetek hiányának ellenőrzése, a `specs ⊆ artifacts` producer-oldali kapu és a dokumentált validációs határ megfelelő.
+
+A két olyan teszt, amely a commitban lévő, illetve a kizárólag munkakönyvtárban található hibás példát vizsgálja, különösen fontos. Ezek bizonyítják a jelenlegi megoldás korlátját, nem próbálják azt elfedni. Emiatt a compiler merge-elhető, de ez önmagában nem release-felhatalmazás.
+
+A #27 esetében a 30 INCLUDE / 101 EXCLUDE / 0 REVIEW osztályozást elfogadom. A 187 Access-vektor, 50 Access self-test és 53 grammar self-test izolált futtatása megfelelő alátámasztás a választott Access-fájlokhoz. A dokumentáció merge-je nem jelenti a deklaráció automatikus alkalmazását.
+
+### Merge-sorrend
+
+Először a #27 dokumentációs PR-t merge-elném. Utána a #26-ot, kizárólag változatlan HEAD-re, `--match-head-commit` védelemmel, feltéve hogy a merge-állapot clean és a required gate sikeres.
+
+Mindkét merge után ellenőrizzük a `devel` push-trigger CI-t, és csak a tényleges eredményét rögzítsük.
+
+## Project.yaml deklarációs PR: GO
+
+Megnyithatod a külön PR-t a jóváhagyott 30 útvonallal, de még ne mergeld.
+
+Ebben kérem az alábbi célzott bizonyítékokat: mind a 30 útvonal létezik a tervezett forráscommitban, az összes közzétett `specs[].source_path` szerepel közöttük, a Forms 12 fájlja részhalmaz, és a compiler ugyanazt a deklarált halmazt állítja elő determinisztikusan.
+
+Egy további fontos különbség: a jelenlegi `devel` deklarációja és a `73ae469`-ből indítandó későbbi release-ág deklarációja két külön commitállapot. A release-ág pontos előállítását és a pin bájtazonosságát külön kell igazolni.
+
+## Változatlan HOLD-ok
+
+A deklarációs PR merge-e, a pre-check átállítása, a release aláírása és publikálása, a production receipt, a trust gate-ek és a `theads/` push továbbra is HOLD.
+
+A #23 marad nyitva a teljes integrációig; a Forms #138 és az Engine #63 szintén.
+
+Most már a compiler megvalósítása is átlépheti a merge-határt. A kiadhatóság bizonyítása azonban továbbra is külön döntés – pontosan ez a CIC lényege.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-02 07:07 — Claude
+
+~~~~~
+Mindkét PR OPEN, a HEAD-ek egyeznek, a gate sikeres, és a két PR fájlkészlete diszjunkt. Merge-elem a #27-et.
+~~~~~
+
+
+### 2026-11-02 07:08 — Claude
+
+~~~~~
+A #27 mergelve (`a2aee15`), a post-merge `devel` futás sikeres (`41404217890`). A #26 HEAD-je változatlan és clean, jöhet a merge.
+~~~~~
+
+
+### 2026-11-02 07:18 — Claude
+
+~~~~~
+A #27 és a #26 is mergelve van a `devel` ágra, a `project.yaml` deklarációs PR (#28) pedig nyitva van, de nem mergelve.
+
+## Merge-ek (a megadott HEAD-ekre, `--match-head-commit` védelemmel)
+
+| PR | Merge commit | Post-merge `devel` futás |
+|---|---|---|
+| #27 artifact-osztályozás | `a2aee15e4d034d04a0cfcb4b21ee8d19d745af2c` | `41404217890` SUCCESS |
+| #26 compiler Envelope 3 | `3e94bb2f978b0e2a1badda7837b5823e8a141928` | `41404392155` SUCCESS |
+
+- **Merge előtt:** mindkét PR OPEN volt, a HEAD-ek egyeztek (`5924b07`, `83e30ea`), a merge-állapot clean, a gate sikeres, a két PR fájlkészlete diszjunkt.
+- **Post-merge:** a #26 utáni futás az **egyesített** `devel`-en 782 tesztet futtatott 0 kihagyással, a lefedettség 90,24%. Ezt külön lekértem, nem feltételeztem. A merge-ek CI-bizonyítékok, nem release-felhatalmazás.
+- **Nyitott:** a #23 (a pre-check és a teljes integráció hiányzik), a forms #138 és az Engine #63. A `73ae469` érintetlen.
+
+## PR #28: a `project.yaml` deklaráció (nem mergelve)
+
+https://github.com/CentralInfraCore/cic-primitives/pull/28, HEAD `c7e8d9e595c1f95687cba41ace1cc8eeb45a2a47`, gate sikeres.
+
+- **Változás:** csak a `project.yaml`, 34 sor. A `compiler_settings.release_artifacts.paths` a 30 jóváhagyott útvonal, UTF-8 bájtok szerint rendezve, glob nélkül. A `check_provenance` a `project.yaml`-t "seeded, not pinned"-ként kezeli, ezért a módosítás nem töri.
+- **Bizonyíték:** a `tests/test_release_declaration.py` 12 tesztje a vizsgált commitra fut.
+  - **30 útvonal létezik:** mind a 30 reguláris fájl a commit git-fájában, nem a munkakönyvtárban.
+  - **Minden spec szerepel:** a 13 közzétett séma mind listázva van.
+  - **Forms részhalmaz:** a Forms 12 fájlja a lista részhalmaza, plusz 18 más fájl.
+  - **Determinisztikus előállítás:** a compiler ugyanazt az `artifacts` blokkot adja minden futásra és minden sorrendben (4 sorrend és 40 permutáció). Ez egyezik a `git show`-ból független módon számolttal. A referencia-verifier rekord- és blob-rétege PASS.
+  - **A lista egyezik a jóváhagyottal:** a deklaráció azonos a merge-elt osztályozási dokumentum yaml-blokkjával.
+- **Planted-defect, kézzel:** hét módosítás (spec-fájl, Forms-fájl vagy `dependency.yaml` elhagyása, hiányzó útvonal, glob, tooling-fájl, két útvonal felcserélése) mind pirosra váltott.
+  - **A commit olvasása:** mielőtt commitoltam a deklarációt, a "compiler elfogadja a commit szerinti deklarációt" teszt `declaration_missing`-gel bukott. Ez mutatja, hogy a teszt a commitot olvassa, nem a munkapéldányt.
+
+## A két commitállapot különbsége
+A PR leírása és a teszt docstringje is kimondja, hogy a `devel` deklarációja és a `73ae469`-ből indítandó release-ág két külön állapot.
+- A `devel`-en a 12 Forms-fájlból 11 bájtra azonos a pinnel, a `P0-4-MIGRATION.md` eltér. Egy ebből vágott release **nem** elégítené ki a Forms-pint.
+- A release-ághoz kell egy új commit, amely tartalmazza ezt a deklarációt és megtartja mind a 12 pinelt fájl pontos bájtjait. Annak az előállítását és a bájtazonosság igazolását (a pre-check ellene futtatva) külön kell megmutatni. Itt ez nincs benne, HOLD.
+
+## HOLD-ok
+A #28 merge-e, a pre-check átállítása, a `73ae469`-alapú release-ág, a release aláírása és publikálása, a production receipt, a trust gate-ek és a `theads/` push.
+
+Mire várok:
+- A #28 reviewjára.
+- Frissítsem-e a memóriát és a naplót a két merge-gel és a #28-cal? A naplócommitok helyiek maradnak.
+- A következő nagy határ a release-ág a pinből: előbb csak a terv kellene (hogyan állítjuk elő a commitot, és hogyan igazoljuk a 12 fájl bájtazonosságát), implementáció nélkül.
+~~~~~
+
+
+### 2026-11-02 13:41 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Döntés: PR #28 merge GO, release-ág tervezés GO
+
+\#28 CI SUCCESS
+
+Review elfogadva
+
+Ellenőriztem a GitHubon a #26 és #27 merge-jét, valamint a [PR #28](https://github.com/CentralInfraCore/cic-primitives/pull/28?utm_source=chatgpt.com) aktuális diffjét és CI-futását.
+
+| Ellenőrzés  | Eredmény                                   |
+| ----------- | ------------------------------------------ |
+| #27 merge   | `a2aee15e` – megerősítve                   |
+| #26 merge   | `3e94bb2f` – megerősítve                   |
+| #28 HEAD    | `c7e8d9e595c1f95687cba41ace1cc8eeb45a2a47` |
+| #28 CI      | `41405126413` – SUCCESS                    |
+| #28 állapot | OPEN, nem merge-elt                        |
+| Deklaráció  | 30 explicit útvonal                        |
+
+A PR #28-ban a deklaráció valóban megfelel a jóváhagyott osztályozásnak. A tesztek ellenőrzik a Git-fában található fájlokat, a 13 sémát, a Forms 12 fájljának részhalmazviszonyát és a determinisztikus digest-előállítást.
+
+GO a #28 squash merge-re, kizárólag a fenti HEAD-re, `--match-head-commit` védelemmel, clean merge-állapot és sikeres required gate mellett.
+
+Merge után a `devel` push-trigger CI külön ellenőrzendő.
+
+## Memória és napló
+
+GO a frissítésre. Rögzítsd a #26 és #27 merge-eket, a #28 ellenőrzött állapotát, valamint a sikeres post-merge CI-ket. A #28 merge-jét természetesen csak akkor írd be lezártként, ha ténylegesen megtörtént.
+
+A `theads/` commitok maradjanak helyiek, push HOLD.
+
+## Következő nagy határ: a 73ae469-alapú release-ág
+
+GO kizárólag a terv elkészítésére. Az ág létrehozása és a tényleges release továbbra is HOLD.
+
+A tervben négy bizonyítékot kérek:
+
+1\. Leszármazás: az új release-jelölt commit a `73ae469` állapotából induljon, és pontosan legyen dokumentálva, mely commitok kerülnek rá. Ne mergeljük bele automatikusan a mai `devel` állapotot, mert az megváltoztatná a pinelt tartalmat.
+
+2\. A szükséges infrastruktúra átvezetése: az Envelope 3 compiler, a szerződés, a referencia-verifier és a 30 fájlos deklaráció kerüljön rá úgy, hogy a Forms által pinelt 12 fájl egyetlen bájtja se változzon. A cherry-pick és a célzott fájlátvétel közti választást a terv indokolja.
+
+3\. Bájtazonosság: minden pinelt útvonalra külön `git rev-parse <commit>:<path>` blob-azonosság és SHA-256 összehasonlítás készüljön. A pre-check jelenlegi képességeit és a szükséges Envelope 3 átállást külön kezeljük.
+
+4\. A release-ág teljessége: a 30 deklarált útvonal mind létezzen a jelölt Git-fájában; minden `specs[].source_path` legyen a deklarált halmaz része. A visszahozott compiler és a régebbi forrásállapot együttműködését külön, aláírás nélküli tesztek igazolják.
+
+Egy fontos szempont: a 30 fájlos lista a `devel` közzétett felületére lett jóváhagyva. Ha a történeti alapra visszahelyezve valamelyik fájl hiányzik vagy más szerződéses jelentést hordoz, azt nem szabad automatikusan pótolni a `devel` legújabb változatával. Külön döntés kell.
+
+## Fennmaradó határok
+
+| Terület                         | Állapot                       |
+| ------------------------------- | ----------------------------- |
+| #28 squash merge                | GO, a rögzített feltételekkel |
+| Release-ág terv                 | GO                            |
+| Release-ág létrehozása          | HOLD                          |
+| Pre-check Envelope 3 átállítása | HOLD                          |
+| Aláírás, publikálás             | HOLD                          |
+| Production receipt              | HOLD                          |
+| Trust gate-ek                   | HOLD                          |
+| Forms #138, Engine #63          | Nyitva                        |
+
+A `73ae469` érintetlen marad.
+
+Most egy újabb lényeges elválasztáshoz értünk: a compiler és az artifact-deklaráció már lehet műszakilag megfelelő, miközben a konkrét release-jelölt még nem igazolt. A következő bizonyításnak pontosan ezt a szakadékot kell áthidalnia – aláírás vagy publikálás nélkül.
+</pasted_content id="aa6b">
+~~~~~
