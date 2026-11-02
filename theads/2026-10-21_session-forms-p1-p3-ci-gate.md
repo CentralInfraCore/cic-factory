@@ -1,6 +1,6 @@
 # Thread-napló — 2026-10-21 (Forms P1–P3, ci-gate)
 
-Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T19:08:59Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl`, a 2026-10-28T22:48Z-tól induló szakasz: `7895b2db-5143-4537-8eaa-3624850e408c.jsonl` (a #106–#118: a `diff_gate` vakfoltjai, a `diff-mutation-rust` megszakadása, P4 duplikált esemény, a ReadDiff differential és fuzz, az inherit, P5-0 terv és a P5-1 kanonikus bájtok; a szakasz a session közben, lezárt PR-onként gyarapodik; a 2026-11-02-i rész: a cic-primitives `v0.2.1` release-ág S commitja, a valódi fejlesztői aláírás és a CICSourceCA-ellenjegyzés, az R commit és a tag, a két Vault szerepe) (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
+Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T19:08:59Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl`, a 2026-10-28T22:48Z-tól induló szakasz: `7895b2db-5143-4537-8eaa-3624850e408c.jsonl` (a #106–#118: a `diff_gate` vakfoltjai, a `diff-mutation-rust` megszakadása, P4 duplikált esemény, a ReadDiff differential és fuzz, az inherit, P5-0 terv és a P5-1 kanonikus bájtok; a szakasz a session közben, lezárt PR-onként gyarapodik; a 2026-11-02-i rész: a cic-primitives `v0.2.1` release-ág S commitja, a valódi fejlesztői aláírás és a CICSourceCA-ellenjegyzés, az R commit és a tag, a két Vault szerepe, a pre-check Envelope 3 átállása (cic-primitives #29), a Forms release-origin addendum (#147), a digest-leképezés terve (#148, D1-D5 elfogadva), a bizalmi modell terve (#149), a verifier záró-újsor hibájának javítása (#31) és a rekord-szerződés pontosítása (#30)) (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
 
 
 ### 2026-10-21 05:57 — Claude
@@ -25207,4 +25207,792 @@ Az eddigi tényeim ebből nem változnak. A `v0.2.1` készen áll: az R commit `
 
 ~~~~~
 GO a memória- és naplófrissítésre az igazi állapottal mi a következő léps
+~~~~~
+
+
+### 2026-11-02 19:27 — Claude
+
+~~~~~
+Röviden: a naplót a valódi transcriptből fűzöm hozzá (a 14:02-es bejegyzéstől mostanáig), a bevezetőt kiegészítem, titokminta-keresés tiszta volt. Utána helyi commit, majd a memória.
+~~~~~
+
+
+### 2026-11-02 19:27 — Claude
+
+~~~~~
+Ez csak a korábbi szövegben említett minta neve, nem titok, és az új sorokban nincs. Commitolom helyben, push nélkül.
+~~~~~
+
+
+### 2026-11-02 19:27 — Claude
+
+~~~~~
+Most a memória. Megnézem a meglévő fájl elejét, hogy frissítsem, ne duplikáljam.
+~~~~~
+
+
+### 2026-11-02 19:28 — Claude
+
+~~~~~
+A memória és a napló frissítve van, a valódi állapottal.
+
+- **Napló:** a `theads/` fájlt a valódi transcriptből fűztem hozzá, a 14:02-es bejegyzéstől mostanáig. Titokminta-keresés az új soroknál tiszta. A helyi commit `91b7df1`, nem pusholt, így a `main` 14 committal van előrébb az origin-nél.
+- **Memória:**
+  - A `project_p3_closed_p3b_state.md` tartalmazza a kiadást: R `5e8c321`, a tag, a menet, az ellenőrzések, a bizonyítatlan pontok, a HOLD-ok és a két saját botlásom.
+  - Új `reference_two_vaults_signing_roles.md`: melyik Vault és token mire jó, a sign–ellenjegyzés folyamat, és az `openssl` helyes hívása.
+
+**Következő lépés (javaslat):**
+1. **Pre-check Envelope 3 átállás, külön PR a `devel`-re.** Ez az egyetlen, ami az én kezemben van, és független a release-től. A pre-check "legfeljebb 6/12 digest" OPEN üzenete elavult, és a pre-check még nem az Envelope 3 rekordot olvassa. Az S-ben azért maradt a régi, mert a pre-checket nem vittük át a release-ágra. Ez GO-t kér tőled.
+2. **CI-futás az R headen (`workflow_dispatch`).** Opcionális, de olcsó bizonyíték. A branch-push nem indított futást, és csak az számít, ha a `head_sha` pontosan `5e8c321`. Ez is külön GO.
+3. **A Forms oldal.** Most van először olyan release, amely tartalmazza a `73ae469` pint. A Forms-oldali release-origin előellenőrzés (#137) még azt állítja, hogy nincs. Hogy a Forms elfogadja-e, és a pint a v0.2.1-re kötik-e, az tulajdonosi döntés.
+4. **HOLD marad:** production receipt, trust gate-ek, a `theads/` push, az Engine #63, a forms #138 és a cic-primitives #23.
+
+Én az 1.-gyel kezdeném. Ha a 2.-at is akarod, mondd, és indítom.
+~~~~~
+
+
+### 2026-11-02 19:35 — Felhasználó
+
+~~~~~
+csináld
+~~~~~
+
+
+### 2026-11-02 19:35 — Claude
+
+~~~~~
+Az 1. pontot csinálom: a pre-check Envelope 3 átállása, külön ágon és PR-ban, a `devel`-re. Először megnézem a jelenlegi eszközt és a hozzá tartozó doksit.
+~~~~~
+
+
+### 2026-11-02 19:36 — Claude
+
+~~~~~
+Először megmérem, mit mond a jelenlegi eszköz a most kiadott rekordról, és milyen szerkezetű a meglévő tesztcsomag.
+~~~~~
+
+
+### 2026-11-02 19:37 — Claude
+
+~~~~~
+Szintaxis rendben. Először a meglévő teszteket futtatom (a v0.2.0 befagyasztott bizonyítéknak változatlanul kell zöldnek lennie), utána a valódi v0.2.1 rekordot.
+~~~~~
+
+
+### 2026-11-02 19:39 — Claude
+
+~~~~~
+A referencia-verifier (`DIGEST_RE.match`, `COMMIT_RE.match`) ugyanazt a `$`-mintát használja. Ezt nem találgatom, megmérem, és előbb a saját regexemet javítom.
+~~~~~
+
+
+### 2026-11-02 19:41 — Claude
+
+~~~~~
+A harness saját védelme jelzett: a mutáció célszövege kétszer szerepelt. Egyedi környezettel pontosítom.
+~~~~~
+
+
+### 2026-11-02 19:42 — Claude
+
+~~~~~
+Mind a 18 mutáns megbukik, az érintetlen másolat zöld. Következik a doksi (angol normatív, magyar összefoglaló). A mért tényeket a valódi rekordból veszem.
+~~~~~
+
+
+### 2026-11-02 19:42 — Claude
+
+~~~~~
+Teljes tesztcsomag a CI-val azonos beállítással (kötelező történet), közben a lint is.
+~~~~~
+
+
+### 2026-11-02 19:45 — Claude
+
+~~~~~
+Fut a háttérben. Közben a lintet (ruff) nézem, ha elérhető.
+~~~~~
+
+
+### 2026-11-02 19:45 — Claude
+
+~~~~~
+A tooling saját `devel`-beli változata ugyanezeket az öt megjegyzést hordozza, a CI nem ezen bukik. A saját új tesztjeimben a `check=False`-t kiírom, ez olcsó rendrakás.
+~~~~~
+
+
+### 2026-11-02 19:46 — Claude
+
+~~~~~
+Most megnyitom a PR-t a `devel`-re (a `--base` kifejezetten megadva), angol szöveggel. Merge nélkül.
+~~~~~
+
+
+### 2026-11-02 19:47 — Claude
+
+~~~~~
+PR #29 nyitva. A CI-t megvárom egy háttér-ciklussal (a head SHA-t egyeztetem).
+~~~~~
+
+
+### 2026-11-02 19:47 — Claude
+
+~~~~~
+A PR #29 nyitva van, a CI fut; az eredményről értesítést kapok. Addig nincs több teendőm vele, és merge-et nem csinálok.
+
+**Mi készült:** a pre-check Envelope 3 átállása, külön ágon (`feat/precheck-envelope3`, commit `a680172`), PR #29 a `devel`-re.
+
+- **`record` mód:** az Envelope 3 rekordnál az `artifacts.files` blokkot olvassa (`sha256:<hex>`), a régi envelope-oknál a régi helyeket. A befagyasztott v0.2.0 negatív bizonyíték változatlan, a 51 meglévő teszt érintetlenül zöld.
+- **`candidate` mód:** `--release-head` mellett a fej `project.yaml` deklarációját olvassa. Ha a 12 pinelt út közül bármelyik hiányzik, a futás bukik.
+- **Kapuk:** egyik sem lett PASS. A `record digest coverage` és a `digest encoding` OPEN maradt, átfogalmazott indokkal. A `readiness` sosem `ready`.
+- **A valódi v0.2.1 rekordon:** 12/12, `checks_passed_gates_open`, kilépési kód 0. Ugyanez a rekord az előző eszközzel "6 of 12" miatt bukott.
+- **Tesztek:** 45 új, 18 planted-defect mutáns (mind megbuktatja a csomagot, az érintetlen másolat zöld), és a v0.2.1 rekord commit-azonosítóval és SHA-256-tal befagyasztva. A teljes csomag 858 teszt, 0 kihagyás.
+
+**Amit a teszt fogott, és amit neked is tudnod kell:**
+1. A saját első változatomban egy `re.match` + `$` elfogadta a `sha256:<hex>\n` alakot. A teszt kimutatta, `fullmatch`-re javítottam.
+2. **Ugyanez a minta a már mergelt referencia-verifierben is megvan** (`DIGEST_RE.match`, `COMMIT_RE.match`). Megmértem: a `sha256:<64 hex>\n` és a `<40 hex>\n` átmegy a `record` rétegen. A hatása korlátozott: a `blobs` réteg stringet hasonlít, a `build_hash` lefedi a bájtokat, a v0.2.1 rekordot nem érinti. De a mérce lyuka, és a mérce befagyasztott (`FROZEN.sha256`). Ezt **nem javítottam ebben a PR-ban**, a PR leírásában szerepel. A javítás külön PR: új vektor, planted defect, a befagyasztott lista tudatos frissítése. A compiler `SOURCE_COMMIT_RE.match`-e is hasonló alakú.
+
+**Döntésre vár:**
+- A #29 merge-e. Csak a te szavadra, a CI és a HEAD egyeztetése után.
+- A verifier-hiány javítása külön PR-ban: indítsam?
+- A CI-futás az R headen (`5e8c321`) továbbra is opcionális.
+~~~~~
+
+
+### 2026-11-02 19:50 — Claude
+
+~~~~~
+A PR #29 CI-ja lefutott, és sikeres.
+
+- **Gate:** `gate` SUCCESS, 3 perc 9 mp, run `41513148753`.
+- **HEAD:** a PR head `a68017256d98a6e6c6e404d51d1f2958db43938d`, ugyanaz, mint a helyi commitom.
+- **Merge állapot:** `MERGEABLE`, `CLEAN`.
+- **Fontos:** a v0.2.1-et befagyasztó teszt (`test_release_v021_holds_the_pinned_grammar_twelve_of_twelve`) a CI-ban is futott, mert a `CIC_REQUIRE_RELEASE_HISTORY=1` miatt kihagyás helyett hibát adott volna. Az R és az S commit tehát elérhető a CI-klónban.
+
+Nem mergeltem. A merge-hez a te kifejezett szavad kell, és a HEAD-re rögzítve futtatnám: `a68017256d98a6e6c6e404d51d1f2958db43938d`.
+
+A másik két nyitott dolog változatlan:
+- **A verifier trailing-newline hiánya:** külön PR kell hozzá. Indítsam?
+- **CI-futás az R headen (`5e8c321`):** opcionális.
+~~~~~
+
+
+### 2026-11-02 20:09 — Felhasználó
+
+~~~~~
+akkor mehetünk vissza a form-ra?
+~~~~~
+
+
+### 2026-11-02 20:09 — Claude
+
+~~~~~
+Mehetünk, a release oldala lezárt, és a #29 nyitva maradhat, nem blokkolja a Formst. Csak a nyitott dolgaimat sorolom fel, hogy ne vesszenek el: a #29 merge-e (a te szavad), a verifier trailing-newline javítás (külön PR) és az opcionális CI-futás az R headen.
+
+**Mi változott a Forms szempontjából.** A #137 előellenőrzés azt állapította meg, hogy egyetlen release sem tartalmazza a `73ae469` pint. Most van ilyen: a `v0.2.1` (R `5e8c321`). Mind a 12 pinelt fájl bájtra azonos, ezt a pre-check és a verifier is mérte. Ezzel a P5-3 korábbi blokkolója ("hiteles receipt nem állítható elő, amíg nincs release a `73ae469`-ből") formálisan elmozdult.
+
+**Amit ez nem old meg.** A production receipt HOLD marad, mert még nyitottak:
+- az Engine #63 és a forms #138,
+- a digest-kódolás receipt-oldali szerződése, a Rust/Go golden tesztekkel (Forms-egység),
+- a trust anchor és az aláíró jogosultsága, amit a rekord nem bizonyít,
+- a tanúsítványok érvényessége (a lánc 2026-12-31-én lejár).
+
+**Javaslatom a Forms első lépésére:** egy kis, csak dokumentációs és bizonyíték-PR. Rögzíti a `v0.2.1`-et mint a pin release-eredetét: R `5e8c321`, rekord SHA-256, a mért 12/12. A #137 "nincs ilyen release" állítását is helyreigazítja, a történetet nem írja át. Receiptet nem készít és trust gate-et nem zár.
+
+Ha ezt akarod, indítom. Vagy van más prioritás a Forms oldalon (a #138 Rust/Go eltérés, a digest-kódolás szerződése)? Mondd meg, melyikkel kezdjünk.
+~~~~~
+
+
+### 2026-11-02 20:10 — Felhasználó
+
+~~~~~
+elfogadom a javaslatodat
+~~~~~
+
+
+### 2026-11-02 20:10 — Claude
+
+~~~~~
+Indítom. Először megkeresem, hol rögzítette a #137 a "nincs ilyen release" állítást, hogy pontosan azt tudjam helyreigazítani.
+~~~~~
+
+
+### 2026-11-02 20:10 — Claude
+
+~~~~~
+A #137 dokumentum dátumozott mérés, ezért nem írom át, hanem kiegészítem. Megnézem, mi köti még gépileg a "nincs release" állítást: a closeout főkönyv és az azt ellenőrző tesztek.
+~~~~~
+
+
+### 2026-11-02 20:11 — Claude
+
+~~~~~
+Mérés kész. Megírom a kiegészítő dokumentumot (a #137 változatlan marad, csak egy státuszsor mutat rá).
+~~~~~
+
+
+### 2026-11-02 20:12 — Claude
+
+~~~~~
+Zöldek, a doksi tiszta ASCII, nincs escape-korrupció. Commit, push, PR a `main`-re (a Forms alapága), merge nélkül.
+~~~~~
+
+
+### 2026-11-02 20:13 — Claude
+
+~~~~~
+A Forms PR (#147) nyitva van. A CI-t háttérben megvárom, a head SHA-val együtt.
+~~~~~
+
+
+### 2026-11-02 20:13 — Claude
+
+~~~~~
+A Forms PR **#147** nyitva van a `main`-re (commit `8713f08`), a CI-t várom. Merge-et nem csináltam.
+
+**Mi van benne (csak dokumentáció):**
+- **Új kiegészítés:** `docs/P5-RELEASE-ORIGIN-ADDENDUM.md`, friss mérésekkel a távoli tagről és a Forms **saját** `corpus/pins.yaml`-járól.
+- **A #137 doksi** nem lett átírva, csak kapott egy mutató bekezdést a tetejére.
+- **Három elavult állítás frissítve:** a closeout főkönyv `authentic-release-origin` sora, a szakasz 22 táblázata és egy mondat a 367. sor környékén. A bejegyzés `not_proved` maradt, a `closeout_check.py` és a 32 tesztje zöld.
+
+**Amit a mérés mutat:**
+- **Lineage és bájtazonosság:** a `73ae469` ősei az S-nek és az R-nek, és a `primitives/@v0.2.1` az egyetlen tag, ami tartalmazza. A 12 pinelt fájl 12/12 egyezik, és az `artifacts.files`-ban is 12/12.
+- **A lánc négy láncszeme** (release, source commit, grammar-digestek, Forms pin) mostantól mind áll. Ez lineage-re, bájtazonosságra és belső aláírás-konzisztenciára vonatkozik, nem hitelességre.
+
+**Amit a dokumentum kimondottan nyitva hagy:**
+- **Trust anchor:** nincs a rekordon kívül rögzítve (11. feltétel 6.). A rekord a saját gyökerét hordozza.
+- **Lejárat:** a lánc 2026-12-31-én lejár, ezután ugyanez az ellenőrzés bukna.
+- **Digest-kódolás:** a `build_hash` és a `provenance.grammar_*` még base64, a receipt `sha256:`+hex formát vár. A leképezés nincs szerződésbe foglalva, és az sincs eldöntve, melyik rekordmezőt olvassa melyik receipt-mező.
+- **Aláírás és hivatalos kiadás:** sem a tag, sem az R commit nem git-aláírt (a GitHub `unsigned`-nek jelzi), és nincs GitHub Release objektum.
+- **Receipt:** egyik sem nevezi meg a release-t. A production receipt HOLD, az Engine #63 és a forms #138 nyitva.
+
+**A következő Forms-lépés jelöltje**, ha ez megvan, a digest-kódolás szerződése golden vektorokkal Rust és Go oldalon. Ez volt a doksiban a 8. feltétel, és a trust anchor döntésétől független. Előbb viszont a döntésed kell arra, melyik rekordmezőt olvassa melyik receipt-mező.
+~~~~~
+
+
+### 2026-11-02 20:20 — Claude
+
+~~~~~
+A Forms PR #147 CI-ja lefutott: minden check `pass` vagy `skipping`, `fail` nincs. A PR head `8713f086abedb6de4410197d297dc98ae9c20ac0`, ugyanaz, mint a helyi commitom. A merge állapota `CLEAN` és `MERGEABLE`.
+
+A `skipping` sorok a docs-PR-nál tervezetten kimaradó nehéz jobok (mutációs, fuzz-target, quality-mutation). Ugyanezek a sorok a #137-es dokumentációs PR-nál is így néztek ki. A `corpus`, `scope`, `parity` és a `proof` ágak lefutottak és zöldek.
+
+Nem mergeltem. A merge-hez a te szavad kell, a fenti head SHA-ra rögzítve.
+
+**Nyitott, rád váró tételek:**
+- **Forms #147 merge:** `8713f086…`-ra rögzítve.
+- **cic-primitives #29 merge:** `a68017256d98a6e6c6e404d51d1f2958db43938d`-ra rögzítve, a CI zöld.
+- **Verifier trailing-newline javítás:** külön PR, indítsam?
+- **Receipt digest-kódolás:** döntés kell, melyik rekordmezőt olvassa melyik receipt-mező. Utána jöhet a szerződés a Rust/Go golden vektorokkal.
+~~~~~
+
+
+### 2026-11-02 20:21 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Forms PR #147 – technikai review
+
+4 CI-futás sikeres
+
+Merge még nincs
+
+Megnéztem a [PR #147](https://github.com/CentralInfraCore/cic-primitive-forms/pull/147?utm_source=chatgpt.com) teljes diffjét, és ellenőriztem a hozzá kapcsolódó `cic-primitives` release-rekord létezését is.
+
+Ez a PR egy fontos változást rögzít: a korábbi „nincs release a pinelt grammarhoz” állítás már nem érvényes.
+
+A `primitives/@v0.2.1` annotált tag valóban létezik, és a megjelölt release commitban megtalálható az Envelope 3 rekord.
+
+Forms PR HEAD
+
+`8713f086`
+
+Release commit
+
+`5e8c3219`
+
+Source commit (S)
+
+`106965b8`
+
+Release envelope
+
+3
+
+A dokumentáció helyesen megkülönbözteti a történeti mérést az új méréstől. Nem írja át a november 1-jei pre-check eredményét, hanem új addendummal egészíti ki.
+
+## Amit elfogadok
+
+A PR helyesen kezeli a bizonyítási határokat:
+
+| Állítás                                 | Review                               |
+| --------------------------------------- | ------------------------------------ |
+| A v0.2.1 release-rekord létezik         | Ellenőrizve                          |
+| Envelope 3 rekord                       | Ellenőrizve                          |
+| 12/12 pin- és artifact-egyezés          | A PR mérési beszámolója alátámasztja |
+| Belső aláírás-ellenőrzések              | Dokumentáltan sikeresek              |
+| Külső trust anchor                      | OPEN                                 |
+| Receipt digestmezők normatív leképezése | OPEN                                 |
+| Production receipt                      | HOLD                                 |
+| `authentic-release-origin`              | `not_proved` – helyes                |
+
+A négy GitHub CI-futás sikerességét megerősítettem. A 12/12 összehasonlítást és az összes kriptográfiai ellenőrzést nem futtattam újra független környezetben, így azoknál a PR mérési eredményeire támaszkodom.
+
+## Egy javítást kérek merge előtt
+
+A PR 8. megállapítása szerint a két aláíró különböző kulcsot használ, különböző Vaultokban.
+
+A két különböző tanúsítványból a különböző kulcs igazolható, a külön Vault-infrastruktúra viszont önmagában nem.
+
+Javaslom pontosítani:
+
+> The release and countersignature verify under distinct public keys. Their operational separation into different Vault instances is not established by the release record alone.
+
+Ha a két Vault különállóságát más, ellenőrizhető bizonyíték igazolja, az külön hivatkozható.
+
+Ezenfelül a „valid today” állítást érdemes a konkrét 2026. november 2-i ellenőrzéshez kötni, mert a tanúsítványok 2026. december 31-én lejárnak.
+
+## Döntés
+
+PR #147: tartalmilag elfogadva, merge HOLD a két szöveges pontosításig.
+
+Nincs szükség architekturális átdolgozásra vagy új tesztkeretrendszerre.
+
+És a lényeg: a CIC-nél most már dokumentáltan külön lehet választani két állítást:
+
+„Létezik egy release, amely a pinelt bájtokat tartalmazza.”
+
+és
+
+„Ez a release jogosult egy hiteles production receipt forrásaként szolgálni.”
+
+Az elsőre már van konkrét, ellenőrizhető bizonyítéklánc. A másodikhoz továbbra is hiányoznak a külső bizalmi és jogosultsági döntések.
+
+Ezért a #147 helyes előrelépés anélkül, hogy indokolatlanul lezárná a P5 eredetigazolási kapuját.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-02 20:21 — Claude
+
+~~~~~
+A két pontosítás jogos: a rekordból két külön tanúsítvány (két külön publikus kulcs) következik, a külön Vault-példányok nem. Azt én a saját munkamenetemből tudom, nem a rekordból, tehát a dokumentum nem állíthatja a rekord bizonyítékaként. Átvezetem a javításokat.
+~~~~~
+
+
+### 2026-11-02 20:22 — Claude
+
+~~~~~
+A PR leírásában is szerepel a pontatlan mondat, azt is javítom (`gh api`, mert a `gh pr edit` korábban GraphQL-hibával bukott), majd megvárom az új CI-t.
+~~~~~
+
+
+### 2026-11-02 20:22 — Claude
+
+~~~~~
+A két pontosítást átvezettem, új commit: `2ead039a505876e499b6e3ecf68cace89dfeb881` a #147-en.
+
+- **8. megállapítás:** már csak azt állítja, hogy az aláírások két különböző publikus kulcs alatt érvényesek (két különböző tanúsítvány). A külön Vault-példányokat kihagytam, mert a rekord nem nevezi meg, melyik Vault írt alá. Azt én a munkamenetből tudom, de nem a rekordból. A PR leírásában is ezt javítottam.
+- **7. feltétel:** a "valid today" helyett "valid at the check of 2026-11-02" áll. A tanúsítványok lejárata (2026-12-31) a szövegben változatlan.
+- **Ellenőrzés:** a closeout-ellenőrzés zöld, a `not_proved` státusz nem változott. A review többi megállapítását (a határok kezelése, a pre-check érintetlensége) nem kellett módosítani.
+
+A CI újra fut az új head-en, az eredményről értesítést kapok. Mergelni nem fogok: ahhoz a te szavad kell, és az új head SHA-ra rögzíteném (`2ead039a…`, ha a CI zöld marad).
+
+A review utolsó mondata pontosan megfogalmazza a határt, amit a dokumentum is tart: a pinelt bájtokat tartalmazó release létezik, de hogy ez hiteles production receipt forrása lehet-e, ahhoz még a trust anchor, a lejárati szabály és a digest-leképezés döntése hiányzik.
+~~~~~
+
+
+### 2026-11-02 20:29 — Felhasználó
+
+~~~~~
+mehet a merge
+~~~~~
+
+
+### 2026-11-02 20:29 — Claude
+
+~~~~~
+Az új head (`2ead039a…`) CI-ja még fut, az állapot `BLOCKED`, ezért addig nem mergelek. A CI végén ellenőrzöm, hogy a head SHA nem változott, a merge állapota tiszta, és a gate zöld. Utána `--match-head-commit 2ead039a505876e499b6e3ecf68cace89dfeb881`-gyel squash-mergelem a **#147-et**. A háttér-ciklus értesít, amint kész.
+
+A "mehet a merge"-t a #147-re értem, mert a review arról szólt. A cic-primitives **#29** (`a68017256d98…`) külön merge-szót kér, azt nem mergelem el.
+~~~~~
+
+
+### 2026-11-02 20:30 — Claude
+
+~~~~~
+A CI zöld (nincs `fail`), a head változatlan, `CLEAN`. A merge a head-re rögzítve:
+~~~~~
+
+
+### 2026-11-02 20:30 — Claude
+
+~~~~~
+Mergelve: `da24b3be4aee43ae02c03121dec267d1cfdd0a65`. A post-merge `main` push-CI-t külön ellenőrzöm, és csak a tényleges eredményt rögzítem.
+~~~~~
+
+
+### 2026-11-02 20:31 — Claude
+
+~~~~~
+A Forms **#147 mergelve** van (squash): `da24b3be4aee43ae02c03121dec267d1cfdd0a65`, 2026-11-02 20:30 UTC. A merge előtt a head `2ead039a…` volt, és a PR CI-ja zöld, a merge állapot `CLEAN`.
+
+- **Post-merge `main` CI:** most fut, a tényleges eredményt akkor rögzítem, amikor megjött. Addig nem állítom, hogy zöld.
+- **A főkönyv `authentic-release-origin` sora** `not_proved` maradt. Az addendum a `main`-ben a javított szöveggel van: két különböző publikus kulcs, nem állítja a külön Vault-példányokat, és a validitás a 2026-11-02-i ellenőrzéshez kötött.
+
+**Még nyitott, tőled függ:**
+- **cic-primitives #29** (pre-check Envelope 3): a CI zöld, a merge-hez külön szó kell, `a68017256d98a6e6c6e404d51d1f2958db43938d`-ra rögzítve.
+- **A verifier trailing-newline javítás:** külön PR, indítsam?
+- **Az R head CI-futása:** opcionális.
+- **Receipt digest-kódolás:** döntés kell, melyik rekordmezőt olvassa melyik receipt-mező.
+- **Memória és napló** frissítése a ma történtekkel (a pre-check PR, a Forms addendum, a trailing-newline lelet): erre külön GO kell.
+~~~~~
+
+
+### 2026-11-02 20:31 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Következő lépés: a release és a receipt közötti szerződés
+
+Forms #147 MERGED
+
+4/4 PR CI SUCCESS
+
+Ellenőriztem a GitHubon: a [Forms #147](https://github.com/CentralInfraCore/cic-primitive-forms/pull/147?utm_source=chatgpt.com) már merge-elve van.
+
+Merge commit: `da24b3be4aee43ae02c03121dec267d1cfdd0a65`.
+
+Ez fontos mérföldkő. A v0.2.1 release létezését és a Forms pinhez való viszonyát most már a Forms saját dokumentációja is rögzíti, miközben az `authentic-release-origin` továbbra is `not_proved`.
+
+A következő munkát a P5 condition 8 körül kezdeném el: a release-rekord és a receipt közötti digestleképezés normatív szerződésével.
+
+### Javasolt sorrend
+
+1\. Condition 8 – digest mapping szerződés
+
+Tervezés GO
+
+Rögzíteni kell, hogy a receipt mezői a release-rekord pontosan mely mezőiből származnak, és hogyan történik a base64 SHA-256 → `sha256:<hex>` átalakítás.
+
+A szerződés legyen független a Python és Go implementációtól.
+
+2\. Condition 6–7 – bizalmi modell
+
+Tervezés következik
+
+Külső trust anchor, signer- és countersigner-jogosultság, tanúsítvány-lejárat, rotáció, valamint az ellenőrzés időpontjának szabályai.
+
+3\. Production receipt integráció
+
+HOLD
+
+Csak az első két szerződés elfogadása és implementációjuk független tesztelése után. Forms #138 és Engine #63 itt kapcsolódhat össze.
+
+### Mit kérnék most a fejlesztő AI-tól?
+
+A Condition 8-hoz egy külön, egyelőre csak tervezési dokumentumot:
+
+1. A `primitive_build_hash`, `grammar_sha256` és `grammar_schema_sha256` mezők pontos eredetét.
+2. Az átalakítás bájtszintű definícióját, beleértve a 32 bájtos SHA-256 követelményt.
+3. A `provenance.grammar_*` és `artifacts.files` közötti egyezés szabályát.
+4. Pozitív és negatív golden vektorokat: hibás base64, hibás hossz, eltérő digest, hiányzó mező, hibás algoritmus.
+5. Egy pontos határt: a leképezés sikeressége nem bizonyítja a kibocsátó jogosultságát.
+
+Különösen fontos: a receipt nem választhat tetszőlegesen két lehetséges digestforrás között. Legyen meghatározott elsődleges forrás, a másik pedig kötelező konzisztencia-ellenőrzés, ahol mindkettő létezik.
+
+### Döntés
+
+GO a Condition 8 szerződés megtervezésére, külön PR-tervként. Implementáció, merge és production receipt továbbra is HOLD.
+
+A következő valódi áttörés nem az lesz, hogy még több teszt lesz zöld, hanem hogy a Forms pontosan definiálni tudja, milyen release-bizonyítékból állíthat elő receipt-mezőket, anélkül hogy közben maga döntene a release hitelességéről.
+
+Ez illeszkedik ahhoz az elvhez, amelyre a CIC-t építitek: a rendelkezésre álló bizonyíték nem ad automatikusan felhatalmazást a következő műveletre.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-02 20:32 — Claude
+
+~~~~~
+Ez a Condition 8 szerződés **tervezési** GO-ja: külön PR-terv, implementáció, merge és production receipt HOLD marad. Mielőtt írok, megnézem, hogyan ellenőrzi a receipt jelenleg a három mező alakját, és a valós rekordból számolom ki a vektorokat két független módszerrel.
+~~~~~
+
+
+### 2026-11-02 20:35 — Claude
+
+~~~~~
+Két javítás kell a saját szövegemben: a P6 kimenet leírása elmosódott, az N6 pedig a `base64_length`-et a shape-ellenőrzés elé tenné, pedig oda nem jut el. Pontosítom.
+~~~~~
+
+
+### 2026-11-02 20:35 — Claude
+
+~~~~~
+A P6 érték egyezik a mérttel, a doksi ASCII, a closeout-ellenőrzés zöld. Commit, push, PR (`main`-re), merge nélkül.
+~~~~~
+
+
+### 2026-11-02 20:35 — Claude
+
+~~~~~
+PR #148 nyitva. Háttérben megvárom a CI-t, és közben a #147 post-merge `main`-futását is végig nézem (az előbb idő előtt léptem ki belőle).
+~~~~~
+
+
+### 2026-11-02 20:35 — Claude
+
+~~~~~
+A Condition 8 tervezési PR kész: Forms **#148**, commit `7732c6db60156ec026afecb781b0c53ae7482517`, csak dokumentáció, a CI fut. Kód, vektorfájl, implementáció és production receipt nincs benne, és merge-t sem csináltam.
+
+**Mi a javasolt szerződés:**
+- **Forrás:** mezőnként egy elsődleges forrás, a többi hely kötelező konzisztencia-ellenőrzés, soha nem alternatíva.
+  - `primitive_build_hash` ← `release.build_hash`, ez az egyetlen hely, base64-ből konvertálva.
+  - A két grammar-digest ← `artifacts.files` (már `sha256:<hex>`, konverzió nélkül). Ezt ellenőrzi a `provenance.grammar_*` (base64, konvertálva) és a `pins.yaml`. Bármilyen eltérés pontosan megnevezett elutasítás, semmit nem javít és nem preferál.
+- **Konverzió bájtszinten:**
+  1. A teljes szöveg illeszkedik a `[A-Za-z0-9+/]{43}=` mintára.
+  2. A dekódolt érték pontosan 32 bájt.
+  3. Csak kanonikus írásmód fogadható el (a visszakódolás egyezik a bemenettel).
+  4. A kimenet `sha256:` + kisbetűs hex.
+- **Vektorok:** 7 pozitív és 14 negatív, a valós v0.2.1 rekordból számolva, és `openssl`+`xxd`-vel ellenőrizve, nem a tesztelt kóddal.
+- **Határ:** egy sikeres leképezés a három mező hű, egy írásmódú átkódolását bizonyítja. Az aláíróról, a trust anchorról vagy a hitelességről semmit. Az N14-es negatív vektor egy hamisított, de belsőleg konzisztens rekord, amely **átmegy** a leképezésen, hogy ez látható maradjon.
+
+**Amit a mérés mutatott, és ami a tervet indokolja:** a Python szigorú base64-dekódere és a Go `StdEncoding` is **elfogadja** ugyanannak a 32 bájtnak egy nem kanonikus írásmódját. A Go a záró újsort is elfogadja, még `Strict()` mellett is. A három könyvtár máris eltér abban, mi érvényes base64, ezért a szerződés mondja ki az alakot, a dekóderek csak dekódolnak. A **Rust dekódert nem tudtam mérni** (nincs toolchain), ez a vektor-egység esete lesz.
+
+**Egy lelet, amit nem javítottam:** a `cic-primitives` rekord-szerződése azt írja, hogy az `sha256:` hex forma "a receipt-mezők formája, nincs újrakódolás". Ez az `artifacts` új digesteire igaz, a `primitive_build_hash`-re nem, mert a `release.build_hash` még base64. Egysoros pontosítás kell, külön változásban.
+
+**Ötféle döntés vár rád (D1–D5):**
+- **D1:** az elsődleges forrás az `artifacts.files` (ajánlott).
+- **D2:** a hiányzó `provenance.grammar_*` elutasítás, nem kihagyott ellenőrzés (ajánlott).
+- **D3:** csak envelope 3 fogadható el.
+- **D4:** a normatív szöveg helye (ajánlott: a Forms oldalon, a rekord-szerződésre hivatkozva).
+- **D5:** a viszony az engine saját identitásához (Engine #63), ez ebből az egységből kimarad.
+
+**Közben:** a #147 post-merge `main`-futását is végignézem, mert az előbb idő előtt léptem ki belőle. A végeredmény a CI-értesítéssel együtt jön. Addig a post-merge `main` CI-ra csak annyit mondok, hogy `p1` és `p1-proof` success, `evidence` skipped, a `corpus` és a `proof-plan` még nem volt kész.
+~~~~~
+
+
+### 2026-11-02 20:43 — Claude
+
+~~~~~
+A két eredmény megjött.
+
+**A #147 post-merge `main`-futása (`da24b3b`) sikeres:**
+- `p1`, `p1-proof`, `proof-plan` és `corpus`: `success`.
+- `evidence`: `skipped`, ahogy dokumentációs változásnál tervezett.
+- Nincs `fail`.
+
+**A #148 CI-ja zöld:**
+- 50 check `pass`, 18 `skipping` (a docs-PR-nál kimaradó nehéz jobok), `fail` nincs.
+- A PR head `7732c6db60156ec026afecb781b0c53ae7482517`, ugyanaz, mint a helyi commitom, az állapot `CLEAN`.
+
+Nem mergeltem. A #148 egy terv, és az ötféle döntés (D1–D5) a tiéd, ezért a merge-hez külön szó kell, a fenti head SHA-ra rögzítve.
+
+**Összes nyitott tétel:**
+- **Forms #148:** merge és a D1–D5 döntések. Ezek nélkül az implementáció nem indul.
+- **cic-primitives #29:** pre-check Envelope 3, CI zöld, `a68017256d98a6e6c6e404d51d1f2958db43938d`, merge-szó kell.
+- **Verifier trailing-newline javítás:** külön PR, még nem indítottam.
+- **Rekord-szerződés egysoros pontosítása** (`primitive_build_hash` még base64): külön változás a `cic-primitives`-ben.
+- **Bizalmi modell (6–7. feltétel):** trust anchor, jogosultság, lejárat, rotáció. A lánc 2026-12-31-én lejár, ez időzített.
+- **Memória és napló:** a mai munka (pre-check PR, Forms addendum, trailing-newline lelet, digest-terv) frissítése, GO kell hozzá.
+
+Ha egyet kell kiemelnem: a lejárat (2026-12-31) az egyetlen határidős tétel, ezért a bizalmi modell tervét érdemes a digest-döntések mellett hamar megkezdeni.
+~~~~~
+
+
+### 2026-11-02 20:50 — Felhasználó
+
+~~~~~
+<pasted_content id="aa6b">
+## Döntés: #148 és #29 – GO
+
+Ellenőriztem mindkét PR-t, a tényleges diffeket és a GitHub Actions futásait.
+
+[Forms #148](https://github.com/CentralInfraCore/cic-primitive-forms/pull/148?utm_source=chatgpt.com)
+
+Review GO
+
+HEAD: `7732c6db60156ec026afecb781b0c53ae7482517`
+
+4/4 workflow SUCCESS. A PR tervezési dokumentum, nem implementáció.
+
+[Primitives #29](https://github.com/CentralInfraCore/cic-primitives/pull/29?utm_source=chatgpt.com)
+
+Review GO
+
+HEAD: `a68017256d98a6e6c6e404d51d1f2958db43938d`
+
+A workflow SUCCESS. Az Envelope 3 pre-check átállítása különálló, a történeti negatív bizonyítékot megőrző módosítás.
+
+Mindkét PR squash merge-elhető a megadott, változatlan HEAD-en, sikeres required gate és clean merge-állapot mellett, `--match-head-commit` védelemmel.
+
+A merge után a Forms `main` és a Primitives `devel` push-trigger CI-jét külön kell ellenőrizni. Egyik merge sem jelent production receipt- vagy trust-gate-felhatalmazást.
+
+## Forms #148 – D1–D5 tulajdonosi döntések
+
+A terv öt javaslatát elfogadom.
+
+| Döntés                  | Elfogadott szabály                                                                                                                           |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1 – Elsődleges forrás  | A két grammar-digest az `artifacts.files` meghatározott útvonalából jön. A `provenance.grammar_*` és a Forms pin kötelező keresztellenőrzés. |
+| D2 – Hiányzó mező       | Fail-closed. Hiányzó `provenance.grammar_*` esetén elutasítás, nem átugrott ellenőrzés.                                                      |
+| D3 – Envelope           | Kizárólag a valódi integer `3` elfogadható. Nincs Envelope 1/2 fallback.                                                                     |
+| D4 – Normatív szerződés | A receipt-leképezés szerződése a Forms repóban legyen. A Primitives rekord-szerződésének base64-os félreérthető mondatát külön PR javítsa.   |
+| D5 – Engine-identitás   | Nem része a leképezési egységnek. Engine #63-ban külön konzisztenciaszabály és vektorok kellenek.                                            |
+
+A `primitive_build_hash` egyetlen elsődleges forrása a `release.build_hash`. Ennél a kanonikus base64 értéket pontosan 32 bájtra kell dekódolni, majd `sha256:` + 64 kisbetűs hex formába alakítani.
+
+Az eljárás nem végezhet aláírás-ellenőrzést, és nem állíthatja, hogy a release hiteles.
+
+GO a D1–D5 szerződéstervezési döntések véglegesítésére. A tényleges implementációt továbbra is külön review-ra kérem.
+
+## Mi legyen a következő munka?
+
+A tanúsítványlánc 2026. december 31-i lejárata miatt most két párhuzamos munkaszálat indítanék.
+
+Első prioritás: Condition 6–7, bizalmi modell
+
+Tervezés GO
+
+Kérek egy önálló tervet a külső trust anchor, az aláírói és ellenjegyzői jogosultság, a tanúsítványok időbeli érvényessége és a kulcsrotáció kezelésére.
+
+Külön válaszoljon arra, hogy egy 2026. december 31. előtt aláírt rekord milyen feltételekkel ellenőrizhető 2027-ben. Nem elég egy új tanúsítvány: az aláírás időpontjának bizonyíthatósága is kérdés.
+
+Második prioritás: Condition 8 szerződés és golden vektorok
+
+Tervezés GO
+
+A D1–D5 döntéseket normatív szöveggé és nyelvfüggetlen tesztvektorokká lehet alakítani külön PR-ban. A Rust/Go implementációt azonban csak a mérce review-ja után indítanám.
+
+A verifier trailing-newline hibájára is GO külön javító PR készítésére, feltétellel: az új negatív vektor előbb bizonyítsa a hibát, és a befagyasztott digest-lista módosítása legyen explicit és review-zható. A javítás nem írhatja át a korábbi v0.2.1 release-rekordot.
+
+A Primitives rekord-szerződés egysoros pontosítására szintén GO külön dokumentációs PR-ként.
+
+A memória és a napló frissítésére GO, a napló továbbra is helyi, push nélkül.
+
+### Állapot a döntés után
+
+| Terület                                                 | Döntés        |
+| ------------------------------------------------------- | ------------- |
+| Forms #148 merge                                        | GO            |
+| Primitives #29 merge                                    | GO            |
+| D1–D5                                                   | Elfogadva     |
+| Condition 8 normatív szerződés és vektorok előkészítése | GO            |
+| Condition 6–7 bizalmi modell tervezése                  | GO, prioritás |
+| Rust/Go implementáció                                   | HOLD          |
+| Production receipt API                                  | HOLD          |
+| Engine #63 / Forms #138 lezárása                        | HOLD          |
+| `theads/` push                                          | HOLD          |
+
+A legfontosabb következő kérdés már nem az, hogy a release-ben a megfelelő bájtok vannak-e. Ezt a bizonyítékláncot megépítettétek. Hanem az, hogy ki, milyen külső bizalmi alapon és milyen időbeli szabály szerint jogosult ezt a release-t hitelesnek elfogadni.
+
+Ezt a döntést nem szabad pusztán a kriptográfiai aláírás sikeréből levezetni.
+</pasted_content id="aa6b">
+~~~~~
+
+
+### 2026-11-02 20:50 — Claude
+
+~~~~~
+Ez egy nagy GO. Sorrendben haladok: először a két merge (head-re rögzítve, előtte ellenőrizve), utána a post-merge CI, majd a munkaszálak. Először a két PR aktuális állapota:
+~~~~~
+
+
+### 2026-11-02 20:51 — Claude
+
+~~~~~
+Mindkét head egyezik a jóváhagyottal, `CLEAN`, a gate zöld (a nem-zöld sorok keresése üres, a kilépési kód csak a `grep` üres találatából jön). Merge, a head-re rögzítve:
+~~~~~
+
+
+### 2026-11-02 20:54 — Claude
+
+~~~~~
+Mielőtt a PR-t megnyitom, egy állításomat nem mértem: hogy a `v0.2.0` és a `v0.1.5` ugyanabban a helyzetben van. Most megmérem.
+~~~~~
+
+
+### 2026-11-02 20:54 — Claude
+
+~~~~~
+Mérve: a `v0.1.5` és a `v0.2.0` is pontosan ugyanígy bukik 2027-ben. Ezt beírom a dokumentumba mérésként, majd commit, push, PR.
+~~~~~
+
+
+### 2026-11-02 20:56 — Claude
+
+~~~~~
+Az importhoz a repo gyökerét kell a keresési útra tenni. Újrafuttatom a mérést a **javítatlan** verifierrel.
+~~~~~
+
+
+### 2026-11-02 20:57 — Claude
+
+~~~~~
+A diff pontosan a kért: a verifierben két sor, a mutánsfájlban nyolc sor, csak az `$` → `\Z` szöveg. Most a javított verifierrel megismétlem a mérést.
+~~~~~
+
+
+### 2026-11-02 20:58 — Claude
+
+~~~~~
+13 teszt bukik már a negatív próba előtt, tehát valami a saját módosításomban hibás. Megnézem a konkrét hibát.
+~~~~~
+
+
+### 2026-11-02 20:58 — Claude
+
+~~~~~
+Saját YAML-hiba: a `vectors:` sor szabad szövegében szerepel egy `proof: ` kettőspont-szóköz. Idézőjelbe teszem.
+~~~~~
+
+
+### 2026-11-02 20:59 — Claude
+
+~~~~~
+Ugyanazok a szabálykategóriák, mint a meglévő, fagyasztott tesztfájlokban (a repo `%`-formázást használ), a CI ezt nem kapuzza. A teljes futás eredményét háttérben várom.
+~~~~~
+
+
+### 2026-11-02 21:00 — Claude
+
+~~~~~
+PR #30 nyitva (dokumentáció). A verifier-javítás teljes futására várok, az eredményt értesítés hozza.
+~~~~~
+
+
+### 2026-11-02 21:00 — Claude
+
+~~~~~
+Egy kimaradt mutáns (`source-commit-length-open`, a 31. sor), mert annak a szövege nem a teljes `re.compile(...)` sor. Ugyanazt a mechanikus cserét végzem, és frissítem az amendment digestjét.
+~~~~~
+
+
+### 2026-11-02 21:01 — Claude
+
+~~~~~
+Amíg ez fut, jelentem az eddigieket, és a harness-blokkolt merge-ekről sem feledkezem meg:
+
+**Elkészült, nyitott PR-ok (mind merge nélkül):**
+- **Forms #149:** bizalmi modell terve (6–7. feltétel), CI fut.
+- **cic-primitives #30:** rekord-szerződés egysoros pontosítása (az `artifacts`-digestekre igaz, a `build_hash` base64 marad), EN + HU.
+- **A verifier trailing-newline javítása:** a teljes tesztfutás most megy, utána PR.
+
+**A te kezedben:** a #148 és #29 merge-e (`!` parancsok fent, a jóváhagyott head-ekre rögzítve). Mindkettő még `OPEN`.
+
+A verifier-javítás futása közben kiderült egy saját mulasztásom: a fagyasztott mutánsfájlban egy kilencedik mutáns szövegét kihagytam a mechanikus cseréből, a teljes csomag emiatt 79 hibát adott. Javítottam, az amendment digestjét újraszámoltam, és a futást megismételtem.
+~~~~~
+
+
+### 2026-11-02 21:02 — Claude
+
+~~~~~
+Zöld: **815 teszt sikeres, kihagyás nélkül** (a CI-val azonos, kötelező-történet beállítással). Commit, push, PR (`devel`-re), merge nélkül.
+~~~~~
+
+
+### 2026-11-02 21:02 — Claude
+
+~~~~~
+PR #31 nyitva. Most a memória és a napló frissítése (erre GO-d van, a napló helyi marad). Közben háttérben figyelem a három új PR CI-ját.
 ~~~~~
