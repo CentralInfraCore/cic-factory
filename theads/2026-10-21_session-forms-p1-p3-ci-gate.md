@@ -1,6 +1,6 @@
 # Thread-napló — 2026-10-21 (Forms P1–P3, ci-gate)
 
-Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T19:08:59Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl`, a 2026-10-28T22:48Z-tól induló szakasz: `7895b2db-5143-4537-8eaa-3624850e408c.jsonl` (a #106–#118: a `diff_gate` vakfoltjai, a `diff-mutation-rust` megszakadása, P4 duplikált esemény, a ReadDiff differential és fuzz, az inherit, P5-0 terv és a P5-1 kanonikus bájtok; a szakasz a session közben, lezárt PR-onként gyarapodik) (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
+Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T19:08:59Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl`, a 2026-10-28T22:48Z-tól induló szakasz: `7895b2db-5143-4537-8eaa-3624850e408c.jsonl` (a #106–#118: a `diff_gate` vakfoltjai, a `diff-mutation-rust` megszakadása, P4 duplikált esemény, a ReadDiff differential és fuzz, az inherit, P5-0 terv és a P5-1 kanonikus bájtok; a szakasz a session közben, lezárt PR-onként gyarapodik; a 2026-11-02-i rész: a cic-primitives `v0.2.1` release-ág S commitja, a valódi fejlesztői aláírás és a CICSourceCA-ellenjegyzés, az R commit és a tag, a két Vault szerepe) (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
 
 
 ### 2026-10-21 05:57 — Claude
@@ -24863,4 +24863,348 @@ GO az S előállítására és bizonyítására. R, aláírás, tag és publiká
 
 ~~~~~
 Az S lineage és fa rendben (6 lineáris commit, mind azonos patch-id, két dokumentum az eltérés). Jönnek a bájtazonosság, a teljesség, a teszt és a compile-futás egy tiszta worktree-ben.
+~~~~~
+
+
+### 2026-11-02 14:02 — Claude
+
+~~~~~
+Az S commit elkészült és helyben bizonyított, nem pusholtam. A tesztkulcsos, mockolt Vault-os futás a compilerrel a `record`, `blobs` és `crypto` rétegen is PASS-t adott.
+
+## Mi készült
+- **Ág:** `primitives/releases/v0.2.1`, a `73ae4692…` alapján, a hat cherry-pick `-x`-szel, a megadott sorrendben, konfliktus nélkül, hook és aláírás nélkül.
+- **S:** `106965b8cea7cce2081beb77008753af21e68b46`.
+- **Hol van:** az ág egyelőre csak a scratchpad-klónban él (`…/scratchpad/rcp`), nem a te munkapéldányodban és nem a távoli repón.
+- **Egy hibám:** az első kísérletben a committer a globális placeholder-identitás ("Your Name") lett. Ezt észrevettem, az ágat a push előtt töröltem, és a helyes repo-identitással újra létrehoztam. Az S ebből a második futásból van.
+
+| Új commit | Eredeti |
+|---|---|
+| `af3c939` | `3437b3d` |
+| `a80e381` | `dd4380b` |
+| `aaf222e` | `d2d8ec7` |
+| `6603656` | `a2aee15` |
+| `03fde3c` | `3e94bb2` |
+| `106965b` | `331f4a6` |
+
+## Az S bizonyítékai (mind az új HEAD-en mérve)
+- **Szülőlánc:** lineáris, 6 commit, nincs merge, a `merge-base` pontosan a `73ae469`. A hat commit patch-id-ja mind egyezik az eredetivel.
+- **Fa a `devel`-hez képest:** kizárólag a `P0-4-MIGRATION.md` és a `p0-4-contradiction-matrix.md` tér el. A faazonosítók: S `f091c0c1…`, `devel` `ed7c505f…`.
+- **A 12 pinelt fájl:** 12/12 azonos. A `git rev-parse <S>:<path>` egyezik a `73ae469`-ével, és a SHA-256 egyezik a Forms **saját** `corpus/pins.yaml`-jával, nem csak a repo fixture-ével. Ezt külön ellenőriztem: a fixture a Forms-fájllal azonos.
+- **Deklaráció:** a 30 deklarált út egyezik a jóváhagyott listával, mind reguláris fájl az S git-fájában. A 13 spec mind a halmaz része. Ezt a compiler függvényeitől független kiválasztással is ellenőriztem.
+- **Teljes tesztcsomag** tiszta checkoutban: 794 teszt sikeres, 0 kihagyás, 90,24% lefedettség. Ebben benne van a deklarációs teszt, a befagyasztott mérce és a v0.2.0 történeti ellenőrzés. A futás után a worktree tiszta maradt.
+- **Pre-check `candidate` mód:** a Forms saját pinjeivel és `--version 0.2.1` mellett lefutott, minden PASS. A `0.2.0 → 0.2.1` érvényes növekmény. A nyitott kapuk OPEN-ek maradtak. A pre-check eszköze az S-ben bájtra azonos a `devel`-ével.
+- **Compiler (Vault és a pledge-loader mockolva, teszt-kulcsokkal):** a `validate_release_prerequisites` itt a **valódi** volt (tiszta fa, helyes ágnév, verzió), és átment.
+  - A forráskonzisztencia-guard is átment.
+  - Envelope 3 rekord: 30 artifact, 13 spec, `source_commit` egyenlő az S-sel.
+  - A rekord 12 pinelt digestje 12/12 egyezik a Forms pinjével.
+  - Referencia-verifier: `record` PASS, `blobs` PASS, `crypto` PASS.
+  - A CLI `--require record,blobs,crypto` kilépési kódja 0.
+
+## Mi marad bizonyítatlan
+- A signer jogosultsága, a trust anchor, a tanúsítvány érvényessége a kiadás napján és a hitelesség.
+- Valódi Vault-aláírás. A kulcsok tesztkulcsok, a rekord nem valódi.
+- Az R állapot és a release-jegyzet.
+- Távoli CI az S-en: ehhez push kell. Ha lesz, csak akkor számít, ha a `head_sha` pontosan az S.
+- A Forms oldali elfogadás, és a pre-check Envelope 3 átállása. A pre-check egyik OPEN üzenete ("a compiler legfeljebb 6/12-t digestel") az S-en elavult, ez a külön pre-check PR dolga.
+
+## Egy megjegyzés a saját takarításomról
+A futás utáni `rm -rf release` a nyomon követett `release/cic-primitives-v0.1.5.yaml`-t is törölte a munkapéldányból. Rögtön visszaállítottam `git checkout`-tal. A SHA-256 egyezik a commitban lévővel, a worktree tiszta, az S változatlan. Semmi nem lett commitolva.
+
+## Memória és napló
+A memória az S-ig frissítve. A napló helyi commitja `b8159e0`, nem pusholt (a `main` tizenhárom committal előrébb). Ez a válaszom a következő frissítésben kerül be.
+
+## HOLD-ok
+- A release-ág push-a.
+- Az R commit, a release-jegyzet létrehozása, a tag.
+- Valódi aláírás, publikálás, production receipt.
+- A pre-check Envelope 3 átállása (külön PR).
+- Trust gate-ek, `theads/` push.
+- A `73ae469` érintetlen. A #23, a forms #138 és az Engine #63 nyitva.
+
+A következő döntési pont az S elfogadása. Elfogadod-e az S-t mint release-forráscommitot, vagy kérsz további bizonyítékot? Az ág pusholása és a távoli CI-futás külön kérés.
+~~~~~
+
+
+### 2026-11-02 18:55 — Felhasználó
+
+~~~~~
+mi a következő lépés?
+~~~~~
+
+
+### 2026-11-02 18:55 — Claude
+
+~~~~~
+A következő lépés a te döntésed: elfogadod-e az S-t (`106965b`) release-forráscommitnak. Utána ezt javaslom, ebben a sorrendben:
+
+1. **S elfogadása.** Ha kérsz még bizonyítékot, megnevezed. Én nem tudok más hiányt, mint amit a jelentésben felsoroltam.
+2. **Az S átvitele a valódi klónodba.** A scratchpad-klón ideiglenes. A `primitives-group/primitives` klónodban most a `devel` van `d27173f`-en. Itt helyben létrehoznám ugyanazt az ágat, `git fetch`-csel a scratch-klónból, és megmérném, hogy az S-azonosító bájtra ugyanaz. Ez nem push.
+3. **A release-ág pusholása és távoli CI az S-en.** Csak az ág, tag nélkül. Az eredmény csak akkor számít bizonyítéknak, ha a `head_sha` pontosan az S. Ez a legkisebb lépés, ami valódi, a gépemtől független bizonyítékot ad. A push kifelé látható, ezért külön GO kell.
+4. **A pre-check Envelope 3 átállása külön PR-ban a `devel`-re.** Ez független az S-től. Javítja az elavult "legfeljebb 6/12" OPEN üzenetet. A tool az S-ben azért marad bájtra azonos a `devel`-ével, mert ezt a PR-t nem vittük az ágra.
+
+Az R commit, a release-jegyzet, a tag, a valódi Vault-aláírás, a publikálás és a production receipt addig HOLD, amíg a 3. lépés eredménye nincs meg. Ezek tulajdonosi és trust döntések.
+
+Azt javaslom, hogy a 2. és 3. lépésre adj GO-t együtt, a 4.-et pedig külön, mert az másik PR.
+~~~~~
+
+
+### 2026-11-02 18:56 — Felhasználó
+
+~~~~~
+elfogadom csináld meg a release-t és a digitáls ellenjegyzés (minden megvan hozzá)
+~~~~~
+
+
+### 2026-11-02 18:56 — Claude
+
+~~~~~
+Ezt explicit release-GO-nak veszem: az ág pusholása, R rekord, valódi Vault-aláírás, ellenjegyzés, release-jegyzet és tag. A production receipt nem szerepel benne, az HOLD marad. Először az eljárást nézem meg, a v0.2.0 menetét.
+~~~~~
+
+
+### 2026-11-02 18:57 — Claude
+
+~~~~~
+Preflight rendben: a commit-aláíró Vault él és nincs lezárva, a tanúsítvány 2026-12-31-ig érvényes, a pledge a helyén van. Először pusholom az ágat, csak az ágat, tag nélkül.
+~~~~~
+
+
+### 2026-11-02 18:57 — Claude
+
+~~~~~
+Az S fent van, az azonosító egyezik. Most jön a valódi aláírás a host venv-jéből, a commit-aláíró Vault ellen.
+~~~~~
+
+
+### 2026-11-02 18:58 — Claude
+
+~~~~~
+Az aláírás megvan. Mielőtt ellenjegyeztetnék, a független referencia-verifierrel ellenőrzöm a rekordot.
+~~~~~
+
+
+### 2026-11-02 18:58 — Claude
+
+~~~~~
+A rekord és a blobs réteg PASS, az aláírás és a build_hash is PASS. Az ellenjegyzés még NOT_RUN, ez a következő lépés. A meglévő kliens és szolgáltatás-indítás szerint járok el.
+~~~~~
+
+
+### 2026-11-02 18:58 — Claude
+
+~~~~~
+A binárisok megvannak, és frissebbek a countersign `devel` fejénél. Elindítom a szolgáltatást a feljegyzett módon: eldobható TLS-certtel, a valódi CICSourceCA Vault ellen.
+~~~~~
+
+
+### 2026-11-02 18:58 — Claude
+
+~~~~~
+A szolgáltatás figyel, mTLS-sel. Most beküldöm a rekord `build_hash`-ét ellenjegyzésre, a szerzői tanúsítvánnyal és a Vault-delegált kliensaláírással.
+~~~~~
+
+
+### 2026-11-02 18:59 — Claude
+
+~~~~~
+A Vault a 32 bájtos digestet írja alá előrehashelve (`prehashed`), ezért az `-rawin -digest` kapcsoló volt a hibás. A helyes `openssl` hívás nyers digestre működik.
+~~~~~
+
+
+### 2026-11-02 19:00 — Claude
+
+~~~~~
+Az R commit megvan (`5e8c321`, szülője pontosan az S, és kizárólag a rekordfájlt adja hozzá). A tag formátumát a v0.2.0-hoz igazítom, ezért megnézem, hogyan készült.
+~~~~~
+
+
+### 2026-11-02 19:01 — Claude
+
+~~~~~
+Annotált tag, a v0.2.0 mintájára, az R commiton, a historikus korlátozás összefoglalójával és a release-jegyzetre mutató hivatkozással. Utána pusholom az R-t és a taget.
+~~~~~
+
+
+### 2026-11-02 19:01 — Claude
+
+~~~~~
+A `pkill` mintája a saját shellemre is illett, ezért a parancs félbeszakadt. Leállítom pontosabban, és újrafuttatom a többit.
+~~~~~
+
+
+### 2026-11-02 19:02 — Claude
+
+~~~~~
+A v0.2.1 release elkészült: az R commit `5e8c3219b52399e3e764b0b0bb27de710f5445a4`, a tag `primitives/@v0.2.1`. A tag a `d6615231…` annotált objektumra mutat, és mindkettő a távoli repón is fent van.
+
+## Mi történt
+1. **Push:** előbb az S-t pusholtam (`106965b…`), tag nélkül.
+2. **Valódi aláírás:** `compiler.py release` a commit-aláíró Vault ellen futott (`cic-my-sign-key`). A guard és a deklaráció átment, a rekord Envelope 3 lett: 13 spec, 30 artifact, `source_commit` egyenlő az S-sel, `build_hash` `HVazYxdg…`.
+3. **Ellenjegyzés:** a CICSourceCA2026 (a 18202-es Vault) ellenjegyezte. Az ellenjegyző szolgáltatást a feljegyzett módon, eldobható TLS-certtel indítottam, és a kérés után leállítottam. Az mTLS handshake aláírása is Vault-on át ment. A szolgáltatás naplója szerint `outcome=countersigned`.
+4. **A blokk beillesztése:** a `cic_countersign` blokkot a rekord végére fűztem. Az előtte lévő bájtok azonosak maradtak, mert a `build_hash` ezt a blokkot nem fedi.
+5. **R commit és tag:** a commit a valódi hook-aláírással készült. Az R szülője pontosan az S, és csak a rekordfájlt adja hozzá (`git add -f`, mert a `release/` gitignore-olt). A release-jegyzet az R üzenetében van. A tag annotált, a v0.2.0 mintájára, és a jegyzetre hivatkozik.
+6. **Push:** a branch és a tag is fent van.
+
+## Mivel ellenőriztem
+- **Referencia-verifier:** `--require record,blobs,crypto` esetén `record` PASS, `blobs` PASS, `crypto` PASS (`build_hash`, `signature`, `countersign` mind PASS), kilépési kód 0. Ezt friss klónból is megismételtem a távoli taggel, ott is PASS.
+- **Compiler `verify-release --strict --trust-root rootCA2026.pem`:**
+  - Az ellenjegyzés a `build_hash` fölött érvényes.
+  - A lánc a gyökérre vezet, és a gyökér bájtra azonos a megadott, kívülről hozott gyökérrel.
+  - A `--strict` csak a szerkezeti "NOT proven" sorokon bukik: a pledge külön utazik, és az artifact-listát ez az eszköz nem ellenőrzi, azt a verifier teszi. A v0.2.0-nál is ez volt a helyzet.
+- **Független `openssl`:** a developer-aláírás és az ellenjegyzés is "Verified". A negatív kontroll (egy bitet elforgatott digest) megbukik.
+- **Release-jegyzet tényei:**
+  - A `P0-4-MIGRATION.md` két elavult állítása: a "34 előfordulás", a mért érték 33 fájl (9 jelenlegi és 24 fagyasztott); és "a registry-hibára külön javítás kell".
+  - Az `cic-schema-registry#162` MERGED (2026-10-18, `c595080`), de csak a 9 jelenlegi sémát javítja.
+  - A `P0-4-MIGRATION.md` a 30 artifact között van. A `p0-4-contradiction-matrix.md` nincs, de ugyanazt az F2-állítást hordozza, ezért ezt is leírtam.
+
+## Hibák és eltérések
+- Az első `openssl` próbám "Verification failure"-t adott. Ez az én hibás kapcsolóm volt (`-rawin -digest`). A Vault előrehashelt, 32 bájtos digestet ír alá. A javított hívás már zöld, és a negatív kontrollal együtt futott.
+- A `pkill` a saját shellemre is illett, ezért az a parancs félbeszakadt. A szolgáltatást pontosabban állítottam le. A 8443-as port azóta nem figyel, az eldobható TLS-kulcsot töröltem.
+
+## Mi nem bizonyított
+- **A rekord hitelessége és a kiadás alkalmassága.** A verifier is ezt írja: nincs trust anchor, signer authority vagy a kiadás napjára érvényes tanúsítvány-politika. A gyökeret én adtam meg a helyi `EEC/rootCA2026.pem`-ből.
+- **A lejárat:** a lánc tanúsítványai 2026-12-31-én lejárnak, a pledge 2027-05-25-ig érvényes.
+- **A Forms oldali elfogadás.**
+
+## Amihez nem nyúltam
+- A **production receipt** HOLD maradt.
+- Nincs GitHub Release objektum és nincs PR. A release-ág nem mergel vissza.
+- A távoli `workflow_dispatch` CI-t nem indítottam. A branch-push nem indított futást (a `gh run list` üres). Ha kell, a head az R, nem az S, ezt külön kérnéd.
+- A pre-check Envelope 3 átállása (külön PR), a memória és a napló nem frissült, mert erre ebben az üzenetben nem kaptam GO-t.
+
+## Javasolt következő lépések
+1. Memória és napló frissítése a valódi állapottal. A `theads/` commit helyi marad, push nélkül.
+2. A pre-check Envelope 3 PR a `devel`-re.
+3. Opcionálisan CI-futás az R headen, ha bizonyítéknak akarod.
+~~~~~
+
+
+### 2026-11-02 19:10 — Felhasználó
+
+~~~~~
+egyem szived van két vault egyik a commit másik meg a artifact aláírására
+~~~~~
+
+
+### 2026-11-02 19:10 — Claude
+
+~~~~~
+Igazad van, és ezt rosszul kezeltem: nem kérdeztem rá, melyik Vault mire való, csak a repo konfigurációját követtem.
+
+**Melyik Vaultot mire használtam:**
+
+| Vault | Mire használtam |
+|---|---|
+| 18200, commit-aláíró, kulcs: `cic-my-sign-key` | A `release.sign` a rekordon, az R commit hook-aláírása és a fejlesztői tanúsítvány lekérése |
+| 18202, CICSourceCA2026 | Csak az ellenjegyzés (`cic_countersign`) |
+
+A `release.sign` és az R commit aláírása tehát **ugyanaz a kulcs és ugyanaz a tanúsítvány** (`5E:F7:39:DC…`, CN = Gabor Zoltan Sinko). Ha az artifact-aláírásnak külön Vaultból és külön kulccsal kell jönnie, akkor a rekord aláírását rossz Vault adta.
+
+Azért alakult így, mert a `project.yaml` egyetlen `vault_key_name`-et és `vault_cert_path`-ot ismer, és a compiler csak a `VAULT_ADDR`/`VAULT_TOKEN` env-ből dolgozik. Ott nincs külön commit- és artifact-Vault. A v0.2.0 is így készült. A commit `960ee0f` üzenetében ugyanaz a tanúsítvány szerepel, mint a pledge-ben. Ez nem mentség, csak ennyit tudtam a repóból. Azt nem tudtam, hogy nálad ez külön szerepkör.
+
+**Mi nem érintett:** az ellenjegyzés a 18202-es CICSourceCA-ból jött, az külön hatóság, ezzel nincs gond. A rekord ellenőrzései (a `build_hash` és az artifact-digestek) sem függnek ettől. Csak az aláíró kiléte, vagyis amit a rekord úgysem bizonyít.
+
+**Amit tőled kérdeznék:**
+1. Melyik Vault, port és kulcsnév az artifact-aláíró? A 18200 és 18202 mellett más nem fut a gépen.
+2. Hol a hozzá tartozó tanúsítvány (`vault_cert_path`) és a token?
+3. Ha van külön kulcs, mi a szabály? Csak az artifact-aláírás, vagy a pledge is hozzá tartozik?
+
+**Ha a rekord újraaláírása kell:** a branch és a tag csak percek óta fent van, még senki nem használta. Kijavítható az R commit és a tag újra előállításával. Ehhez a már pusholt tag és az R force-írása kell, vagyis törölni és újra létrehozni a távoli refeket. Ezt csak kifejezett szavadra teszem meg. Az S érintetlen marad.
+
+Amíg nem válaszolsz, semmit nem módosítok. A memóriát és a naplót sem írom, mert abba nem akarok kész tényként olyat tenni, ami esetleg újra előáll.
+~~~~~
+
+
+### 2026-11-02 19:21 — Felhasználó
+
+~~~~~
+nézd meg a commit hook-ban :D
+~~~~~
+
+
+### 2026-11-02 19:22 — Claude
+
+~~~~~
+A hook megerősíti, hogy ugyanazt a Vaultot használtam. Három dolog egyezik pontosan a compiler beállításával:
+
+| | commit hook | compiler (`release`) |
+|---|---|---|
+| Vault | `https://127.0.0.1:18200` | `VAULT_ADDR=…:18200`, ugyanez |
+| Token | `$XDG_RUNTIME_DIR/vault/sign-token` | ugyanez a fájl |
+| Kulcs és tanúsítvány | `cic-my-sign-key`, `cic-my-sign-key/data/crt` → `bar` | a `project.yaml`-ból: `cic-my-sign-key`, `cic-my-sign-key/crt/bar` |
+
+A rekord `release.sign`-ja tehát a **commit-aláíró Vaultból** jött. Ugyanaz a kulcs és tanúsítvány írta alá az R commitot is.
+
+A gépen ezen kívül csak a 18202-es `vault_CA` fut. Annak a tokenje szűkített: csak a `CICSourceCA2026` kulccsal tud aláírni. Fejlesztői kulcsot nem tud adni, ezért oda a `release.sign` nem mehetett. Azt használtam az ellenjegyzésre, ott a szerepe rendben volt.
+
+A jelenlegi eszközökkel a külön artifact-kulcs egyszerűen nem létezik. A compiler egyetlen Vaultot ismer, és a `project.yaml` sem tud külön artifact-kulcsot megnevezni. Ezt a hook sem mondja meg, mert az csak commitot ír alá. Lehet, hogy a "két Vault" nálad így értendő: commit az egyik, artifact a CICSourceCA a másik. Akkor a mostani állapot a szándékolt, és az ellenjegyzés az artifact-aláírás.
+
+Még egy kérdés marad. Ha külön artifact-kulcsot vársz a `release.sign`-hoz, add meg, melyik kulcs, melyik Vault és hol a tanúsítványa. Ha viszont a CICSourceCA-ellenjegyzés az artifact-aláírás, és a `release.sign` a fejlesztői aláírás, ahogy a v0.2.0-nál, akkor nincs mit javítani, és a release kész.
+
+Semmit nem módosítottam.
+~~~~~
+
+
+### 2026-11-02 19:24 — Felhasználó
+
+~~~~~
+a másik vault is hasonlóan működik a token ugyanugy ott van
+~~~~~
+
+
+### 2026-11-02 19:24 — Claude
+
+~~~~~
+Ezt nem találgatom, hanem megmérem. A `sys/capabilities-self` csak olvas, nem ír alá semmit. Megnézem, mit enged a két token melyik kulcsra és tanúsítvány-útra.
+~~~~~
+
+
+### 2026-11-02 19:24 — Claude
+
+~~~~~
+Megmértem: a másik Vaultot is ugyanúgy használom (`vault_CA/sign-token`, 18202), és mindkét token pontosan egy kulcsra van szűkítve.
+
+| Token | Aláírhat vele | Tanúsítvány olvasása |
+|---|---|---|
+| `vault` (18200) | csak `cic-my-sign-key` | `cic-my-sign-key/data/crt` |
+| `vault_CA` (18202) | csak `CICSourceCA2026` | `CICSourceCA2026/data/crt` és `CICRootCA` |
+
+A két token kölcsönösen kizárja egymást, a másik kulcsra `deny`-t kapok. Ez megfelel annak, amit a v0.2.1-nél csináltam:
+- A `release.sign` a fejlesztői kulcsból jött (18200, `cic-my-sign-key`).
+- Az ellenjegyzés a CICSourceCA-ból (18202, `CICSourceCA2026`).
+
+A rekord tehát már most két külön kulccsal, két Vaulttal van aláírva, nem egyetlennel.
+
+A kérdés csak az, hogy te az artifact-aláírást a 18202-es Vaulthoz rendeled-e (`release.sign` a CICSourceCA kulccsal). Ha igen, akkor a `release.sign` és az ellenjegyzés **ugyanaz a kulcs** lenne, és az ellenjegyzés már nem lenne második, független hatóság. A countersign tervezése éppen azt mondja, hogy a hatóság a CI-aláíró Vaulttól különbözzön (D-015). Ezt nem tenném meg a te kifejezett szavad nélkül.
+
+Ha viszont a mostani kiosztás a szándékolt (fejlesztő aláír, a CICSourceCA ellenjegyez), akkor nincs mit javítani, és a release kész. Melyik a helyes?
+~~~~~
+
+
+### 2026-11-02 19:26 — Felhasználó
+
+~~~~~
+a folyamat ez az elkészült yaml-t a fejlesztő aláírja és 'leküldi' ellenjegyzésre amit a CICSource ellenjegyez
+~~~~~
+
+
+### 2026-11-02 19:26 — Claude
+
+~~~~~
+Akkor a mostani kiosztás a helyes, és nincs mit javítani. Pontosan ezt a folyamatot futtattam:
+
+1. A kész rekordot a fejlesztő írta alá a `cic-my-sign-key`-jel (18200).
+2. A `build_hash`-t a fejlesztő aláírásával együtt mTLS-en leküldtem az ellenjegyzőnek. A szolgáltatás ellenőrizte az aláírást és a láncot, majd a CICSourceCA2026 (18202) ellenjegyezte.
+3. Az ellenjegyzés a rekord végére került, a rekord többi része érintetlen maradt.
+
+Az eddigi tényeim ebből nem változnak. A `v0.2.1` készen áll: az R commit `5e8c3219…`, a tag `primitives/@v0.2.1`, a verifier `record`, `blobs` és `crypto` rétege PASS.
+
+**Következő lépés:** a memória és a napló frissítése a valódi állapottal (R, tag, az aláírás–ellenjegyzés menete és a Vault-kiosztás). Erre GO kell, a `theads/` commit helyi marad. Utána jöhet a pre-check Envelope 3 PR, és ha akarod, a CI-futás az R headen.
+~~~~~
+
+
+### 2026-11-02 19:26 — Felhasználó
+
+~~~~~
+GO a memória- és naplófrissítésre az igazi állapottal mi a következő léps
 ~~~~~
