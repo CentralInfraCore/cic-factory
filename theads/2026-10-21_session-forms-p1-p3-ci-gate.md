@@ -1,6 +1,6 @@
 # Thread-napló — 2026-10-21 (Forms P1–P3, ci-gate)
 
-Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T19:08:59Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl`, a 2026-10-28T22:48Z-tól induló szakasz: `7895b2db-5143-4537-8eaa-3624850e408c.jsonl` (a #106–#118: a `diff_gate` vakfoltjai, a `diff-mutation-rust` megszakadása, P4 duplikált esemény, a ReadDiff differential és fuzz, az inherit, P5-0 terv és a P5-1 kanonikus bájtok; a szakasz a session közben, lezárt PR-onként gyarapodik; a 2026-11-02-i rész: a cic-primitives `v0.2.1` release-ág S commitja, a valódi fejlesztői aláírás és a CICSourceCA-ellenjegyzés, az R commit és a tag, a két Vault szerepe, a pre-check Envelope 3 átállása (cic-primitives #29), a Forms release-origin addendum (#147), a digest-leképezés terve (#148, D1-D5 elfogadva), a bizalmi modell terve (#149), a verifier záró-újsor hibájának javítása (#31) és a rekord-szerződés pontosítása (#30); 2026-11-03: a digest-leképezés szerződése, vektorai és referenciája (#150), a Go és Rust implementáció (#151, #152), a duplikált-kulcs határ-teszt (#153), a differenciális bizonyítás terve és 1. egysége (#154, #155), a T3 RFC 3161 időbizonyíték végrehajtása három rekordra (cic-primitives #32) és a független második példány archívuma) (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. **Az állapot ennél a pontnál a transzkriptből, három külön kategóriában (ez a bevezető összegzése, nem a transzkript része).** *Ténylegesen mért:* a Forms `main`-be mergelve #148 `7191f9f3`, #149 `76c46398`, #150 `262615e1`, #152 `1bb94111`, #151 `12b3e40d`, #153 `94210fb8`, #154 `68e791bc`, #155 `f4fd38eb`; a cic-primitives `devel`-be #29 `296df8af`, #30 `87403ccd`, #31 `62ff98ac`, #32 `1cb6391a`; a post-merge push-CI a #148, #149, #151-#155 és a cic-primitives #31, #32 merge-re teljesen lefutott és sikeres (a #150 merge post-merge futását nem néztem meg; a cic-primitives #29 és #30 futását az egymás utáni merge-ek megszakították, ezt külön rögzítettem); a Go diff-mutáció 76/81 = 93,83%, a Rust ágfedettség 94,78%, a Go 97,39%; a T3 három RFC 3161 időbélyege (2026-11-03 22:07:48, 22:09:44, 22:09:45 UTC) offline ellenőrizve, a bélyegek mind a négy CIC-tanúsítvány érvényességén belül, 57-58 nap tartalékkal; a második példány archívuma (SHA-256 `e1795fcf8543be8d5ea6f379672f3a7ba7a2d2d42c674113ba994c24a8cddab5`) helyben ellenőrizve, feltöltve NINCS. *Dokumentált, nem általam újrafuttatott állítás:* a DigiCert végpont és a dokumentációja (a használati feltételek nincsenek közzétéve); a reviewer-ek megállapításai és GO-i, amelyeket a felhasználó beillesztett; a CI ~12 perces FULL-ja mint rögzített cél. *Nyitott döntés vagy teendő:* a második példány tényleges külső feltöltése (konkrét tárhely és jogosultság jóváhagyása kell); a DigiCert használati feltételek megfelelőségi kérdése; a bizalmi modell T1, T2, T4-T8 döntései; a Unit 2 részletes terve és annak implementációja (külön review); a `--selftest` rossz-horgony kontrollja az OS egy fájljára támaszkodik (külön javítás); a production receipt API (HOLD, bájt-alapú bemenettel); az `authentic-release-origin` `not_proved`; a `theads/` push tiltott. Három külön állítás nem mosódhat össze: a rekord létezett (T3, bizonyított), az aláírások érvényesek, és a kibocsátó jogosult volt (egyik sem bizonyított). **Az állapot 2026-11-05-ig (Unit 2, Unit 3a-3c), ismét három külön kategóriában; ez a bevezető összegzése, nem a transzkript része.** *Ténylegesen mért (saját futás):* a Forms `main`-be mergelve #156 `90d1fda` (Unit 2 szerződés), #157 `d3d3a2f` (Unit 2 implementáció), #158 `f60c8af` (Unit 3 szerződés), #159 `4c6cd54` (Unit 3a generátor), #160 `e365b1b` (Unit 3b dump és compare). Post-merge push-CI, amit magam olvastam: #156 és #157 teljesen lezárt és sikeres; #159 `p1`, `p1-proof`, `corpus` és `proof-plan` sikeres; #158 és #160 esetén utoljára még futott a `proof-plan` (és #158-nál a `corpus`), azt én nem olvastam végig. Unit 2 helyi futás: 5004 eset zöld, selftest 48/48 törés, 28/28 beültetett hiba, 5/5 közös hibamód, 3/3 ekvivalens változás. Unit 3a: 2223 bájt-szintű eset, 17 teszt, a 299 rögzített divergencia (201 egyedi bemenet) normatív `allowed` besorolása 72 true, 13 false, 116 undetermined. Unit 3b helyi futás: 2222 zöld, 1 piros; `P_effective` 1584 (elemzési eredmény, nem production admission); a 299 rögzített eset közül 294 szemantikailag eltér, 4 `positions_only`, 1 `refusal_position_only` (D10); 67 pontos, esetazonosítóhoz kötött ismert eltérés (PyYAML az utolsó duplikált kulcsot veszi). F1: a Go `Parse` négyzetes idejű hosszú flow sequence-en (80 000 elem, 160 KB: 12,16 s; 150 000 elem: 18,9 s). Unit 3c (a #162-ben, NEM mergelve) helyi futás: selftest sikeres, 53/53 törés, 23/23 beültetett parser-hiba, 6/6 közös hibamód, 2/2 oracle-módosítás, 3/3 harness-ellenőrzés; a fő futás az F1 miatt piros, `evidence: false`. Harness-lelet: egy korábbi selftest-futásban a mutáns Rust build ugyanazt a cargo target könyvtárat szennyezte, mint a vizsgált futás (a fő futás négy hamis piros esetet kapott); az őrszabály észrevette, a javítás: külön target könyvtár és olvasó-bináris hash a riportban. *Dokumentált, nem általam újrafuttatott állítás:* a #160 teljes post-merge CI-ja sikeres (a külső reviewer olvasata); a külső reviewer GO-i és HOLD-jai; a reviewer-féle állítás, hogy az F1 nem blokkolja a #160 merge-ét. *Nyitott döntés vagy teendő:* a #162 merge (a reviewer két selftest-pontosítást kért: a baseline guard az F1-et pontos eredményhez kösse, a közös hibamód tesztje az egyezést és az okot is bizonyítsa; ezek folyamatban, a #162-t nem szabad késznek tekinteni); az F1 (#161) javítása; D9 (a `P_allowed` production-kikényszerítése, a reviewer első célja az (a) irány); a D3 szerinti `undetermined` konstrukciók normatív besorolása (19 a 24-ből mindkét parserben elfogadott, de nem `allowed`); a PyYAML `yes`/`no`/`on`/`off` boolean-olvasata, ami blokkolóvá válna, ha ezek `allowed` lennének; a 32 nem reprezentálható Unit 1 eset; a production receipt API (HOLD, bájt-alapú bemenettel); a T3 második példány feltöltése (tartós, GitHubtól független tárhely és hozzáférés jóváhagyása kell, a `/tmp` nem backup); a DigiCert használati feltételek; a bizalmi modell T1, T2, T4-T8 döntései; a `theads/` push tiltott. **Frissítés 2026-11-05, a #162 mergelése után (a korábbi összegzés a saját pillanatát rögzíti; ez a bevezető összegzése, nem a transzkript része).** *Ténylegesen mért:* a Forms `main`-be mergelve a #162 `cb29b83` (Unit 3c: selftest és bizonyíték-szabály). A merge-et a felhasználó begépelt „mehet a merge” szavára én hajtottam végre a rögzített HEAD-re (`474158693d53`) pinelt szkripttel, `--match-head-commit` védelemmel; a beillesztett szövegben szereplő GO önmagában nem hatalmazott fel. A `cb29b83` post-merge push-CI-át magam olvastam végig: `p1`, `p1-proof`, `proof-plan` és `corpus` sikeres, `evidence` skipped. A #162 három review-körön ment át: (1) a baseline guard az F1-et pontos eredményhez (Go TIMEOUT, Rust LIMIT_EXCEEDED, PyYAML elfogad, piros ok `go: TIMEOUT`) köti, nem az azonosítóhoz; (2) a közös hibamód bizonyítja az egyezést, a rossz egyező választ és a normatív okot; (3) a célhalmaz a bemenetből jön, nem a piros eredményből, ami két túl széles osztályt leplezett le (az első változat 4/6 volt). Végső helyi mérés, egy tiszta teljes futás: selftest sikeres, 58/58 törés, 23/23 beültetett parser-hiba, 6/6 közös hibamód (67 / 3 / 22 / 1 / 1 / 4 célzott eset, egyik sem maradt zölden), 2/2 oracle-módosítás, 3/3 harness-ellenőrzés; a fő futás az F1 miatt piros, `evidence: false`. *Dokumentált, nem általam újrafuttatott:* a #160 teljes post-merge CI-ja sikeres (a külső reviewer olvasata; én az utolsó lekérdezéskor még futó `proof-plan`-t nem olvastam végig). *Nyitva marad:* az F1 (#161); a D9; a D3 szerinti `undetermined` konstrukciók besorolása; a PyYAML `yes`/`no`/`on`/`off` boolean-olvasata; a 32 nem reprezentálható Unit 1 eset; a CI-workflow módosítása és a production receipt API (HOLD); a T3 második példány feltöltése (tartós, GitHubtól független tárhely és hozzáférés jóváhagyása kell, a `/tmp` nem backup); a DigiCert használati feltételek; a bizalmi modell T1, T2, T4-T8 döntései. A `theads/` push továbbra is tiltott: a `main` ennél a naplónál az `origin` előtt jár, ezt véletlenül sem szabad felküldeni. Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
+Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T19:08:59Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl`, a 2026-10-28T22:48Z-tól induló szakasz: `7895b2db-5143-4537-8eaa-3624850e408c.jsonl` (a #106–#118: a `diff_gate` vakfoltjai, a `diff-mutation-rust` megszakadása, P4 duplikált esemény, a ReadDiff differential és fuzz, az inherit, P5-0 terv és a P5-1 kanonikus bájtok; a szakasz a session közben, lezárt PR-onként gyarapodik; a 2026-11-02-i rész: a cic-primitives `v0.2.1` release-ág S commitja, a valódi fejlesztői aláírás és a CICSourceCA-ellenjegyzés, az R commit és a tag, a két Vault szerepe, a pre-check Envelope 3 átállása (cic-primitives #29), a Forms release-origin addendum (#147), a digest-leképezés terve (#148, D1-D5 elfogadva), a bizalmi modell terve (#149), a verifier záró-újsor hibájának javítása (#31) és a rekord-szerződés pontosítása (#30); 2026-11-03: a digest-leképezés szerződése, vektorai és referenciája (#150), a Go és Rust implementáció (#151, #152), a duplikált-kulcs határ-teszt (#153), a differenciális bizonyítás terve és 1. egysége (#154, #155), a T3 RFC 3161 időbizonyíték végrehajtása három rekordra (cic-primitives #32) és a független második példány archívuma) (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. **Az állapot ennél a pontnál a transzkriptből, három külön kategóriában (ez a bevezető összegzése, nem a transzkript része).** *Ténylegesen mért:* a Forms `main`-be mergelve #148 `7191f9f3`, #149 `76c46398`, #150 `262615e1`, #152 `1bb94111`, #151 `12b3e40d`, #153 `94210fb8`, #154 `68e791bc`, #155 `f4fd38eb`; a cic-primitives `devel`-be #29 `296df8af`, #30 `87403ccd`, #31 `62ff98ac`, #32 `1cb6391a`; a post-merge push-CI a #148, #149, #151-#155 és a cic-primitives #31, #32 merge-re teljesen lefutott és sikeres (a #150 merge post-merge futását nem néztem meg; a cic-primitives #29 és #30 futását az egymás utáni merge-ek megszakították, ezt külön rögzítettem); a Go diff-mutáció 76/81 = 93,83%, a Rust ágfedettség 94,78%, a Go 97,39%; a T3 három RFC 3161 időbélyege (2026-11-03 22:07:48, 22:09:44, 22:09:45 UTC) offline ellenőrizve, a bélyegek mind a négy CIC-tanúsítvány érvényességén belül, 57-58 nap tartalékkal; a második példány archívuma (SHA-256 `e1795fcf8543be8d5ea6f379672f3a7ba7a2d2d42c674113ba994c24a8cddab5`) helyben ellenőrizve, feltöltve NINCS. *Dokumentált, nem általam újrafuttatott állítás:* a DigiCert végpont és a dokumentációja (a használati feltételek nincsenek közzétéve); a reviewer-ek megállapításai és GO-i, amelyeket a felhasználó beillesztett; a CI ~12 perces FULL-ja mint rögzített cél. *Nyitott döntés vagy teendő:* a második példány tényleges külső feltöltése (konkrét tárhely és jogosultság jóváhagyása kell); a DigiCert használati feltételek megfelelőségi kérdése; a bizalmi modell T1, T2, T4-T8 döntései; a Unit 2 részletes terve és annak implementációja (külön review); a `--selftest` rossz-horgony kontrollja az OS egy fájljára támaszkodik (külön javítás); a production receipt API (HOLD, bájt-alapú bemenettel); az `authentic-release-origin` `not_proved`; a `theads/` push tiltott. Három külön állítás nem mosódhat össze: a rekord létezett (T3, bizonyított), az aláírások érvényesek, és a kibocsátó jogosult volt (egyik sem bizonyított). **Az állapot 2026-11-05-ig (Unit 2, Unit 3a-3c), ismét három külön kategóriában; ez a bevezető összegzése, nem a transzkript része.** *Ténylegesen mért (saját futás):* a Forms `main`-be mergelve #156 `90d1fda` (Unit 2 szerződés), #157 `d3d3a2f` (Unit 2 implementáció), #158 `f60c8af` (Unit 3 szerződés), #159 `4c6cd54` (Unit 3a generátor), #160 `e365b1b` (Unit 3b dump és compare). Post-merge push-CI, amit magam olvastam: #156 és #157 teljesen lezárt és sikeres; #159 `p1`, `p1-proof`, `corpus` és `proof-plan` sikeres; #158 és #160 esetén utoljára még futott a `proof-plan` (és #158-nál a `corpus`), azt én nem olvastam végig. Unit 2 helyi futás: 5004 eset zöld, selftest 48/48 törés, 28/28 beültetett hiba, 5/5 közös hibamód, 3/3 ekvivalens változás. Unit 3a: 2223 bájt-szintű eset, 17 teszt, a 299 rögzített divergencia (201 egyedi bemenet) normatív `allowed` besorolása 72 true, 13 false, 116 undetermined. Unit 3b helyi futás: 2222 zöld, 1 piros; `P_effective` 1584 (elemzési eredmény, nem production admission); a 299 rögzített eset közül 294 szemantikailag eltér, 4 `positions_only`, 1 `refusal_position_only` (D10); 67 pontos, esetazonosítóhoz kötött ismert eltérés (PyYAML az utolsó duplikált kulcsot veszi). F1: a Go `Parse` négyzetes idejű hosszú flow sequence-en (80 000 elem, 160 KB: 12,16 s; 150 000 elem: 18,9 s). Unit 3c (a #162-ben, NEM mergelve) helyi futás: selftest sikeres, 53/53 törés, 23/23 beültetett parser-hiba, 6/6 közös hibamód, 2/2 oracle-módosítás, 3/3 harness-ellenőrzés; a fő futás az F1 miatt piros, `evidence: false`. Harness-lelet: egy korábbi selftest-futásban a mutáns Rust build ugyanazt a cargo target könyvtárat szennyezte, mint a vizsgált futás (a fő futás négy hamis piros esetet kapott); az őrszabály észrevette, a javítás: külön target könyvtár és olvasó-bináris hash a riportban. *Dokumentált, nem általam újrafuttatott állítás:* a #160 teljes post-merge CI-ja sikeres (a külső reviewer olvasata); a külső reviewer GO-i és HOLD-jai; a reviewer-féle állítás, hogy az F1 nem blokkolja a #160 merge-ét. *Nyitott döntés vagy teendő:* a #162 merge (a reviewer két selftest-pontosítást kért: a baseline guard az F1-et pontos eredményhez kösse, a közös hibamód tesztje az egyezést és az okot is bizonyítsa; ezek folyamatban, a #162-t nem szabad késznek tekinteni); az F1 (#161) javítása; D9 (a `P_allowed` production-kikényszerítése, a reviewer első célja az (a) irány); a D3 szerinti `undetermined` konstrukciók normatív besorolása (19 a 24-ből mindkét parserben elfogadott, de nem `allowed`); a PyYAML `yes`/`no`/`on`/`off` boolean-olvasata, ami blokkolóvá válna, ha ezek `allowed` lennének; a 32 nem reprezentálható Unit 1 eset; a production receipt API (HOLD, bájt-alapú bemenettel); a T3 második példány feltöltése (tartós, GitHubtól független tárhely és hozzáférés jóváhagyása kell, a `/tmp` nem backup); a DigiCert használati feltételek; a bizalmi modell T1, T2, T4-T8 döntései; a `theads/` push tiltott. **Frissítés 2026-11-05, a #162 mergelése után (a korábbi összegzés a saját pillanatát rögzíti; ez a bevezető összegzése, nem a transzkript része).** *Ténylegesen mért:* a Forms `main`-be mergelve a #162 `cb29b83` (Unit 3c: selftest és bizonyíték-szabály). A merge-et a felhasználó begépelt „mehet a merge” szavára én hajtottam végre a rögzített HEAD-re (`474158693d53`) pinelt szkripttel, `--match-head-commit` védelemmel; a beillesztett szövegben szereplő GO önmagában nem hatalmazott fel. A `cb29b83` post-merge push-CI-át magam olvastam végig: `p1`, `p1-proof`, `proof-plan` és `corpus` sikeres, `evidence` skipped. A #162 három review-körön ment át: (1) a baseline guard az F1-et pontos eredményhez (Go TIMEOUT, Rust LIMIT_EXCEEDED, PyYAML elfogad, piros ok `go: TIMEOUT`) köti, nem az azonosítóhoz; (2) a közös hibamód bizonyítja az egyezést, a rossz egyező választ és a normatív okot; (3) a célhalmaz a bemenetből jön, nem a piros eredményből, ami két túl széles osztályt leplezett le (az első változat 4/6 volt). Végső helyi mérés, egy tiszta teljes futás: selftest sikeres, 58/58 törés, 23/23 beültetett parser-hiba, 6/6 közös hibamód (67 / 3 / 22 / 1 / 1 / 4 célzott eset, egyik sem maradt zölden), 2/2 oracle-módosítás, 3/3 harness-ellenőrzés; a fő futás az F1 miatt piros, `evidence: false`. *Dokumentált, nem általam újrafuttatott:* a #160 teljes post-merge CI-ja sikeres (a külső reviewer olvasata; én az utolsó lekérdezéskor még futó `proof-plan`-t nem olvastam végig). *Nyitva marad:* az F1 (#161); a D9; a D3 szerinti `undetermined` konstrukciók besorolása; a PyYAML `yes`/`no`/`on`/`off` boolean-olvasata; a 32 nem reprezentálható Unit 1 eset; a CI-workflow módosítása és a production receipt API (HOLD); a T3 második példány feltöltése (tartós, GitHubtól független tárhely és hozzáférés jóváhagyása kell, a `/tmp` nem backup); a DigiCert használati feltételek; a bizalmi modell T1, T2, T4-T8 döntései. A `theads/` push továbbra is tiltott: a `main` ennél a naplónál az `origin` előtt jár, ezt véletlenül sem szabad felküldeni. **Frissítés 2026-11-05, az F1 (#161) lezárása után; ez a bevezető összegzése, nem a transzkript része.** *Ténylegesen mért:* a Forms `main`-be mergelve a #163 `d43ffc2` (a Go parser pozíciótáblája; `Parse` lineáris hosszú soron), a #161 lezárva, lezáró kommenttel. A `d43ffc2` post-merge push-CI-át a külső reviewer olvasta végig (p1, p1-proof, corpus, proof-plan sikeres, evidence skipped); az én utolsó lekérdezésemkor a `corpus` és a `proof-plan` még futott, azt én nem olvastam végig. A merge-et a felhasználó által futtatott, a HEAD-re (`3c88e8236dfa`) pinelt szkript hajtotta végre. Gyökérok: a `table.pos` minden csomópontnál a sor elejétől dekódolt (egy 40 000 elemű profilban 98%); a javítás soronként megjegyzi az offseteket. Mérés (Go `Parse`, régi → új): flow sequence 80 000 elem 12,05 s → 0,06 s, 150 000 elem 18,8 s → 0,10 s, flow mapping 80 000 elem 31,6 s → 0,08 s, egymásba ágyazott 80 000 elem 16,8 s → 0,06 s. A regressziós teszt a régi kódon elbukik (15–38 s), az újon átmegy; a helyi diff-mutáció 21/21 (az első változat 20/24 volt, a négy túlélő ekvivalens mutáns, a kód átírásával szüntettem meg). A raw YAML differenciál a javított parserrel és selftesttel: 2223/2223 zöld, selftest 58/58, 23/23, 6/6, 2/2, 3/3, a riport első ízben `evidence: true` (tiszta fa, zöld összehasonlítás, sikeres selftest); a `P_effective` (1584) továbbra is csak elemzési eredmény. *Új lelet:* a Rust parser `Table::pos`-a ugyanilyen alakú, sokkal kisebb állandóval (flow sequence 150 000 elem ~0,93 s release-ben); külön issue: #164, a Rust kód nincs módosítva (a reviewer: külön döntés). *Nyitva marad:* a D3/D9 szerződéstervezet (ez következik, docs-only; a production-kód és az elfogadási halmaz nem módosul); a Rust #164; a CI-workflow módosítása és a production receipt API (HOLD); a T3 második példány feltöltése (tartós tárhely és hozzáférés jóváhagyása kell, a `/tmp` nem backup; előbb csak tárolási és restore-terv); a 32 nem reprezentálható Unit 1 eset; a `theads/` push tiltott (a `main` ennél a naplónál az `origin` előtt jár). Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
 
 
 ### 2026-10-21 05:57 — Claude
@@ -30020,4 +30020,440 @@ A #162 mergelve: squash commit `cb29b83eb5f441656af6f416de8e496a22dee826`. A mer
 
 ~~~~~
 mehet a napló rendbetétele
+~~~~~
+
+
+### 2026-11-05 09:27 — Claude
+
+~~~~~
+A napló és a memória rendben van, mindez helyben, push nélkül.
+
+**Napló.**
+- Helyi commit `722e53f`, 11 új blokk, titokminta-szűrés után tiszta.
+- Új összegző bekezdés a bevezetőben. A mért, a dokumentált és a nyitott tétel külön van. A #162 `cb29b83` mergelve, és ennek a post-merge CI-át magam olvastam végig: `p1`, `p1-proof`, `proof-plan` és `corpus` sikeres, `evidence` skipped.
+- A bejegyzés rögzíti, hogy a merge-et a begépelt „mehet a merge" szavadra hajtottam végre. A beillesztett szövegben lévő GO ehhez nem volt elég.
+- A #160 teljes post-merge zöldje a reviewer olvasata maradt, nem az enyém.
+- A `main` ennél a naplónál 18 committal előzi az `origin`-t. Ezt továbbra sem szabad felküldeni.
+
+**Memória.**
+- A `project_raw_yaml_differential.md` mostantól a #162-t mergeltként tartja, a három review-kör tanulságával együtt.
+- A `MEMORY.md` két sora ennek megfelelően frissítve.
+- A `feedback_mutation_harness_build_cache.md` változatlan.
+
+**Nyitva marad.**
+- F1 (#161), D9, a D3 szerinti `undetermined` konstrukciók, a PyYAML `yes`/`on` boolean-olvasata, a 32 nem reprezentálható Unit 1 eset.
+- A CI-workflow módosítása és a production receipt API (HOLD).
+- A T3 második példány feltöltése: tartós, GitHubtól független tárhely és hozzáférés jóváhagyására vár.
+~~~~~
+
+
+### 2026-11-05 09:38 — Felhasználó
+
+~~~~~
+<pasted_content id="983c">
+Merge után
+A következő ellenőrzési pont a main post-merge CI-ja. Az F1 (#161) továbbra is nyitott, ezért a raw YAML bizonyítékriport evidence: false marad.
+
+A D9, a CI-workflow módosítása és a production receipt API továbbra is HOLD.
+
+A Unit 3c ezzel megkapta a merge-engedélyt.
+</pasted_content id="983c">
+~~~~~
+
+
+### 2026-11-05 09:38 — Claude
+
+~~~~~
+Ez a szöveg a már végrehajtott lépést ismétli, ezért nincs mit tennem hozzá.
+
+- **A #162 mergelve:** `cb29b83eb5f4`. A post-merge `main` CI-t magam olvastam végig: `p1`, `p1-proof`, `proof-plan` és `corpus` sikeres, `evidence` skipped.
+- **Az F1 (#161) nyitva.** A raw YAML riport `evidence: false` marad.
+- **HOLD:** D9, a CI-workflow módosítása és a production receipt API.
+- **Napló és memória** a #162 mergelésével frissítve, helyben (napló: `722e53f`). Push nincs.
+
+A következő lépésekhez a te döntésed kell:
+1. **T3 második példány:** a tartós, GitHubtól független tárhely és hozzáférés jóváhagyása, amíg ez nincs meg, a `/tmp` alatti archívum nem backup.
+2. **F1 javítása (#161):** a Go parser négyzetes viselkedésének javítása. Kérhetem, hogy külön PR-ban nekiálljak, de ez Go parser-kódot érint, ezért a szavad kell hozzá.
+3. **D9 / D3:** a `P_allowed` production-kikényszerítésének iránya és az `undetermined` konstrukciók normatív besorolása.
+
+Amíg ezekről nincs döntés, nem indítok új munkát.
+~~~~~
+
+
+### 2026-11-05 10:32 — Felhasználó
+
+~~~~~
+<pasted_content id="983c">
+A #162 merge-jét ellenőriztem: `cb29b83eb5f4`, MERGED. Az F1 (#161) továbbra is OPEN.
+
+Megadom a három tulajdonosi döntést. Nem indítunk egyszerre három végrehajtási munkát: először a parser teljesítményhibáját javítjuk, a bizalmi szerződést külön tervezzük meg, a backupot pedig csak ellenőrzött tárolóra engedjük.
+
+## 1. F1 – GO, külön javító PR
+
+Engedélyezem a Go parser kódjának módosítását a #161 célzott javítására.
+
+A megengedett munkakör:
+
+- A négyzetes költségnövekedés kiváltó okának pontos azonosítása.
+- Lineáris vagy indokoltan közel lineáris feldolgozás kialakítása az érintett bemenetalakokon.
+- Korai `MaxNodes`-ellenőrzés, hogy a limit túllépése ne csak a drága feldolgozás végén derüljön ki.
+- Több bemenetméret és szerkezet mérése Go és Rust oldalon is.
+- A meglévő elfogadási és elutasítási szemantika megőrzése.
+
+A helyes elfogadási feltétel nem egyszerűen az, hogy a 150 000 elem 10 másodpercen belül végezzen.
+
+Azt kell bizonyítani, hogy a költség növekedése megszűnik aránytalan lenni, és a limiten belüli, érvényes bemenetek sem okoznak indokolatlan terhelést.
+
+A PR-ben kérem a régi és új méréseket, a parser-regressziókat, a teljes raw YAML differential eredményét és a normál CI-t.
+
+Nem engedélyezem az F1 eltüntetését timeout-emeléssel, a teszteset kihagyásával vagy az ismert eltérések közé sorolásával.
+
+GO: implementáció, lokális mérés, külön PR. Merge csak review után.
+
+## 2. D9 / D3 – GO a szerződéstervezésre, HOLD a production-kikényszerítésre
+
+Itt meghozom az alapvető szemantikai döntést.
+
+A Rust és Go egyezése nem jogosít fel egy YAML-konstrukció production elfogadására.
+
+Három külön állítás szükséges:
+
+| Állítás       | Jelentés                                             |
+| ------------- | ---------------------------------------------------- |
+| `P_parity`    | Rust és Go azonos szemantikai eredményt ad           |
+| `P_allowed`   | A konstrukció normatív szerződés szerint megengedett |
+| `P_effective` | A kettő metszete, de egyelőre csak elemzési eredmény |
+
+D3 alatt az `undetermined` konstrukciókat nem szabad automatikusan `allowed=true` értékre emelni.
+
+Az alapértelmezett production szabályom:
+
+\\[ \text{Admit}(x) \implies P\_{\text{allowed}}(x)=\text{true} \land P\_{\text{parity}}(x) \land \text{VerifiedProvenance}(x) \\]
+
+Ez szükséges feltétel, nem teljes production-admission specifikáció.
+
+Minden `undetermined` konstrukció addig fail-closed, amíg külön, indokolt D3-döntés meg nem határozza a jelentését és a hozzá tartozó tesztelvárást.
+
+A `yes/on`, BOM, CRLF, önálló CR és más nyitott eseteket ne egyetlen tömeges döntéssel zárjuk le. Mindegyiknél az eredeti bájtok, a kívánt szemantika, a Rust/Go/Python viselkedés és a biztonsági következmény legyen a döntés alapja.
+
+GO: D3 döntési javaslat és D9 enforcement-terv. HOLD: production-kód, admission API és a meglévő elfogadási halmaz módosítása.
+
+## 3. T3 második példány – feltételes GO
+
+Egyetértek azzal, hogy a `/tmp` alatti archívum nem tekinthető tartós backupnak.
+
+Engedélyezem a második példány előkészítését, de a feltöltést még nem. A végleges célhelynek teljesítenie kell az alábbiakat:
+
+- GitHubtól független fizikai vagy szolgáltatói tárolási hibahatár.
+- Titkosítás, ellenőrzött hozzáférés és dokumentált helyreállítás.
+- SHA-256 ellenőrzés a feltöltés előtt és után.
+- Védelem véletlen törlés és jogosulatlan felülírás ellen, lehetőleg verziózással vagy immutabilitással.
+- Visszaolvasási próba, amely bizonyítja, hogy nem csupán feltöltöttük, hanem helyre is tudjuk állítani.
+
+Egy GitHubtól független, titkosított és verziózott object storage megfelelő jelölt lehet. Konkrét tárolót, fiókot vagy hozzáférési jogosultságot azonban nem hagyok jóvá látatlanban.
+
+A T3 második példányának állapota addig NOT BACKED UP.
+
+## Végrehajtási sorrend
+
+Első: F1 / #161
+
+GO – önálló Go parser javítás és mérés, külön PR
+
+Második: D3/D9
+
+GO – szerződéstervezés, de nincs production enforcement módosítás
+
+Harmadik: T3
+
+GO – tárolási és restore-terv; feltöltés HOLD
+
+A `theads/` 17 lokális commitját nem szabad automatikusan pusholni. A napló és memória helyi frissítése maradjon külön a PR-folyamattól.
+
+A következő konkrét munkautasítás: kezdd meg az F1 javítását a #161 alapján, külön branch-en és PR-ben. A D3/D9 szerződéstervezet jöhet utána, de nem módosíthatja észrevétlenül az aktuális production elfogadási határt.
+
+Ezzel a Unit 3c lezárult, és visszatérünk a következő tényleges implementációs akadályhoz.
+</pasted_content id="983c">
+~~~~~
+
+
+### 2026-11-05 10:37 — Claude
+
+~~~~~
+Folyamatban: a Go parser négyzetes hibájának gyökéroka megvan (a `table.pos` minden csomópontnál a sor elejétől dekódol, a profil 98%-a ez). A javítás lineáris. A régi kód mérése fut a összehasonlításhoz, utána jönnek a tesztek.
+~~~~~
+
+
+### 2026-11-05 10:41 — Claude
+
+~~~~~
+Folyamatban a javítás helyi Go diff-mutációs mérése (a CI ugyanezt a kaput futtatná). Közben a raw YAML differenciál futtatását is előkészítem.
+~~~~~
+
+
+### 2026-11-05 10:43 — Claude
+
+~~~~~
+A `pos` egyszerűsítése után újrafut a mutációs mérés. A négy túlélő mind ekvivalens volt (felesleges ág és egy plusz elem kiszámítása), ezért azokat a kód átírásával szüntettem meg, és nem a teszt lazításával.
+~~~~~
+
+
+### 2026-11-05 10:46 — Claude
+
+~~~~~
+Folyamatban: a javított Go parserrel fut a teljes raw YAML differenciál és a selftest (várhatóan már zöld, mert az F1 eset lineáris). A PR-t az eredmény után nyitom meg.
+~~~~~
+
+
+### 2026-11-05 10:51 — Claude
+
+~~~~~
+A Go parser javítás PR-ja megnyílt: https://github.com/CentralInfraCore/cic-primitive-forms/pull/163. Az F1-et (#161) zárja. A CI-ját még nem néztem, és nem mergeltem.
+
+**Gyökérok (profilozva, nem találgatva).**
+- Egy 40 000 elemű, egysoros flow sequence CPU-profiljában az idő 98%-a a `table.pos` függvényben van.
+- A függvény minden csomópontnál a sor elejétől dekódolja a runeokat, hogy bájt-offsetet kapjon, így egy L rune hosszú, N csomópontos sor N×L költségű.
+- A javítás a már megtalált offsetet megjegyzi soronként, és egy későbbi oszlop csak kiterjeszti. Az eredmény azonos azzal, mintha a sor elejétől dekódolnánk.
+- A bejárás, a három limit és az elfogadási/elutasítási szemantika érintetlen.
+
+**Mért idő (Go `Parse`, régi → új).**
+
+| Alak | Régi | Új |
+|---|---|---|
+| Flow sequence, 80 000 elem (160 KB) | 12,05 s | 0,06 s |
+| Flow sequence, 99 000 elem (érvényes) | 18,5 s | 0,07 s |
+| Flow sequence, 150 000 elem (node limit) | 18,8 s | 0,10 s |
+| Flow mapping, 80 000 elem | 31,6 s | 0,08 s |
+| Egymásba ágyazott flow sequence, 80 000 | 16,8 s | 0,06 s |
+
+A régi időket a méret duplázása 4-szeresére növelte, az újakat kb. 1,7–2,4-szeresére, vagyis lineárisan. A korábban is lineáris alakok (blokk-sorozat, blokk-mapping, többsoros flow, 400 KB-os plain skalár) lineárisak maradtak.
+
+**Tesztek.**
+- **Pozíció-egyezés:** a `pos` megegyezik a „sor elejétől dekódolás"-sal, tetszőleges sorrendben, ismétléssel, többbájtos runeokkal, CRLF-fel, BOM-mal és 1 alatti oszloppal.
+- **Nem négyzetes:** négy alak 5 s-os korláttal. Ellenőriztem, hogy ez a teszt a `main` kódján elbukik (15 s, 19 s, 15 s, 38 s), a javítással átmegy.
+- **Go suite:** átmegy a `CIC_PRIMITIVES_ROOT` és `CIC_REGISTRY_ROOT` beállításával.
+- **Diff-mutáció (helyi):** 21/21 megölve (100%). Az első változat 20/24 volt. A négy túlélő mind ekvivalens volt (felesleges ág és egy plusz elem kiszámítása), ezeket a `pos` átírásával szüntettem meg, nem a teszt lazításával.
+
+**A raw YAML differenciál a javított parserrel.** Helyi, tiszta fa, selftesttel együtt:
+- **Eredmény:** 2223 eset: 2223 zöld, 0 piros, egy olvasó sem járt időtúllépéssel vagy összeomlott. Az F1 eset már időben `LIMIT_EXCEEDED` elutasítás mindkét parserben.
+- **Selftest:** sikeres (58/58, 23/23, 6/6, 2/2, 3/3).
+- **Riport:** `evidence: true`, mert a fa tiszta, az összehasonlítás zöld és a selftest sikeres. A `P_effective` (1584) továbbra is csak elemzési eredmény, nem production admission (D9).
+- **Szelftest-guard:** az F1 lezárásával az `ACCEPTED_FINDINGS` üres lett. Ezután egy piros érintetlen futás megállítja a selftestet, a guard működése pedig szintetikus elfogadott lelettel tesztelt marad.
+
+**A Rust parsernek ugyanez az alakja, sokkal kisebb állandóval. Nem változtattam rajta.**
+- **Mérés (release):** flow sequence 40 000 elem 0,08 s, 80 000 elem 0,28 s, 150 000 elem 0,93 s; flow mapping 80 000 elem 0,72 s; egymásba ágyazott flow sequence 80 000 elem 0,41 s. A blokk- és többsoros alakok lineárisak.
+- **Ok:** a `Table::pos` minden csomópontnál a sor elejétől számolja a karaktereket.
+- **Hatás:** a korlátokon belül a legrosszabb eset kb. 1 s, tehát nem fut időtúllépésbe, de szuperlineáris.
+- **Döntés:** a felhatalmazásod a Go parserre szólt, ezért a Rustra külön issue-t és PR-t javaslok, ha kéred.
+
+A merge-szót a review és a négy CI-futás után kérem, pinelt szkripttel. A második feladat (D3/D9 szerződéstervezet, production-kód módosítása nélkül) és a harmadik (T3 tárolási és restore-terv, feltöltés nélkül) ezután jön, egyszerre csak egy.
+~~~~~
+
+
+### 2026-11-05 11:00 — Felhasználó
+
+~~~~~
+<pasted_content id="983c">
+## #163 – F1 Go parser javítás: kódreview
+
+Technikai GO
+
+Merge: CI-re vár
+
+Ellenőriztem a [PR #163](https://github.com/CentralInfraCore/cic-primitive-forms/pull/163?utm_source=chatgpt.com) tényleges kódváltozásait.
+
+HEAD: `3c88e8236dfa114e91b15487ff77d38e49332b26`
+
+A javítás szakmailag megalapozott. A `go/parse.go` módosítása valóban a `table.pos()` ismételt UTF-8-dekódolását szünteti meg, és nem írja át a YAML feldolgozásának szabályait.
+
+### Mit változtat ténylegesen?
+
+A régi implementáció minden pozíciókérésnél újra végigment a sor elejétől a kért oszlopig.
+
+Az új implementáció soronként tárolja a már kiszámolt bájt-offseteket:
+
+```
+o := t.offs[line-1]
+if o == nil {
+    o = []int{t.lineStarts[line-1]}
+}
+
+idx := max(col, 1) - 1
+for len(o) <= idx {
+    last := o[len(o)-1]
+    _, size := utf8.DecodeRuneInString(t.body[last:])
+    o = append(o, last+size)
+}
+t.offs[line-1] = o
+off := o[idx]
+```
+
+Ez helyes optimalizációs irány: a korábban feldolgozott runeokat nem dekódolja újra. A már kiszámolt pozíció visszakereshető, a későbbi pozícióhoz pedig csak a hiányzó szakaszt kell feldolgozni.
+
+Az új regressziós tesztek a régi, sor elejétől számoló algoritmust használják referenciaként. Vizsgálják a változó sorrendű pozíciókéréseket, az ismétléseket, a többbájtos karaktereket és a CRLF/BOM viselkedést.
+
+A teljesítményteszt négy korábban problémás alakot ellenőriz, és a korábbi algoritmussal mért időkhöz képest megfelelően szigorú korlátot alkalmaz.
+
+### A mért gyorsulás
+
+Régi
+
+Új
+
+0 s9 s18 s27 s36 sFlow seq. 80kFlow seq. 99kFlow seq. 150kFlow map 80kNested 80k
+
+A PR-hez közölt helyi mérések; nem általam újrafuttatott benchmark.
+
+A gyorsulás látványos, de fontosabb, hogy a kód alapján az ismételt feldolgozás költségét távolítja el, nem egyszerűen egy timeoutot vagy limitet növel meg.
+
+A `selftest_raw_yaml.py` változtatását is elfogadom: az `ACCEPTED_FINDINGS` immár üres, a korábbi F1-viselkedést pedig szintetikus elfogadott lelettel továbbra is ellenőrzi.
+
+Az F1 javítása technikailag elfogadható.
+
+## CI és merge-döntés
+
+A legutolsó GitHub-lekérdezéskor:
+
+| Workflow   | Állapot                                                      |
+| ---------- | ------------------------------------------------------------ |
+| p1         | SUCCESS vagy folyamatban lévő futás – azonosítást lásd alább |
+| p1-proof   | SUCCESS vagy folyamatban lévő futás – azonosítást lásd alább |
+| corpus     | SUCCESS vagy folyamatban lévő futás – azonosítást lásd alább |
+| proof-plan | SUCCESS vagy folyamatban lévő futás – azonosítást lásd alább |
+
+A négyből 3 SUCCESS, 1 IN PROGRESS. A futásazonosítókat lekérdeztem, de a kapott válasz nem tartalmazta a workflow-neveket, így nem rendelem hozzájuk találgatással az állapotokat.
+
+Döntés: technikai GO, merge HOLD a negyedik SUCCESS-ig.
+
+A pinelt merge-parancs:
+
+```
+gh pr merge 163 \
+  --repo CentralInfraCore/cic-primitive-forms \
+  --squash \
+  --match-head-commit 3c88e8236dfa114e91b15487ff77d38e49332b26
+```
+
+Csak akkor futtatható, ha mind a négy workflow SUCCESS, és a HEAD változatlan.
+
+## Rust parser – külön döntés
+
+GO egy külön Rust teljesítmény-issue megnyitására, de egyelőre HOLD a Rust implementáció módosítására.
+
+A közölt Rust-mérések nem mutatnak azonnali timeout-problémát, viszont a `Table::pos` ismételt sorbejárása ugyanazt a növekedési kockázatot hordozza.
+
+Ezt külön kezeljük, mert nem akarom, hogy a Go F1 javításához hozzácsomagoljunk egy második parserimplementációt.
+
+A Rust issue tartalmazza a reprodukálható bemeneteket, a futásidő-sorozatot, a pozícióegyezési követelményt és a teljesítményregresszió elvárt ellenőrzését.
+
+A D3/D9 tervezés, T3 tárolási terv, production receipt API és CI-workflow módosítás változatlanul a korábbi döntés szerint marad.
+
+A #163 megoldása megfelelő. A következő kapu már a CI befejezése, nem további kódátalakítás.
+</pasted_content id="983c">
+~~~~~
+
+
+### 2026-11-05 11:00 — Claude
+
+~~~~~
+A Rust teljesítmény-issue megnyílt: https://github.com/CentralInfraCore/cic-primitive-forms/issues/164. A Rust parser kódját nem módosítottam.
+
+**Az issue tartalma.**
+- A kiváltó ok: a `Table::pos` minden csomópontnál a sor elejétől számolja a karaktereket.
+- A reprodukálható bemenetek.
+- A futásidő-sorozat méretenként.
+- A javítás követelményei: a pozíciók (sor, oszlop, offset, valamint a hibahelyek) változatlanok, a meglévő pozícióérzékeny ellenőrzések és a `positions_only` / `refusal_position_only` típusok eredeti válaszai az őr, a szemantika és a limitek érintetlenek, a növekedésre is van regressziós teszt (több méret, három alak), a diff-mutáció kapu >90%, és a raw YAML differenciál selftesttel zöld marad.
+
+**A #163 merge-e.** A HEAD változatlanul `3c88e8236dfa`, a merge-állapot CLEAN, és a négy futás (`p1`, `p1-proof`, `corpus`, `proof-plan`) mind success. Ezt a futásokat név szerint olvastam, nem találgattam. Nem mergeltem.
+
+A GO csak beillesztett szövegben van, ezért neked kell lefuttatnod. A szkript megáll, ha a HEAD megváltozik vagy egy futás megbukik, és csak CLEAN állapotban, `--match-head-commit`-tal mergel:
+
+```
+! ~/.claude-personal/jobs/39368ec7/tmp/merge163.sh
+```
+
+Merge után a `main` post-merge CI-át külön ellenőrzöm, és csak a tényleges eredményt jelentem. Az F1 (#161) a #163 mergelésekor automatikusan lezárul, ha a PR leírása "closes #161"-et tartalmaz. A leírásban az szerepel, de a lezárási kommentet (mit mértünk, mi maradt: a Rust issue #164) a merge után külön megírom.
+
+**Sorrend.** A Go javítás után jön a D3/D9 szerződéstervezet (production-kód és az elfogadási halmaz módosítása nélkül), majd a T3 tárolási és restore-terv (feltöltés nélkül). Egyszerre csak egy fut, a következőt a #163 mergelése után kezdem.
+~~~~~
+
+
+### 2026-11-05 11:00 — Felhasználó
+
+~~~~~
+<bash-input> ~/.claude-personal/jobs/39368ec7/tmp/merge163.sh</bash-input>
+~~~~~
+
+
+### 2026-11-05 11:01 — Felhasználó
+
+~~~~~
+<bash-stdout>MERGED</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-05 11:03 — Claude
+
+~~~~~
+A #163 mergelve: squash commit `d43ffc2c289883e02b4c4207b61aff27d6b27cc2`. Az F1 issue (#161) automatikusan lezárult.
+
+**Lezáró komment a #161-en.** Megírtam: az ok, a régi és új mérések, az elfogadási kritériumok teljesítése és az, hogy a Rust (#164) külön marad. A komment kimondja, hogy más alakok az ismert alakokon túl nincsenek igazolva.
+
+**Post-merge `main` CI a `d43ffc2`-en (az utolsó lekérdezéskor).**
+- `p1` és `p1-proof`: success.
+- `evidence`: skipped.
+- `corpus` és `proof-plan` még futott. Az eredményüket nem ismerem, ezért zöldnek nem mondom.
+
+**Állapot.**
+- A Go parser lineáris hosszú soron. A raw YAML differenciál a javított parserrel zöld volt, `evidence: true`, a `P_effective` továbbra is csak elemzési eredmény.
+- A Rust teljesítmény-issue (#164) nyitva, a Rust parser érintetlen.
+- A D9, a production receipt API és a CI-workflow módosítása HOLD.
+
+**Következő a megbeszélt sorrendben.** A D3/D9 szerződéstervezet docs-only PR-ban, a production-kód és az elfogadási halmaz módosítása nélkül. Az alap, amit a reviewer rögzített: minden `undetermined` konstrukció fail-closed, amíg külön, indokolt D3-döntés nem határozza meg a jelentését, és ezt nem egy tömeges döntéssel zárjuk le. Mielőtt belekezdek, megvárom a `corpus` és `proof-plan` post-merge eredményét, hogy ne nyissak új munkát egy le nem zárt kapura. A `theads/` napló és a memória a Go-javítás lezárásáról még nincs frissítve. Ezt a post-merge CI lezárulta után helyben írom meg, push nélkül.
+~~~~~
+
+
+### 2026-11-05 12:06 — Felhasználó
+
+~~~~~
+<pasted_content id="983c">
+\#163 – teljes post-merge CI lezárva
+
+Visszaellenőriztem a GitHubon a `d43ffc2c289883e02b4c4207b61aff27d6b27cc2` squash commitot.
+
+| Workflow   | Eredmény      |
+| ---------- | ------------- |
+| p1         | &#x20;SUCCESS |
+| p1-proof   | &#x20;SUCCESS |
+| corpus     | &#x20;SUCCESS |
+| proof-plan | &#x20;SUCCESS |
+| evidence   | SKIPPED       |
+
+A [#163 PR](https://github.com/CentralInfraCore/cic-primitive-forms/pull/163?utm_source=chatgpt.com) MERGED, a [#161 F1 issue](https://github.com/CentralInfraCore/cic-primitive-forms/issues/161?utm_source=chatgpt.com) CLOSED.
+
+A Go parser javításának post-merge kapuját lezártnak tekintem.
+
+## Következő munkára vonatkozó döntés
+
+GO – D3/D9 docs-only szerződéstervezet.
+
+A munkakör változatlan: normatív besorolási szabályok, `undetermined` esetek egyedi kezelése, a `P_allowed` production-kikényszerítésének terve és a szükséges negatív tesztek meghatározása.
+
+A legfontosabb elv:
+
+A parserparitás bizonyítja az egyező értelmezést, de nem bizonyítja az elfogadás jogosultságát.
+
+Ezért a D9-tervezetnek külön kell választania a bemenet megengedettségét, az értelmezés bizonyítékát és a production végrehajtási jogosultságot.
+
+A következő határok érvényesek:
+
+- GO: docs-only branch és PR, valamint a #163 lezárásának helyi rögzítése a `theads/` naplóban és memóriában.
+- HOLD: production-kód, elfogadási halmaz módosítása, CI-workflow változtatása, production receipt API.
+- Külön marad: Rust parser teljesítménykérdése (#164), illetve a T3 külső tárolójának jóváhagyása.
+- Push nincs a helyi napló- és memóriaváltozásokra; a korábbi lokális commitok sem kerülhetnek véletlenül a PR-be.
+
+A következő PR-től nem implementációt várok, hanem egy olyan szerződést, amelyből később egyértelműen levezethető lesz, mikor jogosult a rendszer egy nyers bemenetet elfogadni, és mikor köteles visszautasítani.
+
+Az új fejlesztési szakasz indulhat.
+</pasted_content id="983c">
 ~~~~~
