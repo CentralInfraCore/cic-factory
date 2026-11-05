@@ -1,6 +1,6 @@
 # Thread-napló — 2026-10-21 (Forms P1–P3, ci-gate)
 
-Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T19:08:59Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl`, a 2026-10-28T22:48Z-tól induló szakasz: `7895b2db-5143-4537-8eaa-3624850e408c.jsonl` (a #106–#118: a `diff_gate` vakfoltjai, a `diff-mutation-rust` megszakadása, P4 duplikált esemény, a ReadDiff differential és fuzz, az inherit, P5-0 terv és a P5-1 kanonikus bájtok; a szakasz a session közben, lezárt PR-onként gyarapodik; a 2026-11-02-i rész: a cic-primitives `v0.2.1` release-ág S commitja, a valódi fejlesztői aláírás és a CICSourceCA-ellenjegyzés, az R commit és a tag, a két Vault szerepe, a pre-check Envelope 3 átállása (cic-primitives #29), a Forms release-origin addendum (#147), a digest-leképezés terve (#148, D1-D5 elfogadva), a bizalmi modell terve (#149), a verifier záró-újsor hibájának javítása (#31) és a rekord-szerződés pontosítása (#30); 2026-11-03: a digest-leképezés szerződése, vektorai és referenciája (#150), a Go és Rust implementáció (#151, #152), a duplikált-kulcs határ-teszt (#153), a differenciális bizonyítás terve és 1. egysége (#154, #155), a T3 RFC 3161 időbizonyíték végrehajtása három rekordra (cic-primitives #32) és a független második példány archívuma) (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. **Az állapot ennél a pontnál a transzkriptből, három külön kategóriában (ez a bevezető összegzése, nem a transzkript része).** *Ténylegesen mért:* a Forms `main`-be mergelve #148 `7191f9f3`, #149 `76c46398`, #150 `262615e1`, #152 `1bb94111`, #151 `12b3e40d`, #153 `94210fb8`, #154 `68e791bc`, #155 `f4fd38eb`; a cic-primitives `devel`-be #29 `296df8af`, #30 `87403ccd`, #31 `62ff98ac`, #32 `1cb6391a`; a post-merge push-CI a #148, #149, #151-#155 és a cic-primitives #31, #32 merge-re teljesen lefutott és sikeres (a #150 merge post-merge futását nem néztem meg; a cic-primitives #29 és #30 futását az egymás utáni merge-ek megszakították, ezt külön rögzítettem); a Go diff-mutáció 76/81 = 93,83%, a Rust ágfedettség 94,78%, a Go 97,39%; a T3 három RFC 3161 időbélyege (2026-11-03 22:07:48, 22:09:44, 22:09:45 UTC) offline ellenőrizve, a bélyegek mind a négy CIC-tanúsítvány érvényességén belül, 57-58 nap tartalékkal; a második példány archívuma (SHA-256 `e1795fcf8543be8d5ea6f379672f3a7ba7a2d2d42c674113ba994c24a8cddab5`) helyben ellenőrizve, feltöltve NINCS. *Dokumentált, nem általam újrafuttatott állítás:* a DigiCert végpont és a dokumentációja (a használati feltételek nincsenek közzétéve); a reviewer-ek megállapításai és GO-i, amelyeket a felhasználó beillesztett; a CI ~12 perces FULL-ja mint rögzített cél. *Nyitott döntés vagy teendő:* a második példány tényleges külső feltöltése (konkrét tárhely és jogosultság jóváhagyása kell); a DigiCert használati feltételek megfelelőségi kérdése; a bizalmi modell T1, T2, T4-T8 döntései; a Unit 2 részletes terve és annak implementációja (külön review); a `--selftest` rossz-horgony kontrollja az OS egy fájljára támaszkodik (külön javítás); a production receipt API (HOLD, bájt-alapú bemenettel); az `authentic-release-origin` `not_proved`; a `theads/` push tiltott. Három külön állítás nem mosódhat össze: a rekord létezett (T3, bizonyított), az aláírások érvényesek, és a kibocsátó jogosult volt (egyik sem bizonyított). **Az állapot 2026-11-05-ig (Unit 2, Unit 3a-3c), ismét három külön kategóriában; ez a bevezető összegzése, nem a transzkript része.** *Ténylegesen mért (saját futás):* a Forms `main`-be mergelve #156 `90d1fda` (Unit 2 szerződés), #157 `d3d3a2f` (Unit 2 implementáció), #158 `f60c8af` (Unit 3 szerződés), #159 `4c6cd54` (Unit 3a generátor), #160 `e365b1b` (Unit 3b dump és compare). Post-merge push-CI, amit magam olvastam: #156 és #157 teljesen lezárt és sikeres; #159 `p1`, `p1-proof`, `corpus` és `proof-plan` sikeres; #158 és #160 esetén utoljára még futott a `proof-plan` (és #158-nál a `corpus`), azt én nem olvastam végig. Unit 2 helyi futás: 5004 eset zöld, selftest 48/48 törés, 28/28 beültetett hiba, 5/5 közös hibamód, 3/3 ekvivalens változás. Unit 3a: 2223 bájt-szintű eset, 17 teszt, a 299 rögzített divergencia (201 egyedi bemenet) normatív `allowed` besorolása 72 true, 13 false, 116 undetermined. Unit 3b helyi futás: 2222 zöld, 1 piros; `P_effective` 1584 (elemzési eredmény, nem production admission); a 299 rögzített eset közül 294 szemantikailag eltér, 4 `positions_only`, 1 `refusal_position_only` (D10); 67 pontos, esetazonosítóhoz kötött ismert eltérés (PyYAML az utolsó duplikált kulcsot veszi). F1: a Go `Parse` négyzetes idejű hosszú flow sequence-en (80 000 elem, 160 KB: 12,16 s; 150 000 elem: 18,9 s). Unit 3c (a #162-ben, NEM mergelve) helyi futás: selftest sikeres, 53/53 törés, 23/23 beültetett parser-hiba, 6/6 közös hibamód, 2/2 oracle-módosítás, 3/3 harness-ellenőrzés; a fő futás az F1 miatt piros, `evidence: false`. Harness-lelet: egy korábbi selftest-futásban a mutáns Rust build ugyanazt a cargo target könyvtárat szennyezte, mint a vizsgált futás (a fő futás négy hamis piros esetet kapott); az őrszabály észrevette, a javítás: külön target könyvtár és olvasó-bináris hash a riportban. *Dokumentált, nem általam újrafuttatott állítás:* a #160 teljes post-merge CI-ja sikeres (a külső reviewer olvasata); a külső reviewer GO-i és HOLD-jai; a reviewer-féle állítás, hogy az F1 nem blokkolja a #160 merge-ét. *Nyitott döntés vagy teendő:* a #162 merge (a reviewer két selftest-pontosítást kért: a baseline guard az F1-et pontos eredményhez kösse, a közös hibamód tesztje az egyezést és az okot is bizonyítsa; ezek folyamatban, a #162-t nem szabad késznek tekinteni); az F1 (#161) javítása; D9 (a `P_allowed` production-kikényszerítése, a reviewer első célja az (a) irány); a D3 szerinti `undetermined` konstrukciók normatív besorolása (19 a 24-ből mindkét parserben elfogadott, de nem `allowed`); a PyYAML `yes`/`no`/`on`/`off` boolean-olvasata, ami blokkolóvá válna, ha ezek `allowed` lennének; a 32 nem reprezentálható Unit 1 eset; a production receipt API (HOLD, bájt-alapú bemenettel); a T3 második példány feltöltése (tartós, GitHubtól független tárhely és hozzáférés jóváhagyása kell, a `/tmp` nem backup); a DigiCert használati feltételek; a bizalmi modell T1, T2, T4-T8 döntései; a `theads/` push tiltott. **Frissítés 2026-11-05, a #162 mergelése után (a korábbi összegzés a saját pillanatát rögzíti; ez a bevezető összegzése, nem a transzkript része).** *Ténylegesen mért:* a Forms `main`-be mergelve a #162 `cb29b83` (Unit 3c: selftest és bizonyíték-szabály). A merge-et a felhasználó begépelt „mehet a merge” szavára én hajtottam végre a rögzített HEAD-re (`474158693d53`) pinelt szkripttel, `--match-head-commit` védelemmel; a beillesztett szövegben szereplő GO önmagában nem hatalmazott fel. A `cb29b83` post-merge push-CI-át magam olvastam végig: `p1`, `p1-proof`, `proof-plan` és `corpus` sikeres, `evidence` skipped. A #162 három review-körön ment át: (1) a baseline guard az F1-et pontos eredményhez (Go TIMEOUT, Rust LIMIT_EXCEEDED, PyYAML elfogad, piros ok `go: TIMEOUT`) köti, nem az azonosítóhoz; (2) a közös hibamód bizonyítja az egyezést, a rossz egyező választ és a normatív okot; (3) a célhalmaz a bemenetből jön, nem a piros eredményből, ami két túl széles osztályt leplezett le (az első változat 4/6 volt). Végső helyi mérés, egy tiszta teljes futás: selftest sikeres, 58/58 törés, 23/23 beültetett parser-hiba, 6/6 közös hibamód (67 / 3 / 22 / 1 / 1 / 4 célzott eset, egyik sem maradt zölden), 2/2 oracle-módosítás, 3/3 harness-ellenőrzés; a fő futás az F1 miatt piros, `evidence: false`. *Dokumentált, nem általam újrafuttatott:* a #160 teljes post-merge CI-ja sikeres (a külső reviewer olvasata; én az utolsó lekérdezéskor még futó `proof-plan`-t nem olvastam végig). *Nyitva marad:* az F1 (#161); a D9; a D3 szerinti `undetermined` konstrukciók besorolása; a PyYAML `yes`/`no`/`on`/`off` boolean-olvasata; a 32 nem reprezentálható Unit 1 eset; a CI-workflow módosítása és a production receipt API (HOLD); a T3 második példány feltöltése (tartós, GitHubtól független tárhely és hozzáférés jóváhagyása kell, a `/tmp` nem backup); a DigiCert használati feltételek; a bizalmi modell T1, T2, T4-T8 döntései. A `theads/` push továbbra is tiltott: a `main` ennél a naplónál az `origin` előtt jár, ezt véletlenül sem szabad felküldeni. **Frissítés 2026-11-05, az F1 (#161) lezárása után; ez a bevezető összegzése, nem a transzkript része.** *Ténylegesen mért:* a Forms `main`-be mergelve a #163 `d43ffc2` (a Go parser pozíciótáblája; `Parse` lineáris hosszú soron), a #161 lezárva, lezáró kommenttel. A `d43ffc2` post-merge push-CI-át a külső reviewer olvasta végig (p1, p1-proof, corpus, proof-plan sikeres, evidence skipped); az én utolsó lekérdezésemkor a `corpus` és a `proof-plan` még futott, azt én nem olvastam végig. A merge-et a felhasználó által futtatott, a HEAD-re (`3c88e8236dfa`) pinelt szkript hajtotta végre. Gyökérok: a `table.pos` minden csomópontnál a sor elejétől dekódolt (egy 40 000 elemű profilban 98%); a javítás soronként megjegyzi az offseteket. Mérés (Go `Parse`, régi → új): flow sequence 80 000 elem 12,05 s → 0,06 s, 150 000 elem 18,8 s → 0,10 s, flow mapping 80 000 elem 31,6 s → 0,08 s, egymásba ágyazott 80 000 elem 16,8 s → 0,06 s. A regressziós teszt a régi kódon elbukik (15–38 s), az újon átmegy; a helyi diff-mutáció 21/21 (az első változat 20/24 volt, a négy túlélő ekvivalens mutáns, a kód átírásával szüntettem meg). A raw YAML differenciál a javított parserrel és selftesttel: 2223/2223 zöld, selftest 58/58, 23/23, 6/6, 2/2, 3/3, a riport első ízben `evidence: true` (tiszta fa, zöld összehasonlítás, sikeres selftest); a `P_effective` (1584) továbbra is csak elemzési eredmény. *Új lelet:* a Rust parser `Table::pos`-a ugyanilyen alakú, sokkal kisebb állandóval (flow sequence 150 000 elem ~0,93 s release-ben); külön issue: #164, a Rust kód nincs módosítva (a reviewer: külön döntés). *Nyitva marad:* a D3/D9 szerződéstervezet (ez következik, docs-only; a production-kód és az elfogadási halmaz nem módosul); a Rust #164; a CI-workflow módosítása és a production receipt API (HOLD); a T3 második példány feltöltése (tartós tárhely és hozzáférés jóváhagyása kell, a `/tmp` nem backup; előbb csak tárolási és restore-terv); a 32 nem reprezentálható Unit 1 eset; a `theads/` push tiltott (a `main` ennél a naplónál az `origin` előtt jár). **Frissítés 2026-11-05, az admission-szerződés (#165) és a T3 tárolási terv (cic-primitives #33) lezárása után; ez a bevezető összegzése, nem a transzkript része.** *Ténylegesen mért:* a Forms `main`-be mergelve a #165 `2f02a75` (D3/D9 admission-szerződés, docs-only); a post-merge push-CI-t magam olvastam végig: p1, p1-proof, corpus, proof-plan sikeres, evidence skipped. A cic-primitives `devel`-re mergelve a #33 `05a64a6` (a T3 időbizonyíték független példányának tárolási és helyreállítási terve, docs-only); a post-merge `gate` futás sikeres (magam olvastam). Mindkét merge a HEAD-re pinelt szkripttel, `--match-head-commit` védelemmel futott. A #165-ön két review-kör volt (az `allow` sorok pozitív lefedettsége és az ütközés-tesztek; A7: minden, a mapping által olvasott mező ellenőrzendő, a known-differences állomány nem engedély), a #33-on is kettő (a verifier valódi függőségei, nem csak az OpenSSL, és a Git bundle helyreállítás kifejezett, rendezett lépéssora). A T3 száraz futás: a nyolc helyreállítási parancs egyszer lefutott tiszta könyvtárban, minimális PATH-szal: archívum-hash OK, 18/18 fájl egyezik a manifesttel, a bundle verifikálódott, a három release commit elérhető, a v0.2.1 rekord hash-e egyezik, `ALL CHECKS HOLD`. Ez NEM restore-próba tárolóból. A 17 `undetermined` konstrukció (U1-U17) mért Rust/Go/PyYAML viselkedése a szerződés 4.1 táblájában van; egyik sincs eldöntve. Az archívum és a git bundle minta-ellenőrzése (token- és privátkulcs-minták, 167 commit) nem talált semmit, de ez nem a hiány bizonyítéka. *Dokumentált, nem általam újrafuttatott:* a reviewer olvasatai és GO-i; a reviewer szkriptjét (jq-s ellenőrző) nem használtam, a sajátomat igen. *Nyitva marad:* a T3 második példány: **NOT BACKED UP**, a feltöltés HOLD, az S3 (konkrét tároló, hozzáférések) tulajdonosi döntésre vár, S1-S9 pozíciói a tervben vannak (provider kiválasztva nincs); a reviewer nem blokkoló megjegyzése (a 6. szakasz jelen ideje a még nem létező referenciaobjektumról) egy későbbi módosításba kötve; az U1-U17 egyedi döntései, a D9 production gate, a production receipt API, a CI-workflow módosítása (HOLD); a Rust parser teljesítménye (#164); a DigiCert használati feltételek; a bizalmi modell T1, T2, T4-T8 döntései; a `theads/` push tiltott (a `main` ennél a naplónál az `origin` előtt jár). Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
+Interaktív session transcriptje a 2026-10-17 napló folytatásaként (a 05:56 UTC-s felhasználói üzenet utáni rész, 2026-10-23T19:08:59Z-ig): cic-primitive-forms P1–P3 terv és az ADR 0011 elfogadása, a P3 első egysége, a `ci-gate` eszköz, VCN-merge-ek, a napló maszkolása és az auditjegyzet. Csak az interakció: a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude válaszai, időrendben, UTC. Forrás: `b2a57948-d54c-4bb5-b36c-2c9677b06f01.jsonl, d1a9f2ae-53a4-4479-82bf-aa6804940c8a.jsonl`, a 2026-10-28T22:48Z-tól induló szakasz: `7895b2db-5143-4537-8eaa-3624850e408c.jsonl` (a #106–#118: a `diff_gate` vakfoltjai, a `diff-mutation-rust` megszakadása, P4 duplikált esemény, a ReadDiff differential és fuzz, az inherit, P5-0 terv és a P5-1 kanonikus bájtok; a szakasz a session közben, lezárt PR-onként gyarapodik; a 2026-11-02-i rész: a cic-primitives `v0.2.1` release-ág S commitja, a valódi fejlesztői aláírás és a CICSourceCA-ellenjegyzés, az R commit és a tag, a két Vault szerepe, a pre-check Envelope 3 átállása (cic-primitives #29), a Forms release-origin addendum (#147), a digest-leképezés terve (#148, D1-D5 elfogadva), a bizalmi modell terve (#149), a verifier záró-újsor hibájának javítása (#31) és a rekord-szerződés pontosítása (#30); 2026-11-03: a digest-leképezés szerződése, vektorai és referenciája (#150), a Go és Rust implementáció (#151, #152), a duplikált-kulcs határ-teszt (#153), a differenciális bizonyítás terve és 1. egysége (#154, #155), a T3 RFC 3161 időbizonyíték végrehajtása három rekordra (cic-primitives #32) és a független második példány archívuma) (a helyi eredeti naplók nem kerülnek a repóba; a második a kontextus-összefoglaló utáni folytatás); utólag generálva a `tools/session-transcript.py --private-repo <privát repó neve> --private-pr <privát PR-számok>` hívással. **Az állapot ennél a pontnál a transzkriptből, három külön kategóriában (ez a bevezető összegzése, nem a transzkript része).** *Ténylegesen mért:* a Forms `main`-be mergelve #148 `7191f9f3`, #149 `76c46398`, #150 `262615e1`, #152 `1bb94111`, #151 `12b3e40d`, #153 `94210fb8`, #154 `68e791bc`, #155 `f4fd38eb`; a cic-primitives `devel`-be #29 `296df8af`, #30 `87403ccd`, #31 `62ff98ac`, #32 `1cb6391a`; a post-merge push-CI a #148, #149, #151-#155 és a cic-primitives #31, #32 merge-re teljesen lefutott és sikeres (a #150 merge post-merge futását nem néztem meg; a cic-primitives #29 és #30 futását az egymás utáni merge-ek megszakították, ezt külön rögzítettem); a Go diff-mutáció 76/81 = 93,83%, a Rust ágfedettség 94,78%, a Go 97,39%; a T3 három RFC 3161 időbélyege (2026-11-03 22:07:48, 22:09:44, 22:09:45 UTC) offline ellenőrizve, a bélyegek mind a négy CIC-tanúsítvány érvényességén belül, 57-58 nap tartalékkal; a második példány archívuma (SHA-256 `e1795fcf8543be8d5ea6f379672f3a7ba7a2d2d42c674113ba994c24a8cddab5`) helyben ellenőrizve, feltöltve NINCS. *Dokumentált, nem általam újrafuttatott állítás:* a DigiCert végpont és a dokumentációja (a használati feltételek nincsenek közzétéve); a reviewer-ek megállapításai és GO-i, amelyeket a felhasználó beillesztett; a CI ~12 perces FULL-ja mint rögzített cél. *Nyitott döntés vagy teendő:* a második példány tényleges külső feltöltése (konkrét tárhely és jogosultság jóváhagyása kell); a DigiCert használati feltételek megfelelőségi kérdése; a bizalmi modell T1, T2, T4-T8 döntései; a Unit 2 részletes terve és annak implementációja (külön review); a `--selftest` rossz-horgony kontrollja az OS egy fájljára támaszkodik (külön javítás); a production receipt API (HOLD, bájt-alapú bemenettel); az `authentic-release-origin` `not_proved`; a `theads/` push tiltott. Három külön állítás nem mosódhat össze: a rekord létezett (T3, bizonyított), az aláírások érvényesek, és a kibocsátó jogosult volt (egyik sem bizonyított). **Az állapot 2026-11-05-ig (Unit 2, Unit 3a-3c), ismét három külön kategóriában; ez a bevezető összegzése, nem a transzkript része.** *Ténylegesen mért (saját futás):* a Forms `main`-be mergelve #156 `90d1fda` (Unit 2 szerződés), #157 `d3d3a2f` (Unit 2 implementáció), #158 `f60c8af` (Unit 3 szerződés), #159 `4c6cd54` (Unit 3a generátor), #160 `e365b1b` (Unit 3b dump és compare). Post-merge push-CI, amit magam olvastam: #156 és #157 teljesen lezárt és sikeres; #159 `p1`, `p1-proof`, `corpus` és `proof-plan` sikeres; #158 és #160 esetén utoljára még futott a `proof-plan` (és #158-nál a `corpus`), azt én nem olvastam végig. Unit 2 helyi futás: 5004 eset zöld, selftest 48/48 törés, 28/28 beültetett hiba, 5/5 közös hibamód, 3/3 ekvivalens változás. Unit 3a: 2223 bájt-szintű eset, 17 teszt, a 299 rögzített divergencia (201 egyedi bemenet) normatív `allowed` besorolása 72 true, 13 false, 116 undetermined. Unit 3b helyi futás: 2222 zöld, 1 piros; `P_effective` 1584 (elemzési eredmény, nem production admission); a 299 rögzített eset közül 294 szemantikailag eltér, 4 `positions_only`, 1 `refusal_position_only` (D10); 67 pontos, esetazonosítóhoz kötött ismert eltérés (PyYAML az utolsó duplikált kulcsot veszi). F1: a Go `Parse` négyzetes idejű hosszú flow sequence-en (80 000 elem, 160 KB: 12,16 s; 150 000 elem: 18,9 s). Unit 3c (a #162-ben, NEM mergelve) helyi futás: selftest sikeres, 53/53 törés, 23/23 beültetett parser-hiba, 6/6 közös hibamód, 2/2 oracle-módosítás, 3/3 harness-ellenőrzés; a fő futás az F1 miatt piros, `evidence: false`. Harness-lelet: egy korábbi selftest-futásban a mutáns Rust build ugyanazt a cargo target könyvtárat szennyezte, mint a vizsgált futás (a fő futás négy hamis piros esetet kapott); az őrszabály észrevette, a javítás: külön target könyvtár és olvasó-bináris hash a riportban. *Dokumentált, nem általam újrafuttatott állítás:* a #160 teljes post-merge CI-ja sikeres (a külső reviewer olvasata); a külső reviewer GO-i és HOLD-jai; a reviewer-féle állítás, hogy az F1 nem blokkolja a #160 merge-ét. *Nyitott döntés vagy teendő:* a #162 merge (a reviewer két selftest-pontosítást kért: a baseline guard az F1-et pontos eredményhez kösse, a közös hibamód tesztje az egyezést és az okot is bizonyítsa; ezek folyamatban, a #162-t nem szabad késznek tekinteni); az F1 (#161) javítása; D9 (a `P_allowed` production-kikényszerítése, a reviewer első célja az (a) irány); a D3 szerinti `undetermined` konstrukciók normatív besorolása (19 a 24-ből mindkét parserben elfogadott, de nem `allowed`); a PyYAML `yes`/`no`/`on`/`off` boolean-olvasata, ami blokkolóvá válna, ha ezek `allowed` lennének; a 32 nem reprezentálható Unit 1 eset; a production receipt API (HOLD, bájt-alapú bemenettel); a T3 második példány feltöltése (tartós, GitHubtól független tárhely és hozzáférés jóváhagyása kell, a `/tmp` nem backup); a DigiCert használati feltételek; a bizalmi modell T1, T2, T4-T8 döntései; a `theads/` push tiltott. **Frissítés 2026-11-05, a #162 mergelése után (a korábbi összegzés a saját pillanatát rögzíti; ez a bevezető összegzése, nem a transzkript része).** *Ténylegesen mért:* a Forms `main`-be mergelve a #162 `cb29b83` (Unit 3c: selftest és bizonyíték-szabály). A merge-et a felhasználó begépelt „mehet a merge” szavára én hajtottam végre a rögzített HEAD-re (`474158693d53`) pinelt szkripttel, `--match-head-commit` védelemmel; a beillesztett szövegben szereplő GO önmagában nem hatalmazott fel. A `cb29b83` post-merge push-CI-át magam olvastam végig: `p1`, `p1-proof`, `proof-plan` és `corpus` sikeres, `evidence` skipped. A #162 három review-körön ment át: (1) a baseline guard az F1-et pontos eredményhez (Go TIMEOUT, Rust LIMIT_EXCEEDED, PyYAML elfogad, piros ok `go: TIMEOUT`) köti, nem az azonosítóhoz; (2) a közös hibamód bizonyítja az egyezést, a rossz egyező választ és a normatív okot; (3) a célhalmaz a bemenetből jön, nem a piros eredményből, ami két túl széles osztályt leplezett le (az első változat 4/6 volt). Végső helyi mérés, egy tiszta teljes futás: selftest sikeres, 58/58 törés, 23/23 beültetett parser-hiba, 6/6 közös hibamód (67 / 3 / 22 / 1 / 1 / 4 célzott eset, egyik sem maradt zölden), 2/2 oracle-módosítás, 3/3 harness-ellenőrzés; a fő futás az F1 miatt piros, `evidence: false`. *Dokumentált, nem általam újrafuttatott:* a #160 teljes post-merge CI-ja sikeres (a külső reviewer olvasata; én az utolsó lekérdezéskor még futó `proof-plan`-t nem olvastam végig). *Nyitva marad:* az F1 (#161); a D9; a D3 szerinti `undetermined` konstrukciók besorolása; a PyYAML `yes`/`no`/`on`/`off` boolean-olvasata; a 32 nem reprezentálható Unit 1 eset; a CI-workflow módosítása és a production receipt API (HOLD); a T3 második példány feltöltése (tartós, GitHubtól független tárhely és hozzáférés jóváhagyása kell, a `/tmp` nem backup); a DigiCert használati feltételek; a bizalmi modell T1, T2, T4-T8 döntései. A `theads/` push továbbra is tiltott: a `main` ennél a naplónál az `origin` előtt jár, ezt véletlenül sem szabad felküldeni. **Frissítés 2026-11-05, az F1 (#161) lezárása után; ez a bevezető összegzése, nem a transzkript része.** *Ténylegesen mért:* a Forms `main`-be mergelve a #163 `d43ffc2` (a Go parser pozíciótáblája; `Parse` lineáris hosszú soron), a #161 lezárva, lezáró kommenttel. A `d43ffc2` post-merge push-CI-át a külső reviewer olvasta végig (p1, p1-proof, corpus, proof-plan sikeres, evidence skipped); az én utolsó lekérdezésemkor a `corpus` és a `proof-plan` még futott, azt én nem olvastam végig. A merge-et a felhasználó által futtatott, a HEAD-re (`3c88e8236dfa`) pinelt szkript hajtotta végre. Gyökérok: a `table.pos` minden csomópontnál a sor elejétől dekódolt (egy 40 000 elemű profilban 98%); a javítás soronként megjegyzi az offseteket. Mérés (Go `Parse`, régi → új): flow sequence 80 000 elem 12,05 s → 0,06 s, 150 000 elem 18,8 s → 0,10 s, flow mapping 80 000 elem 31,6 s → 0,08 s, egymásba ágyazott 80 000 elem 16,8 s → 0,06 s. A regressziós teszt a régi kódon elbukik (15–38 s), az újon átmegy; a helyi diff-mutáció 21/21 (az első változat 20/24 volt, a négy túlélő ekvivalens mutáns, a kód átírásával szüntettem meg). A raw YAML differenciál a javított parserrel és selftesttel: 2223/2223 zöld, selftest 58/58, 23/23, 6/6, 2/2, 3/3, a riport első ízben `evidence: true` (tiszta fa, zöld összehasonlítás, sikeres selftest); a `P_effective` (1584) továbbra is csak elemzési eredmény. *Új lelet:* a Rust parser `Table::pos`-a ugyanilyen alakú, sokkal kisebb állandóval (flow sequence 150 000 elem ~0,93 s release-ben); külön issue: #164, a Rust kód nincs módosítva (a reviewer: külön döntés). *Nyitva marad:* a D3/D9 szerződéstervezet (ez következik, docs-only; a production-kód és az elfogadási halmaz nem módosul); a Rust #164; a CI-workflow módosítása és a production receipt API (HOLD); a T3 második példány feltöltése (tartós tárhely és hozzáférés jóváhagyása kell, a `/tmp` nem backup; előbb csak tárolási és restore-terv); a 32 nem reprezentálható Unit 1 eset; a `theads/` push tiltott (a `main` ennél a naplónál az `origin` előtt jár). **Frissítés 2026-11-05, az admission-szerződés (#165) és a T3 tárolási terv (cic-primitives #33) lezárása után; ez a bevezető összegzése, nem a transzkript része.** *Ténylegesen mért:* a Forms `main`-be mergelve a #165 `2f02a75` (D3/D9 admission-szerződés, docs-only); a post-merge push-CI-t magam olvastam végig: p1, p1-proof, corpus, proof-plan sikeres, evidence skipped. A cic-primitives `devel`-re mergelve a #33 `05a64a6` (a T3 időbizonyíték független példányának tárolási és helyreállítási terve, docs-only); a post-merge `gate` futás sikeres (magam olvastam). Mindkét merge a HEAD-re pinelt szkripttel, `--match-head-commit` védelemmel futott. A #165-ön két review-kör volt (az `allow` sorok pozitív lefedettsége és az ütközés-tesztek; A7: minden, a mapping által olvasott mező ellenőrzendő, a known-differences állomány nem engedély), a #33-on is kettő (a verifier valódi függőségei, nem csak az OpenSSL, és a Git bundle helyreállítás kifejezett, rendezett lépéssora). A T3 száraz futás: a nyolc helyreállítási parancs egyszer lefutott tiszta könyvtárban, minimális PATH-szal: archívum-hash OK, 18/18 fájl egyezik a manifesttel, a bundle verifikálódott, a három release commit elérhető, a v0.2.1 rekord hash-e egyezik, `ALL CHECKS HOLD`. Ez NEM restore-próba tárolóból. A 17 `undetermined` konstrukció (U1-U17) mért Rust/Go/PyYAML viselkedése a szerződés 4.1 táblájában van; egyik sincs eldöntve. Az archívum és a git bundle minta-ellenőrzése (token- és privátkulcs-minták, 167 commit) nem talált semmit, de ez nem a hiány bizonyítéka. *Dokumentált, nem általam újrafuttatott:* a reviewer olvasatai és GO-i; a reviewer szkriptjét (jq-s ellenőrző) nem használtam, a sajátomat igen. *Nyitva marad:* a T3 második példány: **NOT BACKED UP**, a feltöltés HOLD, az S3 (konkrét tároló, hozzáférések) tulajdonosi döntésre vár, S1-S9 pozíciói a tervben vannak (provider kiválasztva nincs); a reviewer nem blokkoló megjegyzése (a 6. szakasz jelen ideje a még nem létező referenciaobjektumról) egy későbbi módosításba kötve; az U1-U17 egyedi döntései, a D9 production gate, a production receipt API, a CI-workflow módosítása (HOLD); a Rust parser teljesítménye (#164); a DigiCert használati feltételek; a bizalmi modell T1, T2, T4-T8 döntései; a `theads/` push tiltott (a `main` ennél a naplónál az `origin` előtt jár). **Frissítés 2026-11-05, a T3 tároló- és hozzáférési döntési javaslat (cic-primitives #34) lezárása után; ez a bevezető összegzése, nem a transzkript része.** *Ténylegesen mért / általam olvasott:* a cic-primitives `devel`-re mergelve a #34 `220ff21` (docs-only javaslat az S3/S5/S9/S10 döntésekhez); a post-merge `gate` sikeres (magam olvastam). A merge a HEAD-re (`cb3f94df1619`) pinelt szkripttel futott. A javaslat egyik review-köre egy valódi biztonsági rést talált a sorrendben: a feltöltés–zárolás–bizonyítás sorrend ablakot hagyott, amikor az archívum már a távoli tárolón van, de még nincs compliance védelem alatt (a B2 Object Lock bekapcsolása önmagában nem zárol, a bucket alapértelmezett retentionjét be kell állítani); az új sorrend: bucket alapértelmezett compliance retentionnel, eldobható próbaobjektum, archívum a már védett bucketbe, saját retention-állapot visszaolvasása, legal hold, visszaolvasás verzió szerint és offline restore. *Források minősége (a javaslat maga is jelöli):* a szolgáltatói oldalról teljes egészében olvasott a B2 Object Lock és alkalmazáskulcsok, az S3 Object Lock; a Scaleway és Wasabi csak keresési részlet (az oldalak 403/404), az S3 árak nem renderelődtek. A B2 megőrzési maximuma 3 000 nap (tíz évhez egy előzetes hosszabbítás kell); a fiók a leggyengébb pont (a compliance-zárolt objektumot korán csak a fiók törlésével/lezárásával lehet eltávolítani). *Tulajdonosi álláspontok:* S3 Backblaze B2 feltételes GO (V1-V3 és V6 igazolása után); S5 tíz év GO, a hosszabbítás kötelező ellenőrzött művelet; S9 négy referenciahely GO; S10 HOLD (senki nincs megnevezve); a legal hold kiegészítő védelem. A B2-re adott feltételes GO nem fióklétrehozási, fizetési vagy feltöltési engedély. *Nyitva marad:* a V1-V3 és V6 ellenőrzések; S10; fiók, bucket és feltöltés nem létezik; a T3 második példány **NOT BACKED UP**; az U1-U17 egyedi döntései, a D9 production gate, a production receipt API, a CI-workflow módosítása (HOLD); a Rust #164; a DigiCert használati feltételek; a `theads/` push tiltott (a `main` ennél a naplónál az `origin` előtt jár). Nincs benne: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, subagent-üzenet, kontextus-összefoglaló. A titokminták és egy privát repository azonosítható részletei `[MASKED:<típus>]` jelölővel vannak kitakarva, ezért a szöveg a helyi eredetinél szándékosan kevésbé részletes.
 
 
 ### 2026-10-21 05:57 — Claude
@@ -31110,4 +31110,338 @@ A `devel` post-merge `gate` futása az utolsó lekérdezéskor még `in_progress
 - Az S3 (konkrét tároló és hozzáférések) a te döntésedre vár. Addig nincs mit előkészíteni a feltöltésre.
 
 **Helyi napló és memória.** A `theads/` napló és a memória a #165, a T3 terv és a Go-javítás lezárásáról még nincs frissítve. Ha a `gate` lezárult, egy rövid helyi frissítést írok róla (push nélkül, a `main` 19 committal előzi az `origin`-t).
+~~~~~
+
+
+### 2026-11-05 14:26 — Claude
+
+~~~~~
+A cic-primitives #33 `devel` post-merge `gate` futása sikeres: ezt magam olvastam végig.
+
+**Helyi napló és memória rendben (push nélkül).**
+- **Napló:** `55d7eb2` helyi commit, 18 új blokk. A bevezető új bekezdése külön tartja a mért, a dokumentált és a nyitott tételeket.
+  - Mért: #165 `2f02a75` és cic-primitives #33 `05a64a6`, mindkettő a pinelt szkripttel; a post-merge runokat magam olvastam. A T3 száraz futás eredménye rögzítve, kifejezetten nem restore-próbaként.
+  - A mintaellenőrzések (token- és privátkulcs-minták, 167 commit) rögzítve, nem hiánybizonyítékként.
+  - Nyitott: a T3 második példány NOT BACKED UP, a feltöltés HOLD.
+  - A `main` 20 committal előzi az `origin`-t, ezt továbbra sem szabad felküldeni.
+- **Memória:** a T3 jegyzet és a raw YAML jegyzet frissítve. Rögzítve a verifier valós függőségei, a restore sorrend, az S9 (a hash-hivatkozás, a custody log és a parancsok ne éljenek csak GitHubon), az admission-szerződés három külön állítása, az A7 és az, hogy az U1–U17 egyike sincs eldöntve.
+
+**Ami nyitva és döntésre vár.**
+- **S3:** a T3 konkrét tárolója és hozzáférései. Addig nincs feltöltés, és nem is választok ki semmit.
+- **U1–U17:** minden konstrukció saját döntési rekordot kap, UTF-8 elsőbbséggel.
+- **D9 production gate, a receipt API, a CI-workflow módosítása:** HOLD.
+- **Rust parser teljesítménye (#164):** külön döntés.
+
+Más tételt nem indítok magamtól. A következő lépést te jelölöd ki.
+~~~~~
+
+
+### 2026-11-05 14:33 — Felhasználó
+
+~~~~~
+<pasted_content id="983c">
+A következő feladatot kijelölöm: T3 – S3 tárolóválasztás és hozzáférési terv.
+
+A mostani állapotban ezt fontosabbnak tartom a Rust parser optimalizálásánál és a D9 production gate-nél.
+
+Ennek egyszerű oka van: a T3 időbélyeg-bizonyítékai nem állíthatók elő újra ugyanazzal a 2026. november 3-i időponttal. A parser teljesítményhibája később is javítható, az elveszett történeti bizonyíték nem feltétlenül pótolható.
+
+## Döntés: GO – T3 S3 előkészítése
+
+A következő munkát engedélyezem:
+
+1. Konkrét tárolási jelöltek összehasonlítása. Legalább két, GitHubtól független szolgáltató, amelyek támogatják a verziózást, a valódi WORM/Object Lock megőrzést és a külön olvasó/író jogosultságokat.
+2. S3 hozzáférési modell. Külön feltöltő, visszaolvasó és adminisztrátori jogosultságok; MFA; a törlés és a retention módosításának tiltása a napi használatú identitásoknak.
+3. S5 megőrzési javaslat. Első körben 10 éves megőrzést javaslok, de a szolgáltató tényleges immutabilitási korlátait és a hosszabbítás lehetőségét is vizsgálni kell.
+4. S9 custody-modell. Archívumhash, restore-utasítás és custody log önállóan visszanyerhető, védett példánya, külön a GitHubtól.
+5. Költség- és kockázatbecslés. Ne csak a 721 KB tárolásának ára szerepeljen, hanem a minimális díjak, műveletek, restore, számlafenntartás és a szolgáltató megszűnésének kockázata is.
+
+A cél egy rövid S3–S5–S9 döntési dokumentum, amelynek végén konkrétan meg tudom mondani, melyik szolgáltatót, milyen beállításokkal és hozzáférésekkel hagyom jóvá.
+
+T3 tároló kiválasztása
+
+GO
+
+Fiók/bucket létrehozása és feltöltés
+
+HOLD
+
+U1–U17, D9, receipt API
+
+HOLD
+
+Rust #164
+
+HOLD
+
+Külön fontos: a T3 archívum sértetlen maradjon. Sem újracsomagolás, sem új hash, sem a `verify.sh` módosítása nem része ennek a feladatnak.
+
+A helyi `theads/` és memória marad helyben, push nélkül. Nem kell újabb implementációs PR-t nyitni a tároló kiválasztása előtt.
+
+A következő munkautasítás tehát: készítsd el a T3 konkrét tároló- és hozzáférési döntési javaslatát, feltöltés és infrastruktúra-létrehozás nélkül.
+
+Ezután az S3 jóváhagyásával végre megszüntethetjük azt az állapotot, hogy egy történetileg fontos, kriptográfiai bizonyíték egyetlen gép ideiglenes könyvtárától függ.
+</pasted_content id="983c">
+~~~~~
+
+
+### 2026-11-05 14:38 — Claude
+
+~~~~~
+A T3 tároló- és hozzáférési döntési javaslat PR-ja megnyílt a cic-primitives repóban: https://github.com/CentralInfraCore/cic-primitives/pull/34 (alap: `devel`). Docs-only, egy fájl. Nem hoztam létre fiókot vagy bucketet, nem töltöttem fel semmit, és az archívumhoz sem nyúltam. A CI-ját még nem néztem, és nem mergeltem.
+
+**A javaslat.**
+- **Online példány:** Backblaze B2, Object Lock compliance módban, 3 000 napos megőrzéssel (a szolgáltató maximuma, kb. 8,2 év) plusz legal hold.
+  - A 10 évet egy előzetes meghosszabbítás éri el.
+  - Három külön identitás: feltöltő, visszaolvasó, adminisztrátor.
+  - A master hitelesítő zárolva, a fiók kétfaktoros, a helyreállító kódok két helyen offline.
+- **Tartalék, ha a B2 ellenőrzések elbuknak:** Amazon S3.
+- **Második osztály:** az archívum offline vagy egyszer írható adathordozón, másik fizikai helyen.
+- **Custody (S9):** a jóváhagyott hash, a custody log és a restore parancsok négy helyen, egyik sem csak GitHubon: a repóban, a tárolóban külön zárolt objektumként, az offline hordozón, és a tulajdonos saját nyilvántartásában.
+
+**Az összehasonlítás és a források minősége.**
+- **B2, S3, Scaleway és Wasabi** táblázatban szerepel, minden tény forráscímkével.
+- **A szolgáltató saját oldaláról teljes egészében olvasott:** a B2 Object Lock és alkalmazáskulcsok, valamint az S3 Object Lock.
+- **Csak keresési részlet vagy nem elérhető:** a Scaleway és a Wasabi oldalai (403/404), az S3 árazás nem renderelt. Ezeket a dokumentum kifejezetten jelöli, és jóváhagyásra nem szabad támaszkodni rájuk, amíg nincsenek ellenőrizve.
+- A Wasabi 721 KB-ra kiesik: minimális havi díj 1 TB-ra (kb. évi 96 dollár).
+
+**Két lényeges lelet, amire a döntésnél figyelni kell.**
+- **A B2 megőrzési maximuma 3 000 nap.** Tíz évhez legalább egyszer meg kell hosszabbítani, ez a naptárba kerülő kötelezettség. A legal hold áthidal, de nem a WORM-garancia, azt a compliance retention adja.
+- **A fiók a leggyengébb pont.** Mind a B2, mind az S3 szerint a compliance-zárolt objektumot korán eltávolítani csak a fiók törlésével vagy lezárásával lehet. Egy lejárt fizetési mód vagy elveszett helyreállító kód megszüntetheti a példányt. Ezért tartozik a javaslathoz a másik osztályú, offline példány.
+
+**Költség.** A tárolás ára nulla vagy centek (a B2 első 10 GB-ja ingyenes, a restore-próbák az ingyenes kimenő forgalomba férnek). A valódi költség egy tíz évig érvényes fizetési mód, évi kb. egy óra ellenőrzés, az egy meghosszabbítás, a kétfaktoros eszköz és a helyreállító kódok, és az, aki ezeket csinálja.
+
+**Hat ellenőrzés jóváhagyás előtt (V1–V6).**
+- B2 verziózás az Object Lockkal.
+- B2 kétfaktoros azonosítás felhő-tárolási fiókokra.
+- Megőrzés-hosszabbítás törlési jog nélkül.
+- Az S3 maximális megőrzése és árai.
+- A Scaleway oldalai, ha számításba jön.
+- A szolgáltató feltételei fiók-lezárásra és fizetési elmaradásra.
+
+Mindegyik a szolgáltató saját oldalán vagy egy eldobható próba-bucketen ellenőrizhető, az archívum nem kell hozzá.
+
+**A kért döntések:** S3, S5, S9, és új: **S10**, azaz ki a fiók tulajdonosa, az adminisztrátor és az utód, melyik fizetési módot és szerepkör-postaládát használjuk. Mielőtt ezeket megneveznéd, semmit nem hozok létre.
+
+A merge-szót a CI után kérem, pinelt szkripttel. A fiók/bucket létrehozása és a feltöltés HOLD, a második példány státusza **NOT BACKED UP**. Az U1–U17, a D9, a receipt API és a Rust #164 változatlanul HOLD.
+~~~~~
+
+
+### 2026-11-05 15:49 — Felhasználó
+
+~~~~~
+<pasted_content id="983c">
+## #34 – T3 tárolási döntési javaslat
+
+CI SUCCESS
+
+Merge HOLD – egy biztonsági pontosítás
+
+Ellenőriztem a [PR #34](https://github.com/CentralInfraCore/cic-primitives/pull/34?utm_source=chatgpt.com) tényleges tartalmát.
+
+HEAD: `38e9193faf833e9228eb7a42fbc9a77ab094e612`
+
+A PR OPEN, mergeable, célága `devel`, és valóban egyetlen dokumentumot tartalmaz. A `gate` workflow `42046861701` futása SUCCESS.
+
+A szolgáltatói dokumentáció alapján a Backblaze B2 jó elsődleges jelölt: rendelkezik compliance retentionnel, külön legal hold mechanizmussal és korlátozható alkalmazáskulcsokkal. A 3 000 napos megőrzési határ és a hosszabbítás lehetősége is dokumentált.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.backblaze.com\&sz=32)
+
+backblaze.com+1
+
+
+
+Az S3/S5/S9/S10 javaslat irányát elfogadom, de a #34-ben van egy biztonságilag jelentős sorrendi kérdés.
+
+### 1. Az archívum már a feltöltés pillanatától legyen védett
+
+A dokumentum 3. szakasza ezt a sorrendet írja elő:
+
+`Upload → Lock → Prove`
+
+Ez egy rövid, de valós védelmi rést hagy. A Backblaze dokumentációja szerint az Object Lock engedélyezése önmagában nem jelenti azt, hogy minden feltöltött objektum automatikusan zárolt. Ehhez a bucket alapértelmezett retention szabályát is be kell állítani.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.backblaze.com\&sz=32)
+
+backblaze.com+1
+
+
+
+Én ezért ezt a sorrendet kérem a dokumentumba:
+
+1. Object Lock-kompatibilis bucket létrehozása, alapértelmezett compliance retention beállításával.
+2. Eldobható objektum feltöltése, majd a retention, törlés- és rövidítésvédelem ellenőrzése.
+3. A valódi T3 archívum feltöltése a már védett bucketbe.
+4. Az objektum saját retention állapotának és lejárati idejének visszaellenőrzése, külön legal hold beállítása.
+5. Visszaolvasás verzióazonosító alapján, SHA-256 és offline restore-próba.
+
+A cél: a valódi T3 archívumnak egyetlen olyan pillanata se legyen, amikor már a távoli tárhelyen van, de még nincs compliance védelem alatt.
+
+Ez az egyetlen merge előtti kötelező módosításom.
+
+### 2. Tulajdonosi álláspont az S3/S5/S9/S10 kérdésekhez
+
+| Döntés                    | Álláspont                                                        |
+| ------------------------- | ---------------------------------------------------------------- |
+| S3 – Backblaze B2         | Feltételes GO, V1–V3 és V6 igazolása után                        |
+| S5 – 10 év                | GO, a meghosszabbítás kötelező, ellenőrzött művelet              |
+| S9 – Négy referenciahely  | GO                                                               |
+| S10 – Fiók, utód, fizetés | HOLD, konkrét személyek és hozzáférések még nincsenek megnevezve |
+
+A legal holdot kiegészítő védelemként elfogadom, nem a compliance retention helyettesítőjeként.
+
+Külön hangsúlyozom: a B2 mellett adott feltételes GO még nem jelent fióklétrehozási, fizetési vagy feltöltési engedélyt.
+
+### 3. Merge-döntés
+
+A #34 koncepcióját elfogadom. Merge HOLD kizárólag az Upload → Lock sorrend javításáig.
+
+Nem kérek új szolgáltatói összehasonlítást vagy további architekturális munkát.
+
+A javított HEAD-en új `gate` SUCCESS után megadható a pinelt squash merge GO.
+
+A T3 második példánya továbbra is NOT BACKED UP. A dokumentum elkészülte nem változtat ezen; csak az elfogadott tárhelyre történő, igazolt feltöltés és sikeres helyreállítási próba.
+
+A következő konkrét feladat tehát a #34 feltöltés előtti compliance-védelmének rögzítése.
+</pasted_content id="983c">
+~~~~~
+
+
+### 2026-11-05 15:50 — Claude
+
+~~~~~
+A #34 sorrendi pontosítása bent van. Az új HEAD `cb3f94df1619eefb567ba979b45b891ad9dc2515`. A `gate` most fut újra (UNSTABLE), és nem mergeltem.
+
+**A javítás: az archívum az első pillanattól védett.**
+- A régi sorrend (feltöltés, zárolás, bizonyítás) valóban rést hagyott. A B2 doksi szerint az Object Lock bekapcsolása önmagában nem zárolja a feltöltött fájlokat. A bucket alapértelmezett retentionjét be kell állítani, ez a létrehozáskor történik, és csak az utána feltöltött fájlokra érvényes.
+- A 3. és a 7. szakasz mostantól ezt a sorrendet írja elő:
+  1. Object Lock bucket létrehozása beállított alapértelmezett compliance retentionnel (3 000 nap), még semmit nem töltünk fel. A beállítások visszaellenőrzése.
+  2. Eldobható próbaobjektum a már védett bucketbe. A bucket alapértelmezése adja neki a saját retention állapotot, a törlés és a rövidítés elutasított, az újrafeltöltés új verziót hoz létre, és a zárolt marad olvasható. A próbaobjektum is zárolt marad ugyanannyi ideig (pár bájt). Ha kérsz, külön egynapos próba-bucket mutathatja az lejáratot.
+  3. A valódi archívum és a kis referenciaobjektumok feltöltése a védett bucketbe, kizárólag a feltöltő identitással.
+  4. Az objektum saját retention állapotának és lejáratának visszaolvasása az olvasóval, utána a legal hold az adminisztrátorral kiegészítő védelemként.
+  5. Visszaolvasás verzióazonosító alapján, SHA-256, offline restore a tárolt objektumból, custody log.
+- A hozzáférési modell is illeszkedik: a bucket alapértelmezett retentionjét az adminisztrátor állítja (`writeBucketRetentions`), a feltöltőnek retention-képesség egyáltalán nem kell, mert az alapértelmezés zárol.
+- Ha bármelyik lépés elbukik, megállunk. Az archívum a 3. lépéstől az alapértelmezett védelem alatt van, tehát addig sincs védelem nélkül.
+
+**A pozícióidat rögzítettem a javaslatban.**
+- S3: B2, feltételes GO, a V1–V3 és V6 igazolása után.
+- S5: 10 év, GO, a meghosszabbítás kötelező, ellenőrzött művelet.
+- S9: a négy referenciahely, GO.
+- S10: HOLD, még senki nincs megnevezve.
+- A legal hold kiegészítő védelem, nem a compliance retention helyettesítője.
+- A B2-re adott feltételes GO nem fióklétrehozási, fizetési vagy feltöltési engedély.
+
+A merge-szót az új `gate` után kérem, pinelt szkripttel, amelyet ehhez a PR-hez külön készítek. A fiók/bucket létrehozása és a feltöltés HOLD, a második példány státusza **NOT BACKED UP**. A javítás elkészülte ezen nem változtat.
+~~~~~
+
+
+### 2026-11-05 16:27 — Felhasználó
+
+~~~~~
+<pasted_content id="983c">
+MERGE GO – #34
+
+Mehet a merge. Ellenőriztem a GitHubon az új HEAD-et, a dokumentációs javítást és a CI eredményét.
+
+| Feltétel                | Eredmény                                                                                        |
+| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| PR                      | [#34](https://github.com/CentralInfraCore/cic-primitives/pull/34?utm_source=chatgpt.com) – OPEN |
+| Célág                   | `devel`                                                                                         |
+| HEAD                    | `cb3f94df1619eefb567ba979b45b891ad9dc2515`                                                      |
+| Mergeable               |                                                                                                 |
+| gate CI – `42059036641` | &#x20;SUCCESS                                                                                   |
+| Korábbi review-kifogás  | &#x20;Lezárva                                                                                   |
+
+### Az új sorrend megfelelő
+
+A dokumentum 3. és 7. szakaszában már a megfelelő folyamat szerepel:
+
+Bucket alapértelmezett compliance retentionnel → próbaobjektum → védett archívumfeltöltés → objektum retention ellenőrzése → legal hold → visszaolvasás és restore.
+
+A feltöltő identitásnak nincs szüksége retention-módosítási jogosultságra. Ez megfelel a korábban kért biztonsági határnak.
+
+### Pinelt squash merge
+
+```
+gh pr merge 34 \
+  --repo CentralInfraCore/cic-primitives \
+  --squash \
+  --match-head-commit cb3f94df1619eefb567ba979b45b891ad9dc2515
+```
+
+A merge-et nem hajtottam végre.
+
+### Merge után
+
+A `devel` post-merge gate SUCCESS szükséges a dokumentációs feladat végleges lezárásához.
+
+A tényleges T3 tárolás továbbra is HOLD:
+
+- S3: Backblaze B2 csak feltételesen elfogadott, V1–V3 és V6 ellenőrzendő.
+- S10: fióktulajdonos, adminisztrátor, utód, fizetés és szerepkör-postaláda még nincs kijelölve.
+- Sem fiók, sem bucket, sem feltöltés nincs engedélyezve.
+- A második példány státusza: NOT BACKED UP.
+
+A #34 dokumentációs PR merge-feltételei teljesültek.
+</pasted_content id="983c">
+~~~~~
+
+
+### 2026-11-05 16:28 — Claude
+
+~~~~~
+A cic-primitives #34 HEAD-je változatlanul `cb3f94df1619eefb567ba979b45b891ad9dc2515`, az alapág `devel`, a merge-állapot CLEAN, és a `gate` futás `completed/success`. Ezt magam is lekérdeztem. Nem mergeltem.
+
+A GO csak beillesztett szövegben van, ezért neked kell lefuttatnod. A szkript a HEAD-et, a `devel` alapágat és a nyitott állapotot ellenőrzi, megvárja a `gate` sikerét, és `--match-head-commit`-tal squash-mergel:
+
+```
+! ~/.claude-personal/jobs/39368ec7/tmp/merge34.sh
+```
+
+Ha te magad írod be, hogy "mehet a merge", akkor én futtatom ugyanezt.
+
+**Merge után.**
+- A `devel` post-merge `gate` futását külön ellenőrzöm, és csak a tényleges eredményt jelentem.
+- A helyi `theads/` napló és a memória rövid frissítést kap a T3 döntési javaslatról és annak rögzített pozícióiról (push nélkül).
+
+**A T3 tényleges tárolása változatlanul HOLD.**
+- **S3:** B2 csak feltételesen, a V1–V3 és V6 ellenőrzése után.
+- **S10:** a fióktulajdonos, az adminisztrátor, az utód, a fizetési mód és a szerepkör-postaláda még nincs megnevezve.
+- Sem fiók, sem bucket, sem feltöltés nincs engedélyezve.
+- A második példány státusza: **NOT BACKED UP**.
+~~~~~
+
+
+### 2026-11-05 16:51 — Felhasználó
+
+~~~~~
+<bash-input> ~/.claude-personal/jobs/39368ec7/tmp/merge34.sh</bash-input>
+~~~~~
+
+
+### 2026-11-05 16:52 — Felhasználó
+
+~~~~~
+<bash-stdout>gate: completed/success
+MERGED</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-05 16:54 — Claude
+
+~~~~~
+A cic-primitives #34 mergelve a `devel`-re: squash commit `220ff21e10307c9252eb98add41873d147106c24`. A merge a pinelt szkripttel futott, a `gate` sikere és a HEAD ellenőrzése után.
+
+A `devel` post-merge `gate` futása az utolsó lekérdezéskor még `in_progress`. Az eredményét nem ismerem, ezért zöldnek nem mondom. Figyelőt állítottam rá, és jelzem, amint lezárul. Utána helyben rögzítem a naplóban és a memóriában a T3 döntési javaslatot és a pozícióidat (push nélkül).
+
+**Állapot.**
+- A T3 tárolási döntési javaslat a cic-primitive `devel` ágán van. A javaslat nem hoz létre fiókot vagy bucketet, nem tölt fel semmit, és nem választ szolgáltatót.
+- A feltöltés előtti védelem sorrendje rögzítve: bucket alapértelmezett compliance retentionnel, próbaobjektum, archívum a már védett bucketbe, retention-állapot visszaolvasása, legal hold, visszaolvasás és restore.
+- **A második példány státusza NOT BACKED UP.**
+
+**A tényleges tárolás előtt a te lépéseid hiányoznak.**
+- **S10:** a fióktulajdonos, az adminisztrátor, az utód, a fizetési mód és a szerepkör-postaláda megnevezése.
+- **V1–V3 és V6:** a B2 ellenőrzései (verziózás Object Lockkal, kétfaktoros azonosítás felhő-tárolási fiókra, megőrzés-hosszabbítás törlési jog nélkül, a szolgáltató feltételei fiók-lezárásra és fizetési elmaradásra). Ezek a szolgáltató saját oldalán vagy egy eldobható próba-bucketen ellenőrizhetők. Ha kéred, az oldalakon még ellenőrizhető részeket (V6, V3 dokumentációs oldala) előkészítem, de fiókot nem hozok létre.
+
+Más tételt nem indítok magamtól.
 ~~~~~
