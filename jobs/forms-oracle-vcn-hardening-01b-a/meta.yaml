@@ -41,9 +41,9 @@ workplace:
   branch: "feature/forms-oracle-vcn-hardening-01b-a"
 
 # Status
-status: "running"
+status: "error"
 spec_gate: "passed"
-lease_expires: "2026-11-08T02:56:00Z"
+lease_expires: ""
 run_id: "f6048dc3-4382-43c3-b055-643404dae159"
 attempt: "3"
 result_digest: ""
@@ -54,7 +54,7 @@ error_message: "wrapper exited before finalizing — see the job log; the agent 
 timestamps:
   created: "2026-11-07T16:05:43Z"
   started: "2026-11-07T20:56:00Z"
-  completed: ""
+  completed: "2026-11-07T21:03:22Z"
 usage:
   runs: "1"
   cost_usd: "6.996970000000002"
