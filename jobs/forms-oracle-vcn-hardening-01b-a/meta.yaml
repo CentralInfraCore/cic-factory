@@ -41,11 +41,11 @@ workplace:
   branch: "feature/forms-oracle-vcn-hardening-01b-a"
 
 # Status
-status: "error"
+status: "running"
 spec_gate: "passed"
-lease_expires: ""
-run_id: "517de492-e083-4e9b-ac99-b428be18166d"
-attempt: "1"
+lease_expires: "2026-11-08T02:27:35Z"
+run_id: "c7c92442-81ef-46f7-93f6-95c732722777"
+attempt: "2"
 result_digest: ""
 reviewed_run_id: ""
 error_message: ""
@@ -53,8 +53,8 @@ error_message: ""
 # Timestamps (ISO 8601)
 timestamps:
   created: "2026-11-07T16:05:43Z"
-  started: "2026-11-07T16:28:35Z"
-  completed: "2026-11-07T16:46:18Z"
+  started: "2026-11-07T20:27:35Z"
+  completed: ""
 usage:
   runs: "1"
   cost_usd: "6.996970000000002"
