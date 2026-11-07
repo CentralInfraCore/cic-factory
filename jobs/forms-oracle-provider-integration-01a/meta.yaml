@@ -11,10 +11,19 @@ target:
   path: ""
 
 # KB context
-# No chunk id is written here on purpose: the ids are not stable (the KB was re-indexed
-# before) and nothing was content-verified for this job. The input.md tells the agent to
-# find its starting points itself and to record which node or file each came from.
-kb_focus: []
+# These ids were content-verified by file_path (search_query / get_chunk) on 2026-11-07.
+# They describe the Oracle module at 5d0a327 (the KB was built on 2026-10-16, before #33 and #34),
+# NOT the current state; cic-primitive-forms and cic-schema-registry are not in the KB at all.
+# Chunk ids are not stable: input.md tells the agent to re-check each id by its file_path.
+# (An earlier version of this comment, and of ref/spec-validation.md, wrongly said that
+# input.md already told the agent to search and that no id could be verified; corrected.)
+kb_focus:
+  - "c7529"   # docs/design/architecture.md
+  - "c7616"   # docs/design/specs/state-model.md
+  - "c7487"   # docs/contracts/en/wasm-abi.md
+  - "c7668"   # KB path module/contracts.yaml (the KB indexes Go files with a .yaml extension; the file is module/contracts.go)
+  - "c7675"   # KB path module/correspondence.yaml (the file is module/correspondence.go)
+  - "c7550"   # docs/design/primitives-alignment.md
 promptmap_ref: ""
 
 # Agent
@@ -34,6 +43,7 @@ workplace:
     - "cic-module-oracle-cloud"
     - "cic-primitive-forms"
     - "cic-primitives"
+    - "cic-schema-registry"
   branch: "feature/forms-oracle-provider-integration-01a"
 
 # Status
