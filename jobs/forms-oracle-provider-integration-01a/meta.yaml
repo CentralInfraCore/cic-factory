@@ -47,11 +47,11 @@ workplace:
   branch: "feature/forms-oracle-provider-integration-01a"
 
 # Status
-status: "error"
+status: "running"
 spec_gate: "passed"
-lease_expires: ""
-run_id: "e3a1e976-b2ba-422d-b60a-bf58cf0dc388"
-attempt: "1"
+lease_expires: "2026-11-07T16:49:59Z"
+run_id: "7fb25cba-ae52-4dca-9d7e-bde066d5d9b3"
+attempt: "2"
 result_digest: ""
 reviewed_run_id: ""
 error_message: ""
@@ -59,8 +59,8 @@ error_message: ""
 # Timestamps (ISO 8601)
 timestamps:
   created: "2026-11-07T10:03:28Z"
-  started: "2026-11-07T10:47:49Z"
-  completed: "2026-11-07T10:48:16Z"
+  started: "2026-11-07T10:49:59Z"
+  completed: ""
 usage:
   runs: "1"
   cost_usd: "0"
