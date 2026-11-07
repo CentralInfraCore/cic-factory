@@ -31,7 +31,7 @@ promptmap_ref: ""
 # about what a contract does and does not say, and about what a measurement supports.
 # The weak point of a weaker model here is a confident claim without evidence.
 agent:
-  config_dir: "~/.claude-personal/agents/cic-module-wasm-claude"
+  config_dir: "/home/sinkog/.claude-personal/agents/cic-module-wasm-claude"
   model: "claude-opus-5"
   max_turns: "150"
   session_id: ""
