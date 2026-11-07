@@ -31,7 +31,7 @@ agent:
   config_dir: "/home/sinkog/.claude-personal/agents/cic-module-wasm-claude"
   model: "claude-opus-5"
   max_turns: "130"
-  session_id: ""
+  session_id: "ce1340ce-1b2b-454d-9206-32128b89b4b8"
 
 # Workplace
 workplace:
@@ -41,9 +41,9 @@ workplace:
   branch: "feature/forms-oracle-vcn-hardening-01b-a"
 
 # Status
-status: "running"
+status: "error"
 spec_gate: "passed"
-lease_expires: "2026-11-07T22:28:35Z"
+lease_expires: ""
 run_id: "517de492-e083-4e9b-ac99-b428be18166d"
 attempt: "1"
 result_digest: ""
@@ -54,4 +54,17 @@ error_message: ""
 timestamps:
   created: "2026-11-07T16:05:43Z"
   started: "2026-11-07T16:28:35Z"
-  completed: ""
+  completed: "2026-11-07T16:46:18Z"
+usage:
+  runs: "1"
+  cost_usd: "6.996970000000002"
+  turns: "71"
+  max_turns: "130"
+  stop_reason: "stop_sequence"
+  duration_ms: "1026215"
+  models: "claude-opus-5"
+  total_input_tokens: "7319837"
+  input_tokens: "122"
+  cache_read_input_tokens: "7143520"
+  cache_creation_input_tokens: "176195"
+  output_tokens: "66506"
