@@ -1,0 +1,60 @@
+schema_version: "1.0"
+
+# Identification
+job_id: "forms-oracle-vcn-slice-01b"
+parent_job_id: "forms-oracle-provider-integration-01a"
+
+# Hierarchy level
+level: "repo"
+target:
+  repo: "cic-module-oracle-cloud"
+  path: ""
+
+# KB context
+# The KB was built on 2026-10-16 (module at 5d0a327, Relay at 55a899f). It contains neither cic-primitive-forms
+# nor cic-schema-registry, and it predates #33, #34 and #35 of the module. It is orientation only, never evidence.
+# Chunk ids are not stable: input.md tells the agent to re-check each id by its file_path.
+kb_focus:
+  - "c7529"   # docs/design/architecture.md
+  - "c7616"   # docs/design/specs/state-model.md
+  - "c7487"   # docs/contracts/en/wasm-abi.md
+  - "c7668"   # KB path module/contracts.yaml (the KB indexes Go files with a .yaml extension; the file is module/contracts.go)
+  - "c7675"   # KB path module/correspondence.yaml (the file is module/correspondence.go)
+  - "c7550"   # docs/design/primitives-alignment.md
+promptmap_ref: ""
+
+# Agent
+# Model rationale: this is an implementation slice whose weak point is a confident claim without evidence
+# (a test that cannot fail, a path that no production caller reaches). The 01a baseline found exactly that
+# failure once already. A weaker model is not appropriate here.
+agent:
+  config_dir: "/home/sinkog/.claude-personal/agents/cic-module-wasm-claude"
+  model: "claude-opus-5"
+  max_turns: "200"
+  session_id: ""
+
+# Workplace
+workplace:
+  repos:
+    - "cic-factory"
+    - "cic-module-oracle-cloud"
+    - "cic-primitive-forms"
+    - "cic-primitives"
+    - "cic-schema-registry"
+  branch: "feature/forms-oracle-vcn-slice-01b"
+
+# Status
+status: "pending"
+spec_gate: ""
+lease_expires: ""
+run_id: ""
+attempt: ""
+result_digest: ""
+reviewed_run_id: ""
+error_message: ""
+
+# Timestamps (ISO 8601)
+timestamps:
+  created: "2026-11-07T16:05:43Z"
+  started: ""
+  completed: ""
