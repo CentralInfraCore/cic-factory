@@ -47,20 +47,20 @@ workplace:
   branch: "feature/forms-oracle-provider-integration-01a"
 
 # Status
-status: "awaiting_review"
+status: "done"
 spec_gate: "passed"
 lease_expires: ""
 run_id: "0b7613d1-da11-46d3-8d9e-b1734ee01aa5"
 attempt: "3"
-result_digest: ""
-reviewed_run_id: ""
+result_digest: "5111355e59b2754ddf2c5faff9f2a2d6a3f48e50163e292928a97bb69a600203"
+reviewed_run_id: "0b7613d1-da11-46d3-8d9e-b1734ee01aa5"
 error_message: ""
 
 # Timestamps (ISO 8601)
 timestamps:
   created: "2026-11-07T10:03:28Z"
   started: "2026-11-07T13:50:48Z"
-  completed: "2026-11-07T14:10:35Z"
+  completed: "2026-11-07T15:58:12Z"
 usage:
   runs: "2"
   cost_usd: "37.61848049999999"
