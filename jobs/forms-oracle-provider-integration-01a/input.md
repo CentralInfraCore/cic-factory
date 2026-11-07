@@ -54,6 +54,8 @@ Ha a státuszt nem tudod fájl- vagy node-szinten alátámasztani, **ne mondd ki
 3. A `primitives-alignment.md` két, nem újraellenőrzött állítása: (a) „nincs kódszintű kapcsolat a `cic-primitives`/`cic-yang` felé", (b) „a Relay forrásában nincs `cic-primitives` hivatkozás". Mérd újra (`grep -rn` a modulban, `_test.go` nélkül; a Relay forrásában **olvasással**), és rögzítsd az eredményt dátummal és commitokkal.
 
 ### B. Forms API leltár
+**Verzió, commit-pin, licenc és függőségkezelés (kötelező része a leltárnak):** a Forms jelenlegi verziója és a rögzített commit (`git rev-parse HEAD`, tagek, `go.mod`/`Cargo.toml` verziómezői); a Forms licence (`LICENSE.md`, SPDX-fejlécek: a tartalma vegyes, az átvett eszközei más licencűek lehetnek — idézd); és **hogyan hivatkozhatná a modul a Forms kódot**: Go modul-verzió (a modul `module/go.mod`-ja mit tartalmaz ma, milyen modulútvonalon áll), `replace`, vendor, vagy más — a lehetőségeket és korlátaikat sorold, **döntést nem hozol**. Mérd meg a **TinyGo/WASM-fordíthatóságot** egy **scratch könyvtárban a repókon kívül** (ne a klónokban): lefordul-e `tinygo build -target wasi` (a modul `mk/wasm.mk`-ja szerinti célponttal) egy minimális programmal, amely csak a Forms Go csomagjának a szükséges típusait importálja; mik a közvetlen és közvetett függőségei (pl. a YAML-könyvtár), és mekkora a kimeneti `.wasm`. Ha a TinyGo nem érhető el a környezetben, írd: „nem mérhető" és hogy mi kellene hozzá. (A központi Forms-motor **nem** kerül a WASM-ba — ez a mérés csak azt mondja meg, hogy a modul mit tudna biztonságosan importálni.)
+
 A tényleges Go (és a Rust megfelelő) **függvényaláírásokat és adatszerkezeteket a kódból olvasd ki**, ne emlékezetből: `Parse`, `CompileSchema`, `Validate`, `Expand`, `Normalize`, `NormalizeWithPolicy`, `PolicyResolution`, a canonical path, origin és schema-binding típusai. Táblázat: függvény | aláírás (fájl:sor) | mit fogad és ad | hol hívódik a Forms **saját** production kódjában (fájl:sor) | státusz. A `docs/P1-SUPPORTED-SUBSET.md` és az ADR-ek alapján add meg, mit **nem** támogat (explicit: `state_surface`, nem támogatott YAML-konstrukciók).
 
 ### C. Séma-elérhetőség és szerepek
@@ -75,7 +77,7 @@ Minden szintre (Q0–Q9) rögzítsd a **mért** állapotot a modulra, **a méré
 
 ## Output (a `cic-factory` klónban, `jobs/forms-oracle-provider-integration-01a/output/`)
 
-- `output/baseline.md` — a repók és a rögzített commitok; az Oracle modul, a Forms API, a Relay határ leltára (A, B, D); a Q0–Q9 Stage 0 mérés (F), a nevezőkkel; a licenckérdés.
+- `output/baseline.md` — a repók és a rögzített commitok; az Oracle modul, a Forms API (verzió, commit-pin, licenc, függőségkezelés, TinyGo-fordíthatóság), a Relay határ leltára (A, B, D); a Q0–Q9 Stage 0 mérés (F), a nevezőkkel; a licenckérdés.
 - `output/contract-mapping.md` — a séma-szerepek és a mező-szintű egyezés-tábla (C), a leképezés lefedettsége (E), explicit coverage rekordokkal.
 - `output/relay-requirements.md` — a hiányzó Relay-követelmények a megadott oszlopokkal (D).
 - `output/claim-evidence.md` — **minden állításhoz** egy sor: `| Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat |`. A Bizonyíték oszlop konkrét fájl:sor, commit, parancs és a parancs kimenetének idézete; „nem igazolt" is megengedett státusz.
