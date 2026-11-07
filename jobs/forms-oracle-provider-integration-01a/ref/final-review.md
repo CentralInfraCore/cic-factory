@@ -1,0 +1,23 @@
+# 01a — final orchestrator review record (2026-11-07)
+
+Verdict: **CONDITIONAL GO** — a partial but usable baseline and the design input for 01b. It is **not** a proof of implementation readiness, and closing the job must not turn it into one.
+
+Bound to: feature branch `feature/forms-oracle-provider-integration-01a` at `22849fa14936077ec7cffd56e3b12872c12ffc75` (parent `b62f624`), pushed 2026-11-07 on the owner's GO, nothing merged into Factory `main`. Reviewed trees: module 3e38886, Forms 2f02a75, cic-primitives 73ae469, cic-schema-registry 6db77d4 (and ac567ae for comparison), Relay 55a899f.
+
+Output hashes (identical in the remote commit and the live copy): baseline.md b66da3e5…e9ea; contract-mapping.md a876924c…f3e2; relay-requirements.md acfd3c4d…025c; claim-evidence.md d0383e04…5899 (full values in run-history.md and the agent report).
+
+## What was checked
+- Mechanical gate `tools/validate-output.sh` at the lifecycle location (live `jobs/<id>/output/` after copying the four files): **GO**, 4 files, no blocking failure; O5 warning (46 refs resolvable with the configured roots, 275 not).
+- Immutable inputs bit-identical across the resume (sha256); scope kept (read-only tool calls, no docker/go test/mutation/push by the agent); credential symlink intact; no push by the agent; remote `main` moved only by the lifecycle bookkeeping commits (meta/index).
+- Independent re-measurements by the orchestrator: coverage, race, gofmt/vet/staticcheck, TestRealRegistrySchemas 4/4, TestNormalizeObservedMatchesTheFixture 9/9, the registry correspondence tests (40), planted defects (module M1-M3, registry mutants), pin hash, VCN contract counts (13 config / 19 state), Forms licence (Apache-2.0, 69 SPDX), Relay op vocabulary.
+
+## Limits that must travel with this verdict
+1. **O5 references.** 232 distinct file:line refs: 107 full path resolves at a pinned commit; 109 bare file name with one candidate (resolvable only by context); **9 ambiguous** bare names (e.g. service.go:18, policy.go:143, resolve.go:79, main.go:640/658); **7 not resolvable as written** (4 × `app/module/cicflow_guest.go` = container path of `module/cicflow_guest.go`; 2 × `cic-primitive-forms/go/schema.go` = Forms `go/schema.go`; 1 × Go stdlib inside the builder image, not checkable). 0 refs point past the end of their file. A resolvable reference is not a proven claim: of 14 sampled AM rows all 14 point at a relevant line, 3 cite a declaration rather than the evidence line (stores.go:13, contracts.go:17, provider.go:812).
+2. **NOT INDEPENDENTLY VERIFIED (NIV)** — must not appear in any acceptance claim: module line coverage (82.7% orchestrator vs 82.9% agent; the orchestrator's figure is the one reproduced), top-level test counts (55 + 7 manual vs 26 + 8), mutation result 159/217 (gremlins, timeout-sensitive; re-run HOLD), govulncheck (module clean; oci-extract 1 stdlib finding), Q3 branch coverage, Q6 shared vectors provenance, Q9 determinism/reproducibility probe.
+3. **Open owner decisions, not 01a deficiencies:** M2 (`compartmentId` origin) = `PROPOSED / OWNER DECISION REQUIRED` (binding-based direction proposed; needs the binding owner, the value source and the authorisation boundary; no ABI change accepted); R1 (Relay 4 ops vs provider 8 ops) = open, no mechanism chosen; first decide whether the Relay's `process/get/init/notify` is a general module-lifecycle interface that can dispatch the provider's operations, or an ABI-level extension is needed; a rename of four operations to eight is not an acceptable solution.
+4. **Licence section** is cited only as corrected in cic-module-oracle-cloud PR #35 (open, not merged); it is not the accepted state of `devel`.
+5. **Findings the evidence base supports (each re-checked in code):** NetworkSpace/OCI VCN field gaps (7 vs 13 config fields; compartmentId/displayName not expressible); no forward mapping anywhere; create runs through `Execute(CreateVcn)` outside `Plan`; the created OCID is documented in the design but not returned by the execution result; production `Observe` does not use `normalizeObserved` (planted defect M2 survives all 55 tests) — a mandatory 01b blocking negative test: an absent `ipv6CidrBlocks` must not yield a derived `isIpv6Enabled=false`, driven through the production `Observe` path; Relay op vocabularies do not intersect; no Forms call path in module or Relay.
+
+## What this review does NOT say
+No implementation readiness, no acceptance of the NIV items, no decision on M2 or R1, no authorisation for 01b, no approval to merge #35, no T3 progress (second copy still NOT BACKED UP).
+Detail: `orchestrator-review-partial.md` (rounds 1-6), `run-history.md`, `resume-scope-proposal.md`.
