@@ -36,3 +36,25 @@ Reviewer: the orchestrator that wrote the spec. **Limited independence**: the wr
 
 ## State
 Files only in the live workdir (untracked): `jobs/forms-oracle-vcn-slice-01b/{meta.yaml,input.md,output/.gitkeep,ref/spec-review.md}`. Not committed, not pushed, not started. Start requires the owner's separate GO. M2 and R1 stay open.
+
+---
+# Addendum 2026-11-07 (after two independent reviews): the draft was SPLIT
+
+This file was written for the original single-job draft `forms-oracle-vcn-slice-01b` (commit 66627ed, kept in history; the original text is in `ref/original-01b-draft-input.md`). The directory was renamed with `git mv` to `forms-oracle-vcn-hardening-01b-a` and the spec rewritten.
+
+Two independent reviews reached the same recommendation: do not start S1-S6 as one 200-turn job.
+1. The owner's external review: CONDITIONAL GO for rework, NO-GO for starting as one job; split into 01b-A (S3+S4+targeted S6), 01b-B (S1+S5), 01b-C (S2 after the owner decides M2). That review could not read the then-untracked files, so it is architectural, not line-level.
+2. A fresh read-only subagent review (`ref/independent-review-subagent.md`): SPLIT FIRST, with ten findings. I re-verified the load-bearing ones myself before using them: F3 (`module/module.wasm` is tracked, `project.yaml` `buildHash` equals its sha256, the load test reads `module.wasm`, so a real-Call test would run the old binary), F1 (production `Observe` already omits `isIpv6Enabled` when the source is absent; the gap is a missing production-path test), F4/F6 (`executeOne` is shared by every provider operation; `compartmentId` is a `required` config field that `conformIntent` already enforces and `renderBody` already sends from `config`).
+
+## What changed in 01b-A (S4 + S3 only, `max_turns` 130)
+- S4 is test-only; the production `Observe` is not modified; wiring `normalizeObserved` into `Observe` is an owner decision (it would change the `effective_config` content). Positive controls added (absent / `[]` / non-empty / `null` / `state` unchanged). The Plan replace hazard (input-only -> replace) must be named, not changed. Stop condition keeps the RED test, the reproduction and the ABI-impact analysis (owner's request).
+- S3: `resource_id` on `steps[i]` only, create role only, `omitempty`; errors through `result.status=failed` + `error_class`; OCID shape `ocid1.vcn.` + non-empty remainder; message says the VCN was created; non-create results byte-identical; `provider-abi.md` is informative, divergence reported, not treated as a requirement; compatibility checks (`go vet -tags manual_real_oci`, no `DisallowUnknownFields`, `abi.schema.yaml` scope).
+- New "measurement infrastructure" block: `docker run` on a scratch copy instead of `docker compose exec` (project-name collision), print mount and HEAD first; build the guest to a scratch path and point the new test at it by an env variable; `module/module.wasm` and `project.yaml` are not modified or committed and the committed artefact is stated stale; generalise the load-test mock (body, status, request counter); Q2 via an out-of-repo script; Q4 has an explicit `NOT MEASURED` escape; Q7 declared absent.
+- The bit-identical list was extended (project.yaml, module.wasm, abi/capability/project schemas, oci-sdk.lock.yaml, schemas/core, testdata/vcn-v1, manual_real_oci_test.go).
+- Removed from this job: S1, S5 (mapping, Forms vectors), S2 (`compartment_id`, the M2 decision record), all Forms/primitives/registry clones. They move to two future specs (mapping job; binding job after the owner's M2 decision), not yet written.
+
+## Gates after the rewrite
+`validate-meta.sh` OK; `validate-spec.sh` GO. Not started; not pushed.
+
+## Still true
+The orchestrator who wrote this spec also checked it (limited independence); the two reviews above are the independence. Not yet checked by anyone: whether the builder image can build TinyGo output to a scratch path with the module's flags (the host has no Go; only the image does), and whether a mutation tool can be installed there at run time (Q4 therefore may end as `NOT MEASURED`).
