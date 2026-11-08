@@ -1,6 +1,6 @@
-# Thread-napló — 2026-11-08 (Oracle-modul: binding.resource_id M1, M3, M5, M4 felmérés; #39, #40, #41)
+# Thread-napló — 2026-11-08 (Oracle-modul: binding.resource_id M1, M3, M5, kanonikus JSON, M4a; #39–#43)
 
-Interaktív session transcriptje 2026-11-08T06:27:38Z (a 2026-11-07_session-oracle-01b-a-pr36-pr38 naplóban lezárt pont) után 2026-11-08T10:26Z-ig: a binding.resource_id szerződés tervezete, az M1 (cic-module-oracle-cloud #39, F1 javítással), az M3 (#40, read-szerep elutasítása), az M5 (#41, Poll work_request_id) merge-e és devel push-CI ellenőrzése, majd az M4 felmérés megindítása. **Ez a napló utólag készült a session transcriptjéből** (ugyanaz a 081edee1… .jsonl), a session alatt nem vezettem menet közben; az utolsó blokk az M4 GO után a felmérés megkezdését jelző üzenet. Az M4 felmérés eredménye (probe, szerződéstervezet, negatív mátrix) a job ref/ könyvtárában van, nem ebben a naplóban.
+Interaktív session transcriptje 2026-11-08T06:27:38Z (a 2026-11-07_session-oracle-01b-a-pr36-pr38 naplóban lezárt pont) után 2026-11-08T12:55Z-ig: a binding.resource_id szerződés tervezete, az M1 (cic-module-oracle-cloud #39, F1 javítással), az M3 (#40, read-szerep elutasítása), az M5 (#41, Poll work_request_id), a pontos JSON-egyenlőség és a Plan-noop javítása (#42), valamint az M4 felmérés, az M4a szerződés és az M4a implementáció (#43, F1: a create-terv konformitása) — #39–#42 mergelve és a devel push-CI ellenőrizve, #43 Draft, az újra-review GO-jával zárul a napló. **Ez a napló utólag készült a session transcriptjéből** (ugyanaz a 081edee1… .jsonl), a session alatt nem vezettem menet közben; ugyanezt a fájlt korábban a 10:26Z-ig tartó állapotban commitoltam (eb9c16b), ez annak frissítése és átnevezése. Az M4 felmérés, az M4a szerződés, a probe-ok és a szerződéstervezet a job ref/ könyvtárában vannak, nem ebben a naplóban.
 
 
 ### 2026-11-08 06:37 — Felhasználó
@@ -1557,4 +1557,1061 @@ Az M4 akkor lesz igazán kész, ha a három állítást egymástól függetlenü
 
 ~~~~~
 The M4 felmérés elkészült. Most a párhuzamos tételek jönnek: a szerződés-tervezet D1–D5 frissítése, majd a thread-napló helyi frissítése.
+~~~~~
+
+
+### 2026-11-08 10:27 — Claude
+
+~~~~~
+Az M4 felmérés, szerződéstervezet és negatív mátrix elkészült, a repókban nincs kódváltozás. A mérés lényege: ma az `Execute` semmit sem köt a jóváhagyott tervhez.
+
+**A legfontosabb mért eredmény**
+
+Ugyanazzal a `plan_id`-val, egyetlen dimenziót változtatva az `Execute` mindig lefutott:
+
+| Változás | Elindult provider-kérés |
+|---|---|
+| `config` eltér a tervezett `desired`-től | 1 (törzs: `EVIL-RENAME`) |
+| `resource_id`, `host`, `base_path`, `key_id`, `revision` | 1 mindegyiknél |
+| a műveletek lecserélve `DeleteVcn`-re (M3-konform) | 1 (`DELETE`) |
+| a műveleti sorrend megfordítva | 2 |
+| `plan_id` üres vagy értelmetlen | 1 |
+| ugyanaz a jóváhagyott kérés 2×, illetve 5× | 2, illetve 5 |
+
+A `plan_id`-t az `Execute` egyáltalán nem olvassa. A visszajátszás korlátlan.
+
+**A `plan_id` maga is hiányos és nem kanonikus.**
+- Nem fedi le a `schema_version`-t, az `encoding`-ot, az `observed.schema_id`-t, a `provider_operations`-t és a bindinget.
+- Azonos JSON eltérő szóközzel más hash-t ad.
+- A mezőhatár eltolása ütköző hash-t ad (`kind="AB"`+`"CD"` ugyanaz, mint `"A"`+`"BCD"`), mert a mezők elválasztó nélkül vannak összefűzve.
+
+**Szerződés: három külön fogalom, külön ellenőrizve**
+- **Plan identity:** a provider önállóan ellenőrizheti. A `Plan` tiszta és determinisztikus, ezért az `Execute` újra-levezetheti a tervet, és összevetheti a műveleteket (halmaz és sorrend), a configot (config=desired) és a `plan_digest`-et.
+- **Approval authority:** csak a Relay tudja ellenőrizni (hitelesítés, policy, lejárat, egyszeri felhasználás).
+- **Execution binding:** részben a provider (a `target_digest` egyezése), részben a Relay (futási kontextus, visszajátszás).
+- **Visszajátszás ellen** a modul állapotmentessége miatt önmagában nem védhet. Az OCI `If-Match` részleges védelem lehet frissítésre, de valós OCI-n nem mértem.
+- **Relay:** van `core/nexus/ois` (`Intent`, `Policy.Authorize`), de a cabinet/WASM végrehajtási úton nincs bekötve. Állítás csak a `55a899f` forrásából, a Relay nem módosult.
+
+**Fokozatos bevezetés:** M4a csak modul, M4b Relay-függő, M4c aszinkron (a Work Request és a terv kötése, amihez még mérés kell).
+
+**Hat döntés vár Önre (D-M4-1…6)**
+- M4a modul-only külön lépés.
+- Az `Execute` kérés bővítése `desired`, `observed` és `plan_digest` mezőkkel, kompatibilitási út nélkül.
+- Új mezőnév a `plan_digest`, a `plan_id` pedig ideiglenes alias.
+- A `key_id` a célhoz tartozzon.
+- A Relay-igények rögzítése a `relay-requirements.md`-ben (külön modul-PR).
+- A tárolt `plan_id`-k fogyasztóinak felmérése (Forms, VCN), mert az átnevezésüket nem mértem.
+
+A negatív mátrix minden dimenziót lefed: digest-változás, jóváhagyás érvénytelensége, megengedett kérések száma, elvárt és mért érték, valamint hogy ki bizonyítja. Mutáns-terv is van hozzá.
+
+**A párhuzamos tételek**
+- A szerződés-tervezet 10. szakasza rögzíti a D1–D5 döntéseket, a megvalósulást és a rendezett sorrendet. A D4 és D5 még nincs megírva, azokat külön tervezem.
+- A thread-napló helyi, aláírt commit: `eb9c16b` a workdir repóban, `theads/2026-11-08_session-oracle-m1-m5-pr39-pr41.md`, 92 blokk. Utólag készült, a header ezt kimondja, és 10:26Z-ig tart. A titokkereső tiszta (12 e-mail maszkolva). Nincs pusholva.
+
+A fájlok a `jobs/forms-oracle-vcn-hardening-01b-a/ref/` alatt vannak, az M4 rekordot kivéve, amelyet itt is idézek: `m4-plan-binding-contract-and-impact-2026-11-08.md`, `m4-probe-source-2026-11-08.go.txt` és `m4-probe-output-2026-11-08.txt`.
+
+Következő lépés a D-M4-1…6 döntésük. Utána jöhet az M4a implementációs Draft PR RED/GREEN-nel, vagy a D4/D5 szerződés. A WASM-release és a production-integráció HOLD.
+~~~~~
+
+
+### 2026-11-08 10:30 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+Az M4 felmérése alapján GO-t adok az M4a szerződés véglegesítésére, de az implementáció előtt két dolgot pontosítanék: a `plan_digest` jelentését és a `key_id` bizalmi szerepét.
+
+A méréseidből egy fontos következtetés adódik: az M1, M3 és M5 után a provider már ellenőrzi egy-egy kérés megengedett alakját, de továbbra sem ellenőrzi, hogy az adott kérés ugyanahhoz a tervhez tartozik-e, amelyből a végrehajtásnak következnie kellene.
+
+A `DeleteVcn`-re cserélt művelet különösen jó bizonyíték erre. M3-konform, tehát önmagában szabályos művelet, mégis eltérhet a tervezett végrehajtástól.
+
+## D-M4-1…6 – döntések
+
+| Döntés                              | Határozat                                                          |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| D-M4-1 – M4a modul-only             | GO, külön PR                                                       |
+| D-M4-2 – Execute bővítése           | GO, szigorú szerződéssel                                           |
+| D-M4-3 – `plan_digest` és `plan_id` | GO, de az alias nem lehet ellenőrzést megkerülő kompatibilitási út |
+| D-M4-4 – `key_id` kötése            | GO a célkötésre, nem jogosultsági bizonyítékként                   |
+| D-M4-5 – Relay-követelmények        | GO, külön dokumentációs változtatás                                |
+| D-M4-6 – Fogyasztók felmérése       | Kötelező, az implementáció előtt                                   |
+
+### 1. M4a: mit bizonyítson a provider?
+
+Az M4a pontos feladata:
+
+Az Execute kizárólag olyan tervet hajthasson végre, amelynek teljes tartalmát a provider a megadott tervezési bemenetekből újra elő tudja állítani, és amelynek célkötése változatlan.
+
+Ehhez három külön ellenőrzést kérek:
+
+- Plan derivation: a terv a `desired` és `observed` alapján újra levezetve ugyanazokat a műveleteket, ugyanabban a sorrendben adja.
+- Plan integrity: a kanonikus tervtartalom digestje megegyezik a mellékelt `plan_digest` értékével.
+- Target integrity: a végrehajtáskor megadott binding kötött mezői megegyeznek a tervhez tartozó `target_digest` által azonosított céladatokkal.
+
+A `config == desired` ellenőrzésnél strukturális, kanonikus JSON-egyenlőséget várnék el, nem nyers bájtszintű egyezést.
+
+Viszont fontos korlát: az újraszámolt digest sem bizonyítja a terv hitelességét. Ha a hívó egyszerre módosíthatja a tervet, a `desired` tartalmat és a digestet, akkor létrehozhat egy új, belsőleg konzisztens tervet. Ennek végrehajtási jóváhagyását továbbra is a Relaynek kell igazolnia.
+
+### 2. A digest-szerződés
+
+A jelenlegi `plan_id` kialakítását lecserélném.
+
+Az új digest bemenetét strukturált, verziózott, kanonikusan szerializált objektumként határozzuk meg. Legalább a kind, schema metadata, desired/observed tartalom, rendezett provider-műveletek és a megfelelő célkötés legyen egyértelműen lefedve.
+
+A `plan_digest` és `target_digest` lehet két külön érték, de a jóváhagyási szerződésnek mindkettőt megváltoztathatatlanul össze kell kötnie. Különben a hívó megtarthatna egy érvényes tervet, és mellé másik, önmagában szintén érvényes célt rendelhetne.
+
+A mezőhatár-ütközés miatt semmilyen közvetlen string-összefűzést nem fogadnék el.
+
+### 3. A `plan_id` alias
+
+Az új belépési pontnál kötelező legyen a `plan_digest`.
+
+A régi `plan_id` mezőt átmenetileg csak akkor tartanám meg, ha a fogyasztók felmérése ezt ténylegesen indokolja. Az alias soha nem jelentheti azt, hogy az Execute a digest ellenőrzése nélkül folytathatja a végrehajtást.
+
+Ha a régi és az új mező egyszerre szerepel, az első implementációban elutasítást javaslok.
+
+### 4. `key_id` és a célazonosság
+
+A `key_id` kerüljön bele a kötött végrehajtási kontextusba, de ne tekintsük önmagában hitelesített identitásnak.
+
+A provider ellenőrizheti, hogy ugyanazzal a `key_id` értékkel készül-e a kérés, amelyet a célkötés rögzített.
+
+Azt viszont a Relaynek kell ellenőriznie, hogy a kulcs valóban az adott tenanthez, jogosult szereplőhöz és végrehajtási kontextushoz tartozik-e.
+
+A `revision` kötése szintén kötelező legyen, mert a tervkészítés és végrehajtás közötti állapotváltozás lényeges lehet.
+
+## M4a elfogadási kritériumok
+
+A negatív tesztmátrixban az alábbi eredményeket várom:
+
+| Eltérés                                           | Elvárt eredmény                                       |
+| ------------------------------------------------- | ----------------------------------------------------- |
+| Megváltozott config                               | Validation, 0 sign / actuate                          |
+| Megváltozott művelet vagy sorrend                 | Validation, 0 sign / actuate                          |
+| Megváltozott `resource_id`                        | Validation, 0 sign / actuate                          |
+| Megváltozott host / base_path / key_id / revision | Validation, 0 sign / actuate                          |
+| Hibás vagy hiányzó digest                         | Validation, 0 sign / actuate                          |
+| Ugyanaz a JSON más whitespace-szel                | Azonos kanonikus digest                               |
+| Mezőhatár-eltolási kísérlet                       | Eltérő digest                                         |
+| Belsőleg konzisztens, de nem jóváhagyott terv     | M4a önmagában nem tudja elutasítani; M4b feladata     |
+| Ugyanazon terv ismételt végrehajtása              | M4a nem garantál egyszeri felhasználást; M4b feladata |
+
+Az utolsó két sor különösen fontos. Nem szeretném, hogy a modul-only M4a tesztekből azt a következtetést vonjuk le, hogy már van jóváhagyás- vagy replay-védelem.
+
+## Következő konkrét feladat
+
+M4a szerződés és függőségi ellenőrzés
+
+GO
+
+Elsőként mérjük fel a `plan_id` jelenlegi fogyasztóit a Forms és VCN útvonalakon, és rögzítsük a digest kanonikus, verziózott bemeneti modelljét.
+
+Ezt követően készülhet az M4a implementációs Draft PR RED/GREEN tesztekkel, külön review-ra.
+
+A Relay-követelmények dokumentálását támogatom, de Relay-kódhoz még ne nyúljunk. A thread-napló és a helyi szerződésdokumentumok frissítése mehet a meglévő commit/push szabályokkal.
+
+A WASM-release, az aláírás és a production-integráció továbbra is HOLD.
+
+### Egy további architekturális észrevétel
+
+A felmérésed talán legérdekesebb eredménye a korlátlan visszajátszás.
+
+Egy stateless provider önmagában nem tudja megállapítani, hogy egy egyébként teljesen szabályos, korábban jóváhagyott műveletet már egyszer végrehajtottak-e.
+
+Ezért az M4b során a Relaynek nemcsak jóváhagyási bizonyítékot kell kezelnie, hanem végrehajtási felhasználási állapotot is: melyik jóváhagyást, melyik futás használhatja fel, milyen állapotátmenettel és milyen ismétlési szabállyal.
+
+Ez különösen fontos az aszinkron OCI-műveleteknél, ahol a válasz elvesztése nem jelentheti automatikusan azt, hogy a kérés nem hajtódott végre.
+
+Az M4 három részre bontása ezért indokolt:
+
+M4a: bizonyíthatóan ugyanaz a terv és cél. M4b: jogosult és megengedett végrehajtás. M4c: az aszinkron végrehajtás bizonyítható folytatása.
+
+Ez az a pont, ahol a CIC tervazonossági modellje ténylegesen összekapcsolódhat a végrehajtás bizonyítási láncával.
+</pasted_content id="51f3">
+~~~~~
+
+
+### 2026-11-08 10:33 — Claude
+
+~~~~~
+Az M4a szerződés véglegesítve és a függőségi ellenőrzés elkészült, implementáció nélkül. A modul repo és a Relay nem változott.
+
+**Fogyasztó-felmérés (D-M4-6, mért).** Végigkerestem a helyben klónozott `CentralInfraCore` repókban és a workdirben a `plan_id` és a `plan_digest` előfordulásait.
+- **Modul:** a `provider.go`, a `provider-abi.md` és egyetlen teszt, `provider_test.go:499`. Az csak azt nézi, hogy az érték legalább `sha256:` hosszú.
+- **Forms:** nincs találat, és a modul `Plan`/`Execute`-ját nem hívja.
+- **VCN pipeline:** a modul-lépése csak `normalizeObserved`-et futtat. A talált `conformance_plan_digest` az engine verdictjének mezője, nem a modul terve.
+- **Relay:** csak tervezési szálak, kód nincs.
+- **Következtetés:** a modul `plan_id`-jának nincs ismert fogyasztója, ezért nem javaslok aliast.
+- **Mérési határ:** a GitHubon lévő, de nem klónozott repókat, más gépeket és a Relay jövőbeli adapterét nem mértem.
+- **Névütközés:** az engine `conformance_plan_digest` fogalma más, mint a modul `plan_digest`-je. A mezőnév marad `plan_digest`, de a domain-címke megkülönböztető (`cic-oracle-execution-plan/1`), és a nyitott kérdés (D-M4a-1), hogy legyen-e `execution_plan_digest`.
+
+**Mért hiba, ami a tervet érinti.** A meglévő `canonicalEqual` nem alkalmas a `config == desired` kapuhoz.
+- A `{"n":9007199254740993}` és a `…992` egyenlőnek látszik, mert float64-re kerekít.
+- A duplikált kulcs (`{"a":1,"a":2}` és `{"a":2}`) is egyenlő.
+- A `Plan` noop-döntése ugyanezt a függvényt használja, tehát egy ilyen eltérés ma `noop`-ot ad.
+- A gyakorlati kockázat kicsi, de a kapunál nem elfogadható.
+
+**A véglegesített digest-modell**
+- **Kanonizálás:** saját, `cic-canonical-json/1` nevű szabály. Szigorú dekódolás, duplikált kulcs elutasítva. A számok pontosan normalizáltak, float64 nélkül (`1`, `1.0` és `1e0` azonos). A kulcsok bájtsorrendben rendezettek, nincs HTML-escape. Szándékosan nem JCS, mert az float-formázást követelne.
+- **Három digest, szerkezeti kerettel** (nincs string-összefűzés):
+  - `plan_digest`: a kind, a `contract_digest`, a teljes `desired` és `observed`, a `operation` és a rendezett `provider_operations`. A `reason` és a `notes` kimarad.
+  - `target_digest`: `host`, `base_path`, `key_id`, `resource_id`, `revision`.
+  - `execution_digest`: összeköti a kettőt, és az approval ezt nevesíti. Így a hívó nem párosíthat érvényes tervhez másik, önmagában szintén érvényes célt.
+- **Új Plan-bemenet:** a `Plan` kérés kötelező `target` bemenetet kap.
+- **Execute-sorrend az első aláírás előtt:** M1/M3, majd a digestek megléte (a `plan_id` jelenléte elutasítás), a terv újra-levezetése, a `plan_digest`, a config kanonikus egyenlősége a `desired`-del, végül a `target_digest` és az `execution_digest`.
+- **`key_id`:** célkötés, nem hitelesített identitás.
+
+**Negatív mátrix** a határozata szerint, a számpontosság-, duplikált-kulcs- és mezőhatár-esetekkel bővítve. Két korlát-rögzítő teszt is szerepel benne: `…M4aDoesNotClaimApproval` és `…M4aDoesNotPreventReplay`. Ezek azt rögzítik, hogy egy konzisztens, soha nem jóváhagyott terv M4a-ban lefut, és ugyanaz a kérés kétszer is. Így az M4a tesztjeiből senki ne következtessen jóváhagyás- vagy replay-védelemre.
+
+**Hatás:** az `executeRequest{` literál 17 helyen van 9 fájlban, ezek mind javításra szorulnak. Egyetlen tesztsegéd építene valódi `Plan()`-hívással digesteket. A négy kötelezett valós-WASM tesztnek PASS-nak kell maradnia. Nem mértem, hogy a `verify_release` ABI-ellenőrzés érinti-e a változást.
+
+**Kicsi döntések (D-M4a-1…5):**
+- a mezőnév (`plan_digest` vagy `execution_plan_digest`),
+- a `Plan` `target` bemenetének ellenőrzése,
+- a noop-javítás ugyanebben a PR-ban vagy külön,
+- a két korlát-rögzítő teszt,
+- a `reason`/`notes` kimaradása a digestből.
+
+A rekord: `jobs/…/ref/m4a-contract-and-dependency-check-2026-11-08.md`, mellette a két probe forrása és kimenete (`m4a-canon-probe-*`). A szerződés-tervezet 10. szakasza is hivatkozik rá. A thread-naplót most nem frissítettem: azt egy lezárt PR után viszem (konvenció).
+
+Következő lépés: az M4a implementációs Draft PR RED/GREEN-nel, mutánsokkal és a meglévő Execute-tesztek javításával, külön review-ra. Előbb kérem a D-M4a-1…5 döntést (kicsik, az alapértelmezésem: `plan_digest`, igen, külön PR a noopra, igen, kimarad). A Relay-követelmények dokumentálása külön, Relay-kód nélküli lépés. A WASM-release, az aláírás és a production-integráció HOLD.
+~~~~~
+
+
+### 2026-11-08 10:35 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+Döntésem: GO az M4a implementációs előkészítésére, de egy fontos sorrendi módosítással. A `canonicalEqual` hibáját külön PR-ban javítanám, még az M4a előtt.
+
+A felmérésből ugyanis kiderült valami, ami túlmutat a tervazonosságon: a jelenlegi `Plan` bizonyos, ténylegesen eltérő JSON-értékeket azonosnak tekinthet, ezért hibásan dönthet `noop` mellett.
+
+Ez már a tervezés helyességét érinti.
+
+## D-M4a-1…5 döntések
+
+| Döntés                                 | Határozat           |
+| -------------------------------------- | ------------------- |
+| D-M4a-1 – Mezőnév                      | `plan_digest` marad |
+| D-M4a-2 – Plan target ellenőrzés       | GO, kötelező        |
+| D-M4a-3 – `canonicalEqual` javítás     | Külön PR, M4a előtt |
+| D-M4a-4 – Korlát-rögzítő tesztek       | GO, mindkettő       |
+| D-M4a-5 – `reason` / `notes` kihagyása | GO, feltételekkel   |
+
+### 1. `plan_digest` marad
+
+Nem vezetném be az `execution_plan_digest` nevet.
+
+A három azonosító jelentése megfelelően elkülönül:
+
+- `plan_digest`: a levezetett terv tartalmának azonosítója.
+- `target_digest`: a végrehajtási cél kötése.
+- `execution_digest`: a terv és a cél összekapcsolt azonosítója.
+
+A `cic-oracle-execution-plan/1` domain-címke megfelelő a más rendszerek digestjeitől való elválasztásra. A három digest bemenetének külön domain-címkét is adnék, hogy különböző szerepű objektumok véletlenül se osszanak közös hash-névteret.
+
+Fontos: a `cic-canonical-json/1` saját kanonizálási szerződés. Verzióját, számtani szabályait és a hibás bemenetek kezelését rögzíteni kell. Ez ne egy kizárólag Go-implementációban létező algoritmus legyen.
+
+### 2. A Plan target bemenete legyen kötelező
+
+GO.
+
+Viszont a validáció legyen életciklus-tudatos.
+
+Create esetén a cél `resource_id` még nem ismert. Observe/update/delete esetén viszont lehet kötelező és típushelyes.
+
+Ezért a target szerkezeti ellenőrzését és a tényleges erőforrás-azonossági követelményt ne keverjük össze.
+
+A `target_digest` számításába a hiányzó és az üres értékek szabályozott reprezentációval kerüljenek, ne implicit string-összefűzéssel.
+
+### 3. A canonicalEqual külön PR, de előfeltétel
+
+Itt eltérnék az alapértelmezett sorrendtől.
+
+Ha előbb elkészül az M4a, akkor az újra-levezetés egy olyan `Plan`-re támaszkodik, amelynek az egyenlőségi döntése bizonyos esetekben hibás.
+
+Ez azt eredményezheti, hogy az M4a tökéletesen bizonyítja egy hibásan előállított terv belső konzisztenciáját.
+
+Ezért a következő PR először a JSON-egyenlőség javítása legyen.
+
+Elfogadási feltételei:
+
+- Számpontosság megőrzése `float64` nélkül.
+- Duplikált objektumkulcsok elutasítása.
+- Az `1`, `1.0` és `1e0` szemantikai azonossága.
+- Különböző nagy egész számok megkülönböztetése.
+- A `Plan` hibás `noop` döntésének negatív reprodukciója.
+- A meglévő, érvényes JSON-tesztek kompatibilitása.
+
+A kanonizáló legyen determinisztikus, pontosan definiált, és kezelje korlátozottan a bemeneti méretet, mélységet és számalakokat is.
+
+### 4. A két korlát-rögzítő teszt maradjon
+
+Kifejezetten támogatom.
+
+A `M4aDoesNotClaimApproval` és `M4aDoesNotPreventReplay` fontos architekturális tesztek.
+
+De ezeket izolált, mockolt provider-környezetben kell futtatni, nem valós OCI-erőforrásokon.
+
+A tesztek célja nem egy kívánatos biztonsági tulajdonság igazolása, hanem annak dokumentálása, hogy az M4a mit nem garantál.
+
+Az M4b bevezetésekor ezek lesznek a legjobb összehasonlítási alapok.
+
+### 5. `reason` és `notes` kimaradhat
+
+GO, amennyiben ezek kizárólag magyarázó mezők.
+
+Ha bármely végrehajtási döntés, policy, feltétel vagy jóváhagyási szabály felhasználja őket, akkor már nem lehetnek a digest szempontjából közömbösek.
+
+Azt is rögzíteném, hogy a `reason` és `notes` utólag módosítható anélkül, hogy a `plan_digest` megváltozna. Ez szándékos tulajdonság, nem hiba.
+
+Amennyiben az auditálásnak a magyarázat pontos szövegét is meg kell őriznie, ahhoz külön evidence-digest vagy aláírt rekord szükséges.
+
+## Következő sorrend
+
+1\. JSON-egyenlőség és Plan noop javítása
+
+Külön Draft PR, RED/GREEN, mutációs tesztekkel és teljes CI-vel. Ennek lezárása előfeltétele az M4a-nak.
+
+2\. M4a implementáció
+
+Verzionált canonical JSON, három digest, teljes terv-újravezetés, target- és config-ellenőrzés, valamint a 17 Execute-kérési hely átvezetése.
+
+3\. M4b – Relay jóváhagyási szerződés
+
+Hitelesített végrehajtási kontextus, `execution_digest`-hez kötött jóváhagyás, egyszeri felhasználás, replay és konkurens végrehajtás kezelése.
+
+Az M4a PR-nál külön vizsgálnám, hogy az újraszámolt terv és az átadott terv összes végrehajtás szempontjából jelentős mezője egyezik-e, nem csak a műveletek listája. A `plan_digest` hiánya, a régi `plan_id`, vagy a három digest bármilyen eltérése az első aláírás előtt eredményezzen elutasítást.
+
+A mostani konkrét GO tehát a canonicalEqual/Plan noop javítás külön Draft PR-jára szól. Az M4a implementációs iránya elfogadott, de annak merge-jére még nincs engedély.
+
+A WASM-release, az aláírás és a production-integráció továbbra is HOLD.
+
+A mérnöki jelentősége ennek a sorrendnek egyszerű: előbb bizonyítsuk, hogy a tervező helyesen különbözteti meg az állapotokat; utána építsük rá annak bizonyítását, hogy pontosan ugyanazt a tervet hajtjuk végre.
+</pasted_content id="51f3">
+~~~~~
+
+
+### 2026-11-08 10:37 — Claude
+
+~~~~~
+The test setup was wrong, not the behavior: the schema hash must be hex. Fixing it and re-running RED.
+~~~~~
+
+
+### 2026-11-08 10:38 — Claude
+
+~~~~~
+The Plan `noop` bug now reproduces for real: a plan of `noop` with 0 operations for two different numbers. The equivalence controls pass. Now the implementation.
+~~~~~
+
+
+### 2026-11-08 10:39 — Claude
+
+~~~~~
+My vectors were wrong, not the implementation: numbers are always written as `<digits>e<exp>`, so `2` is `2e0` inside a container too. Fixing the vector file.
+~~~~~
+
+
+### 2026-11-08 10:39 — Claude
+
+~~~~~
+GREEN with the full suite. Now mutants for the canonicalizer and the Plan check.
+~~~~~
+
+
+### 2026-11-08 10:41 — Claude
+
+~~~~~
+A JSON-egyenlőség és a Plan-noop javítás elkészült és helyben, aláírt commitként megvan: `bd53cbf` a `feature/canonical-json-exact-equality` ágon. Még nincs pusholva, ezért Draft PR sincs. Az M4a-hoz nem nyúltam.
+
+**Mit javít**
+- A hibás `canonicalEqual` helyét egy saját, szigorú `cic-canonical-json/1` kanonizáló vette át (`module/canonical_json.go`).
+- **Számok:** pontos értékek, float64 nélkül. Az `1`, `1.0`, `1e0` és `10e-1` azonos, a `9007199254740993` pedig különbözik a `…992`-től. A `0.1` is különbözik a `0.10000000000000001`-től.
+- **Kulcsok:** UTF-8 bájtsorrendben rendezve. Duplikált kulcs, érvénytelen UTF-8, árva surrogate és a szigorú JSON-tól eltérő bemenet hiba, nem javítás.
+- **Határok:** 1 MiB bemenet, 64 mélység, 1000 számjegy és ±10000 kitevő. A hiba csak a bájtpozíciót és az okot nevezi meg, a bemenetet nem.
+- **Plan:** a `desired.data` és az `observed.data` nem kanonizálható alakja `validation` hibát ad a megfelelő `field_path`-szal. Az értékek összevetése (teljes payload és mezőnként) a kanonikus alak alapján történik.
+
+**A kanonizálás nem csak Go-ban él.**
+- A normatív elvárások a nyelvsemleges vektorfájlban vannak (`module/testdata/canonical_json_vectors.json`). 25 kanonikus kimenet, 9 azonos pár, 11 különböző pár és 40 elutasítandó bemenet szerepel benne, utóbbiak közt bájtszintű esetek is.
+- A szabályokat a `docs/design/specs/canonical-json.md` rögzíti: miért nem JCS, mit utasít el, és mely határok vannak. A `docs/design/README.md` és a `provider-abi.md` is hivatkozik rá.
+
+**Bizonyíték**
+- **RED:** a Plan-noop hiba valósan reprodukálódott: `plan = "noop" with 0 operations: two different numbers were treated as equal`. A duplikált-kulcs és a mélységi esetek `ok`-t adtak validációs hiba helyett. Az ekvivalencia-kontrollok (szóköz, kulcssorrend, `1` vs `1.0`, escape) a javítatlan kódon is zöldek voltak. Egy első futásom hibás tesztbeállítás miatt (nem hexa `schema_hash`) érvénytelen RED volt, ezt kijavítottam, és csak az újrafuttatott eredményt számítom.
+- **GREEN:** a teljes tesztkészlet átmegy, a gofmt, vet és staticcheck tiszta. A négy valós WASM-os teszt PASS a friss guesttel, tehát a TinyGo is lefordítja. A meglévő tesztek, köztük az `observe_derivation_test`, módosítás nélkül zöldek.
+- **Mutánsok:** 13 fordítható mutáns. Mind bukik, kivéve a 12-est: az az egyik oldalt nyers bájtra cseréli hiba esetén, ami ekvivalens, mert érvénytelen szöveg nem egyezhet érvényes kanonikus alakkal bájtról bájtra. Az erősebb változat, amely mindkét oldalt nyersre cseréli, bukik.
+- **Fuzz:** a determinisztikus mutációs fuzz (4000 eset, rögzített seed) panic nélkül fut, és az elfogadott kimenet fixpont.
+
+Egy észrevétel a saját munkámról: a vektorfájlban elsőre rosszul írtam a számok kimenetét (`{"a":2}` helyett `{"a":2e0}`). Ezt a tesztek elkapták. A hiba a vektorban volt, nem a kódban, és javítottam.
+
+**Következő lépés:** a push az Ön döntése. Futtassa ezt:
+`! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push [MASKED:email]:CentralInfraCore/cic-module-oracle-cloud.git feature/canonical-json-exact-equality`
+
+Utána Draft PR-t nyitok `--base devel` célággal, és a CI-t a job-naplókból ellenőrzöm. Nincs merge, és a WASM-release, az aláírás és a production-integráció HOLD. Az M4a implementáció csak e PR lezárása után kezdődik, ahogy a döntése előírja.
+~~~~~
+
+
+### 2026-11-08 10:46 — Felhasználó
+
+~~~~~
+! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push [MASKED:email]:CentralInfraCore/cic-module-oracle-cloud.git feature/canonical-json-exact-equality
+~~~~~
+
+
+### 2026-11-08 10:46 — Claude
+
+~~~~~
+A push nem futott le: az üzenet sima szövegként érkezett, nem lett végrehajtva, és a távoli oldalon nincs ilyen ág. Ezért nem nyitottam PR-t.
+
+Az előző push-oknál a `!` parancs a bash-bemeneten ment át, és úgy lefutott. Most próbálja újra ugyanígy a prompt elején a `!` előtaggal, szóköz nélkül, ugyanezzel a paranccsal:
+
+`! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push [MASKED:email]:CentralInfraCore/cic-module-oracle-cloud.git feature/canonical-json-exact-equality`
+
+A helyi commit változatlan: `bd53cbf`. Ha a push lefutott, szóljon, és megnyitom a Draft PR-t `--base devel` célággal, majd ellenőrzöm a CI-t.
+~~~~~
+
+
+### 2026-11-08 11:19 — Felhasználó
+
+~~~~~
+<bash-input> git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push [MASKED:email]:CentralInfraCore/cic-module-oracle-cloud.git feature/canonical-json-exact-equality</bash-input>
+~~~~~
+
+
+### 2026-11-08 11:19 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'feature/canonical-json-exact-equality' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/new/feature/canonical-json-exact-equality        
+remote: 
+To github.com:CentralInfraCore/cic-module-oracle-cloud.git
+ * [new branch]      feature/canonical-json-exact-equality -&gt; feature/canonical-json-exact-equality</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-08 11:23 — Claude
+
+~~~~~
+A Draft PR megnyílt: #42, https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/42, `devel` célággal. A CI zöld a `bd53cbf` commiton.
+
+- **Futások:** a push-futás (42475207828) és a PR-futás (42475241069) is sikeres, mindkettő pontosan a `bd53cbf`-en.
+- **Napló:** a push-futás job-naplóját elolvastam. Nincs benne `--- FAIL`. Mind a kilenc új teszt PASS, köztük a Plan-noop reprodukció (`TestPlanDoesNotCallDifferentLargeIntegersANoop`), a vektorok, a határok és a fuzz.
+- **Valós WASM:** a `TestHostLoadExecuteCreateCarriesOCID` PASS a friss guestes lépésben. A SKIP sor a szokásos guest nélküli tesztlépés.
+
+A PR-leírás tartalmazza a szabályokat, a bizonyítékot (köztük a javított érvénytelen RED-et és a saját vektorhibámat), és a korlátokat:
+- **Szándékos viselkedésváltozás:** a `Plan` mostantól visszautasítja a duplikált kulcsos és a határokat átlépő payloadot, amit korábban engedékenyen olvasott.
+- **Nincs benne:** az M4a digestek és a `validate` változása.
+- **Nincs merge:** és a WASM újraépítése, aláírása, a release és a production-integráció HOLD.
+
+A #42 Draft és nincs mergelve. A review és a merge-döntés az Öné. Ha én mergeljek, írja ki: „mergeld te", különben futtassa a `gh pr ready` és `gh pr merge --match-head-commit bd53cbf…` parancsot. A merge után a `devel` push-CI-t ellenőrzöm.
+
+Az M4a implementáció csak a #42 lezárása után indul, ahogy a döntése előírta. A következő lépések: a szerződés alapján az M4a Draft PR RED/GREEN-nel, és a Relay-követelmények dokumentálása külön, Relay-kód nélkül.
+~~~~~
+
+
+### 2026-11-08 12:10 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+## PR #42 – független kódreview
+
+[Exact JSON equality – cic-canonical-json/1](https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/42?utm_source=chatgpt.com) · HEAD: `bd53cbf168c097692d4872b5eed19086b6ed3d1c` · Célág: `devel`
+
+GO – forráskód-merge
+
+Átnéztem a kanonizáló implementációját, a `Plan` módosításait, a tesztvektorokat, a szerződésdokumentációt és a CI-naplót.
+
+A korábban kimutatott hibás `noop` döntést a #42 érdemben javítja. Nem találtam merge-blokkoló hibát.
+
+### 1. A korábbi hiba javítása
+
+A régi `canonicalEqual()` az `encoding/json` által dekódolt értékeket szerializálta újra. Emiatt a `float64` pontossági korlátja fölött két eltérő szám egyenlőnek látszhatott.
+
+Az új megoldás:
+
+- nem alakítja a számokat `float64`-re;
+- pontos tizedes reprezentációt használ;
+- elutasítja a duplikált objektumkulcsokat;
+- ellenőrzi a UTF-8-at és a Unicode surrogate párokat;
+- determinisztikus bájtsorozatot állít elő;
+- korlátozza a bemeneti méretet és a beágyazási mélységet.
+
+A tényleges `Plan()` most már ezeket a szabályokat használja a `desired` és `observed` összehasonlításához.
+
+### 2. Tesztlefedettség
+
+| Ellenőrzés                             | Eredmény |
+| -------------------------------------- | -------- |
+| `2^53` feletti eltérő egész számok     | PASS     |
+| `1`, `1.0`, `1e0` azonossága           | PASS     |
+| Duplikált JSON-kulcs elutasítása       | PASS     |
+| Érvénytelen Unicode/UTF-8 elutasítása  | PASS     |
+| Kulcsok determinisztikus rendezése     | PASS     |
+| Kanonikus forma idempotenciája         | PASS     |
+| Méret- és mélységkorlát                | PASS     |
+| Hibás `Plan noop` reprodukció          | PASS     |
+| 4000 determinisztikus mutációs bemenet | PASS     |
+| Nyelvfüggetlen tesztvektorok           | Rögzítve |
+
+A különálló `cic-canonical-json/1` specifikáció és a tesztvektorok lényegesek. Az M4a esetén ugyanis a digestet más komponenseknek is ugyanúgy kell tudniuk értelmezni.
+
+### 3. CI
+
+[PR CI](https://github.com/CentralInfraCore/cic-module-oracle-cloud/actions/runs/42475241069?utm_source=chatgpt.com)
+
+SUCCESS
+
+[Push CI](https://github.com/CentralInfraCore/cic-module-oracle-cloud/actions/runs/42475207828?utm_source=chatgpt.com)
+
+SUCCESS
+
+A PR CI naplójában külön ellenőriztem a kanonizálási tesztek és a hibás `noop` regressziós tesztjének PASS eredményét. A Python tesztekből 164 sikeres.
+
+### 4. Két észrevétel a következő fejlesztéshez
+
+F1 – A régi `planHash()` továbbra is hibás szerződésű.
+
+A `provider.go` jelenleg még elválasztók nélkül fűzi össze a hash bemeneteit, és a nyers JSON-t használja. Ezt a #42 nem javítja.
+
+Ez elfogadható, mert az M4a feladata a verziózott, strukturált digestmodell bevezetése. Az új kanonizálót azonban nem szabad összetéveszteni a már megvalósult tervazonossági kötéssel.
+
+F2 – A kanonikus JSON határait más implementációk számára is kötelezővé kell tenni.
+
+A saját számszerializálás szándékosan eltér a JCS-től. Ez megfelelő választás lehet, de a Relay és a többi fogyasztó számára pontosan ugyanazokat a korlátokat és bájtkimeneteket kell előírni.
+
+Az M4a során érdemes a tesztvektorok változatlan átvételét külön ellenőrizni.
+
+Egyik észrevétel sem blokkolja a #42-t.
+
+## Merge-döntés
+
+GO a #42 Draft állapotának megszüntetésére és a `devel` ágba történő merge-re, az alábbi feltételekkel:
+
+- a HEAD változatlanul `bd53cbf168c097692d4872b5eed19086b6ed3d1c`;
+- a célág `devel`, a kötelező ellenőrzések sikeresek;
+- merge commit készüljön, HEAD-hez kötött ellenőrzéssel;
+- a merge utáni `devel` CI-t külön vizsgáljuk.
+
+A WASM újraépítése, aláírása, a release és a production-integráció továbbra is HOLD.
+
+Következő lépés: M4a implementációs Draft PR. A #42 lezárása után már a pontos JSON-egyenlőségre építhetjük a `plan_digest`, `target_digest` és `execution_digest` ellenőrzését.
+
+A #42 legfontosabb eredménye nem önmagában egy jobb JSON-parser, hanem az, hogy a `Plan` többé nem mondhat `noop`-ot pusztán azért, mert két különböző számot a lebegőpontos átalakítás azonosnak láttatott.
+</pasted_content id="51f3">
+~~~~~
+
+
+### 2026-11-08 12:11 — Claude
+
+~~~~~
+A #42 merge-feltételei teljesülnek, de a merge-et nem futtattam le. A beillesztett review GO-t mond, az Ön saját üzenete viszont nem kéri kifejezetten, hogy én mergeljek. Ahogy eddig, a jogosultság-szűrőt nem kerülöm meg.
+
+**Ellenőrizve most a GitHubon**
+- HEAD `bd53cbf168c097692d4872b5eed19086b6ed3d1c`, változatlan.
+- Célág `devel`, a PR konfliktusmentes (MERGEABLE), még Draft.
+- Mindkét kötelező ellenőrzés SUCCESS.
+
+Ha mergelni szeretné, futtassa ezt. Kész állapotba teszi a PR-t, a HEAD-hez kötve merge commitot csinál, és kiírja a merge commit azonosítóját:
+
+`! R=CentralInfraCore/cic-module-oracle-cloud; gh pr ready 42 --repo $R && gh pr merge 42 --repo $R --merge --match-head-commit bd53cbf168c097692d4872b5eed19086b6ed3d1c && gh pr view 42 --repo $R --json state,mergeCommit -q '.state+" "+.mergeCommit.oid'`
+
+Ha inkább azt szeretné, hogy én mergeljek, írja ki: „mergeld te". Utána a `devel` push-CI-t a job-naplóból ellenőrzöm.
+
+A review két észrevételét rögzítem az M4a tervébe:
+- **F1:** a régi `planHash` hibás szerződése (elválasztó nélküli összefűzés, nyers JSON) nem javul a #42-vel. Az M4a cseréli le a verziózott digestekre.
+- **F2:** a `cic-canonical-json/1` határait és bájtkimenetét minden fogyasztónak ugyanúgy kell előírni. Az M4a-ban külön ellenőrzöm, hogy a vektorfájlt változatlanul veszik át.
+
+Az M4a implementációs Draft PR a #42 mergelése után indul, mert az a pontos JSON-egyenlőségre épül. A WASM újraépítése, aláírása, a release és a production-integráció HOLD marad.
+~~~~~
+
+
+### 2026-11-08 12:11 — Felhasználó
+
+~~~~~
+<bash-input> R=CentralInfraCore/cic-module-oracle-cloud; gh pr ready 42 --repo $R && gh pr merge 42 --repo $R --merge --match-head-commit bd53cbf168c097692d4872b5eed19086b6ed3d1c && gh pr view 42 --repo $R --json state,mergeCommit -q '.state+" "+.mergeCommit.oid'</bash-input>
+~~~~~
+
+
+### 2026-11-08 12:11 — Felhasználó
+
+~~~~~
+<bash-stdout>✓ Pull request CentralInfraCore/cic-module-oracle-cloud#42 is marked as "ready for review"
+MERGED 9ce8a79be5322ae174c7ffdbdc53e7d2c60ffa51</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-08 12:15 — Claude
+
+~~~~~
+A #42 bekerült a `devel` ágba merge commitként (`9ce8a79`), és a `devel` push-CI zöld. A merge a HEAD-hez kötve történt (`bd53cbf`).
+
+A push-CI (futás 42479067409) a `9ce8a79`-en sikeres. A naplóban nincs `--- FAIL`. A Plan-noop regressziós teszt, a szigorú JSON-elutasítás, a határok és a valós WASM-os `TestHostLoadExecuteCreateCarriesOCID` mind PASS.
+
+**Állapot**
+- **Kész:** #36, #38, #39 (M1), #40 (M3), #41 (M5), #42 (pontos JSON-egyenlőség és a Plan-noop javítása).
+- **Következő:** az M4a implementációs Draft PR. Az előfeltétele teljesült, mert az újra-levezetés már pontos egyenlőségre épül.
+- **HOLD:** a `module.wasm` újraépítése és aláírása, a release és a production-integráció.
+
+**Az M4a PR terve** (a véglegesített szerződés és a döntései szerint)
+- A régi `planHash` helyett három, külön domain-címkével ellátott digest: `plan_digest`, `target_digest`, `execution_digest`. Mind a `cic-canonical-json/1` szerkezeti keretezésén alapul, string-összefűzés nélkül.
+- A `Plan` kötelező, életciklus-tudatos `target` bemenetet kap. A szerkezeti ellenőrzés külön van a tényleges erőforrás-azonossági követelménytől, és a hiányzó és az üres érték szabályozott reprezentációt kap.
+- Az `Execute`-nak kötelező a `desired`, az `observed` és a három digest. A régi `plan_id` jelenléte elutasítás. A terv újra-levezetése, a `config == desired` kanonikus egyenlősége és a `target_digest` ellenőrzése az első aláírás előtt történik.
+- A `reason` és a `notes` kimarad a digestből, szándékosan. Ezt a feltételt a doksi rögzíti: ha bármi végrehajtási döntés használná őket, már nem közömbösek.
+- A két korlát-rögzítő teszt (`…M4aDoesNotClaimApproval`, `…M4aDoesNotPreventReplay`) izolált, mockolt környezetben fut, valós OCI nélkül.
+- A review F2 szerint a vektorfájl változatlan átvételét külön ellenőrzöm.
+- A 17 meglévő `executeRequest{` helyet egy közös, valódi `Plan()`-nal dolgozó tesztsegéd vezeti át.
+- RED/GREEN, mutánsok, friss guest és CI-naplóellenőrzés, mint eddig. Az M4a merge-ére nincs engedély, azt külön review előzi meg.
+
+Mielőtt az M4a-ba kezdek, még egy dolgot jelzek: a Relay-követelmények (hitelesített futási kontextus, jóváhagyás-ellenőrzés felhasználással, replay-nyilvántartás, bizonyíték a ProofTrace-be) dokumentálása külön, Relay-kód nélküli lépés marad. Nem keverem az M4a PR-ba.
+
+Az M4a-val folytatom. Ez a legnagyobb változás eddig: a `Plan` és az `Execute` ABI-ja is módosul, és minden meglévő Execute-teszt átírásra kerül. Ha előbb a thread-naplót (#39–#42) vagy a Relay-követelmények dokumentálását szeretné, szóljon.
+~~~~~
+
+
+### 2026-11-08 12:17 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+GO az M4a implementációs Draft PR elkészítésére. Nem változtatnék a sorrenden: most az M4a a prioritás, a thread-napló és a Relay-követelmények dokumentálása követheti.
+
+A #42 lezárásával az M4a legfontosabb előfeltétele teljesült: a `Plan` már pontos JSON-egyenlőség alapján hozza meg a döntéseit.
+
+Az általad felvázolt implementációs tervet elfogadom, három kiegészítéssel.
+
+### 1. A három digest kapcsolata legyen egyértelmű
+
+A szerződésben rögzítsük:
+
+- `plan_digest`: a teljes, végrehajtás szempontjából releváns terv azonosítója.
+- `target_digest`: a célhoz tartozó binding azonosítója.
+- `execution_digest`: a kettő együttes, domain-szeparált azonosítója.
+
+Az `execution_digest` legyen az a konkrét érték, amelyre az M4b-ben a Relay jóváhagyása hivatkozik.
+
+Fontos: ha a hívó minden bemenetet és digestet módosíthat, az M4a továbbra is csak belső konzisztenciát bizonyít, nem jóváhagyást.
+
+### 2. Az újra-levezetés ugyanazt a tervet állítsa elő
+
+Az Execute ne elégedjen meg azzal, hogy a kapott digest helyes a kapott tervhez.
+
+A `desired` és `observed` alapján újra előállított terv végrehajtási tartalmának kell egyeznie az átadott tervvel, beleértve a műveletek sorrendjét és az `operation` mezőt.
+
+Ezzel zárjuk le azt az esetet, amikor valaki egy eredetileg `update` tervet egy M3-konform `delete` műveletre cserél.
+
+### 3. A teljes ellenőrzés előzze meg az első OCI-kérést
+
+A több lépésből álló tervnél sem történhet részleges végrehajtás, ha az eltérés már a bemenetből felismerhető.
+
+A negatív tesztekben továbbra is külön ellenőrizni kell a nulla sign / nulla actuate eredményt.
+
+## Egy további fontos teszt
+
+Az új canonical JSON miatt külön kontrollt kérnék erre:
+
+Ugyanaz a szemantikailag azonos `desired` és `observed`, de eltérő JSON-ábrázolással ugyanazt a `plan_digest` értéket eredményezze.
+
+Például eltérő kulcssorrend, whitespace, illetve `1` és `1.0` használata esetén.
+
+Ez nemcsak a kanonizáló tesztje, hanem annak bizonyítása, hogy a digestképzés valóban a kanonikus reprezentációra épül.
+
+## Következő sorrend
+
+M4a implementációs Draft PR
+
+GO
+
+Külön feature branch, RED/GREEN regressziós tesztek, mutációs kontrollok, friss WASM guest és teljes CI. A merge külön döntés.
+
+Utána: M4b Relay-követelmények rögzítése, majd Relay-oldali szerződés és integrációs terv.
+
+Párhuzamos adminisztráció: #39–#42 thread-napló frissítése a meglévő helyi commit/push konvenció szerint.
+
+A 17 Execute-hívási hely közös tesztsegéddel történő átvezetése megfelelő, de ügyelj arra, hogy a negatív tesztek ne kizárólag a segéd helyességét teszteljék. Legalább néhány eset közvetlenül, kézzel módosított kérésen bizonyítsa a tényleges M4a-kapu működését.
+
+A merge, a WASM-release, az aláírás és a production-integráció továbbra is HOLD.
+
+Az M4a-val végre nemcsak azt ellenőrizzük, hogy a provider megengedett OCI-műveletet hajt-e végre, hanem azt is, hogy pontosan azt a műveleti tervet hajtja-e végre, amely a megadott intentből és állapotból következik, pontosan a hozzá kötött célon.
+</pasted_content id="51f3">
+~~~~~
+
+
+### 2026-11-08 12:19 — Claude
+
+~~~~~
+Now the implementation: the digest model first, then the Plan refactor and the Execute gate.
+~~~~~
+
+
+### 2026-11-08 12:29 — Claude
+
+~~~~~
+Az M4a implementáció elkészült és helyben, aláírt commitként megvan: `8499a5d` a `feature/m4a-plan-binding` ágon. Még nincs pusholva, ezért Draft PR sincs, és a CI-t sem láttam.
+
+**Mit csinál**
+- **Három digest:** a `Plan` kötelező `target` bemenetet kap, és `plan_digest`, `target_digest`, `execution_digest` értéket ad. Mind `cic-canonical-json/1` szerkezeti keretezésen alapul (JSON-objektum, string-összefűzés nélkül), saját domain-címkével. Az üres és a hiányzó mező egyaránt `null`.
+- **Mit fed le a digest:**
+  - `plan_digest`: a kind és a kontraktus-digest, a teljes `desired` és `observed` (kanonikus `data` és minden séma-mező), az `operation` és a rendezett `provider_operations`.
+  - `target_digest`: `host`, `base_path`, `key_id`, `resource_id`, `revision`.
+  - `execution_digest`: a kettő együtt. Ezt nevesíti majd az M4b jóváhagyása.
+- **Régi `plan_id`:** megszűnt, nincs alias. A jelenlétét az `Execute` elutasítja, akár üres vagy `null` értékkel is.
+- **Execute-kapu az első aláírás előtt:** az M1 és az M3 után a terv újra-levezetése a `desired` és `observed` alapján (ugyanaz az `operation`, ugyanazok a műveletek ugyanabban a sorrendben, vagyis az `update` → M3-konform `delete` csere itt bukik), a három digest egyezése, és a `config == desired` kanonikus JSON-értékként. Az eredmény visszhangozza az `execution_digest`-et.
+- **Életciklus-tudatos target:** a `host` és a `key_id` kötelező, minden mező ≤1024 bájt, a `resource_id` jól formált OCID.
+  - Nincs állapot és nincs id: `create` terv.
+  - Állapot van, de nincs id, vagy id van, de nincs állapot: elutasítás. A #31-es védelem megmarad.
+- **Vektorok:** `testdata/plan_digest_vectors.json`, 16 plan, 11 target és 4 execution eset. Ezeket egy független Python-implementáció generálta (Go nélkül), és a Go-teszt ezzel veti össze az envelope-ot és a digestet. A specifikáció a `docs/design/specs/plan-digest.md`.
+
+**Bizonyíték**
+- **Gate-tesztek:** a negatív tesztek nem a segéddel épített rossz kérést használják. Egy, a valódi `Plan()` által adott kérésen változtatnak egy dolgot kézzel (struktúra-mező vagy a JSON-szöveg).
+  - ~30 eltérés mind validációs hibát ad a várt `field_path`-szal és nulla sign/actuate hívással: config, desired, observed, műveletek (csere, sorrend, hozzáadás, elvétel), `resource_id`, `host`, `base_path`, `key_id`, `revision`, hiányzó vagy hamis digest, másik terv digestje, érvényes terv másik céllal párosítva.
+  - A 2-lépéses tervben a rossz lépés mellett a jó lépés sem fut le.
+- **Szöveg-szintű szerkesztések:** négy kézzel szerkesztett kérésszöveg is bukik.
+- **Pozitív kontroll:** eltérő JSON-ábrázolás (kulcssorrend, whitespace, escape, `1` vs `1.0` vs `10e-1`) ugyanazt a `plan_digest`-et adja, és a más írásmódú kérés lefut.
+- **GREEN:** a teljes tesztkészlet átmegy. A gofmt, vet és staticcheck tiszta, és a manuális harness is lefordul a build-tagjével. A négy valós WASM-os teszt PASS a friss guesttel.
+- **Mutánsok:** 18 fordítható mutáns, mind bukik. Ezek: a kapu teljes kikapcsolása, az `operation`, a hossz és a lépések összevetése, mind a három digest összevetése, a config-egyenlőség, a `plan_id` tilalom, a kontraktus-digest, a revision a targetből, az encoding a tervből, a nyers `data` a kanonikus helyett, a műveletek rendezése, a plan saját műveleteivel történő „levezetés", az erőforrás-id ellenőrzés, az életciklus-ág és az execution-tag.
+- **RED:** ez mutáció-alapú. Az `8499a5d` előtti kódot az M4 felmérés mérte (minden dimenzióváltozás lefutott), a kapu-kikapcsolt mutáns pedig a gate-teszteket bukja. Egy külön, javítatlan kódon futtatott RED nincs, mert az új tesztek új szimbólumokra hivatkoznak.
+
+**Korlát-rögzítő tesztek (mockolt hoston):** `TestM4aDoesNotClaimApproval` rögzíti, hogy egy teljesen a hívó által kitalált, soha nem jóváhagyott, de belsőleg konzisztens kérés lefut. `TestM4aDoesNotPreventReplay` azt, hogy ugyanaz a kérés háromszor is lefut. Egyik sem kívánatos tulajdonság, az M4b fordítja át őket.
+
+**Dönteni kell róla, mert nem volt kimondva**
+1. **A `Plan` mostantól tervez létrehozást** (nincs megfigyelt állapot és nincs `resource_id`). Ez azért kellett, mert az `Execute` csak újra-levezethető tervet fogad, a létrehozás pedig eddig kézzel épített `Execute`-tal ment. Ha ezt nem szeretné, a create kikerülne a kapuból. A #31-es védelem változatlan.
+2. **Egyetlen lépés már nem futtatható az `Execute`-on át**, ha a `Plan` nem állít elő ilyet. Egy önálló `DeleteVcn` vagy `AddVcnCidr` lépést a `Plan` nem ad. Az önálló törlés a `Destroy` dolga.
+3. **A meglévő tesztek átíródtak:** az `Execute`-ot hívó helyek a valódi `Plan()`-nal dolgoznak, és ezt a többség közös `m4a_helpers_test.go` segédre épül. A kimeneti-bájt tesztet a `executeSteps`-re kötöttem, hogy a lépés-leképezés önállóan látszódjon, és az `Execute` kimenete tesztelt módon csak az `execution_digest` mezővel bővült.
+4. **Kikerült az M3-pozitív teszt „minden regisztrációs művelet az Executen át":** helyette az `checkPlanAgainstRegistry` közvetlen egységtesztje és egy, a `Plan` által levezethető tervekre futó integrációs teszt lépett.
+5. **A #40-es F1-tesztek közül kikerült** a „create-névvel, sima útvonallal, rossz id" eset: azt most az M4a target-ellenőrzés utasítja el, az M1 egyedül már nem látszik rajta.
+6. **A `manual_real_oci_test.go` Execute-harness átírva:** az `OCI_EXEC_METHOD`/`PATH` megszűnt, a harness Observe→Plan→Execute láncot épít. Lefordul, de valós OCI ellen nem futtattam.
+
+Nem állítom, hogy ez jóváhagyás- vagy replay-védelem, és a `module.wasm` nincs újraépítve.
+
+**Következő lépés:** a push az Ön döntése. Futtassa ezt:
+`! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push [MASKED:email]:CentralInfraCore/cic-module-oracle-cloud.git feature/m4a-plan-binding`
+
+Utána Draft PR-t nyitok `--base devel` célággal, és a CI-t a job-naplókból ellenőrzöm. A merge külön döntés. Párhuzamosan marad: a #39–#42 thread-napló frissítése (helyi commit) és az M4b Relay-követelmények dokumentálása, Relay-kód nélkül.
+~~~~~
+
+
+### 2026-11-08 12:29 — Felhasználó
+
+~~~~~
+<bash-input> git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push [MASKED:email]:CentralInfraCore/cic-module-oracle-cloud.git feature/m4a-plan-binding</bash-input>
+~~~~~
+
+
+### 2026-11-08 12:29 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'feature/m4a-plan-binding' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/new/feature/m4a-plan-binding        
+remote: 
+To github.com:CentralInfraCore/cic-module-oracle-cloud.git
+ * [new branch]      feature/m4a-plan-binding -&gt; feature/m4a-plan-binding</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-08 12:34 — Claude
+
+~~~~~
+Az M4a Draft PR megnyílt: #43, https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/43, `devel` célággal. A CI zöld a `8499a5d` commiton.
+
+- **Futások:** a push-futás (42480496989) és a PR-futás (42480532111) is sikeres, mindkettő pontosan a `8499a5d`-n.
+- **Napló:** a push-futás job-naplóját elolvastam. Nincs benne `--- FAIL`. A vektor-teszt, a kapu-negatívok, a kézzel szerkesztett kérésszövegek, a `plan_id` tilalom, a többlépéses terv, az ekvivalens írásmódok, a levezethető tervek integrációs tesztje és a két korlát-rögzítő teszt PASS.
+- **Valós WASM:** a `TestHostLoadExecuteCreateCarriesOCID` PASS a friss guestes lépésben. A SKIP sor a szokásos guest nélküli tesztlépés.
+
+A PR-leírás tartalmazza a szerződést és a bizonyítékot. Kimondja azt is, hogy az M4a nem jóváhagyás- és nem replay-védelem, a RED mutáció-alapú, az átírt manuális harness pedig valós OCI ellen nem futott. Hat viselkedésváltozást sorol fel felülvizsgálatra, köztük hogy a `Plan` mostantól tervez létrehozást, és hogy egyetlen, a `Plan` által nem adott lépés már nem futtatható az `Execute`-on át. A fenti hat pontot az előző üzenetemben is jeleztem döntésre.
+
+A #43 Draft és nincs mergelve. A review és a merge-döntés az Öné. Ha én mergeljek, írja ki: „mergeld te", vagy futtassa a `gh pr ready` és `gh pr merge --match-head-commit 8499a5d…` parancsot. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+
+Közben két párhuzamos, helyi tétel marad, amit a review-ja alatt végezhetek:
+- a #39–#42 thread-napló frissítése (helyi commit, push nélkül);
+- az M4b Relay-követelmények dokumentálása a modul `relay-requirements.md`-ben, külön PR-ban és Relay-kód nélkül.
+
+Mindkettő jelenleg nem sürgős, de a Relay-követelmények dokumentálása az M4b előfeltétele. Ha szeretné, azzal folytatom, amíg a review tart.
+~~~~~
+
+
+### 2026-11-08 12:38 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+## PR #43 – M4a független review
+
+[M4a – Plan binding implementation](https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/43?utm_source=chatgpt.com) · HEAD: `8499a5d03072a1814e96f42b39a670bab4760c56` · Draft → `devel`
+
+HOLD – célzott javításig
+
+Átnéztem a tényleges `provider.go`, `plan_binding.go`, digest-szerződés és M4a-tesztek lényegi implementációját, valamint ellenőriztem a két CI-futást.
+
+Az M4a alapmechanizmusa működőképes és megfelel a tervezett iránynak. Egy viselkedésváltozásnál azonban találtam olyan hiányosságot, amelyet merge előtt lezárnék.
+
+## 1. Ami megfelelő
+
+| Ellenőrzés                              | Értékelés        |
+| --------------------------------------- | ---------------- |
+| Három külön domain-szeparált digest     | PASS             |
+| Kanonikus JSON-keretezés                | PASS             |
+| Teljes desired/observed tartalom kötése | PASS             |
+| Műveletek sorrendjének kötése           | PASS             |
+| Terv újra-levezetése Execute előtt      | PASS             |
+| Binding öt mezőjének digestkötése       | PASS             |
+| `plan_id` elutasítása                   | PASS             |
+| `config.data == desired.data`           | PASS             |
+| Nulla sign/actuate hibás tervnél        | Teszttel igazolt |
+| Approval/replay korlátok dokumentálása  | PASS             |
+
+A három digest helyesen különül el:
+
+plan_digest
+
+A levezetett műveletek és állapotok
+
+target_digest
+
+Host, base_path, key_id, resource_id, revision
+
+execution_digest
+
+Az M4b Relay-jóváhagyásának későbbi tárgya
+
+Ez már nem a korábbi, ellenőrizetlen `plan_id` modell.
+
+Az Execute valóban újra meghívja a `planFromRequest()` levezetést, majd ellenőrzi az `operation` értékét, a műveletek sorrendjét és mindhárom digestet. Ezt az első aláírás előtt teszi.
+
+## 2. F1 – Create-tervek konformitása
+
+Merge előtt rendezendő
+
+A `planFromRequest()` új create-ága az alábbi feltétellel készít tervet:
+
+```
+case len(observed) == 0 && req.Target.ResourceID == "":
+    // derive create operation
+```
+
+Az ágat megelőzi az envelope-, JSON- és target-validáció, de a forrásban nem láttam, hogy a create-terv előtt kötelezően lefutna a meglévő `conformIntent()`.
+
+Ezért például egy olyan `desired.data`, amelyből hiányoznak a kind kötelező mezői, belsőleg konzisztens create-tervet eredményezhet. A későbbi `renderBody()` ekkor a rendelkezésre álló mezőkből épít kérést.
+
+Ez nem feltétlenül jogosulatlan végrehajtás, és a korábbi közvetlen Execute-útvonalnak is voltak hasonló korlátai. Az új Plan(create) ABI-nál azonban kifejezetten eldöntendő, hogy a tervezés garantálja-e az intent konformitását.
+
+Én azt javaslom, hogy a create-ág előtt kötelező legyen a megfelelő konfigurációs szerződés ellenőrzése, különösen:
+
+- kötelező mezők jelenléte;
+- ismeretlen vagy provider-computed mezők elutasítása;
+- mezőtípusok ellenőrzése;
+- `validation/schema` hiba esetén nulla sign/actuate.
+
+Ehhez célzott negatív teszteket kérek. A meglévő `conformIntent()` felhasználható kiindulásnak, de önmagában nem teljes JSON Schema-validátor.
+
+## 3. Az öt dokumentált viselkedésváltozás
+
+| Változás                                                 | Review-döntés                                 |
+| -------------------------------------------------------- | --------------------------------------------- |
+| Plan most create-et is tervez                            | Feltételes GO, F1 lezárása után               |
+| Nem levezethető egyedi Execute-lépések tiltása           | GO                                            |
+| `execution_digest` hozzáadása a válaszhoz                | GO                                            |
+| Régi tesztek átvezetése, `executeSteps` külön tesztelése | GO                                            |
+| Manual OCI harness átírása                               | GO, valós OCI-verifikáció továbbra is nyitott |
+
+A nem levezethető Delete/Action lépések Execute-ból való kizárását elfogadom. Az önálló Destroy és Invoke műveleteket ugyanakkor később külön be kell kötni a Relay jogosultsági modelljébe, mert az M4a Execute-kapu nem védi automatikusan ezeket.
+
+## 4. CI-bizonyítékok
+
+[Push CI](https://github.com/CentralInfraCore/cic-module-oracle-cloud/actions/runs/42480496989?utm_source=chatgpt.com)
+
+SUCCESS
+
+[PR CI](https://github.com/CentralInfraCore/cic-module-oracle-cloud/actions/runs/42480532111?utm_source=chatgpt.com)
+
+SUCCESS
+
+Mindkettő a `8499a5d` HEAD-en futott.
+
+A naplóban ellenőriztem a valódi WASM guest-teszt, valamint a `TestM4aDoesNotClaimApproval` és `TestM4aDoesNotPreventReplay` sikeres futását. Nem találtam `--- FAIL` sort.
+
+A 18 mutáns eredményét a PR bizonyítékleírása alapján tudom figyelembe venni; az egyedi lokális mutációs futtatásokat nem reprodukáltam.
+
+## 5. További nyitott, de nem M4a-blokkoló tételek
+
+A `base_path` továbbra is a kérésútvonal előtagja. A digest megköti az értékét, de nem igazolja, hogy az adott szolgáltatáshoz megfelelő. Ez D5.
+
+A `revision` bekerült a célkötésbe, de önmagában nem bizonyítja, hogy az observed állapot még mindig aktuális.
+
+Az M4a emellett nem állít meg egy belsőleg konzisztens, de soha jóvá nem hagyott végrehajtást, és nem biztosít egyszeri felhasználást. Ezek az M4b feladatai.
+
+## Review-határozat
+
+A #43 jelenlegi HEAD-jére egyelőre HOLD-ot adok. Nem a digestmodell vagy a terv-újravezetés miatt, hanem az új create-tervezési szerződés pontosítása miatt.
+
+A következő lépést javaslom:
+
+1. F1 célzott javítása vagy kifejezett, dokumentált döntés arról, hogy a `Plan(create)` nem vállal intent-konformitást.
+2. Negatív tesztek a hiányzó kötelező és ismeretlen mezőkre.
+3. Új HEAD, GREEN CI, majd rövid újra-review.
+
+A #39–#42 thread-naplója helyben frissíthető. Az M4b Relay-követelmények dokumentálása is mehet külön, Relay-kód nélkül.
+
+A fő M4a mechanizmust elfogadom: az Execute most már bizonyíthatóan újra-levezethető tervhez és konkrét célkötéshez igazodik. A következő lépés annak biztosítása, hogy maga a levezetett create-terv is érvényes konfigurációból származzon.
+</pasted_content id="51f3">
+~~~~~
+
+
+### 2026-11-08 12:39 — Claude
+
+~~~~~
+RED is valid against the previous `provider.go`: all 12 negative cases fail and the control passes. Now GREEN, the mutants and the fresh guest.
+~~~~~
+
+
+### 2026-11-08 12:40 — Claude
+
+~~~~~
+My `cd module` failed inside the container, so the GREEN checks did not run. Re-running them properly.
+~~~~~
+
+
+### 2026-11-08 12:41 — Claude
+
+~~~~~
+Az F1 javítása elkészült és helyben, aláírt commitként megvan: `ba7bb5e` a `feature/m4a-plan-binding` ágon, a `8499a5d` fölött. Még nincs pusholva, ezért a #43 a régi HEAD-et mutatja, és az új HEAD CI-jét sem láttam.
+
+**Döntés az F1-ről:** a `Plan(create)` vállal intent-konformitást. A create-ág a `Plan` és az `Execute` újra-levezetése előtt ugyanazt az ellenőrzést futtatja, amit a `Validate` is:
+- a kötelező mezők jelenléte,
+- az ismeretlen és a provider-computed mezők elutasítása,
+- a mezőtípusok durva ellenőrzése.
+
+A hiba `desired.data.<mező>` útvonalon jön. A hiányzó kötelező mező `validation`, az ismeretlen mező vagy rossz típus `schema` osztályú, nulla sign/actuate hívással. Az `Execute` ugyanígy utasítja el, mert újra-levezeti a tervet.
+
+A hatókör szándékosan a create. Egy update változásra épül, és a már megfigyelt erőforrás állapotát nem a „kötelező mező" szabály méri. A `conformIntent` nem teljes JSON Schema-validátor, de ez a `validate` mai határa is. A doksiba is beírtam.
+
+**Egy új hiba, amit közben találtam:** a `conformIntent` map-on iterál, ezért több hiba esetén a `errs[0]` véletlenszerű lett volna. A `Plan` most mezőútvonal szerint rendez, és a legelsőt nevezi meg, így a válasz nem függ a map sorrendjétől.
+
+**Bizonyíték**
+- **RED:** az előző `provider.go`-n (`8499a5d`) mind a 12 új negatív eset bukik, a kontroll átmegy.
+- **Tesztek:** `plan_create_conformance_test.go`.
+  - 8 `Plan`-eset: kötelező mező hiánya VCN-nél, subnetnél és instance-nál, tiltott mező, ismeretlen mező, két rossz típus.
+  - 3 kézzel szerkesztett create-kérés, plusz a kérésszöveg-szintű szerkesztés.
+  - Pozitív kontroll: az update nem kell kötelező mező, és az érvényes create fut.
+  - A több-hibás kérés determinisztikus.
+- **GREEN:** a teljes tesztkészlet átmegy. A gofmt, vet és staticcheck tiszta, és a négy valós WASM-os teszt PASS a friss guesttel. Az `OCI` subnet és instance create-esetei a levezethető-terv tesztben mostantól a saját kötelező mezőiket hordozzák.
+- **Mutánsok:** 5 fordítható mutáns, mind bukik. A konformitás-ellenőrzés kikapcsolása, a hibaút elhagyása, az utolsó hiba kiválasztása a legelső helyett, a rendezés elhagyása és az ellenőrzés kiterjesztése az update-ágra is (az utóbbi a meglévő tesztek tucatját töri).
+- **Hiba a saját munkámban:** az F1-es tesztben először minden eltérésre `validation` osztályt vártam, de az ismeretlen mező és a típushiba `schema` osztályú. A teszt hibás volt, nem a kód, ezt javítottam. A GREEN-futtatásom első kísérlete a konténerben nem futott le egy hibás `cd` miatt, ezt észrevettem és újrafuttattam.
+
+**Következő lépés:** a push az Ön döntése. Futtassa ezt:
+`! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push [MASKED:email]:CentralInfraCore/cic-module-oracle-cloud.git feature/m4a-plan-binding`
+
+Utána frissítem a PR-leírást az F1 döntésével, és mindkét CI-futást a job-naplókból ellenőrzöm. Csak ezután kérhető a rövid újra-review. A merge külön döntés. A review többi pontját rögzítem, nem vállalom az M4a-ban:
+- a `base_path` helyessége D5,
+- a `revision` nem bizonyítja az observed állapot frissességét,
+- az önálló `Destroy` és `Invoke` védelme a Relay jogosultsági modellben M4b.
+
+A WASM-release, az aláírás és a production-integráció HOLD marad.
+~~~~~
+
+
+### 2026-11-08 12:41 — Felhasználó
+
+~~~~~
+<bash-input> git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push [MASKED:email]:CentralInfraCore/cic-module-oracle-cloud.git feature/m4a-plan-binding</bash-input>
+~~~~~
+
+
+### 2026-11-08 12:41 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-module-oracle-cloud.git
+   8499a5d..ba7bb5e  feature/m4a-plan-binding -&gt; feature/m4a-plan-binding</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-08 12:46 — Claude
+
+~~~~~
+A #43 az új HEAD-en (`ba7bb5e`) zöld, a PR-leírás pedig már tartalmazza az F1 döntését.
+
+- **CI:** a push-futás (42481439788) és a PR-futás (42481444306) is sikeres, mindkettő pontosan a `ba7bb5e`-n. A push-futás job-naplóját elolvastam: nincs benne `--- FAIL`.
+- **Új tesztek:** mind PASS a naplóban: a create-konformitás `Plan`-esetei, a három kézzel szerkesztett kérés, a több-hibás eset determinizmusa, és az update/érvényes create kontroll. A levezethető tervek integrációs tesztje és az M4a-korlátok tesztje is PASS.
+- **Valós WASM:** a `TestHostLoadExecuteCreateCarriesOCID` PASS a friss guestes lépésben. A SKIP sor a szokásos guest nélküli tesztlépés.
+- **PR:** Draft, MERGEABLE, HEAD `ba7bb5e`. A leírásban új „Review F1" szakasz rögzíti a döntést és a bizonyítékot.
+
+**Állapot a review szerint:** a három javasolt lépésből az F1 célzott javítása (1), a negatív tesztek a hiányzó kötelező és az ismeretlen mezőkre (2) és az új HEAD GREEN CI-je (3) teljesült. A merge nem az enyém: a rövid újra-review és a döntés az Öné. Ha én mergeljek, írja ki: „mergeld te", vagy futtassa a `gh pr ready` és `gh pr merge --match-head-commit ba7bb5e…` parancsot. A merge után a `devel` push-CI-t ellenőrzöm.
+
+A review további pontjait nem vállalom az M4a-ban, rögzítem őket:
+- a `base_path` helyessége (D5),
+- a `revision` nem bizonyítja az observed állapot frissességét,
+- az önálló `Destroy` és `Invoke` védelme, az M4b Relay-jogosultsági modellben.
+
+A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+
+Közben a következő, nem blokkoló tételek várnak, a review alatt végezhetők: a #39–#43 thread-napló (helyi commit) és az M4b Relay-követelmények dokumentálása a modul `relay-requirements.md`-ben, külön PR-ban, Relay-kód nélkül. Ha szeretné, a Relay-követelményekkel folytatom.
+~~~~~
+
+
+### 2026-11-08 12:55 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+## PR #43 – M4a újra-review
+
+[M4a – Plan/Execute binding](https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/43?utm_source=chatgpt.com) · HEAD: `ba7bb5e4f13de81bddd44c88812221f87ba5376a` · Draft → `devel`
+
+GO – forráskód-merge
+
+Az előző review egyetlen blokkoló észrevételét, az F1-et lezártnak tekintem. Ellenőriztem az új commit diffjét, a create-konformitás implementációját, a negatív teszteket és a PR CI-naplóját.
+
+### F1 – lezárva
+
+Az új `planFromRequest()` create-ág a terv létrehozása előtt meghívja a meglévő `conformIntent()` ellenőrzést.
+
+A megvalósításban három fontos tulajdonságot igazoltam:
+
+- A hiányzó kötelező mező, ismeretlen mező és hibás JSON-alaptípus elutasítást eredményez.
+- Több hiba esetén a `field_path` szerinti rendezés determinisztikus eredményt ad, függetlenül a Go map bejárási sorrendjétől.
+- Az Execute ugyanazon `planFromRequest()` függvényen keresztül vezeti le újra a tervet, ezért az érvénytelen create-konfigurációt az aláírás előtt elutasítja.
+
+A változás nem kényszeríti rá a create kötelezőmező-szabályait a részleges update-tervekre.
+
+### Tesztek és CI
+
+| Ellenőrzés                              | Eredmény |
+| --------------------------------------- | -------- |
+| 8 hibás create-konfiguráció Plan alatt  | PASS     |
+| 3 kézzel módosított Execute-kérés       | PASS     |
+| Közvetlenül módosított JSON-kérésszöveg | PASS     |
+| Több hiba determinisztikus kiválasztása | PASS     |
+| Részleges update kompatibilitása        | PASS     |
+| Érvényes create-végrehajtás             | PASS     |
+| Valós WASM guest-teszt                  | PASS     |
+
+[Push CI](https://github.com/CentralInfraCore/cic-module-oracle-cloud/actions/runs/42481439788?utm_source=chatgpt.com)
+
+SUCCESS
+
+[PR CI](https://github.com/CentralInfraCore/cic-module-oracle-cloud/actions/runs/42481444306?utm_source=chatgpt.com)
+
+SUCCESS
+
+A PR-futás pontosan a `ba7bb5e` HEAD-en fejeződött be. A naplóban az F1 új tesztjei és a friss WASM guest-teszt sikeresek; `--- FAIL` sort nem találtam.
+
+## Merge-döntés
+
+GO a #43 Draft állapotának megszüntetésére és merge commitként történő beolvasztására a `devel` ágba.
+
+Feltételek: változatlan `ba7bb5e4f13de81bddd44c88812221f87ba5376a` HEAD, sikeres kötelező ellenőrzések, konfliktusmentes célág, HEAD-hez kötött merge, majd külön `devel` push-CI ellenőrzés.
+
+Ez a döntés az M4a forráskódjára vonatkozik, nem jelenti a teljes végrehajtási bizalmi lánc jóváhagyását.
+
+### Mi következik?
+
+Az M4a után az elsődleges feladat az M4b Relay-követelmények dokumentálása, külön dokumentációs PR-ban, Relay-kód nélkül.
+
+Ebben a jóváhagyás tárgya az `execution_digest` legyen, és külön kezeljük a hitelesített futási kontextust, a policy-döntést, a jóváhagyás felhasználását, a konkurens végrehajtásokat és a ProofTrace-evidence keletkezését.
+
+Az önálló `Destroy` és `Invoke` belépési pontokra is ki kell terjednie: nem maradhatnak az új jóváhagyási modell megkerülőútjai.
+
+A #39–#43 thread-napló helyi frissítése mehet ezzel párhuzamosan, push nélkül.
+
+WASM újraépítés és aláírás, release, production-integráció: továbbra is HOLD.
+
+A lényegi eredmény: az M4a-val az Execute már nem fogad el pusztán belsőleg szabályos OCI-műveleteket. A végrehajtandó tervet újra levezeti, ellenőrzi annak tartalmát, és a konkrét célhoz köti. Az M4b következő feladata annak bizonyítása, hogy ezt a konzisztens végrehajtást valóban jogosult szereplő, érvényes jóváhagyás alapján kezdeményezte.
+</pasted_content id="51f3">
 ~~~~~
