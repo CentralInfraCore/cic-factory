@@ -1,6 +1,6 @@
-# Thread-napló — 2026-11-08 (Oracle-modul: binding.resource_id M1, M3, M5, kanonikus JSON, M4a; #39–#43)
+# Thread-napló — 2026-11-08 (Oracle-modul: binding.resource_id M1, M3, M5, kanonikus JSON, M4a, M4b dokumentáció; #39–#44)
 
-Interaktív session transcriptje 2026-11-08T06:27:38Z (a 2026-11-07_session-oracle-01b-a-pr36-pr38 naplóban lezárt pont) után 2026-11-08T12:55Z-ig: a binding.resource_id szerződés tervezete, az M1 (cic-module-oracle-cloud #39, F1 javítással), az M3 (#40, read-szerep elutasítása), az M5 (#41, Poll work_request_id), a pontos JSON-egyenlőség és a Plan-noop javítása (#42), valamint az M4 felmérés, az M4a szerződés és az M4a implementáció (#43, F1: a create-terv konformitása) — #39–#42 mergelve és a devel push-CI ellenőrizve, #43 Draft, az újra-review GO-jával zárul a napló. **Ez a napló utólag készült a session transcriptjéből** (ugyanaz a 081edee1… .jsonl), a session alatt nem vezettem menet közben; ugyanezt a fájlt korábban a 10:26Z-ig tartó állapotban commitoltam (eb9c16b), ez annak frissítése és átnevezése. Az M4 felmérés, az M4a szerződés, a probe-ok és a szerződéstervezet a job ref/ könyvtárában vannak, nem ebben a naplóban.
+Interaktív session transcriptje 2026-11-08T06:27:38Z (a 2026-11-07_session-oracle-01b-a-pr36-pr38 naplóban lezárt pont) után 2026-11-08T13:37Z-ig: a binding.resource_id szerződés tervezete, az M1 (cic-module-oracle-cloud #39, F1 javítással), az M3 (#40), az M5 (#41), a pontos JSON-egyenlőség és a Plan-noop javítása (#42), az M4 felmérés és az M4a implementáció (#43, F1: a create-terv konformitása), az M4b Relay-követelmények dokumentációja (#44, F1: a host-hívás kötése, F2: fail-closed rögzítés) — #39–#44 mind mergelve és a devel push-CI ellenőrizve; a napló a Destroy/Invoke felmérés GO-jával zárul. **Ez a napló utólag készült a session transcriptjéből** (ugyanaz a 081edee1… .jsonl), a session alatt nem vezettem menet közben; ugyanezt a fájlt korábban 12:55Z-ig commitoltam (cc9a3b8, pr39-pr43 néven), ez annak frissítése és átnevezése. A felmérések, probe-ok és szerződéstervezetek a job ref/ könyvtárában vannak, nem ebben a naplóban.
 
 
 ### 2026-11-08 06:37 — Felhasználó
@@ -2613,5 +2613,518 @@ A #39–#43 thread-napló helyi frissítése mehet ezzel párhuzamosan, push né
 WASM újraépítés és aláírás, release, production-integráció: továbbra is HOLD.
 
 A lényegi eredmény: az M4a-val az Execute már nem fogad el pusztán belsőleg szabályos OCI-műveleteket. A végrehajtandó tervet újra levezeti, ellenőrzi annak tartalmát, és a konkrét célhoz köti. Az M4b következő feladata annak bizonyítása, hogy ezt a konzisztens végrehajtást valóban jogosult szereplő, érvényes jóváhagyás alapján kezdeményezte.
+</pasted_content id="51f3">
+~~~~~
+
+
+### 2026-11-08 12:55 — Claude
+
+~~~~~
+A #43 merge-feltételei teljesülnek, de a merge-et nem futtattam le. A beillesztett review GO-t mond, az Ön saját üzenete viszont nem kéri kifejezetten, hogy én mergeljek. Ahogy eddig, a jogosultság-szűrőt nem kerülöm meg.
+
+**Ellenőrizve most a GitHubon**
+- HEAD `ba7bb5e4f13de81bddd44c88812221f87ba5376a`, változatlan.
+- Célág `devel`, a PR konfliktusmentes (MERGEABLE), még Draft.
+- Mindkét kötelező ellenőrzés SUCCESS.
+
+Ha mergelni szeretné, futtassa ezt. Kész állapotba teszi a PR-t, a HEAD-hez kötve merge commitot csinál, és kiírja a merge commit azonosítóját:
+
+`! R=CentralInfraCore/cic-module-oracle-cloud; gh pr ready 43 --repo $R && gh pr merge 43 --repo $R --merge --match-head-commit ba7bb5e4f13de81bddd44c88812221f87ba5376a && gh pr view 43 --repo $R --json state,mergeCommit -q '.state+" "+.mergeCommit.oid'`
+
+Ha inkább azt szeretné, hogy én mergeljek, írja ki: „mergeld te". Utána a `devel` push-CI-t a job-naplóból ellenőrzöm.
+
+**A párhuzamos tétel megvan:** a thread-napló helyben frissítve és átnevezve, aláírt commitként: `cc9a3b8` a workdir repóban. A fájl most `theads/2026-11-08_session-oracle-m1-m4a-pr39-pr43.md`, 106 blokk, 12:55Z-ig. Utólag készült, ezt a header kimondja. A titokkereső tiszta (20 e-mail maszkolva). A korábbi `eb9c16b` ugyanennek a fájlnak a 10:26Z-ig tartó változata volt, a mostani azt váltja. Nincs pusholva.
+
+**Következő a review szerint:** az M4b Relay-követelmények dokumentálása külön dokumentációs PR-ban, Relay-kód nélkül. A tartalma:
+- a jóváhagyás tárgya az `execution_digest`;
+- hitelesített futási kontextus és policy-döntés;
+- a jóváhagyás felhasználása, a konkurens végrehajtások és a replay;
+- a ProofTrace-evidence keletkezése;
+- az önálló `Destroy` és `Invoke` belépési pontokra is kiterjed, hogy ne maradjanak az új modell megkerülőútjai.
+
+A branch a #43 mergelése után a frissített `devel`-ről indul, hogy a szövegben szereplő mezőnevek (`execution_digest`, `plan.plan_digest`) már a mergelt állapotra hivatkozzanak. Ha előbb szeretné, hogy a mostani `ba7bb5e`-ről induljak, szóljon. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+~~~~~
+
+
+### 2026-11-08 12:56 — Felhasználó
+
+~~~~~
+<bash-input> R=CentralInfraCore/cic-module-oracle-cloud; gh pr ready 43 --repo $R && gh pr merge 43 --repo $R --merge --match-head-commit ba7bb5e4f13de81bddd44c88812221f87ba5376a && gh pr view 43 --repo $R --json state,mergeCommit -q '.state+" "+.mergeCommit.oid'</bash-input>
+~~~~~
+
+
+### 2026-11-08 12:56 — Felhasználó
+
+~~~~~
+<bash-stdout>✓ Pull request CentralInfraCore/cic-module-oracle-cloud#43 is marked as "ready for review"
+MERGED 70123503ea72abc517c9d1e3a2ce0b6a5658c665</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-08 13:00 — Claude
+
+~~~~~
+A #43 bekerült a `devel` ágba merge commitként (`7012350`), és a `devel` push-CI zöld. A merge a HEAD-hez kötve történt (`ba7bb5e`).
+
+A push-CI (futás 42482584582) a `7012350`-en sikeres. A naplóban nincs `--- FAIL`. A digest-vektorok, a kapu-negatívok, a create-konformitás, a replay-korlát tesztje és a valós WASM-os `TestHostLoadExecuteCreateCarriesOCID` mind PASS.
+
+**Állapot**
+- **Kész:** #36, #38, #39 (M1), #40 (M3), #41 (M5), #42 (pontos JSON-egyenlőség, Plan-noop), #43 (M4a: plan-, target- és execution-digest, derive-again kapu, create-konformitás).
+- **Következő:** az M4b Relay-követelmények dokumentálása külön dokumentációs PR-ban, Relay-kód nélkül.
+- **HOLD:** a `module.wasm` újraépítése és aláírása, a release és a production-integráció.
+
+**Mit ér az M4a, és mit nem.** Az `Execute` már csak olyan tervet hajt végre, amelyet a megadott intentből és állapotból újra le tud vezetni, a konkrét célhoz kötve. Belsőleg konzisztens, de soha jóvá nem hagyott kérést továbbra is lefuttat, és ugyanaz a kérés többször is lefut. Ezt két teszt rögzíti. A jóváhagyás, a jogosult szereplő, az egyszeri felhasználás és a konkurens végrehajtás az M4b feladata, és az önálló `Destroy` és `Invoke` belépési pontokat az M4a kapuja nem védi.
+
+**Az M4b dokumentációs PR terve** (a `devel` `7012350`-ről, `relay-requirements.md` + új szakasz a `provider-abi.md`-ben, Relay-kód nélkül):
+- **R-A:** hitelesített, futáshoz kötött végrehajtási kontextus a guest felé. Ma csak a `step.ComponentID` van, ami nem azonosít sem futást, sem tervet.
+- **R-B:** jóváhagyás-ellenőrzés a provider-hívás előtt, az `execution_digest`-hez kötve. A modul az `execution_digest`-et hozza, a Relay hitelesíti és fogyasztja el az approvalt. A hitelesség eldöntése a modulban nem marad.
+- **R-C:** egyszeri felhasználás és állapotátmenet (lefoglalt, végrehajtva, ismeretlen), replay és konkurens végrehajtás kezelése. A válasz elvesztése nem jelenti, hogy a kérés nem hajtódott végre, különösen aszinkron OCI-műveletnél.
+- **R-D:** a végrehajtási bizonyíték (`plan_digest`, `target_digest`, `execution_digest`, `approval_id`) a ProofTrace-be, a modul hash-éhez kötve.
+- **R-E:** a `Destroy` és az `Invoke` belépési pontok ugyanabba a jóváhagyási modellbe, hogy ne maradjanak megkerülőutak. A modul-oldali, még hiányzó védelmük külön tétel.
+- **A Relay-forrás állapota** csak a `55a899f`-ig mért, és a doksiban ezzel a megjelöléssel szerepel. A Relay-állításokat nem teszem élő forrás nélkül.
+
+A PR-ban minden követelmény kap egy bizonyítási kritériumot: mit kell mérni és mi az, ami nincs mérve.
+
+Az M4b dokumentációs PR-ral folytatom, hacsak mást nem kér. A branch neve `docs/m4b-relay-requirements` lenne, és a push, ahogy eddig, az Ön döntése.
+~~~~~
+
+
+### 2026-11-08 13:04 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+GO az M4b Relay-követelmények dokumentációs PR-jának elkészítésére. A javasolt `docs/m4b-relay-requirements` branch és a `devel` `7012350` kiindulópont megfelelő.
+
+Az R-A–R-E felosztást elfogadom. Az M4a után ez a következő szükséges lépés, mert a terv belső konzisztenciájának bizonyítása még nem jelenti a végrehajtás jogosultságát.
+
+Három dolgot különösen fontosnak tartok a szerződésben.
+
+### 1. Jóváhagyás és végrehajtás atomikus kapcsolata
+
+A Relay ne csupán ellenőrizze, hogy létezik-e érvényes approval. A végrehajtásra való lefoglalásnak atomikusnak kell lennie a konkurens kérésekkel szemben.
+
+Ugyanazon jóváhagyásra két párhuzamos kérésből legfeljebb egy kaphasson új végrehajtási jogosultságot.
+
+A lefoglalásnak tartós állapotba kell kerülnie az első, külső mellékhatást kiváltó OCI-kérés előtt.
+
+### 2. Az UNKNOWN állapot ne legyen automatikusan újrafuttatható
+
+Külön rögzítsük a következő esetet:
+
+A Relay elküldött egy OCI-kérést, de elvesztette a választ. Nem tudja, hogy a művelet megtörtént-e.
+
+Ilyenkor a rendszer nem tekintheti a végrehajtást sikertelennek, és nem indíthatja újra automatikusan.
+
+Előbb bizonyítékokon alapuló egyeztetés szükséges. Aszinkron műveleteknél ez a Work Request állapotának és a hozzá tartozó végrehajtásnak a korrelációját is megköveteli.
+
+### 3. A ProofTrace tartalmazza a döntés kontextusát
+
+Az R-D-ben a négy felsorolt azonosító mellett szerepeljen a hitelesített futásazonosító, a policy-döntés azonosítója, az ellenőrzött modul-artefaktum digestje és a jóváhagyás felhasználási állapotátmenete.
+
+A ProofTrace-nek külön kell megkülönböztetnie:
+
+- mit kértek;
+- mit engedélyeztek;
+- mit küldtek el a providernek;
+- mit igazolt vissza a provider;
+- mi maradt bizonytalan.
+
+Az aláírt megfigyelést ne nevezzük automatikusan bizonyított fizikai állapotnak.
+
+## Elfogadási feltételek
+
+A dokumentációs PR-hoz nem kérek Relay-implementációt, de az alábbi negatív esetekhez legyen megfogalmazott, később végrehajtható teszt:
+
+| Eset                                               | Elvárt M4b-viselkedés                                                     |
+| -------------------------------------------------- | ------------------------------------------------------------------------- |
+| Hiányzó vagy érvénytelen approval                  | Nincs provider-kérés                                                      |
+| Approval más `execution_digest` értékre            | Elutasítás                                                                |
+| Lejárt vagy visszavont approval                    | Elutasítás                                                                |
+| Két konkurens felhasználás                         | Legfeljebb egy új végrehajtás                                             |
+| Elveszett OCI-válasz                               | UNKNOWN, nincs automatikus újraküldés                                     |
+| Megváltozott modul-artefaktum                      | A korábbi jóváhagyás nem használható fel eltérő végrehajtási kontextusban |
+| Destroy/Invoke közvetlen meghívása approval nélkül | Elutasítás                                                                |
+
+A Relay `55a899f` forrásállapotának megjelölése helyes. Amit azon túl nem ellenőriztünk, azt ne állítsuk megvalósultnak.
+
+A dokumentáció elkészítésére és helyi commitjára GO. A feature branch pusholására és a Draft PR megnyitására is GO-t adok, kizárólag dokumentációs változtatásokkal. Merge csak külön review után történhet.
+
+A #39–#43 thread-napló helyi frissítése szintén mehet, push nélkül.
+
+A WASM újraépítése és aláírása, a release és a production-integráció továbbra is HOLD.
+
+A következő valódi mérnöki határ az lesz, hogy a Relay egy jóváhagyott `execution_digest` felhasználását akkor is konzisztensen tudja kezelni, ha két végrehajtás versenyez, egy komponens újraindul, vagy az OCI-válasz elveszik.
+</pasted_content id="51f3">
+~~~~~
+
+
+### 2026-11-08 13:07 — Claude
+
+~~~~~
+Az M4b dokumentáció elkészült és helyben, aláírt commitként megvan: `b695902` a `docs/m4b-relay-requirements` ágon, a `devel` `7012350`-ről indulva. Még nincs pusholva, ezért Draft PR sincs. Csak dokumentációt érint (4 fájl, 270 sor), kód és Relay-változás nincs.
+
+**Mi került be**
+- **`relay-requirements.md`, új M4b szakasz (R6–R10).** Mindegyik a „jelenlegi viselkedés, kívánt viselkedés, negatív teszt, elfogadási feltétel" formát követi. Mind `needed`, és még nincs a `CIC-Relay`-ben felvéve.
+- **`specs/approval-and-execution-state.md`** (új, **concept** státusz): a három kérdés szétválasztása, az approval tartalma, az állapotgép, az UNKNOWN szabály, a ProofTrace öt fajtája, a belépési pontok és a 12 elfogadási eset.
+- A `docs/design/README.md` indexe hivatkozik rá.
+
+**A három kiemelt pont**
+1. **Atomikus kapcsolat:** az approval lefoglalása compare-and-set, tartós és nyugtázott az első `sign`/`actuate` előtt. Egyidejű kérések közül legfeljebb egy nyer. Minden provider-kérés előtt write-ahead rekord készül. A lefoglalás csak akkor adható vissza, ha nulla kérés ment ki.
+2. **UNKNOWN:** a lefoglalás nem szabadul fel, és semmi nem küld újra automatikusan. Csak rögzített, bizonyítékon alapuló egyeztetéssel hagyhatja el az állapotot. Aszinkron műveletnél ez a Work Request és a végrehajtás korrelációját is kéri. Egy félreérthető 5xx nem bizonyítja a hatástalanságot. Hogy az OCI-műveletek fogadnak-e idempotencia-tokent, NOT MEASURED, a dokumentum nem feltételezi.
+3. **ProofTrace:** öt külön bejegyzés-fajta: kért, engedélyezett, elküldött, a provider által visszaigazolt és bizonytalan. A hitelesített futásazonosító, a policy-döntés azonosítója, az ellenőrzött modul-artefaktum digestje és a lefoglalás állapotátmenete kötelező mező. Az aláírt megfigyelés külön fajta, és sosem „bizonyított fizikai állapot".
+
+**A 7 elfogadási eset** mind szerepel, plusz öt további: összeomlás a lefoglalás után, összeomlás a write-ahead után, a modul által elutasított kérés, a hiányzó egyeztetés és a nyomvonal alakja. Mindegyik leírja, mikor „nincs provider-kérés" (nulla `sign` és nulla `actuate`).
+
+**A Relay `55a899f` forrásából olvasott, de nem futtatott tények**
+- **Cabinet:** az `authContextJson` csak a komponensazonosító (`core/cabinet/service.go:228`), és a cabinet csak `init`, `process`, `get` és `notify` műveletet ad át a guestnek (`:234-240`).
+- **`cic-flow` host-függvények:** a `cicFlowDeps` csak `{sign, doer, egress}`, nincs benne futás vagy jóváhagyás.
+- **`trace_id`:** a `sign` és az `actuate` kérés elfogad egy `trace_id` mezőt, de egyik sem használja. A guest adja, ezért nem lehet hiteles azonosító.
+- **`actuate`:** minden átviteli hibát ugyanazzal a szöveggel ad vissza, így a „nem ment ki" és az „elveszett a válasz" a guestnek egyformán néz ki. Ezért kell az UNKNOWN szabálynak a Relay-é lennie.
+- **ProofTrace:** a `cic-flow` host-függvények nem használnak audit- vagy ProofTrace-sinket.
+- **`ois`:** a `core/nexus/ois` (intent-engedélyezés) nem-teszt importálója csak a `recorder` (rollback) és a `statechain-demo`. A cabinet és a `cmd/relay` nem használja, a híd itt szakad meg.
+
+**NOT VERIFIED, és a dokumentumban így szerepel:** van-e a Relay-nek tartós tárolója, és mik a garanciái; látja-e a Relay a `destroy`/`invoke` művelet nevét, mielőtt a guest fut; milyen korrelációs módszer létezik egy elveszett aszinkron válasznál.
+
+**Modul-oldali tétel, csak concept:** a `destroy` és az `invoke` mellé is kell egy digest ugyanazzal a kerettel (művelet, kind, cél, `invoke` esetén a kanonikus törzs), hogy egy approval nevezhesse őket. Amíg ez nincs, a modul nem tud a Relaynek jóváhagyandó értéket adni rájuk, ezt a doksi külön kimondja.
+
+A `link-check` OK. A „CI" ellenőrzést a push után a job-naplóból végzem.
+
+**Következő lépés:** a push az Ön döntése. Futtassa ezt:
+`! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push [MASKED:email]:CentralInfraCore/cic-module-oracle-cloud.git docs/m4b-relay-requirements`
+
+Utána Draft PR-t nyitok `--base devel` célággal, és a CI-t a job-naplóból ellenőrzöm. Merge csak külön review után, a WASM-release és a production-integráció HOLD marad. A #39–#43 thread-napló helyi frissítése már megvan (`cc9a3b8`), ezt a PR-ok lezárása után egészítem ki az M4b-vel.
+~~~~~
+
+
+### 2026-11-08 13:08 — Felhasználó
+
+~~~~~
+<bash-input> git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push [MASKED:email]:CentralInfraCore/cic-module-oracle-cloud.git docs/m4b-relay-requirements</bash-input>
+~~~~~
+
+
+### 2026-11-08 13:08 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'docs/m4b-relay-requirements' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/new/docs/m4b-relay-requirements        
+remote: 
+To github.com:CentralInfraCore/cic-module-oracle-cloud.git
+ * [new branch]      docs/m4b-relay-requirements -&gt; docs/m4b-relay-requirements</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-08 13:19 — Claude
+
+~~~~~
+Az M4b dokumentációs Draft PR megnyílt: #44, https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/44, `devel` célággal. A CI zöld a `b695902` commiton.
+
+- **Futás:** a `docs/**` ág nincs a workflow push-trigger listájában, ezért csak a pull-request futás van (42483567124), az sikeres. Az első lekérdező hurkom emiatt a hiányzó push-futásra várt, és túllépte az időkorlátot. Ezt megállítottam, a PR-futást külön ellenőriztem.
+- **Napló:** a futás összes lépése sikeres, nincs `--- FAIL`. Ezek között van a repository manifest ellenőrzése, a committed WASM-artefaktum integritása, a friss guest valós WASM-tesztjei és a belső doksi-hivatkozások ellenőrzése.
+- **PR:** Draft, MERGEABLE, HEAD `b695902`.
+
+A PR-leírás összefoglalja a három kiemelt pontot (atomikus tartós lefoglalás, UNKNOWN újraküldés nélkül, a ProofTrace öt fajtája). Felsorolja a Relay `55a899f` forrásából olvasott tényeket, a NOT VERIFIED tételeket és a kés bbi tesztnek szánt elfogadási eseteket. Kimondja, hogy ebből semmi nincs megvalósítva a Relay-ben, és nincs benne kód, sem Relay-változás. A `destroy` és `invoke` modul-oldali digestje csak concept tételként szerepel.
+
+A #44 Draft és nincs mergelve. A merge csak külön review után lehet, azt az Ön döntése nyitja. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+
+**Állapot:** az M1, M3, M5, a kanonikus JSON, az M4a és az M4b-dokumentáció (review alatt) megvan.
+- **Következő mérnöki tétel:** az M4b Relay-oldali megvalósítása, amit a Relay csapata épít. Innen csak a követelmények, a tesztterv és az olvasott tények szólnak.
+- **Modul-oldali nyitott tétel:** a `destroy` és az `invoke` digestje, hogy az approval nevezhesse őket.
+- **D5:** a `base_path` és társai szerződése. Az `Observe` és az `Execute` a `base_path`-t ma is ellenőrzés nélkül fűzi az útvonalba, a Poll alias üres `base_path` esetén a hívótól kapja az API-verziót.
+
+Ha szeretné, a D5-tel vagy a `destroy`/`invoke` digest szerződéstervével folytatom, mindkettő implementáció nélkül.
+~~~~~
+
+
+### 2026-11-08 13:23 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+## PR #44 – M4b Relay-követelmények review
+
+[PR #44 – M4b approval and execution state](https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/44?utm_source=chatgpt.com) · HEAD: `b6959029be1dc632c2143939f254418655ee3b68` · Draft → `devel`
+
+HOLD – szerződéspontosítás
+
+Átnéztem a négy módosított fájlt, az R6–R10 követelményeket, az új állapotgép- és ProofTrace-szerződést. Ellenőriztem a CI-t, és a Relay `55a899f` forrásából közvetlenül is megnéztem a `cic-flow` hostfüggvényeket és a cabinet végrehajtási útját.
+
+A dokumentáció alapvetően jó, és az M4b tervezési iránya megfelelő. Egy fontos bizalmi határt azonban pontosabban kell rögzíteni, mielőtt merge-t javasolnék.
+
+### Ami megfelelő
+
+| Követelmény                                       | Review          |
+| ------------------------------------------------- | --------------- |
+| R6 – Hitelesített futási kontextus                | Megfelelő irány |
+| R7 – `execution_digest`-hez kötött jóváhagyás     | Pontosítandó    |
+| R8 – Atomikus, tartós lefoglalás                  | Megfelelő       |
+| R8 – UNKNOWN és automatikus retry tiltása         | Megfelelő       |
+| R9 – Ötféle ProofTrace-bizonyíték                 | Megfelelő irány |
+| R10 – Destroy/Invoke megkerülőutak kizárása       | Megfelelő irány |
+| Implementált és tervezett képességek elkülönítése | Megfelelő       |
+
+Különösen helyesnek tartom, hogy a dokumentáció nem állítja egy elveszett válaszról, hogy a provider nem hajtotta végre a műveletet.
+
+Az is megfelelő, hogy a Relay jelenlegi képességeiről tett állítások konkrét commitra korlátozódnak.
+
+## F1 – A jóváhagyást a tényleges host-híváshoz kell kötni
+
+Érintett: R6, R7, R10 – merge előtt javítandó
+
+A Relay ellenőrzött forrásában a két hostfüggvény lényegében külön működik:
+
+- `cic-flow.sign`: a guest által átadott bájtokat aláírja.
+- `cic-flow.actuate`: a guest által összeállított HTTP-kérést az egress policy alapján továbbítja.
+
+Az `actuate` a guest által szolgáltatott `Authorization` fejlécet is továbbítja.
+
+Ez azt jelenti, hogy önmagában egy érvényes `execution_digest` és approval ellenőrzése még nem bizonyítja, hogy az elküldött HTTP-kérés pontosan a jóváhagyott végrehajtás része.
+
+Az M4a ezt a saját Execute-útján ellenőrzi. Az M4b-nek viszont azt is garantálnia kell, hogy a Relay host-határán egy másik guest-útvonal, egy eltérő hívás vagy egy módosított kérés ne kerülhesse meg a jóváhagyást.
+
+Ezért az R7-be kifejezetten beírnám:
+
+Minden mellékhatást kiváltó `actuate` hívás előtt a Relay a saját, hitelesített kontextusából ellenőrizze, hogy a tényleges HTTP method, cél, kéréstörzs és műveleti lépés a lefoglalt, jóváhagyott végrehajtáshoz tartozik. A guest által közölt digest vagy trace ID önmagában nem jogosultsági bizonyíték.
+
+Nem szükséges most eldönteni a Relay megvalósítási részleteit. Azt viszont rögzíteni kell, hogy ez kötelező biztonsági tulajdonság.
+
+Két új negatív elfogadási tesztet kérnék:
+
+1. Érvényes approval mellett a guest eltérő HTTP-kérést próbál elküldeni: 0 provider-kérés.
+2. A guest közvetlenül meghívja a `cic-flow.actuate` függvényt, megkerülve a tervezett Execute-folyamatot: jóváhagyott és megfelelően kötött végrehajtási kontextus nélkül elutasítás.
+
+Ez azért lényeges, mert a jóváhagyás ellenőrzése nem csupán a modul publikus belépési pontjain történhet. A tényleges külső mellékhatást lehetővé tevő host-határnak is védenie kell.
+
+## F2 – ProofTrace és tartós végrehajtási napló
+
+Dokumentációs pontosítás – nem önálló blokkoló
+
+A Relay `55a899f` forrásában a cabinet ProofTrace-recordere opcionális, és a rögzítés hibája esetén a workflow folytatódhat.
+
+Ez a jelenlegi implementációról szóló tény, nem feltétlenül a jövőbeli M4b terve.
+
+Az R8 és R9 kapcsolatánál azonban egyértelművé tenném:
+
+A végrehajtás biztonságához szükséges tartós reservation és write-ahead evidence rögzítése nem lehet best-effort. Ha a tartós rögzítés meghiúsul, nem indulhat el a provider-kérés.
+
+Az opcionális, megjelenítési vagy analitikai célú ProofTrace-feldolgozás ettől külön kezelhető.
+
+## CI-ellenőrzés
+
+[PR #44 CI-futás](https://github.com/CentralInfraCore/cic-module-oracle-cloud/actions/runs/42483567124?utm_source=chatgpt.com)
+
+SUCCESS
+
+A futás tényleges HEAD-je `b6959029be1dc632c2143939f254418655ee3b68`, a `lint_and_test` job sikeres. A naplóban 164 sikeres Python-teszt szerepel, és nem találtam `--- FAIL` sort.
+
+A push-futás hiánya a `docs/**` ágon önmagában nem probléma, ha a workflow valóban nem tartalmaz ilyen push-triggert. A kötelező PR-ellenőrzés sikeres.
+
+## Döntés
+
+A #44 dokumentációs tartalmát elfogadom az F1 és F2 célzott pontosításával. Merge-re jelenleg még HOLD.
+
+Nem kérek Relay-kódot, új állapotgépet vagy implementációs teszteket ebben a PR-ban. Kizárólag a hiányzó host-határ garanciát és a tartós evidence fail-closed követelményét rögzítsük, majd az új HEAD zöld CI-je után rövid újra-review következhet.
+
+A következő mérnöki feladatnak ezek után a Destroy/Invoke digest-szerződés megtervezését választanám, implementáció nélkül. Ez közvetlenül szükséges az R10 megvalósíthatóságához. A D5 külön, ezt követő szerződésfeladat maradhat.
+
+A WASM újraépítése, aláírása, a release és a production-integráció továbbra is HOLD.
+
+Az M4b legfontosabb kérdése most már nem az, hogy a Relay el tud-e olvasni egy approvalt, hanem hogy a tényleges külső mellékhatás kizárólag annak ellenőrzött és tartósan lefoglalt végrehajtási határán keresztül történhet-e meg.
+</pasted_content id="51f3">
+~~~~~
+
+
+### 2026-11-08 13:24 — Claude
+
+~~~~~
+Az F1 és az F2 pontosítása elkészült és helyben, aláírt commitként megvan: `5b0a6ed` a `docs/m4b-relay-requirements` ágon. Még nincs pusholva, így a #44 a régi HEAD-et mutatja és az új HEAD CI-jét sem láttam. A változás csak dokumentáció, két fájl.
+
+**F1: a jóváhagyás a tényleges host-híváshoz kötve.** Az R7-be kötelező biztonsági tulajdonságként került be:
+- **`actuate`:** minden mellékhatást kiváltó hívás előtt a Relay a saját hitelesített kontextusából ellenőrzi, hogy a tényleges method, cél, törzs és lépés a lefoglalt, jóváhagyott végrehajtáshoz tartozik. A kérések halmazát a jóváhagyott végrehajtás határozza meg (például a digest által lefedett terven át), nem a guest kérése.
+- **`sign`:** egy olyan aláírás, amely nem köthető jóváhagyott lépéshez, elutasítandó, mert maga is képesség.
+- **Guest által megadott érték:** a digest vagy a trace id sosem jogosultsági bizonyíték. A megvalósítás a Relay dolga, a tulajdonság nem opcionális.
+- **A modul M4a kapuja** csak a saját `execute` útját védi, a host-határt nem. A dokumentum ezt kimondja.
+- **Két új negatív teszt:**
+  - érvényes approval mellett a guest eltérő HTTP-kérést küld: nincs provider-kérés;
+  - a guest közvetlenül hívja a `cic-flow.actuate` vagy a `cic-flow.sign` függvényt jóváhagyott kontextus nélkül: elutasítás.
+- Az R6 forrás-ténye bővült az olvasott `sign` és `actuate` viselkedéssel, az R10 a host-határon át is kéri a `destroy`/`invoke` lezárását. A specifikációban új „host boundary" szakasz van.
+
+**F2: a tartós rögzítés fail-closed.**
+- **Biztonsági állapot:** a lefoglalás és a write-ahead rekord biztonsági állapot, nem telemetria. Ha nem rögzíthető tartósan, nem indul provider-kérés. Ez az R8-ban és a specifikációban is szerepel.
+- **Opcionális feldolgozás:** a megjelenítési és analitikai ProofTrace-feldolgozás külön, opcionális maradhat (R9).
+- **Új negatív teszt:** ha a tároló hibázik a lefoglalásnál, majd a write-ahead rekordnál is, egyik esetben sincs provider-kérés.
+- **Új forrás-tény (olvasva, `55a899f`):** a cabinet ProofTrace-recordere opcionális (`nil` kihagyja, `core/cabinet/service.go:99`, `:105-106`). Egyszer fut, az összes lépés után, és hibánál a workflow logol és folytatódik (`:299-307`). Ez utólagos, best-effort rögzítés, nem write-ahead, és nem tud kaput tartani a provider-kérés előtt.
+
+A `link-check` OK. A review többi pontja változatlan.
+
+**Következő lépés:** a push az Ön döntése. Futtassa ezt:
+`! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push [MASKED:email]:CentralInfraCore/cic-module-oracle-cloud.git docs/m4b-relay-requirements`
+
+Utána frissítem a PR-leírást az F1 és F2 döntésével, és az új HEAD CI-jét ellenőrzöm, ezúttal csak a pull-request futásra várva, mert a `docs/**` ágon nincs push-futás. A merge csak a rövid újra-review után lehet.
+
+A review szerint a következő mérnöki feladat a `destroy` és `invoke` digest-szerződés megtervezése, implementáció nélkül, mert az R10 megvalósíthatóságához ez kell. Utána jöhet a D5 külön szerződéstervként. Ha szeretné, a #44 push után ezzel folytatom.
+~~~~~
+
+
+### 2026-11-08 13:24 — Felhasználó
+
+~~~~~
+<bash-input> git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push [MASKED:email]:CentralInfraCore/cic-module-oracle-cloud.git docs/m4b-relay-requirements</bash-input>
+~~~~~
+
+
+### 2026-11-08 13:24 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-module-oracle-cloud.git
+   b695902..5b0a6ed  docs/m4b-relay-requirements -&gt; docs/m4b-relay-requirements</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-08 13:28 — Claude
+
+~~~~~
+A #44 az új HEAD-en (`5b0a6ed`) zöld, a PR-leírás pedig már tartalmazza az F1 és F2 döntését.
+
+- **CI:** a pull-request futás (42484846142) sikeres, pontosan az `5b0a6ed`-en. A `docs/**` ágon továbbra sincs push-futás, csak ez a PR-futás.
+- **Napló:** a futás lépései sikeresek: repository manifest, a committed WASM-artefaktum integritása, a friss guest valós WASM-tesztjei, a belső doksi-hivatkozások, a kódminőség és a Go minőségkapu. Nincs `--- FAIL`.
+- **PR:** Draft, MERGEABLE. A leírásban új „Review F1 and F2" szakasz rögzíti a host-határ tulajdonságot, a fail-closed rögzítést és a három új negatív tesztet.
+
+**Állapot a review szerint:** az F1 és az F2 pontosítása megvan, az új HEAD CI-je zöld. A rövid újra-review és a merge-döntés az Öné. Ha én mergeljek, írja ki: „mergeld te", vagy futtassa a `gh pr ready` és `gh pr merge --match-head-commit 5b0a6ed…` parancsot. A merge csak dokumentációt hoz be, és nem jelenti, hogy a Relay megvalósította volna. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+
+**Következő mérnöki tétel (a review szerint):** a `destroy` és az `invoke` digest-szerződés megtervezése, implementáció nélkül, mert az R10 megvalósíthatóságához ez kell. A tervben a digest ugyanazt a keretezést követné: művelet, kind, cél, és `invoke` esetén a kanonikus törzs. Hozzá egy forrásalapú felmérés kell arról, mit ellenőriz ma a `Destroy` és az `Invoke`, mérésekkel ugyanúgy, ahogy az M4-nél tettem: melyik dimenzió megváltoztatása fut le most. Utána jöhet a D5 külön szerződéstervként.
+
+Ha szeretné, a `destroy`/`invoke` felméréssel és szerződéstervvel folytatom, a #44 review-jától függetlenül, mert az csak olvas és tervez.
+~~~~~
+
+
+### 2026-11-08 13:30 — Felhasználó
+
+~~~~~
+mergeld... :
+
+<pasted_content id="51f3">
+## PR #44 – újra-review
+
+[M4b Relay requirements](https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/44?utm_source=chatgpt.com) · HEAD: `5b0a6ed96d0e68a7d374ca046b245b111868ff55` · Draft → `devel`
+
+GO – dokumentációs merge
+
+Ellenőriztem a frissített diffet, az F1/F2 javításokat és az új HEAD-hez tartozó CI-futást.
+
+Mindkét korábbi review-észrevételt lezártnak tekintem.
+
+| Megállapítás                       | Ellenőrzött javítás                                                                                                                   | Döntés |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| F1 – Host-határ megkerülhetősége   | A Relaynek minden `sign` és mellékhatást kiváltó `actuate` hívást a lefoglalt, jóváhagyott végrehajtáshoz kell kötnie                 | PASS   |
+| F2 – Best-effort evidence veszélye | A reservation és a write-ahead rögzítés tartós, fail-closed biztonsági követelmény; elkülönül az opcionális ProofTrace-feldolgozástól | PASS   |
+
+Az új dokumentáció mindkét esethez negatív elfogadási tesztet is előír. A Relay megvalósítási döntéseit továbbra sem próbálja a modulrepo meghozni.
+
+### CI
+
+[PR #44 friss CI-futás](https://github.com/CentralInfraCore/cic-module-oracle-cloud/actions/runs/42484846142?utm_source=chatgpt.com)
+
+SUCCESS
+
+A futás pontosan az új `5b0a6ed` HEAD-en fejeződött be sikeresen.
+
+## Merge-döntés
+
+GO a #44 Draft állapotának megszüntetésére és a `devel` ágba történő merge-re.
+
+A merge legyen HEAD-hez kötött, változatlan `5b0a6ed96d0e68a7d374ca046b245b111868ff55` commiton. Utána ellenőrizzük a `devel` push-CI-t.
+
+Ez kizárólag dokumentációs elfogadás: az R6–R10 követelmények még nincsenek megvalósítva a Relay-ben.
+
+A következő feladatnak a Destroy/Invoke digest-szerződés felmérését választom, először implementáció nélkül. Utána következhet D5, a `base_path` és a kapcsolódó célkötési mezők szigorítása.
+
+A WASM újraépítése és aláírása, a release és a production-integráció továbbra is HOLD.
+</pasted_content id="51f3">
+~~~~~
+
+
+### 2026-11-08 13:34 — Claude
+
+~~~~~
+A #44 bekerült a `devel` ágba merge commitként (`f48246e`), és a `devel` push-CI zöld. A merge a HEAD-hez kötve történt (`5b0a6ed`).
+
+A push-CI (futás 42485307708) a `f48246e`-on sikeres. A repository manifest, a committed WASM-artefaktum integritása, a friss guest valós WASM-tesztjei, a belső doksi-hivatkozások és a Go minőségkapu mind sikeres. Nincs `--- FAIL`. A távoli `devel` pontosan a `f48246e`.
+
+**Állapot**
+- **Kész és mergelve:** #36, #38, #39 (M1), #40 (M3), #41 (M5), #42 (pontos JSON-egyenlőség), #43 (M4a), #44 (M4b dokumentáció, R6–R10).
+- **A #44 csak dokumentációs elfogadás:** az R6–R10 a Relay-ben nincs megvalósítva, és a modulban sem a jóváhagyás, az egyszeri felhasználás vagy a `destroy`/`invoke` védelme.
+- **HOLD:** a `module.wasm` újraépítése és aláírása, a release és a production-integráció.
+
+**Következő feladat (a review szerint):** a `destroy` és az `invoke` digest-szerződés felmérése, implementáció nélkül. A terv:
+1. Forrásalapú felmérés arról, mit ellenőriz ma a `Destroy` és az `Invoke`: a `plan_digest` és az M4a kapuja nem érinti őket. Ugyanúgy, mint az M4-nél, dimenziónként megmérem, mi fut le most: másik `resource_id`, `host`, `base_path`, `key_id`, `revision`, másik művelet, másik törzs, ismételt hívás. A mérés a scratch probe-ban fut, nem a repóban.
+2. Szerződéstervezet: egy digest ugyanazzal a keretezéssel, mint az M4a (művelet, kind, a célkötés, `invoke` esetén a kanonikus törzs), külön domain-címkével. Ezt nevezheti majd az approval.
+3. Negatív tesztmátrix és a nyitott döntések.
+
+Utána jön a D5: a `base_path` és társai (`host`, `key_id`, `revision`) szigorítása. Közbe esik a #43 review két megjegyzése: a `revision` önmagában nem igazolja az observed állapot frissességét, és az `Observe`/`Execute` a `base_path`-t ma is ellenőrzés nélkül fűzi az útvonalba.
+
+A felméréssel folytatom, hacsak mást nem kér. A #39–#44 thread-napló frissítése is esedékes (helyi commit), ezt a felmérés mellett viszem.
+~~~~~
+
+
+### 2026-11-08 13:37 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+GO a Destroy/Invoke digest-szerződés forrásalapú felmérésére, implementáció nélkül. A sorrendet elfogadom: előbb mérjük fel a jelenlegi viselkedést, utána tervezzük meg a szerződést, és csak azt követően térjünk rá a D5-re.
+
+A tervhez négy pontosítást kérek.
+
+### 1. A digest kötése ne legyen összetéveszthető az M4a végrehajtási digestjével
+
+A Destroy és Invoke esetén külön domain-címkét alkalmaznék, például:
+
+- `cic-oracle-destroy/1`
+- `cic-oracle-invoke/1`
+
+Mindkettő felhasználhatja az M4a `target_digest` modelljét, de a teljes jóváhagyási digest tartalmazza a művelet típusát, a kindot, a registry műveleti szerződését és a végrehajtási célját.
+
+Az Invoke esetében a ténylegesen elküldendő HTTP-kérés törzsének szemantikáját is kötni kell, nem pusztán a bemeneti JSON szövegét.
+
+### 2. A tényleges kimenő kérést is vizsgáljuk
+
+Különösen érdekel, hogy a `renderBody()` vagy az Invoke saját törzsépítése során történik-e olyan átalakítás, amely miatt a bemeneti konfiguráció és a providernek elküldött tartalom eltérhet.
+
+A felmérés ezért tartalmazza mindkettőt:
+
+- mit kap a modul;
+- mit ír alá és küld el ténylegesen.
+
+Ez lesz a legfontosabb bizonyíték az R7 host-határ követelményeihez.
+
+### 3. A replay-mérésnél különítsük el az idempotenciát és az egyszeri jóváhagyást
+
+Egy ismételt DELETE kaphat 404-et, egy ismételt Invoke pedig újabb mellékhatást okozhat.
+
+Ettől függetlenül mindkét eset sértheti az egyszeri jóváhagyás követelményét.
+
+Tehát a replay-mátrix ne csak a provider válaszát vizsgálja, hanem azt is, hogy történt-e új `sign` és `actuate`.
+
+### 4. A D5-höz rögzítsük a céladatok eredetét
+
+A későbbi D5-nek nemcsak a `base_path` formátumáról kell szólnia, hanem arról is, hogy honnan származik és ki hitelesíti a `host`, `base_path`, `key_id` és `revision` értékét.
+
+A digest az értékeket köti össze. Önmagában nem igazolja, hogy a megfelelő OCI-környezetet vagy jogosultságot jelölik.
+
+## Elfogadási keret
+
+A felmérés végén három elkülönített eredményt szeretnék látni:
+
+1. Mért jelenlegi viselkedés: pontosan mely módosítások mellett történik aláírás és provider-hívás.
+2. Javasolt szerződés: mely mezőket kell megkötni, milyen domain-címkével és kanonizálással.
+3. Bizonyítási korlátok: mit lehet a modulban ellenőrizni, és mi marad kötelezően a Relay felelőssége.
+
+A scratch probe megfelelő; az éles OCI-t nem kell bevonni. A #39–#44 thread-napló helyi frissítésére is GO, push nélkül.
+
+Egyelőre nem adok GO-t Destroy/Invoke implementációs PR-ra. A felmérés után külön döntünk a szerződésről.
+
+A WASM újraépítése és aláírása, a release és a production-integráció továbbra is HOLD.
+
+A cél most az, hogy az M4a-val elért terv–cél kötés ne csak az Execute-ra legyen igaz, miközben a Destroy és az Invoke ugyanazon hoston keresztül, lényegesen gyengébb ellenőrzéssel képes mellékhatást kiváltani.
 </pasted_content id="51f3">
 ~~~~~
