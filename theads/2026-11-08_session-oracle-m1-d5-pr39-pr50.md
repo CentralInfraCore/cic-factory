@@ -1,6 +1,6 @@
-# Thread-napló — 2026-11-08 (Oracle-modul: binding.resource_id M1, M3, M5, kanonikus JSON, M4a, M4b dokumentáció; #39–#44)
+# Thread-napló — 2026-11-08 (Oracle-modul: binding.resource_id M1, M3, M5, kanonikus JSON, M4a, M4b, Destroy/Invoke felmérés, D5, döntési előterjesztés; #39–#50)
 
-Interaktív session transcriptje 2026-11-08T06:27:38Z (a 2026-11-07_session-oracle-01b-a-pr36-pr38 naplóban lezárt pont) után 2026-11-08T13:37Z-ig: a binding.resource_id szerződés tervezete, az M1 (cic-module-oracle-cloud #39, F1 javítással), az M3 (#40), az M5 (#41), a pontos JSON-egyenlőség és a Plan-noop javítása (#42), az M4 felmérés és az M4a implementáció (#43, F1: a create-terv konformitása), az M4b Relay-követelmények dokumentációja (#44, F1: a host-hívás kötése, F2: fail-closed rögzítés) — #39–#44 mind mergelve és a devel push-CI ellenőrizve; a napló a Destroy/Invoke felmérés GO-jával zárul. **Ez a napló utólag készült a session transcriptjéből** (ugyanaz a 081edee1… .jsonl), a session alatt nem vezettem menet közben; ugyanezt a fájlt korábban 12:55Z-ig commitoltam (cc9a3b8, pr39-pr43 néven), ez annak frissítése és átnevezése. A felmérések, probe-ok és szerződéstervezetek a job ref/ könyvtárában vannak, nem ebben a naplóban.
+Interaktív session transcriptje 2026-11-08T06:27:38Z (a 2026-11-07_session-oracle-01b-a-pr36-pr38 naplóban lezárt pont) után 2026-11-08T20:00Z-ig: a binding.resource_id szerződés tervezete, az M1 (cic-module-oracle-cloud #39, F1 javítással), az M3 (#40), az M5 (#41), a pontos JSON-egyenlőség és a Plan-noop javítása (#42), az M4 felmérés és az M4a implementáció (#43, F1: a create-terv konformitása), az M4b Relay-követelmények dokumentációja (#44, F1: a host-hívás kötése, F2: fail-closed rögzítés) — #39–#44 mind mergelve és a devel push-CI ellenőrizve; ezt követi a Destroy/Invoke felmérés és szerződéstervezet (#46), a D5 (#47–#49) és a döntési előterjesztés (#50, F1/F2 javítással, mergelve 47ef745, devel push-CI sikeres); a napló a naplópótlás kérésével zárul. **Ez a napló utólag készült a session transcriptjéből** (ugyanaz a 081edee1… .jsonl), a session alatt nem vezettem menet közben; ugyanezt a fájlt korábban (75a91de, pr39-pr44 néven) a 13:37Z-ig terjedő állapotban commitoltam és pusholtam, ez annak bővítése és átnevezése. A 13:44Z utáni szakasz két transcriptből áll (081edee1… a 19:26Z-ig, majd dadb9642…), a 14:53Z és 17:58Z közti szünet a transcriptben is szünet. A felmérések, probe-ok és szerződéstervezetek a job ref/ könyvtárában vannak, nem ebben a naplóban.
 
 
 ### 2026-11-08 06:37 — Felhasználó
@@ -3127,4 +3127,1624 @@ A WASM újraépítése és aláírása, a release és a production-integráció 
 
 A cél most az, hogy az M4a-val elért terv–cél kötés ne csak az Execute-ra legyen igaz, miközben a Destroy és az Invoke ugyanazon hoston keresztül, lényegesen gyengébb ellenőrzéssel képes mellékhatást kiváltani.
 </pasted_content id="51f3">
+~~~~~
+
+
+### 2026-11-08 13:44 — Claude
+
+~~~~~
+A Destroy/Invoke felmérés, a szerződésjavaslat és a bizonyítási korlátok elkészültek, implementáció nélkül. A thread-napló is frissítve van helyben.
+
+A rekord: `jobs/forms-oracle-vcn-hardening-01b-a/ref/destroy-invoke-digest-survey-and-contract-2026-11-08.md`. A probe-ok és a kimenetük szintén ott vannak (`di-probe-*`, `di-raw-probe-*`). Az élő OCI-t nem érintettem, minden a mock host-seamen futott.
+
+## 1. Mért jelenlegi viselkedés
+
+- **Destroy:** mind az 5 dimenzió (`resource_id`, `host`, `base_path`, `key_id`, `revision`) megváltoztatható, és minden esetben 1 aláírás és 1 provider-kérés megy ki. Nincs terv, nincs digest.
+- **Invoke, a legfontosabb lelet:** az `operation` a kind registryjének bármely művelete lehet, a szerepét nem nézi. Ugyanazon az úton, 1 aláírással és 1 kéréssel lefut a `DeleteVcn` (`DELETE`), az `UpdateVcn` (`PUT`), a `CreateVcn` (`POST`) és a `GetVcn` (`GET`, törzzsel). Az M3/M4a kapuk csak az `Execute`-ot védik, az Invoke ugyanazokhoz a műveletekhez jóváhagyás nélküli út.
+- **Mit kap a modul és mit küld:**
+  - Az Invoke a `config.data` szövegét változatlanul küldi el, mezőszűrés nélkül.
+  - Az ismétlődő kulcs mindkét értékkel kimegy, a `displayName` és a `lifecycleState` is, a `9007199254740993` és az `1.0` ahogy írva, az u-escape ahogy írva. Tömb, szöveg és `null` törzs is elmegy.
+  - Az Execute `renderBody`-ja ugyanazt a bemenetet mezőre szűri: `ChangeVcnCompartment` csak a `compartmentId`-t viszi, a `DeleteVcn` törzs nélkül megy.
+  - Ugyanarra a műveletre tehát az Execute és az Invoke más törzset küld.
+- **Visszajátszás, külön az idempotenciától:** a Destroy 3×, a provider 204 majd 404 választ ad, az eredmények `ok`, `not-found`, `not-found`, de az aláírás **3**, a provider-kérés **3**. Az Invoke 5× 5 aláírás és 5 kérés. A mérőszám a `sign` és az `actuate` darabszáma, nem a provider válasza.
+- **Fogyasztók:** a helyben klónozott repókban és a workdirben nincs a `destroy`/`invoke` fogyasztója a modul saját tesztjein és a manuális harnessen kívül. A nem klónozott repókat nem néztem.
+
+## 2. Javasolt szerződés (concept)
+
+- **Domain-címkék:** `cic-oracle-destroy/1` és `cic-oracle-invoke/1`, a mező neve mindhárom belépési pontnál `execution_digest`. A `v` címke különbözteti meg őket, így egy `Execute`-digest nem használható Destroy/Invoke-hoz.
+- **Envelope:** művelet típusa, kind, a kontraktus-digest, a feloldott registry-művelet (név, metódus, útvonal, szerep) és az M4a `target_digest` modellje. Az Invoke-nál ehhez a `body` is.
+- **Az Invoke törzse, a kért szemantikai kötés:**
+  1. csak `action` szerepű művelet futhat (ez zárja a mért megkerülést);
+  2. a törzs JSON-objektum;
+  3. csak a művelet deklarált mezői lehetnek benne, a többi elutasítás, nem csendes eldobás;
+  4. szigorú, kanonizálható JSON (duplikált kulcs elutasítva);
+  5. a küldött bájtok a digestelt kanonikus értékből `wire()` egyetlen függvénnyel következnek, és egy teszt rögzíti, hogy a küldött bájtok kanonikus alakja a digestelt érték.
+- **A modul az aláírás előtt** feloldja a műveletet, ellenőrzi a célt és a törzset, újraszámolja a digestet, egyezést követel, és visszhangozza. Nincs terv és nincs `desired`/`observed`.
+
+## 3. Bizonyítási korlátok
+
+A modul azt bizonyíthatja, hogy a jóváhagyott érték és a ténylegesen aláírt kérés egybeesik. A jóváhagyás kiléte, az egyszeri felhasználás és az UNKNOWN a Relay dolga (R7, R8). A `sign`/`actuate` host-határ védelme szintén (R7 F1): a modul digestje csak előfeltétel, nem kényszer. Egy digest-mentes, host-határon át érkező hívást a modul nem állít meg.
+
+## 4. A D5-nek rögzített céladat-eredet
+
+Négy mezőre (`host`, `base_path`, `key_id`, `revision`) táblázat: ma honnan jön és ki hitelesíti, és mit kell a D5-nek tisztáznia. Lényeg: a digest az értékeket köti, nem igazolja, hogy a megfelelő OCI-környezetet vagy jogosultságot jelölik. A mért tény, hogy mindegyik a hívótól jön, és az egyetlen host-oldali korlát a Relay egress-engedélylistája.
+
+## Nyitott döntések
+- **D-DI-1:** az Invoke csak `action` szerepet futtat (javasolt igen).
+- **D-DI-2:** idegen mező a törzsben: elutasítás (javasolt).
+- **D-DI-3:** a `wire` számformája. Az ajánlott sima tizedes forma (`1`, `0.5`) még nincs mérve, hogy az OCI elfogadja-e, ezért ez NOT MEASURED, és mérés nélkül nem dönthető el.
+- **D-DI-4:** egységes `execution_digest` név.
+- **D-DI-5:** a digest nélküli régi kérés nem marad meg.
+
+## Hiba a korábbi munkámban, amit most találtam és javítottam
+
+A szerszám-réteg átírta a `\u` escape-eket három, már mergelt helyen. A sima szövegként beírt `\u00e9`-ből `é`, az `n\u0065w`-ből `new` lett.
+- **Következmény:** a `plan_noop_exactness_test.go` „escaped text" és az `m4a_gate_test.go` „escapes" sora azonos szöveget hasonlított össze, így nem bukhatott. A `canonical-json.md`-ben egy mondat azt mondta: „`"a"` is `"a"`".
+- **Mi nem sérült:** a kanonizáló implementáció és a nyelvfüggetlen vektorfájlok, amelyek Pythonnal, `chr()` és dupla backslash használatával íródtak, és tartalmaznak valódi escape-et.
+- **Javítás:** a branch `tests/real-escape-spellings`, commit `b1a8e3a`, helyben, nincs pusholva. A backslash hex-escape-elt konstans, a sor ellenőrzi, hogy van benne escape, a spec-mondat helyreállt.
+- **Bizonyíték:** egy olyan mutánssal, amely nem dekódolja az u-escape-et, a régi sorok átmentek, az újak buknak.
+- **Tanulság:** a memóriába felírtam (a korábbi feljegyzés bővítése), hogy escape-et építő teszt-bemenetnél a backslash hex-escape-elt konstans legyen, legyen futásidejű guard, és mutánssal igazoljam, hogy a teszt tud bukni.
+
+## Következő lépés
+
+- A szerződésről külön döntünk, ahogy kérte. A D5 jön utána.
+- A javító commit push-a az Ön döntése. Futtassa ezt:
+  `! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git tests/real-escape-spellings`
+  Utána Draft PR-t nyitok `--base devel` célággal, és a CI-t ellenőrzöm. Kisebb tesztjavítás, de a #42/#43 bizonyítékának egy része volt, ezért érdemes külön lezárni.
+- A thread-napló `75a91de` a workdir repóban (átnevezve: `theads/2026-11-08_session-oracle-m1-m4b-pr39-pr44.md`, 123 blokk, 13:37Z-ig), helyi, nincs pusholva.
+
+A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+~~~~~
+
+### 2026-11-08 13:44 — Felhasználó
+
+~~~~~
+<bash-input> git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git tests/real-escape-spellings</bash-input>
+~~~~~
+
+### 2026-11-08 13:44 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'tests/real-escape-spellings' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/new/tests/real-escape-spellings        
+remote: 
+To github.com:CentralInfraCore/cic-module-oracle-cloud.git
+ * [new branch]      tests/real-escape-spellings -&gt; tests/real-escape-spellings</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-08 13:49 — Claude
+
+~~~~~
+A #45 CI-ja befejeződött és zöld, a feltétel, amelyhez a review a GO-t kötötte, teljesült.
+
+**#45 (Draft, HEAD `b1a8e3a`)**
+- A pull-request futás (42486445779) sikeres, pontosan az `b1a8e3a`-n. A naplóban nincs `--- FAIL`.
+- A két javított eset PASS: `TestPlanStillCallsEquivalentJSONANoop/escaped_text` és `TestEquivalentSpellingsOfDesiredAndObservedGiveOnePlanDigest/escapes`. A friss guest, a belső doksi-hivatkozások és a Go minőségkapu sikeres.
+- A PR MERGEABLE, a távoli `devel` továbbra is `f48246e`.
+- Ez a CI csak azt mutatja, hogy a javított tesztek átmennek. Hogy a régi sorok nem bukhattak, a mutáns-bizonyíték mutatta meg, ahogy a PR-leírásban is áll.
+- Mergelni nem merge-eltem: a feltételes GO-ból most már feltétel nélküli lehet, de a merge-engedély az Öné. Ha én mergeljek, írja ki: „mergeld te", vagy futtassa a `gh pr ready` és `gh pr merge --match-head-commit b1a8e3a…` parancsot.
+
+**A Destroy/Invoke felmérés nem látszik a távoli repóban, és ez így is van.**
+- A felmérés a `jobs/forms-oracle-vcn-hardening-01b-a/ref/` alatt van (`destroy-invoke-digest-survey-and-contract-2026-11-08.md` és a `di-*` probe-ok), a cic-factory repóban, commit nélkül. Magyar nyelvű, és a modulrepóba nem került.
+- A modulrepóban semmi sem változott miatta, így abból forrásalapú döntést nem lehet hozni.
+- A #44-hez hasonlóan megoldható: egy angol nyelvű, dokumentációs Draft PR a modulrepóban (`docs/destroy-invoke-digest-contract`), a `devel` `f48246e`-ről. Tartalma: a mért táblák, a három elkülönített eredmény (mért viselkedés, javasolt szerződés, bizonyítási korlátok), a D5-nek rögzített céladat-eredet és a nyitott döntések. A probe forrása és kimenete a PR-hoz melléklet szöveges forrásként kerülhet be, így a mérés reprodukálható.
+- A pusholás a push-zár miatt az Ön döntése.
+
+Ezt most nem kezdem el, mert a felmérés publikálása új, külön dokumentációs PR, amelyre még nem kaptam GO-t. Ha mehet, a PR kész lesz, és csak a push marad Önre.
+
+A javasolt sorrend változatlan: #45 lezárása, a Destroy/Invoke felmérés és szerződés publikálása review-ra, majd a D5. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+~~~~~
+
+### 2026-11-08 13:50 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+## Döntés: #45 GO, Destroy/Invoke dokumentáció GO
+
+A jelentett CI-eredmények és a korábbi diff-review alapján a #45 merge-feltétele teljesült. A javítás a tesztek valódi ellenőrzőképességét állítja helyre, nem módosítja a modul végrehajtási logikáját.
+
+### 1. PR #45 – merge-engedély
+
+GO – merge
+
+mergeld te
+
+A merge feltételei:
+
+- HEAD: `b1a8e3a1a3d2b855d29c2b864fac61e0c5373440`
+- Célág: `devel`
+- Draft → Ready
+- Merge commit, HEAD-hez kötött ellenőrzéssel
+- Merge után a `devel` push-CI ellenőrzése
+
+A jóváhagyás kizárólag erre a HEAD-re vonatkozik.
+
+### 2. Destroy/Invoke – dokumentációs PR
+
+GO – Draft PR
+
+Engedélyezem az angol nyelvű, kizárólag dokumentációs PR elkészítését és megnyitását:
+
+- Branch: `docs/destroy-invoke-digest-contract`
+- Célág: `devel`
+- Kiindulópont: a #45 merge utáni ellenőrzött `devel`
+- Nincs modulimplementáció, WASM-módosítás vagy Relay-kód
+
+A felmérésben a három eredmény maradjon szigorúan elkülönítve: mért jelenlegi viselkedés, javasolt szerződés, bizonyítási korlátok.
+
+A scratch probe-ok forrását és mért kimenetét is kérem mellékelni, pontos környezettel és commitazonosítóval. Ez teszi ellenőrizhetővé, hogy a táblázatok valódi mérésen alapulnak.
+
+Különösen fontos, hogy a szerződés ne keverje össze a digestelt bemeneti adatot a ténylegesen elküldött HTTP-kéréssel, és az approval ellenőrzését ne állítsa már megvalósultnak.
+
+A D5-höz csak a felmérésből következő nyitott kérdések kerüljenek át; most nem kell megoldani őket.
+
+A dokumentációs branch pusholására és a Draft PR megnyitására is GO. A merge-ére még nincs engedély.
+
+### 3. Következő sorrend
+
+\#45 merge, majd post-merge CI
+
+Destroy/Invoke survey + digest-szerződés Draft PR
+
+Független review és külön merge-döntés
+
+D5 – céladatok eredete és útvonalbiztonság
+
+A WASM újraépítése és aláírása, a release és a production-integráció továbbra is HOLD.
+
+Egy fontos dolgot megőriznék a munkamódszerből: a felmérést ne az előre kívánt szerződés igazolására használjuk. Először maradjon meg a megfigyelt viselkedés változatlanul, és abból vezessük le a szükséges biztonsági tulajdonságokat.
+</pasted_content id="51f3">
+~~~~~
+
+### 2026-11-08 13:57 — Claude
+
+~~~~~
+A #45 bekerült a `devel` ágba (`eda4aeb`), és a Destroy/Invoke dokumentációs PR el van készítve helyben, aláírt commitként: `5ef1c06` a `docs/destroy-invoke-digest-contract` ágon. Még nincs pusholva, így Draft PR sincs.
+
+## #45
+- **Merge:** merge commit `eda4aeb`, a HEAD-hez kötve (`b1a8e3a`).
+- **CI:** a `devel` push-CI (42486907538) a `eda4aeb`-n sikeres, nincs `--- FAIL`, és a két javított escape-eset PASS.
+
+## A dokumentációs PR tartalma
+
+Csak dokumentáció és mérési fájlok (7 fájl, 528 sor): nincs modulkód, WASM-módosítás vagy Relay-kód.
+
+- **`docs/design/specs/destroy-invoke-binding.md`** (angol), szigorúan elkülönített részekkel:
+  - **1. Mért viselkedés:** forráskivonat, mérési tábla O1–O7, és ami nincs mérve (a valódi provider és a Relay). A szerződésről itt nem esik szó, ahogy kérte: előbb a megfigyelt viselkedés.
+  - **2. Levezetett tulajdonságok:** P1–P6, mindegyik egy megfigyelésre hivatkozva.
+  - **3. Javasolt szerződés (concept).**
+  - **4. Mit bizonyíthat a modul és mit a Relay.**
+  - **5. Nyitott döntések (D-DI-1…5).**
+  - **6. A D5-nek átadott kérdések,** kizárólag a felmérésből következők.
+- **`docs/design/measurements/destroy-invoke/`**:
+  - a két probe forrása (`probe_test.go.txt`, `raw_probe_test.go.txt`);
+  - az `output.txt`;
+  - egy README a pontos környezettel és az újrafuttatás lépéseivel.
+
+## A mérés ellenőrizhetősége
+- **Commit:** az `output.txt` nem a korábbi scratch-fából származik. A `devel` `eda4aeb` commitjából, tiszta `git archive`-vel készült mappában futtattam újra.
+- **Egyezés a korábbival:** az eredmény azonos az `f48246e`-n kapott korábbi mérés kimenetével (az időzítéseket leszámítva). A termelési kód (`provider.go`, `canonical_json.go`, `plan_binding.go`, `abi.go`) a két commit között nem változott (üres `git diff`).
+- **Környezet:** go1.25.0, TinyGo 0.39.0, a builder image azonosítója (`sha256:b5a3b64b…`), Linux 7.0.0-43. A provider helyett a modul saját mock host-seamje fut, nincs OCI, hitelesítő adat vagy hálózat.
+
+## Egy fontos pontosítás a mérésről
+- **A mérés és a szerződés szétválasztása:** a táblák mind a mérésből jönnek, a szerződés nem arra való, hogy igazolja őket. Az Invoke törzs mérése nyers kérésszövegen történt, mert egy `json.Marshal`-lal épített kérés átírná a törzs szövegét.
+- **Escape-ek:** a mérési forrásban a backslash `"\x5c"` hex-escape-elt, a korábbi `\u`-korrupció tanulsága szerint.
+- **Pontos megfogalmazás O5-ben:** az `invoke` oszlop azt tartalmazza, amit O3 és O4 mért, a megadott törzset, nem „minden bemeneti mezőt". Ezt javítottam, mert nem minden műveletre mértem extra mezőkkel.
+
+## Amit a dokumentum nem állít
+A dokumentum kimondja, hogy semmi sem megvalósított. A Relay ma nem kér és nem ellenőriz jóváhagyást a `destroy`/`invoke` felett, a javasolt digest nem fogja rákényszeríteni, és a mérés mock host-seamen készült, nem providerrel.
+
+## Következő lépés
+A push az Ön döntése. Futtassa ezt:
+`! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/destroy-invoke-digest-contract`
+
+Utána Draft PR-t nyitok `--base devel` célággal, és a pull-request futást ellenőrzöm. A `docs/**` ágon nincs push-futás, és a merge-re nincs engedély. A felmérés után külön döntés kell a szerződésről, utána jön a D5. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+~~~~~
+
+### 2026-11-08 13:57 — Felhasználó
+
+~~~~~
+<bash-input> git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/destroy-invoke-digest-contract</bash-input>
+~~~~~
+
+### 2026-11-08 13:57 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'docs/destroy-invoke-digest-contract' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/new/docs/destroy-invoke-digest-contract        
+remote: 
+To github.com:CentralInfraCore/cic-module-oracle-cloud.git
+ * [new branch]      docs/destroy-invoke-digest-contract -&gt; docs/destroy-invoke-digest-contract</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-08 14:02 — Claude
+
+~~~~~
+A Destroy/Invoke dokumentációs Draft PR megnyílt: #46, https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/46, `devel` célággal. A CI zöld az `5ef1c06` commiton.
+
+- **Futás:** a pull-request futás (42487453723) sikeres, pontosan az `5ef1c06`-on. A `docs/**` ágon nincs push-futás, ez az egyetlen futás.
+- **Lépések:** a repository manifest, a committed WASM-artefaktum integritása, a friss guest valós WASM-tesztjei, a belső doksi-hivatkozások és a Go minőségkapu sikeres. Nincs `--- FAIL`.
+- **PR:** Draft, MERGEABLE.
+
+A PR-leírás a három részt elkülönítve foglalja össze:
+- **Mért viselkedés:** minden célkötési dimenzió megváltoztatható Destroy és Invoke esetén. Az Invoke bármely registry-műveletet futtat, szerepétől függetlenül. Az Invoke a hívó törzsét változatlanul küldi el, az Execute viszont szűr. Az ismételt kérés minden alkalommal újra aláír és újra küld (Destroy 3× → 3 és 3, Invoke 5× → 5 és 5).
+- **Javasolt szerződés:** concept.
+- **Bizonyítási korlátok:** mit ellenőrizhet a modul, és mi marad a Relayé.
+
+A leírás kitér az ellenőrizhetőségre is: a probe-ok a környezettel és az újrafuttatás lépéseivel a PR részei, és a kimenet egy tiszta `git archive`-ból származik. A PR kimondja, hogy az approval ellenőrzése sehol sem megvalósított. A D5-nek csak a felmérésből következő kérdések kerültek át.
+
+A #46 Draft és nincs mergelve. A review és a merge-döntés az Öné. A szerződésről külön döntés kell a review után (D-DI-1…5), a D5 pedig csak ezután jön. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+
+Közben két helyi tétel marad, amit a review alatt végezhetek: a D5 előkészítő olvasása (hol és hogyan használja a modul a `base_path`-t, forrásalapú felmérés mérésekkel, implementáció nélkül), és a #45–#46 thread-napló bővítése. Ha szeretné, a D5 felméréssel folytatom, ugyanúgy, mint a Destroy/Invoke-nál: előbb a megfigyelt viselkedés, utána a levezetett tulajdonságok.
+~~~~~
+
+### 2026-11-08 14:07 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+## PR #46 – Destroy/Invoke felmérés és digest-szerződés review
+
+[PR #46 – Destroy/Invoke binding contract](https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/46?utm_source=chatgpt.com) · HEAD: `5ef1c063583fb8d059fe8184dd7ad468e2824427` · Draft → `devel`
+
+GO – dokumentációs merge
+
+Átnéztem a PR hét módosított fájlját, a mérési táblákat, a scratch probe-ok forrását, a rögzített kimenetet és a javasolt szerződést. A CI pontosan a vizsgált HEAD-en sikeres.
+
+A #46 dokumentációs merge-jét támogatom. A felmérés kellően elkülöníti a ténylegesen megfigyelt viselkedést a még nem implementált szerződéstől.
+
+### 1. A mérés legfontosabb eredményei
+
+| Vizsgált tulajdonság                      | Eredmény                                             |
+| ----------------------------------------- | ---------------------------------------------------- |
+| Destroy céladatainak módosítása           | 1 sign / 1 actuate minden vizsgált dimenziónál       |
+| Invoke céladatainak módosítása            | 1 sign / 1 actuate                                   |
+| Invoke más registry-szerepkörű művelettel | Delete, Update, Create, Read is eljut a mock hosthoz |
+| Invoke duplikált JSON-kulccsal            | Az eredeti duplikáció továbbmegy                     |
+| Invoke eltérő JSON-számalakkal            | A számalak megmarad                                  |
+| Destroy három ismétlése                   | 3 sign / 3 actuate                                   |
+| Invoke öt ismétlése                       | 5 sign / 5 actuate                                   |
+
+A legsúlyosabb eredmény az O3: az Invoke ma nemcsak action-műveletet tud indítani, hanem a registryben megtalált más szerepkörű műveleteket is.
+
+Ez valós moduloldali szerződéshiány, bár a vizsgálat nem bizonyítja, hogy az OCI ezeket a kéréseket elfogadná.
+
+A második fontos eredmény az O4: a duplikált kulcsokat és az actionhöz nem tartozó mezőket az Invoke jelenleg továbbadja. Ez eltér az Execute `renderBody()` szerződésétől.
+
+A mérések a mock host-határig terjednek. Nem tekintem őket élő OCI-végrehajtási bizonyítéknak.
+
+### 2. A javasolt digestmodell
+
+A két külön domain-címke megfelelő:
+
+- `cic-oracle-destroy/1`
+- `cic-oracle-invoke/1`
+
+Mindkettő tartalmazza a műveleti identitást, a kindot, a registry-szerződés kötését és a célt. Invoke esetén ehhez társul a kanonikus műveleti törzs.
+
+Különösen helyes a `wire(value)` elv: a digestelt JSON-érték és a ténylegesen kiküldött HTTP-törzs között meghatározott, tesztelhető kapcsolatnak kell lennie.
+
+Azt is elfogadom, hogy a számok végleges wire-reprezentációját nyitott döntésként kezelitek. A jelenlegi mérésből nem következik, hogy az OCI minden számalakot elfogadna.
+
+### 3. Három megjegyzés a későbbi implementációhoz
+
+Ezek nem blokkolják a dokumentációs merge-et, de a következő implementációs review előtt döntést igényelnek.
+
+F1 – Az Invoke action-mezőinek forrása
+
+A szerződés szerint az Invoke kizárólag az adott művelethez deklarált mezőket engedheti át. Pontosan meg kell határozni, hogy ezeket a registry `action-managed` mezőiből, külön action request-sémából vagy más ellenjegyzett szerződésből állítjuk elő.
+
+Ez azért fontos, mert nem minden OCI action bemeneti szerkezete írható le feltétlenül a resource konfigurációs mezőivel.
+
+F2 – A kanonikus érték nem feltétlenül OCI-kompatibilis wire-formátum
+
+A D-DI-3 döntést az implementáció előtt szükséges lezárni. Nem elegendő a kanonikus JSON oda-vissza azonossága: a célzott OCI request-séma szerinti érvényességet is ellenőrizni kell.
+
+F3 – A destroy/invoke digest nem jóváhagyás
+
+A modul újraszámolhatja a hívó által átadott digestet, de a hívó egy módosított kéréshez új digestet is készíthet. Az approval és az egyszeri felhasználás továbbra is Relay-feladat. Ezt a dokumentáció helyesen kezeli.
+
+### 4. CI
+
+[PR #46 CI-futás](https://github.com/CentralInfraCore/cic-module-oracle-cloud/actions/runs/42487453723?utm_source=chatgpt.com)
+
+SUCCESS
+
+A `lint_and_test` job sikeresen lezárult a `5ef1c06` HEAD-en.
+
+## Merge-döntés
+
+GO a #46 Draft állapotának megszüntetésére és a `devel` ágba történő merge-re, változatlan HEAD mellett, merge commitként és HEAD-hez kötött ellenőrzéssel.
+
+A merge utáni `devel` push-CI-t külön ellenőrizzük.
+
+A következő feladatnak a D5 céladat-eredet és útvonalbiztonsági szerződésének dokumentációs felmérését választom. A Destroy/Invoke implementációjára még nem adok GO-t, mert a D-DI-1–5 döntéseket és a D5-határokat előbb össze kell hangolni.
+
+A WASM újraépítése, aláírása, release és production-integráció továbbra is HOLD.
+
+A #46 fontos eredménye, hogy már nem feltételezés, hogy az Invoke megkerüli az Execute szerződését: a mock host-határig mérhető, reprodukálható bizonyíték van rá, és a kívánt javítást ettől világosan elválasztva dokumentáltátok.
+</pasted_content id="51f3">
+~~~~~
+
+### 2026-11-08 14:07 — Claude
+
+~~~~~
+A #46 merge-feltételei teljesülnek, de a merge-et nem futtattam le. A beillesztett review GO-t mond, az Ön saját üzenete viszont nem kéri kifejezetten, hogy én mergeljek. Ahogy eddig, a jogosultság-szűrőt nem kerülöm meg.
+
+**Ellenőrizve most a GitHubon**
+- HEAD `5ef1c063583fb8d059fe8184dd7ad468e2824427`, változatlan.
+- Célág `devel`, ami még `eda4aeb`. A PR konfliktusmentes (MERGEABLE), még Draft.
+- A kötelező ellenőrzés SUCCESS.
+
+Ha mergelni szeretné, futtassa ezt. Kész állapotba teszi a PR-t, a HEAD-hez kötve merge commitot csinál, és kiírja a merge commit azonosítóját:
+
+`! R=CentralInfraCore/cic-module-oracle-cloud; gh pr ready 46 --repo $R && gh pr merge 46 --repo $R --merge --match-head-commit 5ef1c063583fb8d059fe8184dd7ad468e2824427 && gh pr view 46 --repo $R --json state,mergeCommit -q '.state+" "+.mergeCommit.oid'`
+
+Ha inkább azt szeretné, hogy én mergeljek, írja ki: „mergeld te". Utána a `devel` push-CI-t a job-naplóból ellenőrzöm.
+
+**A review három megjegyzése** nem blokkolja a merge-et. A Destroy/Invoke implementáció előtti döntési listára kerülnek, és külön rögzítem őket, amikor a #46 bent van:
+- **F1:** az Invoke action-mezői honnan jönnek (a registry `action-managed` mezőiből, külön action-kérés sémából, vagy más szerződésből). Ez a D-DI-2 előfeltétele, mert nem minden OCI action bemenete írható le az erőforrás konfigurációs mezőivel.
+- **F2:** a D-DI-3 (a `wire` számformája) zárása az implementáció előtt. A kanonikus JSON oda-vissza azonossága nem elég, a célzott OCI kérés-séma szerinti érvényesség is kell, és az nincs mérve.
+- **F3:** a digest nem jóváhagyás, ezt a #46 dokumentuma már így kezeli.
+
+**A következő feladat a review szerint:** a D5 céladat-eredet és útvonalbiztonság dokumentációs felmérése. Ugyanazzal a módszerrel készítem, mint a Destroy/Invoke-nál: először a megfigyelt viselkedés, mérésekkel, majd a levezetett tulajdonságok, a javasolt szerződés és a bizonyítási korlátok szigorúan elválasztva.
+
+A D5 felmérés tárgya:
+- hol és hogyan kerül a `base_path`, a `host`, a `key_id` és a `revision` az útvonalba és az aláírásba az `observe`, `execute`, `destroy`, `invoke` és `poll` belépési pontokon;
+- mit enged ma át a hívótól (például `base_path` szerkezete és `..` szegmens, ismétlődő perjel, a `host` portja és sémája);
+- a Relay egress-engedélylistája (olvasott, `55a899f`) hogyan viszonyul hozzá. Az útvonal-előtag egyezés a nem normalizált `u.Path`-on történik. Ezt újra olvasom a forrásból.
+
+Ezt a #46 mergelése után indítom, és a branch a frissített `devel`-ről indul. Ha az új `devel` előtt szeretné, hogy kezdjek, a mostani `eda4aeb`-ről is indulhatok, a #46 csak dokumentáció, a mérés tárgyát nem változtatja. Szóljon, melyik legyen.
+~~~~~
+
+### 2026-11-08 14:07 — Felhasználó
+
+~~~~~
+<bash-input> R=CentralInfraCore/cic-module-oracle-cloud; gh pr ready 46 --repo $R && gh pr merge 46 --repo $R --merge --match-head-commit 5ef1c063583fb8d059fe8184dd7ad468e2824427 && gh pr view 46 --repo $R --json state,mergeCommit -q '.state+" "+.mergeCommit.oid'</bash-input>
+~~~~~
+
+### 2026-11-08 14:07 — Felhasználó
+
+~~~~~
+<bash-stdout>✓ Pull request CentralInfraCore/cic-module-oracle-cloud#46 is marked as "ready for review"
+MERGED 2ac19ecade7131514a3103f20ab0d38cccf41521</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-08 14:11 — Claude
+
+~~~~~
+A #46 bekerült a `devel` ágba merge commitként (`2ac19ec`), és a `devel` push-CI zöld. A merge a HEAD-hez kötve történt (`5ef1c06`).
+
+A push-CI (futás 42488274212) a `2ac19ec`-n sikeres: a repository manifest, a committed WASM-artefaktum integritása, a friss guest valós WASM-tesztjei, a belső doksi-hivatkozások és a Go minőségkapu mind sikeres, nincs `--- FAIL`. A helyi `gh/devel` is `2ac19ec`.
+
+**Állapot**
+- **Mergelve a `devel`-be:** #36, #38, #39 (M1), #40 (M3), #41 (M5), #42 (pontos JSON-egyenlőség), #43 (M4a), #44 (M4b dokumentáció), #45 (escape-tesztek javítása), #46 (Destroy/Invoke felmérés és szerződésjavaslat).
+- **HOLD:** a `module.wasm` újraépítése és aláírása, a release és a production-integráció.
+- **Nincs implementálva:** a Destroy/Invoke digest (a D-DI-1…5 döntések és a F1/F2 előbb), az approval, az egyszeri felhasználás (Relay) és a D5.
+
+**Következő feladat (a review szerint):** a D5 céladat-eredet és útvonalbiztonság dokumentációs felmérése. A módszer ugyanaz, mint a Destroy/Invoke-nál: előbb a megfigyelt viselkedés mérésekkel, utána a levezetett tulajdonságok, a javasolt szerződés és a bizonyítási korlátok. Elkezdem a frissített `devel`-ről (`2ac19ec`), a branch neve `docs/d5-target-origin-and-path-safety`, és semmit nem változtatok a kódon.
+
+A felmérés tárgya:
+- hogyan kerül a `host`, a `base_path`, a `key_id` és a `revision` az útvonalba és az aláírásba az `observe`, `execute`, `destroy`, `invoke` és `poll` belépési pontokon;
+- mit enged át a hívótól: `base_path` szerkezete, `..` szegmens, dupla perjel, a `host` portja, sémája és userinfo része;
+- a Relay egress-engedélylistájának újraolvasása a `55a899f` forrásból: az útvonal-előtag egyezés a nem normalizált `u.Path`-on, és hogyan viszonyul ehhez az, amit a modul aláír.
+
+Ezt a következő lépésben megcsinálom. A push, mint eddig, az Ön döntése.
+~~~~~
+
+### 2026-11-08 14:14 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+Igazad van. Visszanéztem a CIC eredeti architektúrájáról folytatott beszélgetéseinket, különösen a júniusi, júliusi és szeptemberi koncepciókat.
+
+Az előző D5-javaslatomban egy lényeges dolgot eltévesztettem: úgy kezeltem a `host`, `base_path`, `key_id`, `revision` és OCID értékeket, mintha a provider modulhoz érkező, önállóan hitelesítendő konfigurációs paraméterek lennének.
+
+A te eredeti elképzelésed ennél lényegesen más.
+
+## 1. Az eredeti CIC-modell
+
+Általános, providerfüggetlen intent
+
+`cic:network` – mit szeretnénk elérni?
+
+Sémavezérelt specializáció
+
+General → Standards → Provider contract
+
+Realization / deployment context
+
+Környezet, hitelesített binding, provider-erőforrás, szükséges állapot
+
+Engedélyezett szemantikai consequence
+
+OIS / döntési és jogosultsági határ
+
+Relay → ellenőrzött WASM provider → OCI
+
+Csak a megengedett következmény végrehajtása
+
+Observed state → Verification → ProofTrace
+
+Visszamérés, összevetés, bizonyítéklánc
+
+A `cic:oracle:network` ebben nem önálló döntéshozó, hanem provider-specifikus realizációs szerződés.
+
+A különbség észlelése nem automatikus CRUD-parancs. Ezt többször is hangsúlyoztad:
+
+Az eltérés nem parancs.
+
+## 2. Honnan származnak valójában a target adatok?
+
+A 2026. szeptember 29-i beszélgetésünkben ezt már kifejezetten tisztáztuk:
+
+A `host`, `base_path`, `key_id`, `revision`, OCID és hasonló binding adatok nem a domain intentből származnak, hanem a realization/deployment contextből, a provider-szerződésből és a megfelelő observed state-ből.
+
+| Mező                 | Eredeti architekturális szerep                                               |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `host`               | A providerhez rendelt realizációs környezet végpontja                        |
+| `base_path`          | A provider API-szerződéséből levezetett útvonal                              |
+| `key_id`             | A Relay/CIC hitelesített végrehajtási identitásához tartozó kötés            |
+| `resource_id` / OCID | A CIC logikai objektuma és a provider erőforrása közötti ellenőrzött binding |
+| `revision`           | A megfigyeléshez tartozó provider-állapotadat, például ETag                  |
+
+Vagyis nem az a fő kérdés, hogy egy hívó által megadott `base_path` megfelel-e egy regexnek.
+
+Hanem az, hogy egyáltalán miért adhatna meg a hívó szabadon olyan adatot, amelyet a CIC-nek a hitelesített sémákból és realizációs kontextusból kellene levezetnie?
+
+Ez két egészen más architektúra.
+
+## 3. A séma nem csupán validátor
+
+A július 20-i megbeszélésünk szerint a rövidített:
+
+```
+key: VALUE
+```
+
+egy összetettebb, sémavezérelt mezőmodell rövid alakja, amely hordozhatja a `value`, `default`, `mode`, hozzáférési és módosítási szabályokat.
+
+A modul előtti materializálás során kerülnek be a defaultok és a rejtett viselkedési adatok.
+
+A szeptember 13-i koncepcióban ezt tovább pontosítottad: ugyanaz a primitív struktúra hordozhatja az intentet, a végrehajtási bemenetet és a visszatérő state-et, miközben a providerből visszakapott azonosítók szabályozottan kerülnek vissza az állapotmodellbe.
+
+Ez különösen fontos az OCID esetében.
+
+Az OCID nem egyszerűen egy megfelelő formátumú karakterlánc. Egy CIC-objektumhoz rendelt, ellenőrizhető provider-azonosság.
+
+## 4. Mit jelent ez a D5-re nézve?
+
+Az eddig megtervezett D5-felmérésnek továbbra is van értelme: megmutatja, hol fogad el a jelenlegi modul tetszőleges paramétereket, és ez milyen következményekkel jár.
+
+De a javasolt megoldás középpontja rossz helyre került.
+
+A helyes architekturális kérdés szerintem:
+
+> Hogyan bizonyítjuk, hogy a végrehajtás minden provider-specifikus paramétere a jóváhagyott intentből, a hitelesített realizációs szerződésből, a végrehajtási kontextusból és a megfelelő observed state-ből származik?
+
+Ennek következménye, hogy:
+
+- A provider modul ne váljon a céladatok igazságforrásává.
+- A szabadon megadott target paraméter ne helyettesíthesse a sémavezérelt levezetést.
+- A `target_digest` a levezetett és ellenőrzött bindingot kösse a tervhez.
+- A Relay a jóváhagyott következmény végrehajtási jogosultságát érvényesítse.
+- A visszatérő state és a ProofTrace külön bizonyítsa, hogy mi történt, és mit figyeltünk meg.
+
+A path-normalizálás, az egress-policy és a request-signature ellenőrzése továbbra is szükséges, de ezek a levezetett cél biztonságos végrehajtásának részletei, nem az architektúra kiindulópontjai.
+
+## 5. És itt van a legfontosabb különbség
+
+Az M4a/M4b fejlesztési vonal jelenlegi formájában jórészt azt bizonyítja:
+
+Egy megadott terv és egy megadott cél összetartozik-e, és van-e rá jogosultság?
+
+Az eredeti CIC elképzelés ennél többet kíván:
+
+Miért éppen ez a terv és ez a cél következik a hitelesített, sémavezérelt rendszerállapotból és a jóváhagyott szándékból?
+
+Ez nem pusztán erősebb inputvalidáció. Ez a realization és az authority réteg szétválasztása.
+
+A jelenlegi M4a eredményeit ettől nem kell eldobni. A három digest, a kanonikus JSON, a derive-again kapu és a replay-korlát felismerése mind használható építőelem. Csak nem szabad összekeverni őket a teljes CIC-realizációs bizonyítékkal.
+
+A D5-öt ezért két részre bontanám: a jelenlegi modul tényleges HTTP- és binding-viselkedésének felmérése, valamint az eredeti CIC-modell szerinti sémavezérelt, hitelesített target-levezetési szerződés.
+
+Így a felmérés nem egy egyre bonyolultabb OCI-specifikus paramétervalidátor felé visz, hanem visszakapcsolódik ahhoz, ami miatt a CIC-et eredetileg elkezdted felépíteni.&#x20;
+</pasted_content id="51f3">
+~~~~~
+
+### 2026-11-08 14:17 — Claude
+
+~~~~~
+`ok200` lived in the earlier probe file, not in the repo. Defining it locally in this probe.
+~~~~~
+
+### 2026-11-08 14:20 — Claude
+
+~~~~~
+A D5 felmérés és szerződéstervezet elkészült és helyben, aláírt commitként megvan: `bf05d21` a `docs/d5-target-origin-and-path-safety` ágon (a `devel` `2ac19ec`-ről). Még nincs pusholva, ezért Draft PR sincs. Csak dokumentáció és mérési fájlok, 6 fájl, 472 sor.
+
+**A felvetésre**
+
+Az átdolgozást elfogadtam. A D5 két részre bomlik, és a második rész nem inputvalidátor, hanem az a kérdés, honnan származik a cél.
+- **A rész (mérés):** mit csinál ma a modul a hívó által adott `host`-tal és `base_path`-tal.
+- **B rész (concept):** hogyan kellene a `host`, `base_path`, `key_id`, `revision` és az OCID értékeknek a realizációs kontextusból, a provider-szerződésből és az observed állapotból származniuk.
+
+A B rész előfeltevése a tulajdonosi állítás. Ezt nem tudtam ellenőrizni: az idézett szeptember 29-i beszélgetésre nem találtam nyomot a repóban (`docs/`, `theads/`) vagy a helyi Claude Code-átiratokban. Ezért a dokumentum ezt kimondja, mint a modul repójában az első írott formáját, és kijavítható.
+
+**A mérés (a `2ac19ec` tiszta `git archive`-ján, mock host-seamen)**
+
+A Relay egress-szabályát forrásból olvastam (`55a899f`) és a probe-ba lemásoltam. A Relay-t nem futtattam, ezért az „engedett/tiltott" a lemásolt szabály ítélete, nem a Relay-é.
+
+- **`host`:** úgy használja, ahogy a hívó írta. Userinfo, `#`, `?` vagy `/` esetén az URL másik hostra parse-ol, de a modul a nyers értéket kéri aláíratni host-sorként. A lemásolt szabály ezeket a parse-olt host alapján tiltja.
+- **Wildcard:** a `*.oraclecloud.com` az összes OCI-szolgáltatást és régiót engedi (`objectstorage...`, `anything...`). A manifestben nincs útvonalszabály.
+- **`base_path`:**
+  - A `/x?inject=1` esetén az erőforrás-útvonal query-vé válik.
+  - A `/x#frag` esetén az útvonal fragment lesz.
+  - A `/20160918/../other` változatlanul kimegy.
+  - Az üres `base_path` verziót nem ad az útvonalhoz.
+  - A vezető perjel nélküli érték beleolvad a hostba.
+- **Újsor a `base_path`-ban:** a `sign` hívás előtt a signed stringbe külön sor kerül, és a modul addigra már kérte az aláírást, mielőtt bármi elutasítaná.
+- **Egy builder:** az `observe`, `execute`, `destroy` és `invoke` ugyanazt az `opPath` függvényt használja, a Poll szigorú saját builderrel.
+- **Registry:** nincs benne API-verzió, base path vagy host. A séma-kivonatoló sem rögzíti.
+
+**A B rész lényege (concept)**
+
+- **Mezőnkénti származás és hitelesítő:**
+  - `host`: a realizációs környezet, nem tudja a modul levezetni.
+  - `base_path`: a provider API-szerződése. A modul levezethetné, ha a registry rögzítené az API-verziót; ma nem.
+  - `key_id`: a Relay identitás-kötése.
+  - `resource_id`: az ellenőrzött CIC-objektum–provider kötés.
+  - `revision`: a megfigyelés etag-je.
+- **A `target_digest`** a levezetett és ellenőrzött bindingot köti a tervhez, a levezetést magát nem. Amit a levezetés köt: a séma-digestek és a `contract_digest` (már a `plan_digest`-ben), plus a **hiányzó** realizációs-kontextus és megfigyelés digest.
+- **Átmeneti állapot:** a mostani M4a `target` bemenet pontosan az, ami volt: hívó által adott érték, amelyet a kapu konzisztensnek bizonyít. A dokumentum ezt kimondja, és nem állítja azt, hogy az M4a a realizációs bizonyíték. Az M4a épületelemek: a kanonikus JSON, a három digest, a derive-again kapu.
+- **Útvonal-szigorítás:** külön szakaszban, kifejezetten a levezetett cél biztonságos végrehajtásának részleteként, nem kiindulópontként: egy builder, a host és a `base_path` szerkezeti ellenőrzése a `sign` hívás előtt.
+
+**Nyitott döntések:**
+- **D5-1:** az API-verzió rögzítése a registryben, ami extractor-változtatás.
+- **D5-2:** hol él a realizációs kontextus, és mi viszi be a végrehajtásba (R6).
+- **D5-3:** marad-e a hívói `target` mező, ha lesz hitelesített forrás.
+- **D5-4:** a szerkezeti ellenőrzés elutasítson vagy normalizáljon.
+- **D5-5:** a Poll-alias üres `base_path` esetén.
+
+**Nem mértem:** a valódi Relay-t, az OCI vagy egy proxy dot-szegmens kezelését, és azt, hogy a Go HTTP-kliens mit küld fragmentes URL-lel.
+
+**Következő lépés:** a push az Ön döntése. Futtassa ezt:
+`! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/d5-target-origin-and-path-safety`
+
+Utána Draft PR-t nyitok `--base devel` célággal, és a pull-request futást ellenőrzöm. A merge-re nincs engedély. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+~~~~~
+
+### 2026-11-08 14:23 — Felhasználó
+
+~~~~~
+<bash-input> git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/d5-target-origin-and-path-safety</bash-input>
+~~~~~
+
+### 2026-11-08 14:23 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'docs/d5-target-origin-and-path-safety' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/new/docs/d5-target-origin-and-path-safety        
+remote: 
+To github.com:CentralInfraCore/cic-module-oracle-cloud.git
+ * [new branch]      docs/d5-target-origin-and-path-safety -&gt; docs/d5-target-origin-and-path-safety</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-08 14:27 — Claude
+
+~~~~~
+A D5 dokumentációs Draft PR megnyílt: #47, https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/47, `devel` célággal. A CI zöld a `bf05d21` commiton.
+
+- **Futás:** a pull-request futás (42489581826) sikeres, pontosan a `bf05d21`-en. A `docs/**` ágon nincs push-futás.
+- **Napló:** a repository manifest, a committed WASM-artefaktum integritása, a friss guest valós WASM-tesztjei, a belső doksi-hivatkozások, a kódminőség és a Go minőségkapu sikeres. Nincs `--- FAIL`.
+- **PR:** Draft, MERGEABLE.
+
+A leírás szétválasztja az A részt (mérés), a B részt (concept) és azt, ami nincs mérve. Elöl áll az a pont, amelyet ellenőrizni kell: a B rész előfeltevése (a `host`, `base_path`, `key_id`, `revision` és az OCID a realizációs kontextusból, a provider-szerződésből és az observed állapotból származik, nem szabad paraméter) a tulajdonosi állítás. Én ezt nem találtam leírva a repóban vagy a helyi átiratokban, ezért a PR ennek az első írott formája, és javítható. A dokumentum azt is kimondja, hogy a mostani M4a `target` bemenet hívó által adott érték, amelyet a kapu konzisztensnek bizonyít, és nem a realizációs bizonyíték.
+
+A #47 Draft és nincs mergelve. A review és a merge-döntés az Öné. A nyitott döntések (D5-1…5, plusz a #46 D-DI-1…5) még nincsenek eldöntve, és implementációra nincs engedély. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+
+A következő lépés a tulajdonosi döntéstől függ. Két irány van, mindkettő dokumentáció vagy felmérés, kód nélkül:
+- **D5-1 felmérése:** hogyan teszi a Go SDK elérhetővé a szolgáltatás API-verzióját, hogy a registry rögzíthesse. Ez döntené el, hogy a `base_path` valóban levezethető-e a modulban.
+- **A realizációs kontextus (D5-2):** hol él, és mit viszi be a végrehajtásba. Ehhez a Relay oldali R6 olvasása is kell, és ez a legnagyobb nyitott tervezési kérdés.
+
+Ha szeretné, a D5-1 felméréssel folytatom, mert az konkrét, forrásból mérhető és a legkisebb kockázatú.
+~~~~~
+
+### 2026-11-08 14:30 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+## PR #47 – D5 független review
+
+[D5 – Target origin and path safety](https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/47?utm_source=chatgpt.com) · HEAD: `bf05d21bfd8fa9aaeb0f2340c649a567d79026d3` · Draft → `devel`
+
+GO – dokumentációs merge
+
+A #47-et elfogadom dokumentációs PR-ként. Átnéztem a tényleges diffet, a mérési forrást, a rögzített kimenetet és a szerződéstervezetet. Az új változat megfelel annak az architekturális különbségtételnek, amelyet az előző beszélgetésünkben tisztáztunk.
+
+### 1. A legfontosabb eredmény
+
+A D5 most már két külön kérdésre válaszol:
+
+|              | A rész – Mérés                | B rész – CIC-koncepció                     |
+| ------------ | ----------------------------- | ------------------------------------------ |
+| Kérdés       | Mit csinál ma a modul?        | Honnan származhat jogosan a céladat?       |
+| Bizonyíték   | Reprodukálható scratch probe  | Tulajdonosi architekturális előfeltevés    |
+| Állapot      | Mért, mock hoston             | Concept, nem implementált                  |
+| Következmény | Útvonal- és céladatkockázatok | Hitelesített realization context szükséges |
+
+Ez a szétválasztás helyes.
+
+Kifejezetten elfogadom a B részben megfogalmazott tulajdonosi architekturális alapelvet: a céladatokat a CIC realizációs kontextusából, provider-szerződéséből és ellenőrzött állapotából kell levezetni. Nem kell azt állítani, hogy ez már a modulban megvalósult, vagy hogy a jelenlegi repó önmagában bizonyítja az eredetét.
+
+### 2. A mérési eredmények értékelése
+
+A legfontosabbakat a mérési kimenet is alátámasztja.
+
+| Megállapítás                                                      | Review                           |
+| ----------------------------------------------------------------- | -------------------------------- |
+| A `host` nyers formában kerül az aláírandó szövegbe               | Igazolt                          |
+| A `base_path` szabadon módosítja az összeállított URL-t           | Igazolt                          |
+| Query/fragment karakterek megváltoztatják az URL értelmezését     | Igazolt a URL-parszolás szintjén |
+| A wildcard minden vizsgált `*.oraclecloud.com` célra engedélyt ad | A lemásolt szabályon igazolt     |
+| Újsor kerülhet az aláírandó szövegbe                              | Igazolt a mock sign-határig      |
+| Observe/Execute/Destroy/Invoke közös útvonalépítést használ       | Igazolt                          |
+| A Poll külön, szigorúbb útvonalépítést használ                    | Igazolt                          |
+
+Különösen jelentős a `base_path` query/fragment esete: a modul által szándékolt erőforrásútvonal és a parse-olt URL útvonalrésze már nem feltétlenül ugyanaz.
+
+A felmérés helyesen jelzi, hogy a tényleges Relay-t, az OCI-t és a Go HTTP transport teljes hálózati viselkedését nem mérte.
+
+### 3. A B rész szerződésének értékelése
+
+A következő architekturális állítást tartom a dokumentum központi eredményének:
+
+> A `target_digest` a binding értékeit köti a tervhez, de nem bizonyítja, hogy a binding a megfelelő hitelesített forrásokból származik.
+
+Ez pontosan az a különbség, amely eddig hiányzott a modul körüli D5-gondolkodásból.
+
+A következő származási modell megfelelő tervezési alap:
+
+- `host`: realization context;
+- `base_path`: provider API-szerződés;
+- `key_id`: Relay végrehajtási identitás;
+- `resource_id`: CIC-objektum és provider-erőforrás ellenőrzött kötése;
+- `revision`: observed state és annak megfigyelési bizonyítéka.
+
+A realizációs kontextus és az observation külön digestjének igénye szintén megfelelő irány.
+
+### 4. Egy pontosítás, amelyet érdemes megőrizni
+
+Az A részben a mock által rögzített `actuate` URL és a tényleges hálózaton továbbított HTTP request-target nem azonos bizonyítékszint.
+
+A dokumentum ezt a korlátok között már jelzi. A későbbi megvalósítási review-ban erre külön bizonyítékot fogok kérni; most nem merge-blokkoló.
+
+### 5. CI
+
+[PR #47 CI – 42489581826](https://github.com/CentralInfraCore/cic-module-oracle-cloud/actions/runs/42489581826?utm_source=chatgpt.com)
+
+SUCCESS
+
+A PR-futás pontosan a `bf05d21` commiton fejeződött be sikeresen. A friss WASM guest kapu és a dokumentációs ellenőrzések is sikeresek. A szokásos guest nélküli tesztlépés SKIP-je nem hiba.
+
+## Merge-határozat
+
+GO a #47 Draft állapotának megszüntetésére és a `devel` ágba történő merge-re, változatlan HEAD mellett, HEAD-hez kötött merge commitként.
+
+Merge után ellenőrizendő a `devel` push-CI.
+
+A D5-1…5 továbbra is nyitott tervezési döntés. A dokumentáció elfogadása nem jelenti ezek automatikus jóváhagyását.
+
+### Következő lépés
+
+A D5-2-t választanám következőnek: a realization context szerződésének feltárását.
+
+A D5-1 SDK-verziófelderítése kisebb és konkrétabb feladat, de a CIC teljes architektúrája szempontjából a D5-2 határozza meg, hogy mit jelent egyáltalán a hitelesített céllevezetés.
+
+A megvalósítás előtt tisztázni kell, hogyan lesz az általános intentből egy adott providerhez, környezethez és CIC-objektumhoz kötött, bizonyítható realizációs kontextus. Enélkül egy pontosan kinyert API-verzió is csak egy újabb jól formázott paraméter lenne.
+
+A D5-2 felmérésére és szerződéstervezetére GO, implementáció nélkül. A WASM újraépítése, aláírása, release és production-integráció változatlanul HOLD.
+
+A #47 lényege: nem az a cél, hogy a provider modul ügyesebben ellenőrizzen tetszőleges célparamétereket, hanem hogy a végrehajtás olyan célhoz legyen kötve, amelynek származása is bizonyítható.
+</pasted_content id="51f3">
+~~~~~
+
+### 2026-11-08 14:30 — Claude
+
+~~~~~
+A #47 merge-feltételei teljesülnek, de a merge-et nem futtattam le. A beillesztett review GO-t mond, az Ön saját üzenete viszont nem kéri kifejezetten, hogy én mergeljek. Ahogy eddig, a jogosultság-szűrőt nem kerülöm meg.
+
+**Ellenőrizve most a GitHubon**
+- HEAD `bf05d21bfd8fa9aaeb0f2340c649a567d79026d3`, változatlan.
+- Célág `devel`, ami még `2ac19ec`. A PR konfliktusmentes (MERGEABLE), még Draft.
+- A kötelező ellenőrzés SUCCESS.
+
+Ha mergelni szeretné, futtassa ezt. Kész állapotba teszi a PR-t, a HEAD-hez kötve merge commitot csinál, és kiírja a merge commit azonosítóját:
+
+`! R=CentralInfraCore/cic-module-oracle-cloud; gh pr ready 47 --repo $R && gh pr merge 47 --repo $R --merge --match-head-commit bf05d21bfd8fa9aaeb0f2340c649a567d79026d3 && gh pr view 47 --repo $R --json state,mergeCommit -q '.state+" "+.mergeCommit.oid'`
+
+Ha inkább azt szeretné, hogy én mergeljek, írja ki: „mergeld te". Utána a `devel` push-CI-t a job-naplóból ellenőrzöm.
+
+**A review megjegyzése, amit megőrzök:** az A részben a mock által rögzített `actuate` URL és a hálózaton ténylegesen elmenő HTTP request-target nem azonos bizonyítékszint. A dokumentum ezt a korlátok között már jelzi, és egy későbbi megvalósítási review-hoz külön bizonyíték kell (a Relay valódi futtatása vagy a Go HTTP-kliens kimenetének mérése).
+
+**Következő feladat: a D5-2, a realizációs kontextus szerződésének feltárása, implementáció nélkül.** A kérdés: hogyan lesz az általános intentből egy adott providerhez, környezethez és CIC-objektumhoz kötött, bizonyítható realizációs kontextus, és mi viszi be ezt a végrehajtásba.
+
+A feltárás tervezett hatóköre. Itt a „mért" kevés lesz, mert a realizációs réteg a CIC-ben ma nagyrészt nincs kódban, ezért a három állapotot (implemented, scaffold, concept) minden állításnál külön jelölöm:
+1. **Mi van ma, forrásból.** Olvasom az ökoszisztéma-térképet és a releváns repókat (Forms, primitives és az engine, a séma-registry, a CIC-Relay `55a899f`, az `ois` csomag) arra, hogy van-e bármi, ami realizációs kontextust, deployment-környezetet, objektum–provider kötést vagy ilyen digestet hordoz. Mindegyikre állapotot adok: megvalósított, scaffold vagy csak koncepció.
+2. **Hol szakad meg a lánc.** A „concept, code, runtime, audit" lánc minden pontján rögzítem, hol van élő híd és hol szakad meg, a CIC boot-szabálya szerint: „a modell létezik, de az implementációs híd itt megszakad".
+3. **Szerződéstervezet (concept).** A realizációs kontextus tartalma és digestje, mi származik belőle (`host`, régió és realm, kulcs-kötés), hogyan kerül egy végrehajtás elé (R6), és hogyan kapcsolódik a már megvalósított digestekhez (`plan_digest`, `contract_digest`, `target_digest`).
+4. **Nyitott kérdések** a tulajdonosnak, elkülönítve attól, amit forrásból lehet eldönteni.
+
+A branch a #47 mergelése utáni `devel`-ről indul, `docs/d5-realization-context`. A #47 merge-éig csak olvasok, hogy a doksi a mergelt állapotra hivatkozzon.
+
+A D5-1 (SDK API-verzió) kisebb és független, a D5-2 után vagy mellette jöhet. A D5-1…5 döntései nincsenek eldöntve. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+~~~~~
+
+### 2026-11-08 14:30 — Felhasználó
+
+~~~~~
+<bash-input> R=CentralInfraCore/cic-module-oracle-cloud; gh pr ready 47 --repo $R && gh pr merge 47 --repo $R --merge --match-head-commit bf05d21bfd8fa9aaeb0f2340c649a567d79026d3 && gh pr view 47 --repo $R --json state,mergeCommit -q '.state+" "+.mergeCommit.oid'</bash-input>
+~~~~~
+
+### 2026-11-08 14:30 — Felhasználó
+
+~~~~~
+<bash-stdout>✓ Pull request CentralInfraCore/cic-module-oracle-cloud#47 is marked as "ready for review"
+MERGED b6895045a8ef543a5c6a5d6bac1b00b527592c32</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-08 14:35 — Claude
+
+~~~~~
+Reading the knowledge-base chunks that mention "realization" and the OIS gate, to see what exists on the realization context and what is only concept.
+~~~~~
+
+### 2026-11-08 14:38 — Claude
+
+~~~~~
+A #47 bekerült a `devel` ágba (`b689504`), és a `devel` push-CI zöld. A D5-2 felmérés és szerződéstervezet elkészült és helyben, aláírt commitként megvan: `66e4a6f` a `docs/d5-realization-context` ágon. Még nincs pusholva, ezért Draft PR sincs. Csak dokumentáció.
+
+## #47
+A push-CI (futás 42490168218) a `b689504`-en sikeres: a manifest, a WASM-integritás, a friss guest, a doksi-hivatkozások és a Go minőségkapu mind sikeres, nincs `--- FAIL`.
+
+## D5-2: mit találtam
+
+A dokumentum `docs/design/specs/realization-context.md`. A tudásbázist (2026-10-16-i pillanatkép) csak tájékozódásra használtam, minden állítást élő fájlból olvastam újra.
+
+**Ami van** (állapotjelöléssel):
+- **Logikai azonosítás:** az intent és a state két reprezentáció, az összekapcsolás a CIC `uid` alapján történik, soha nem `provider_id` szerint. A state objektumban `binding`, `revision` és `provenance` szerepel. Ez spec, concept; a hozzá tartozó `observe` implementált.
+- **Host-oldali összehasonlítás és conformance:** a Relay `core/nexus/iac` kódja implementált, de csak a drift-ellenőrzés használja. Az execution-úton (cabinet, `cic-flow`) nincs bekötve.
+- **Tervezési döntés:** „a modul nem tanúsítja a saját munkáját", terv, majd az *aláírt terv* végrehajtása, az observe és verify host-oldali. Ez a Relay design-dokumentumában rögzített döntés. A `cic-flow` implementált, a jóváhagyás concept.
+- **OIS:** implementált szeg, de nincs a modul végrehajtási útján.
+- **Adatút:** a Forms-tól a modulig leírt adatút concept a modul oldalán.
+
+**Ami nincs, és itt szakad meg a lánc:** a realizációs kontextus. Nincs olyan dokumentum a repóban, amely definiálná, és nincs a Relay `cmd`, `core`, `pkg` kódjában (típusnévre keresve) realizációs, deployment- vagy environment-típus. A state objektum `binding`-ja a spec példájában csak `provider` és `provider_id`. A `host`, `base_path`, `key_id`, `resource_id` és `revision` mérten hívó által adott mezőként érkezik minden belépési ponton. A boot-szabály szerinti megfogalmazás: *a modell létezik, de az implementációs híd itt megszakad: a kibővített intent objektum és a végrehajtási cél között*.
+
+**Amit NEM olvastam ebben a körben:** a Forms engine és dokumentumai (`cic-primitive-forms`, `cic-primitive-engine`), a séma-registry, a `primitives`, a `CIC-basic-knowledge` és az OIS repo. Ezekről szóló állítások másodkezűek, és a dokumentum jelöli.
+
+## Javaslat (concept)
+
+- **Realizációs kontextus:** verziózott, hitelesített rekord egy logikai objektumra és egy providerre: `object` (uid), `provider`, `environment` (régió és realm), `provider_contract` (registry digest), `execution_identity` (kulcs-hivatkozás, soha nem kulcsanyag), `binding` (`provider_id`), `observation`, valamint a kibocsátó, a policy-döntés és az érvényesség.
+- **Levezetés:** `host` ← környezet és a provider-szerződés host-szabálya; `base_path` ← a registry API-verziója (D5-1); `key_id` ← az identitás-kötés, amit a Relay old fel; `resource_id` ← `provider_id` a `uid` szerinti összekapcsolással; `revision` ← a megfigyelés.
+- **Lánc:** a `target_digest` a levezetett célnak és egy új realizációs digestnek a függvénye (saját domain-címke, ugyanaz a kanonikus keretezés), amelyet az `execution_digest` tranzitíven köt. A kontextus az R6 szerinti hitelesített végrehajtási kontextuson át érkezik, nem a kérés törzsében.
+- **OIS:** külön szerep. Az approval a következményt engedélyezi, a kontextus a célt azonosítja, egyik sem helyettesíti a másikat.
+- **Átmenet:** amíg ez nincs, az M4a `target` bemenet hívó által adott érték marad, amelyet a kapu konzisztensnek bizonyít.
+
+## Hét nyitott kérdés, amelyeket a források nem döntenek el
+1. hol készül és hol tárolódik egy realizációs kontextus (deployment repo, Relay-konfiguráció, séma-kind a registryben, máshol);
+2. granularitás: környezetenként megosztott, vagy objektumonkénti;
+3. ki bocsátja ki és írja alá;
+4. a provider-szerződés host-szabálya és API-verziója (D5-1), és hogy a host-szabály minta vagy lista;
+5. routing és dekompozíció, ha egy intent több providert vagy régiót érint;
+6. életciklus: forgatás, visszavonás, mi történik a jóváhagyott, de nem végrehajtott tervvel, ha a kontextus változik;
+7. a Forms oldala: hol lépne be egy kontextusból levezetett érték a „defaults with origin" és „policy resolution" lépésekbe. Ehhez a Forms engine és dokumentumai kellenek.
+
+**Nem állítom:** hogy a kontextus megvalósult, hogy a Forms, a registry vagy az OIS oldalán ellenőriztem volna, vagy hogy egy aláírt megfigyelés a fizikai állapot bizonyítéka.
+
+## Következő lépés
+
+A push az Ön döntése. Futtassa ezt:
+`! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/d5-realization-context`
+
+Utána Draft PR-t nyitok `--base devel` célággal, és a pull-request futást ellenőrzöm. A merge-re nincs engedély.
+
+A hetedik kérdés és a Forms oldala nem zárható a mostani forrásokból. Javasolt következő olvasási kör: a Forms engine („defaults with origin", policy resolution) és a séma-registry átolvasása, hogy a kontextus belépési pontja ne csak elméleti legyen. A D5-1 (SDK API-verzió) független, kisebb feladat. A D5-1…5, a D-DI-1…5 és az egész javasolt szerződés döntése az Öné. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+~~~~~
+
+### 2026-11-08 14:38 — Felhasználó
+
+~~~~~
+<bash-input> git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/d5-realization-context</bash-input>
+~~~~~
+
+### 2026-11-08 14:38 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'docs/d5-realization-context' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/new/docs/d5-realization-context        
+remote: 
+To github.com:CentralInfraCore/cic-module-oracle-cloud.git
+ * [new branch]      docs/d5-realization-context -&gt; docs/d5-realization-context</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-08 14:42 — Claude
+
+~~~~~
+A D5-2 dokumentációs Draft PR megnyílt: #48, https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/48, `devel` célággal. A CI zöld a `66e4a6f` commiton.
+
+- **Futás:** a pull-request futás (42490819885) sikeres, pontosan a `66e4a6f`-en. A `docs/**` ágon nincs push-futás.
+- **Napló:** a repository manifest, a committed WASM-artefaktum integritása, a friss guest valós WASM-tesztjei, a belső doksi-hivatkozások, a kódminőség és a Go minőségkapu sikeres. Nincs `--- FAIL`.
+- **PR:** Draft, MERGEABLE.
+
+A PR-leírás összefoglalja a felmérést (mi van, mi nincs, hol szakad meg a lánc), a javaslatot (concept) és a hét nyitott kérdést. Ami nincs, az a realizációs kontextus: a dokumentum kimondja, hogy ma nincs rá sem dokumentum a repóban, sem típus a Relay kódjában. A leírás külön tartalmazza, mit nem olvastam ebben a körben (Forms engine, séma-registry, `primitives`, `CIC-basic-knowledge`, OIS repo), és hogy a Relay-tények a `55a899f`-ből olvasottak, nem futtatottak.
+
+A #48 Draft és nincs mergelve. A review és a merge-döntés az Öné. A javasolt szerződés, a D5-1…5 és a D-DI-1…5 döntései nyitottak. Implementációra nincs engedély. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+
+**Állapot a `devel` ágon:** #36–#47 bent van. A nyitott dokumentációs PR-ok közül most a #48 vár review-ra.
+
+A következő logikus olvasási kör, amely a hetedik nyitott kérdést (a Forms oldala) zárná, csak olvas és tervez. Ez a Forms engine és a séma-registry átolvasása: hol lépne be egy realizációs kontextusból levezetett érték a „defaults with origin" és „policy resolution" lépésekbe. Ha szeretné, ezzel folytatom, és az eredményt kiegészítésként a #48-ra, vagy külön dokumentációs PR-ban adom.
+~~~~~
+
+### 2026-11-08 14:45 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+## PR #47 – D5 független review
+
+[D5 – Target origin and path safety](https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/47?utm_source=chatgpt.com) · HEAD: `bf05d21bfd8fa9aaeb0f2340c649a567d79026d3` · Draft → `devel`
+
+GO – dokumentációs merge
+
+A #47-et elfogadom dokumentációs PR-ként. Átnéztem a tényleges diffet, a mérési forrást, a rögzített kimenetet és a szerződéstervezetet. Az új változat megfelel annak az architekturális különbségtételnek, amelyet az előző beszélgetésünkben tisztáztunk.
+
+### 1. A legfontosabb eredmény
+
+A D5 most már két külön kérdésre válaszol:
+
+|              | A rész – Mérés                | B rész – CIC-koncepció                     |
+| ------------ | ----------------------------- | ------------------------------------------ |
+| Kérdés       | Mit csinál ma a modul?        | Honnan származhat jogosan a céladat?       |
+| Bizonyíték   | Reprodukálható scratch probe  | Tulajdonosi architekturális előfeltevés    |
+| Állapot      | Mért, mock hoston             | Concept, nem implementált                  |
+| Következmény | Útvonal- és céladatkockázatok | Hitelesített realization context szükséges |
+
+Ez a szétválasztás helyes.
+
+Kifejezetten elfogadom a B részben megfogalmazott tulajdonosi architekturális alapelvet: a céladatokat a CIC realizációs kontextusából, provider-szerződéséből és ellenőrzött állapotából kell levezetni. Nem kell azt állítani, hogy ez már a modulban megvalósult, vagy hogy a jelenlegi repó önmagában bizonyítja az eredetét.
+
+### 2. A mérési eredmények értékelése
+
+A legfontosabbakat a mérési kimenet is alátámasztja.
+
+| Megállapítás                                                      | Review                           |
+| ----------------------------------------------------------------- | -------------------------------- |
+| A `host` nyers formában kerül az aláírandó szövegbe               | Igazolt                          |
+| A `base_path` szabadon módosítja az összeállított URL-t           | Igazolt                          |
+| Query/fragment karakterek megváltoztatják az URL értelmezését     | Igazolt a URL-parszolás szintjén |
+| A wildcard minden vizsgált `*.oraclecloud.com` célra engedélyt ad | A lemásolt szabályon igazolt     |
+| Újsor kerülhet az aláírandó szövegbe                              | Igazolt a mock sign-határig      |
+| Observe/Execute/Destroy/Invoke közös útvonalépítést használ       | Igazolt                          |
+| A Poll külön, szigorúbb útvonalépítést használ                    | Igazolt                          |
+
+Különösen jelentős a `base_path` query/fragment esete: a modul által szándékolt erőforrásútvonal és a parse-olt URL útvonalrésze már nem feltétlenül ugyanaz.
+
+A felmérés helyesen jelzi, hogy a tényleges Relay-t, az OCI-t és a Go HTTP transport teljes hálózati viselkedését nem mérte.
+
+### 3. A B rész szerződésének értékelése
+
+A következő architekturális állítást tartom a dokumentum központi eredményének:
+
+> A `target_digest` a binding értékeit köti a tervhez, de nem bizonyítja, hogy a binding a megfelelő hitelesített forrásokból származik.
+
+Ez pontosan az a különbség, amely eddig hiányzott a modul körüli D5-gondolkodásból.
+
+A következő származási modell megfelelő tervezési alap:
+
+- `host`: realization context;
+- `base_path`: provider API-szerződés;
+- `key_id`: Relay végrehajtási identitás;
+- `resource_id`: CIC-objektum és provider-erőforrás ellenőrzött kötése;
+- `revision`: observed state és annak megfigyelési bizonyítéka.
+
+A realizációs kontextus és az observation külön digestjének igénye szintén megfelelő irány.
+
+### 4. Egy pontosítás, amelyet érdemes megőrizni
+
+Az A részben a mock által rögzített `actuate` URL és a tényleges hálózaton továbbított HTTP request-target nem azonos bizonyítékszint.
+
+A dokumentum ezt a korlátok között már jelzi. A későbbi megvalósítási review-ban erre külön bizonyítékot fogok kérni; most nem merge-blokkoló.
+
+### 5. CI
+
+[PR #47 CI – 42489581826](https://github.com/CentralInfraCore/cic-module-oracle-cloud/actions/runs/42489581826?utm_source=chatgpt.com)
+
+SUCCESS
+
+A PR-futás pontosan a `bf05d21` commiton fejeződött be sikeresen. A friss WASM guest kapu és a dokumentációs ellenőrzések is sikeresek. A szokásos guest nélküli tesztlépés SKIP-je nem hiba.
+
+## Merge-határozat
+
+GO a #47 Draft állapotának megszüntetésére és a `devel` ágba történő merge-re, változatlan HEAD mellett, HEAD-hez kötött merge commitként.
+
+Merge után ellenőrizendő a `devel` push-CI.
+
+A D5-1…5 továbbra is nyitott tervezési döntés. A dokumentáció elfogadása nem jelenti ezek automatikus jóváhagyását.
+
+### Következő lépés
+
+A D5-2-t választanám következőnek: a realization context szerződésének feltárását.
+
+A D5-1 SDK-verziófelderítése kisebb és konkrétabb feladat, de a CIC teljes architektúrája szempontjából a D5-2 határozza meg, hogy mit jelent egyáltalán a hitelesített céllevezetés.
+
+A megvalósítás előtt tisztázni kell, hogyan lesz az általános intentből egy adott providerhez, környezethez és CIC-objektumhoz kötött, bizonyítható realizációs kontextus. Enélkül egy pontosan kinyert API-verzió is csak egy újabb jól formázott paraméter lenne.
+
+A D5-2 felmérésére és szerződéstervezetére GO, implementáció nélkül. A WASM újraépítése, aláírása, release és production-integráció változatlanul HOLD.
+
+A #47 lényege: nem az a cél, hogy a provider modul ügyesebben ellenőrizzen tetszőleges célparamétereket, hanem hogy a végrehajtás olyan célhoz legyen kötve, amelynek származása is bizonyítható.
+</pasted_content id="51f3">
+~~~~~
+
+### 2026-11-08 14:45 — Claude
+
+~~~~~
+Ez a #47 review szó szerint ugyanaz, mint amit korábban kaptam, és újraolvastam az egészet: nincs benne új pont, új feltétel vagy eszkaláció. Minden, amit kér, már megtörtént.
+
+**Ellenőrizve most a GitHubon**
+- **#47:** MERGED, merge commit `b6895045a8ef543a5c6a5d6bac1b00b527592c32`, a HEAD-hez kötve (`bf05d21`). A `devel` push-CI (futás 42490168218) zöld.
+- **`devel`:** `b689504`.
+- **D5-2:** a felmérés és szerződéstervezet kész, a #48 Draft (`66e4a6f`, CI zöld, nincs mergelve). Ez a review „D5-2 felmérésére és szerződéstervezetére GO, implementáció nélkül" kérése.
+- **Megőrzött megjegyzés:** a mock `actuate` URL és a hálózaton elmenő request-target közti bizonyítékszint-különbség már szerepel a #47 korlátai között. Egy későbbi megvalósítási review-hoz külön bizonyíték kell, ezt feljegyeztem.
+
+Ha ezt a szöveget a #48-ra szánta, vagy van új megjegyzése, küldje el. A #48 review-ja még várat magára.
+
+**Állapot és következő lépés**
+- **`devel`-be mergelve:** #36–#47.
+- **Nyitott Draft:** #48 (D5-2).
+- **Nyitott döntések:** D5-1…5, D-DI-1…5 és maga a realizációs kontextus javaslata. Egyik sincs eldöntve, implementációra nincs engedély.
+- **A hetedik kérdés** (a Forms oldala: hol lépne be egy kontextusból levezetett érték a „defaults with origin" és „policy resolution" lépésekbe) csak a Forms engine és a séma-registry átolvasásával zárható. Ezt a #48 review-ja után, kiegészítésként vagy külön dokumentációs PR-ban adom.
+- **HOLD:** a WASM újraépítése és aláírása, a release és a production-integráció.
+~~~~~
+
+### 2026-11-08 14:46 — Felhasználó
+
+~~~~~
+mergeld
+~~~~~
+
+### 2026-11-08 14:53 — Claude
+
+~~~~~
+A #48 bekerült a `devel` ágba (`d0688c0`), és a `devel` push-CI zöld. A hetedik kérdés (a Forms oldala) olvasási köre is megvan helyben, aláírt commitként: `bc268f9` a `docs/d5-realization-context-forms-side` ágon. Még nincs pusholva, ezért PR sincs. Csak dokumentáció.
+
+## #48
+- **Merge:** a „mergeld" utasítására megtörtént, a HEAD-hez kötve (`66e4a6f`). Egy dolgot jelzek: a #48-ra külön független review GO-t nem láttam, a merge az Ön kifejezett utasításán alapul.
+- **CI:** a `devel` push-CI (futás 42491488979) a `d0688c0`-n sikeres: manifest, WASM-integritás, friss guest, doksi-hivatkozások, Go minőségkapu, nincs `--- FAIL`.
+
+## A „kitűzött irányba" haladás: a Forms oldala (D5-2, 7. kérdés)
+
+A Forms és az engine dokumentumait olvastam (Forms `5531111`, engine `93c793a`), plusz szövegkeresést mindkét repón és a séma-registry felső szintjének listázását. A forráskódot és az ADR-törzseket nem olvastam, ezt a dokumentum kimondja.
+
+**Amit leírnak**
+- **Forms:** tiszta könyvtár, nincs Git, hálózat, fájlrendszer-szabály vagy végrehajtási kontextus. A defaultok sémában deklaráltak (`value_origins`: authored vagy default), az `expand` eredete authored vagy materialized.
+- **P5:** csak terv, kód nincs: „Resolve (from supplied snapshot), materialize, receipt". Receipt-előállító sehol nincs az ökoszisztémában, amennyire az engine dokumentumai mutatják.
+- **Az engine hatókör-korrekciója:** a Parse, Normalize, Resolve és Validate „tartósan a környezet dolga". Az engine egy kész, materializált objektumot kap, ellenőrzi, kanonizálja és digestel.
+- **A receipt-szerződés zárt,** 15 kötelező mezővel. A `derived_values[]` az `inputs`-ot az objektum útvonalainak halmazaként nevezi meg.
+- **Szövegkeresés:** a Forms repóban egyáltalán nincs `realization`, `deployment context`, `tenancy`, `oraclecloud`, `base_path`, `key_id` vagy `provider_id`. Az engine-ben csak az OCI-konformancia fixture-ökben szerepel a `provider_id`, state-only mezőként.
+
+**Következmények a realizációs kontextusra**
+- Egy séma-default nem hordozhatja: a default szabálya `schema-default`, és egy host vagy régió beleírása környezet-specifikussá tenné a sémát.
+- A könyvtár nem tudja levezetni, felépítésénél fogva.
+- A megnevezett belépési pont a **Resolve egy átadott snapshotból** (P5, csak terv). Ez kódban nem létezik.
+- **Auditrés:** a receipt `derived_values`-a csak objektum-útvonalat nevezhet meg bemenetként. Egy, az objektumon kívüli kontextusból levezetett érték bemenetét ma nem tudja megnevezni.
+- **Két lehetséges zárás (az Ön döntése):**
+  - (i) a kontextus az objektumba kerül: az objektum környezet-specifikussá válik, és az engine zárt receipt-szerződése változik;
+  - (ii) a kontextus az objektumon kívül marad, és a végrehajtási rétegben köti a realizációs digest. A receipt változatlan marad, az objektum provider-független. A #48 szakasz 4. része (ii)-re épül.
+- **Terminológiai ütközés:** az engine „environment" szava a feldolgozó réteg (Parse, Normalize, Resolve, Validate), a realizációs „environment" viszont egy provider-fiók, régió és realm. A kettőt nem szabad összekeverni.
+
+**Új döntések:** D5-6 (kontextus az objektumban vagy azon kívül) és D5-7 (a realizációs környezetre külön elnevezés). A 7. nyitott kérdést ez részben megválaszolja: a kontextus nem a defaultokban vagy a policy-feloldásban lép be.
+
+## Következő lépés
+
+A push az Ön döntése. Futtassa ezt:
+`! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/d5-realization-context-forms-side`
+
+Utána Draft PR-t nyitok `--base devel` célággal, és a pull-request futást ellenőrzöm. A merge a #48 mintájára külön döntés.
+
+**A `devel`-be mergelve:** #36–#48. **Nyitott, nem eldöntött:** D5-1…7, D-DI-1…5, és maga a realizációs kontextus javaslata. Implementációra nincs engedély. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+
+**Ami a kitűzött irányban még hátra van**, mind dokumentáció vagy felmérés, kód nélkül:
+- a D5-1 (az SDK hogyan teszi elérhetővé az API-verziót, hogy a registry rögzíthesse);
+- a séma-registry sémáinak és a `primitives` átolvasása, hogy van-e valami, ami egy realizációs kontextust hordozhatna;
+- a `destroy`/`invoke` és a D5-1…7 döntéseinek összegzése egyetlen döntési előterjesztésbe, hogy az implementáció előtt egy helyen lehessen dönteni.
+
+Ha szeretné, a döntési előterjesztéssel folytatom: az összes nyitott döntést egy dokumentumban, ajánlással és az egymástól való függésükkel.
+~~~~~
+
+### 2026-11-08 17:58 — Felhasználó
+
+~~~~~
+<bash-input> git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/d5-realization-context-forms-side</bash-input>
+~~~~~
+
+### 2026-11-08 17:58 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'docs/d5-realization-context-forms-side' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/new/docs/d5-realization-context-forms-side        
+remote: 
+To github.com:CentralInfraCore/cic-module-oracle-cloud.git
+ * [new branch]      docs/d5-realization-context-forms-side -&gt; docs/d5-realization-context-forms-side</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-08 18:03 — Claude
+
+~~~~~
+A Forms-oldali kiegészítés Draft PR-ja megnyílt: #49, https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/49, `devel` célággal. A CI zöld a `bc268f9` commiton.
+
+- **Futás:** a pull-request futás (42507660249) sikeres, pontosan a `bc268f9`-en. A `docs/**` ágon nincs push-futás.
+- **Napló:** a manifest, a WASM-integritás, a friss guest valós WASM-tesztjei, a doksi-hivatkozások, a kódminőség és a Go minőségkapu sikeres. Nincs `--- FAIL`.
+- **PR:** Draft, MERGEABLE.
+
+A leírás összefoglalja, mit olvastam és mit nem, a megtalált tényeket, a következtetéseket és a két új döntést (D5-6, D5-7). A PR nem állít többet, mint amit a dokumentumok és a szövegkeresés mutat: a Forms és az engine forrását, az ADR-törzseket, a registry sémáit, a `primitives`-t és az OIS repót nem olvastam.
+
+A #49 Draft és nincs mergelve. Ha mergeljem, írja ki: „mergeld", ahogy a #48-nál. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+
+**A `devel`-be mergelve:** #36–#48. **Nyitott Draft:** #49. **Nyitott, nem eldöntött:** D5-1…7, D-DI-1…5, és a realizációs kontextus javaslata. Implementációra nincs engedély.
+
+A kitűzött irány következő lépése a döntési előterjesztés: az összes nyitott döntés egy dokumentumban, ajánlással és az egymástól való függésükkel, hogy az implementáció előtt egy helyen lehessen dönteni. Tartalma:
+- **Forrás:** a D-DI-1…5, a D5-1…7, az M4a-ból megmaradt D-M4-ek és az F1/F2 megjegyzések.
+- **Függőségek:** például a D-DI-3 (a `wire` számformája) mérést igényel az OCI-n. A D5-1 az extractor változtatásától függ. A D5-6 a legnagyobb, mert egy engine-szerződés-változást is jelenthet.
+- **Sorrend:** mi dönthető el forrásból, mi igényel mérést, és mi tisztán tulajdonosi döntés.
+
+Ezt a #49 mellett készítem el, a `devel`-ről induló új dokumentációs ágon. Szóljon, ha mást szeretne előbb.
+~~~~~
+
+### 2026-11-08 18:10 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+## PR #49 – Forms-oldali realization context review
+
+[PR #49 – D5-2 Forms side](https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/49?utm_source=chatgpt.com) · HEAD: `bc268f92acf5f44018f5a11a8d2e165fa20168ca` · Draft → `devel`
+
+GO pontosítás után
+
+Átnéztem a #49 diffjét, és a megjelölt commitokon külön ellenőriztem a Forms P5-tervét, valamint a primitive-engine materializálási és receipt-szerződését.
+
+A fő következtetést támogatom: a providerfüggetlen primitív objektum és a konkrét infrastruktúra-realizáció kontextusa két külön fogalom.
+
+A #49 lényeges előrelépés, mert nem próbálja az OCI céladatait egyszerűen beilleszteni a Forms defaultmechanizmusába.
+
+### Ellenőrzött megállapítások
+
+| Állítás                                                               | Review                                                         |
+| --------------------------------------------------------------------- | -------------------------------------------------------------- |
+| A Forms könyvtár nem rendelkezik futási/realizációs kontextussal      | A dokumentált határok szerint helyes                           |
+| A P5 Resolve/materialize/receipt még tervezési fázis                  | Helyes                                                         |
+| Az engine nem maga végzi a Parse/Normalize/Resolve/Validate lépéseket | Forrásdokumentummal igazolt                                    |
+| A receipt 15 kötelező mezős, zárt szerződés                           | Igazolt                                                        |
+| A `derived_values[].inputs` objektummezőkre hivatkozik                | Igazolt a jelenlegi szerződés alapján                          |
+| Külső realization context külön digesttel köthető a végrehajtáshoz    | Érvényes architekturális javaslat, nem implementált bizonyíték |
+
+A legfontosabb különbség az, hogy a Forms materializálási receipt és a későbbi execution proof nem feltétlenül ugyanazt a felelősséget viseli.
+
+### F1 – A D5-6 alternatíváinak megfogalmazása pontosítandó
+
+A dokumentum jelenleg azt állítja, hogy ha a realization context bekerül az objektumba, az szükségszerűen megváltoztatja a zárt engine receipt-szerződést.
+
+Ez nem következik automatikusan az olvasott forrásokból.
+
+Ha a kontextus a materializált objektum sémájának részévé válna, a jelenlegi `derived_values[].inputs` elvileg továbbra is hivatkozhatna az ott lévő mezőkre. Ehhez sémamódosítás és az objektumhatár újradefiniálása kellhet, de nem feltétlenül új receipt-mező.
+
+Azt javaslom, hogy a D5-6 első alternatívájánál ez szerepeljen:
+
+> Context inside the materialized object requires reconsidering the schema and object boundary. Whether the existing receipt contract can represent its derivation without extension is not yet verified.
+
+Emellett a Forms P5 dokumentuma kifejezetten rögzíti, hogy a referenciafeloldás supplied snapshot alapján tervezett, de azt nem bizonyítja, hogy a realization context már elfogadott snapshot-típus lenne. Ezt is javaslatként kell megtartani.
+
+Ezek dokumentációs pontossági kérdések, nem az architektúra elutasításai.
+
+### CI
+
+[PR #49 CI – 42507660249](https://github.com/CentralInfraCore/cic-module-oracle-cloud/actions/runs/42507660249?utm_source=chatgpt.com)
+
+SUCCESS
+
+A futás sikeres, és a HEAD pontosan `bc268f92acf5f44018f5a11a8d2e165fa20168ca`.
+
+## Döntésem
+
+GO a #49 F1 szerinti célzott pontosítására, majd az új HEAD ellenőrzése után a merge-re. A jelenlegi HEAD-re még nem adok feltétel nélküli merge-engedélyt.
+
+A következő döntési előterjesztést szintén támogatom, egy fontos feltétellel: a D5-6 nem kezelhető egyszerű modulrepo-szintű implementációs választásként. Ez a CIC objektumhatárát érinti, ezért a Forms és az engine szerződéseivel együtt kell eldönteni.
+
+A döntési dokumentum az összes D5, D-DI és M4 kérdést összegyűjtheti, de az egymásra épülő döntéseket világosan különítse el:
+
+- Architektúra: hol él a realization context, ki hitelesíti, hogyan kötődik az intenthez?
+- Szerződések: mit módosít ez a Forms, az engine, a Relay és a provider modul határain?
+- Megvalósítás: milyen sorrendben lehet ellenőrizhető módon bevezetni?
+
+A dokumentációs döntési előterjesztés elkészítésére GO, implementáció nélkül.
+
+A WASM újraépítése és aláírása, a release és a production-integráció továbbra is HOLD.
+
+A #49-ből számomra a legfontosabb eredmény, hogy a Forms az objektum szemantikáját és materializálását, a realization layer pedig annak konkrét infrastruktúrához kötött megvalósítását kezelheti. Ezt a határt kell most szerződéssé formálni, mielőtt az OCI modulba további végrehajtási logikát építünk.
+</pasted_content id="51f3">
+~~~~~
+
+### 2026-11-08 18:12 — Claude
+
+~~~~~
+Mindkét kért dokumentációs lépés elkészült, helyben, aláírt commitként. Még egyik sincs pusholva. Csak dokumentáció.
+
+## 1. A #49 F1 szerinti pontosítása: `f2c9c39`
+Ez a `docs/d5-realization-context-forms-side` ágon van, a #49 branchén, így a #49 PR-ba automatikusan bekerül a push után.
+
+- **D5-6 (i) alternatíva:** már nem állítja, hogy az objektumba helyezett kontextus szükségszerűen változtatja a zárt receipt-szerződést. Azt mondja: az objektum sémájának és határának újragondolása kell. Hogy a jelenlegi receipt bővítés nélkül képes-e ábrázolni a levezetést, az **nincs ellenőrizve**. Ha a kontextus az objektum sémájának része, egy `derived_values[].inputs` bejegyzés elvben megnevezhetné az útvonalait, tehát új receipt-mező nem bizonyított szükségesnek.
+- **P5 snapshot:** javaslatként marad. Semmi nem mondja a P5 dokumentumában, hogy a realizációs kontextus elfogadott snapshot-fajta.
+- **D5-6 hatóköre:** a szöveg kimondja, hogy nem csak ennek a repónak a döntése. Érinti az objektumhatárt, ezért a Forms, az engine és a Relay szerződéseivel együtt kell dönteni.
+
+## 2. A döntési előterjesztés: `07cca31`
+A `docs/design/decision-brief-target-and-binding.md` a `docs/decision-brief-target-and-binding` ágon van, az `f2c9c39` fölött. Nem dönt el semmit, a javaslatok a szerző olvasatai.
+
+A három réteg külön marad, ahogy kérte, és egy irányban függnek egymástól:
+- **A. Architektúra:** A1 (D5-6, bent vagy kint), hol készül és tárolódik egy kontextus, granularitás, ki bocsátja ki és hitelesíti, routing, életciklus, elnevezés (D5-7). A1 előfeltétele a többinek.
+- **B. Szerződések határonként:**
+  - Provider modul: D-DI-1…5, D5-1, D5-4, D5-5 és a Poll-alias lejárata.
+  - Relay: az R6–R10 felvétele (R6 tartalma az A1-től és az A4-től függ).
+  - Forms és engine: csak ha az A1 az (i) alternatíva.
+- **C. Megvalósítás sorrendje:** az 1–3. lépés modul-only, nem függ az architektúra-rétegtől, de egyik sem a realizációs bizonyíték. A 4. lépés (a realizációs kontextus) függ az A-tól. Az 5. lépés a Relay csapaté.
+
+Minden döntésnél jelölöm, hogyan dönthető el: **[S]** forrásból olvasható, **[M]** mérést igényel, **[O]** tulajdonosi, **[J]** más repo szerződésével közös. A D5-6-ot **[J][O]**-nak jelöltem, ahogy a review kérte: nem modulrepo-szintű választás.
+
+**Egy forrásból kiolvasott válasz** a #46 review F1-es kérdésére (honnan jönnek az Invoke action-mezői): a registry már hordozza. A négy `action` szerepű műveletnek (`AddVcnCidr`, `ChangeVcnCompartment`, `ChangeSubnetCompartment`, `ChangeInstanceCompartment`) mind van `input` sémája deklarált `properties`-szel és `additionalProperties: false`-szal. A többi szerepnek nincs. A modul `resourceContract`-ja ezt ma nem tölti be, mert csak a `method`, a `path` és a `role` van meg benne. Hogy minden jövőbeli action-műveletnek lesz-e ilyen, nem ellenőriztem.
+
+**Hiányzó mérések** (külön táblában): az OCI által elfogadott számforma, a hálózaton ténylegesen kimenő request-target, a dot-szegmensek kezelése, az idempotencia-token, a Work Request mezői és OCID-típusa, és az átírt manuális harness valós OCI-futása.
+
+## Következő lépés
+1. **A #49 frissítése:** futtassa a pusht, utána az új HEAD CI-jét ellenőrzöm, a PR-leírást az F1-gyel kiegészítem, és kérhető a rövid újra-review. A merge a „mergeld" utasítására vagy a review GO-ra történik, nem önállóan.
+   `! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/d5-realization-context-forms-side`
+2. **A döntési előterjesztés pusholása és PR-ja:** a #49 mergelése utánra javaslom. Az ág a #49 fölött áll, és a `devel` ellen nyitott PR-nak addig a #49 két commitját is tartalmazná. A #49 mergelése után az ágat a frissített `devel`-re rebase-elem, így a PR csak a brief commitját tartalmazza. Ha előbb szeretné látni, a mostani állapotban is pusholhatja, de a diff zajos lesz:
+   `! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/decision-brief-target-and-binding`
+
+A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad. Implementációra nincs engedély.
+~~~~~
+
+### 2026-11-08 18:17 — Felhasználó
+
+~~~~~
+! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/d5-realization-context-forms-side
+~~~~~
+
+### 2026-11-08 18:17 — Claude
+
+~~~~~
+A push nem futott le. Az üzenet sima szövegként érkezett, nem lett végrehajtva. A távoli ág még a régi `bc268f9`-en áll, a helyi `f2c9c39` (az F1 pontosítás) nincs fent, és a döntési előterjesztés ága sincs fent.
+
+Az előző push-oknál a `!` parancs a bash-bemeneten át futott le, és úgy működött. Próbálja újra ugyanígy:
+
+`! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/d5-realization-context-forms-side`
+
+Ha lefutott, szóljon, és ellenőrzöm az új HEAD CI-jét a #49-en, majd a PR-leírást is kiegészítem az F1 döntésével.
+~~~~~
+
+### 2026-11-08 18:18 — Felhasználó
+
+~~~~~
+! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/d5-realization-context-forms-side
+~~~~~
+
+### 2026-11-08 18:19 — Claude
+
+~~~~~
+A push még mindig nem futott le. A távoli ág változatlanul `bc268f9`, a helyi pedig `f2c9c39`. Ugyanazt a sima szöveges üzenetet kaptam meg, amelyet a rendszer nem hajt végre.
+
+A `!` parancsnak a prompt legelején, a bash-bemeneten át kell érkeznie, nem hozzászólásként vagy behúzott sorként. Az utóbbi két üzenetben szóköz volt a `!` előtt, a korábbi, működő push-oknál nem. Próbálja így, szóköz nélkül, a sor elején:
+
+`! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/d5-realization-context-forms-side`
+
+Ha ez sem megy, a push-zárat (`remote.origin.pushurl = DISABLED-...`) az Ön oldalán kell feloldani, én nem nyúlok hozzá. Szóljon, ha lefutott, és folytatom a #49 CI-jével.
+~~~~~
+
+### 2026-11-08 18:26 — Felhasználó
+
+~~~~~
+<bash-input> git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/d5-realization-context-forms-side</bash-input>
+~~~~~
+
+### 2026-11-08 18:26 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-module-oracle-cloud.git
+   bc268f9..f2c9c39  docs/d5-realization-context-forms-side -&gt; docs/d5-realization-context-forms-side</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-08 18:30 — Claude
+
+~~~~~
+A #49 az új HEAD-en (`f2c9c39`) zöld, a PR-leírás pedig már tartalmazza az F1 pontosítást.
+
+- **CI:** a pull-request futás (42510039749) sikeres, pontosan az `f2c9c39`-en. A manifest, a WASM-integritás, a friss guest, a doksi-hivatkozások és a Go minőségkapu sikeres. Nincs `--- FAIL`.
+- **PR:** Draft, MERGEABLE.
+- **Leírás:** a „Concluded" szakasz átírva a pontosított állítással, és új „Review F1" szakasz mondja ki, mit javítottam és miért.
+  - Az (i) alternatívánál nincs bizonyítva receipt-bővítés szükségessége.
+  - A P5 snapshot-ötlet javaslat.
+  - A D5-6 nem ennek a repónak az egyedüli döntése.
+
+A review feltétele így teljesült: az F1 célzott pontosítása megvan, az új HEAD zöld. A rövid újra-review és a merge-döntés az Öné. Ha mergeljem, írja ki: „mergeld", ahogy eddig. A merge után a `devel` push-CI-t ellenőrzöm.
+
+**A döntési előterjesztés** (`07cca31`, a `docs/decision-brief-target-and-binding` ágon) még nincs pusholva. A #49 mergelése után javaslom, hogy a frissített `devel`-re rebase-eljem, így a PR csak a brief commitját tartalmazza. Ha előbb szeretné látni, a mostani állapotban is pusholhatja, de a diff a #49 két commitját is mutatná.
+
+A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad. Implementációra nincs engedély.
+~~~~~
+
+### 2026-11-08 19:21 — Felhasználó
+
+~~~~~
+<pasted_content id="51f3">
+## PR #49 – újra-review
+
+GO – merge
+
+Ellenőriztem a #49 új HEAD-jét, a tényleges dokumentációs diffet és a CI-futást.
+
+Az F1 megállapítást lezártnak tekintem. Nincs további merge-blokkoló észrevételem.
+
+A javítás megfelelően rögzíti, hogy:
+
+- A realization context objektumba helyezése nem bizonyítottan igényel receipt-séma-bővítést.
+- A Forms P5 snapshot felhasználása realization contextként egyelőre javaslat, nem elfogadott szerződés.
+- A D5-6 az objektumhatárt érinti, ezért nem dönthető el kizárólag az Oracle-modul repójában.
+
+[PR #49 – Forms-oldali kiegészítés](https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/49?utm_source=chatgpt.com)
+
+MERGEABLE
+
+| Ellenőrzés                                                                                                                    | Eredmény                                   |
+| ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| HEAD                                                                                                                          | `f2c9c39fb89b556e438e0c1b45eae2404edda35d` |
+| Célág                                                                                                                         | `devel`                                    |
+| F1 pontosítás                                                                                                                 | PASS                                       |
+| [CI 42510039749](https://github.com/CentralInfraCore/cic-module-oracle-cloud/actions/runs/42510039749?utm_source=chatgpt.com) | SUCCESS                                    |
+| Dokumentációs scope                                                                                                           | Megfelelő                                  |
+
+mergeld
+
+Engedélyezem a Draft → Ready → merge commit folyamatot, kizárólag a fenti HEAD-re kötve. Merge után ellenőrizendő a `devel` push-CI.
+
+### Következő lépés
+
+A döntési előterjesztés `07cca31` commitját a #49 sikeres merge-je után rebase-eljük az új `devel` ágra. Így a következő PR önállóan értékelhető lesz, és nem tartalmazza ismét a #49 változásait.
+
+A dokumentációs Draft PR elkészítésére és pusholására GO; merge-engedélyt majd a tényleges review után adok.
+
+A WASM újraépítése, aláírása, release és production-integráció továbbra is HOLD.
+</pasted_content id="51f3">
+~~~~~
+
+### 2026-11-08 19:26 — Claude
+
+~~~~~
+A #49 bekerült a `devel` ágba, és a döntési előterjesztés már a friss `devel`-re rebase-elve áll, újra aláírva. Még nincs pusholva.
+
+## #49
+- **Merge:** merge commit `a5e2235`, a HEAD-hez kötve (`f2c9c39`), az Ön „mergeld" utasítására.
+- **CI:** a `devel` push-CI (futás 42514672314) a `a5e2235`-n sikeres. A manifest, a WASM-integritás, a friss guest, a doksi-hivatkozások és a Go minőségkapu sikeres, nincs `--- FAIL`.
+
+## A döntési előterjesztés (`893a9d3`, `docs/decision-brief-target-and-binding`)
+- **Rebase:** a `devel` `a5e2235`-ére, a #49 két commitja nélkül. A diff a `devel`-hez képest csak a brief három fájlját mutatja (`decision-brief-target-and-binding.md`, a README indexsor, a `MANIFEST.sha256`).
+- **Aláírás:** a rebase elrontja a commit aláírását, mert a beágyazott `signing-metadata` az eredeti tartalomra szólt, ezt az `cic-factory-core` #81 már jelzi. Ezért kivágtam a régi blokkot és újraírtam a commitot, így a hook az új tartalomra írt alá. A régi és az új aláírás eltér.
+- **Manifest:** egy friss újragenerálással összevetve azonos, nincs eltérés.
+
+## Következő lépés
+A brief pusholása az Ön döntése. Az ág rebase-elt, ezért a távoli ágat nincs még mit felülírni, nem force-push kell. Futtassa ezt, a sor elején szóköz nélkül:
+
+`! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/decision-brief-target-and-binding`
+
+Ha korábban pusholta volna a rebase előtti változatot, az most force-push-t igényelne. Azt nem teszem meg önállóan. Az ellenőrzésem szerint a távoli ág még nem létezik.
+
+Utána Draft PR-t nyitok `--base devel` célággal, és a pull-request futást ellenőrzöm. A merge-engedélyt a tényleges review után adja.
+
+**A `devel`-be mergelve:** #36–#49. **Nyitott, nem eldöntött:** A1–A7, D-DI-1…5, D5-1/4/5, R-raise, D-M5-3, és a mérések (OCI számforma, kimenő request-target, dot-szegmensek, idempotencia, Work Request, harness valós futás). Implementációra nincs engedély. A WASM újraépítése és aláírása, a release és a production-integráció HOLD marad.
+~~~~~
+
+### 2026-11-08 19:26 — Felhasználó
+
+~~~~~
+<bash-input> git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/decision-brief-target-and-binding</bash-input>
+~~~~~
+
+### 2026-11-08 19:26 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'docs/decision-brief-target-and-binding' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/new/docs/decision-brief-target-and-binding        
+remote: 
+To github.com:CentralInfraCore/cic-module-oracle-cloud.git
+ * [new branch]      docs/decision-brief-target-and-binding -&gt; docs/decision-brief-target-and-binding</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-08 19:32 — Felhasználó
+
+~~~~~
+felvennéd a fonalat?
+~~~~~
+
+### 2026-11-08 19:32 — Claude
+
+~~~~~
+Felveszem. Először megnézem, hol tartott a legutóbbi session: a thread-naplót, a git állapotot és a 01b-A job ref-jeit.
+~~~~~
+
+### 2026-11-08 19:32 — Claude
+
+~~~~~
+The newest transcript is this session, so I'll look at the previous one.
+~~~~~
+
+### 2026-11-08 19:33 — Claude
+
+~~~~~
+Felvettem a fonalat. Az Oracle-modul (`cic-module-oracle-cloud`) munkájánál tartunk, és a legutóbbi session 2026-11-08 19:26 UTC körül ért véget.
+
+**Hol tartunk**
+- **Mergelve a `devel`-be:** #36–#49, az utolsó a #49 (`a5e2235`). Ebbe tartozik a Destroy/Invoke digest-szerződés felmérése (#46) és a D5 (#47–#49).
+- **Nyitva:** a #50 Draft PR, `--base devel`, a döntési előterjesztés (`docs/decision-brief-target-and-binding`, `893a9d3`). A fej egyezik azzal, amit pusholt. A `lint_and_test` sikeres, review és komment még nincs.
+- **Nem döntött kérdések:** A1–A7, D-DI-1…5, D5-1/4/5, R-raise, D-M5-3, valamint a mérések (OCI számforma, kimenő request-target, dot-szegmensek, idempotencia, Work Request, harness valós futás).
+- **Engedély:** implementációra nincs. A WASM újraépítése és aláírása, a release és a production-integráció HOLD.
+
+**Helyi állapot**
+- A `workdir` ref-fájljai és a `theads` napló változásai nincsenek commitolva. A thread-napló utolsó commitja a #44-nél áll (`75a91de`), a Destroy/Invoke felméréstől a #50-ig tartó rész még hiányzik belőle. A napló frissítésére korábban helyi commitra kaptam GO-t, push nélkül.
+
+**Javaslat a folytatásra**
+1. A #50 review-ját Ön végzi, vagy ha kéri, én végzek egy előzetes átnézést.
+2. Közben pótolom a thread-naplót a #45–#50 szakasszal. Ez helyi commit lenne, push nélkül.
+3. A nyitott döntések közül a D-DI-1…5 az, ami az implementációs GO előfeltétele. Ezekre a #50 brief szolgál alapul.
+
+Melyikkel kezdjem? Ha nem szól, a 2. pontot (napló pótlása, helyi commit) kezdem el.
+~~~~~
+
+### 2026-11-08 19:33 — Felhasználó
+
+~~~~~
+mergeld a 49-est
+~~~~~
+
+### 2026-11-08 19:33 — Claude
+
+~~~~~
+A #49 már mergelve van, így nincs mit mergelni rajta. A `devel`-be `a5e2235` merge commit-tal került be, és a hozzá tartozó push-CI sikeres volt.
+
+Gondolom, a #50-et szánta, a döntési előterjesztést. Azt nem mergelem magamtól, mert:
+- Draft PR, és még nem nézte át senki. A `lint_and_test` sikeres, de review nincs rajta.
+- A „mergeld" utasítás a konkrét PR-számra szól, és itt a szám nem stimmel.
+
+Ha a #50-et kérte, írja meg: „mergeld a 50-est". Előtte átfutom a diffet, kiveszem a PR-t a draft állapotból, és a HEAD-hez kötve (`893a9d3`) mergelem. Utána ellenőrzöm a `devel` push-CI-t.
+~~~~~
+
+### 2026-11-08 19:36 — Felhasználó
+
+~~~~~
+<pasted_content id="567c">
+## PR #50 – Döntési előterjesztés review
+
+[PR #50 – Target data and execution binding](https://github.com/CentralInfraCore/cic-module-oracle-cloud/pull/50?utm_source=chatgpt.com) · HEAD: `893a9d33ffa36ab4c25ac6a0be494cef5e0f4386` · Draft → `devel`
+
+HOLD – célzott pontosítás
+
+Átnéztem a döntési előterjesztést, a kapcsolódó M4a digest-szerződést és annak Go-implementációját. A #50 CI-futása is zöld.
+
+Az előterjesztés szerkezete jó, és a döntések nagy részét helyesen rendezi függőségi sorrendbe. Egy konkrét architekturális tévedést azonban javítanék a merge előtt.
+
+### Ami megfelelő
+
+| Terület                                                  | Értékelés           |
+| -------------------------------------------------------- | ------------------- |
+| Architektúra, szerződés és implementáció különválasztása | PASS                |
+| D5-6 közös, több repót érintő döntésként kezelése        | PASS                |
+| D-DI-1…5 összegyűjtése                                   | PASS                |
+| OCI-mérést igénylő kérdések megjelölése                  | PASS                |
+| Forms és engine szerződéshatárának megőrzése             | PASS, pontosítással |
+| Moduloldali lépések elkülönítése a realization proof-tól | PASS                |
+| Nyitott döntések automatikus lezárásának elkerülése      | PASS                |
+
+Külön értékesnek tartom az Invoke input-sémájára vonatkozó megállapítást: a dokumentum szerint a négy jelenlegi action-művelethez a registry már tartalmaz deklarált `input` sémát, amelyet a modul futási `resourceContract` reprezentációja még nem használ. Ez konkrét implementációs irányt ad a korábbi F1 kérdéshez, bár a jövőbeli action-műveletekre nem jelent általános garanciát.
+
+### F1 – A6: a megváltozott realization context nem feltétlenül változtatja meg az execution digestet
+
+Merge előtt javítandó
+
+A dokumentum A6 sorában jelenleg ez az indoklás szerepel:
+
+> a changed context yields a different digest and the old approval does not match
+
+Ez a jelenlegi M4a implementáció alapján nem garantált.
+
+Ellenőriztem a `module/plan_binding.go` `targetEnvelope()` és `executionEnvelope()` függvényeit.
+
+A `target_digest` kizárólag a következőket köti:
+
+`host`, `base_path`, `key_id`, `kind`, `resource_id`, `revision`.
+
+Nincs benne a realization context azonosítója, digestje, verziója vagy az azt kibocsátó hitelesített identitás.
+
+Ezért két különböző realizációs kontextus, amely ugyanazokat a targetértékeket adja, azonos `execution_digest` értéket eredményezhet.
+
+A `key_id` változatlansága például nem bizonyítja, hogy a mögötte álló végrehajtási jogosultság változatlan.
+
+Az A6 javaslatát így pontosítanám:
+
+> A changed realization context does not necessarily change the current execution digest. The context identity or digest, its validity, and its authorization binding must be part of the approval's verified execution context. Whether this requires extending execution_digest or a separate approval binding remains an open architectural decision.
+
+Ez azért fontos, mert az A6 jelenlegi megfogalmazása olyan garanciát tulajdonít az M4a-nak, amelyet az nem nyújt.
+
+### F2 – A1 függőségei és a Forms változatlansága
+
+Dokumentációs pontosítás
+
+Két mondatot finomítanék.
+
+Az első:
+
+> Nothing below them can be settled until A1 is.
+
+Ez túl szigorú, mert a dokumentum később helyesen állítja, hogy a path-hardening, a provider API-verziójának kinyerése és bizonyos moduloldali digestdöntések A1 nélkül is előkészíthetők.
+
+A második:
+
+> If A1 is (ii) these two have no change.
+
+Az objektumon kívüli realization context valóban lehetővé teszi a Forms és az engine jelenlegi szerződésének megtartását. De ez önmagában nem bizonyítja, hogy az integrációhoz semmilyen későbbi változtatás nem szükséges.
+
+Helyesebb lenne:
+
+A külső realization context nem követel meg automatikusan Forms- vagy engine-szerződésmódosítást; a konkrét integrációs követelményeket külön kell ellenőrizni.
+
+### CI
+
+[PR #50 CI – 42515119300](https://github.com/CentralInfraCore/cic-module-oracle-cloud/actions/runs/42515119300?utm_source=chatgpt.com)
+
+SUCCESS
+
+A futás a vizsgált `893a9d33ffa36ab4c25ac6a0be494cef5e0f4386` HEAD-en sikeresen befejeződött.
+
+## Döntés
+
+GO a két célzott dokumentációs pontosításra, utána rövid újra-review. A jelenlegi HEAD-re még nem adok feltétel nélküli merge-engedélyt.
+
+Nem kérek új kutatási kört, Relay-kódot vagy digest-implementációt ebben a PR-ban.
+
+A #50 lényegében alkalmas arra, hogy a CIC következő architekturális döntéseinek közös kiindulópontja legyen. Az F1 javítása különösen fontos, mert a megváltozott kontextushoz tartozó régi approval érvénytelenítése nem vezethető le pusztán a jelenlegi target digestből.
+
+A WASM újraépítése, aláírása, release és production-integráció továbbra is HOLD.
+</pasted_content id="567c">
+~~~~~
+
+### 2026-11-08 19:36 — Claude
+
+~~~~~
+Először ellenőrzöm a review két állítását a forrásban, mielőtt szerkesztek.
+~~~~~
+
+### 2026-11-08 19:36 — Claude
+
+~~~~~
+A review mindkét pontját ellenőriztem a forrásban, és mindkettő megállja a helyét. A javítást helyben commitoltam (`ef779aa`, aláírva), de még nem pusholtam.
+
+**F1 (A6):** a `targetEnvelope()` a `module/plan_binding.go`-ban tényleg csak a `host`, `base_path`, `key_id`, `kind`, `resource_id` és `revision` mezőt köti. Az `executionEnvelope()` ehhez csak a `plan_digest`-et teszi hozzá. Realization context nincs benne, ezért az A6 régi indoklása olyan garanciát tulajdonított az M4a-nak, amelyet az nem ad. Az A6 sora most ezt mondja:
+- A megváltozott context nem feltétlenül változtatja meg az `execution_digest`-et.
+- Az érintetlen `key_id` nem bizonyítja, hogy a mögötte álló jogosultság ugyanaz.
+- A context azonosítója vagy digestje, érvényessége és az autorizációs kötése legyen az approval ellenőrzött kontextusának része.
+- Hogy ehhez bővül-e az `execution_digest`, vagy külön approval-kötés kell, az nyitott architekturális döntés.
+
+**F2:**
+- Az „Nothing below them can be settled until A1 is" mondat helyett ez áll: az A2–A7 döntések várnak az A1-re, a 4. szakasz modul-only lépései nem.
+- Az „If A1 is (ii) these two have no change" helyett ez áll: a Forms és az engine szerződése nem igényel automatikusan módosítást, a konkrét integrációs követelményeket külön kell ellenőrizni.
+
+A diff 9 sor, csak a brief és a `MANIFEST.sha256` változott. A `sha256sum -c MANIFEST.sha256` hiba nélkül lefutott. Kód, Relay vagy digest-implementáció nem készült.
+
+**Következő lépés:** a push szokás szerint Öné. Fast-forward, force nélkül, a sor elején szóköz nélkül:
+
+`! git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/decision-brief-target-and-binding`
+
+Utána ellenőrzöm a PR-futást a `ef779aa`-on, és jelzem a reviewernek az újra-review-hoz. A #50 draft marad, és nem mergelem, amíg nem mondja, hogy „mergeld a 50-est".
+~~~~~
+
+### 2026-11-08 19:36 — Felhasználó
+
+~~~~~
+<bash-input> git -C ~/sync/claude_factory/CIC/workdir/jobs/forms-oracle-vcn-hardening-01b-a/workspace/cic-module-oracle-cloud push git@github.com:CentralInfraCore/cic-module-oracle-cloud.git docs/decision-brief-target-and-binding</bash-input>
+~~~~~
+
+### 2026-11-08 19:37 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-module-oracle-cloud.git
+   893a9d3..ef779aa  docs/decision-brief-target-and-binding -&gt; docs/decision-brief-target-and-binding</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-08 19:40 — Claude
+
+~~~~~
+A push megérkezett, és a #50 fejlécén most `ef779aa` áll. A `lint_and_test` sikeres lett ezen a HEAD-en.
+
+Az újra-review-hoz a reviewernek ennyit érdemes jelezni:
+- **F1 (A6):** az indoklás javítva. A jelenlegi `execution_digest` nem köti a realization contextet. A context azonosítója, érvényessége és az autorizációs kötése az approval ellenőrzött kontextusának része kell legyen. Az `execution_digest` bővítése vagy külön approval-kötés nyitott döntés.
+- **F2:** az A1-függőség és a Forms/engine mondata szűkítve.
+- **Diff:** 9 sor, csak a brief és a `MANIFEST.sha256`. Kód nem változott.
+
+A #50 draft marad, és nem mergelem. A mergeléshez a reviewer újra-review-ja után az Ön „mergeld a 50-est" utasítása kell. Ha addig hasznos, a thread-naplót a #45–#50 szakasszal pótolom helyi commitban, push nélkül.
+~~~~~
+
+### 2026-11-08 19:45 — Felhasználó
+
+~~~~~
+kérném a merget
+~~~~~
+
+### 2026-11-08 19:46 — Claude
+
+~~~~~
+Most ellenőrzöm a `devel` push-CI-t a merge commiton.
+~~~~~
+
+### 2026-11-08 19:50 — Claude
+
+~~~~~
+A #50 mergelve van a `devel`-be, `47ef745` merge commit-tal. Kivettem a draft állapotból, és a merge a HEAD-hez kötve (`ef779aa`) ment, ahogy ígértem.
+
+A `devel` push-CI (futás 42516681238) a `47ef745`-ön sikeresen lefutott. A headSha egyezik a merge committal.
+
+A reviewer újra-review-ja a merge előtt nem érkezett meg, a #50 az Ön döntésére ment be. A reviewer eredeti HOLD-ja a két pontosításra szólt, és mindkettő javítva van, de a javított változatot ő nem látta.
+
+**Állapot:** a `devel`-be mergelve #36–#50. A nyitott döntések (A1–A7, D-DI-1…5, D5-1/4/5, R-raise, D-M5-3) most már a #50 briefjében vannak közös kiindulópontként, és egyik sincs lezárva. Implementációra nincs engedély. A WASM újraépítése és aláírása, a release és a production-integráció HOLD.
+
+A thread-napló a #45–#50 szakasszal még hiányzik. Pótoljam helyi commitban, push nélkül?
+~~~~~
+
+### 2026-11-08 19:58 — Felhasználó
+
+~~~~~
+helyi commitokat pushold
+~~~~~
+
+### 2026-11-08 19:58 — Claude
+
+~~~~~
+Négy helyi commit van, kettő thread-naplófájllal. Push előtt átnézem a tartalmukat titkokra, ahogy a szabály kéri.
+~~~~~
+
+### 2026-11-08 19:58 — Claude
+
+~~~~~
+Nincs találat titokmintára. Pusholom (fast-forward, force nélkül).
+~~~~~
+
+### 2026-11-08 19:58 — Claude
+
+~~~~~
+A négy helyi commit fent van a `cic-factory` `main` ágán (`b128654..75a91de`, fast-forward). Az `origin/main` és a helyi `main` most egyezik.
+
+- **Titokellenőrzés:** a két naplófájl hozzáadott soraiban nem volt titokminta (Vault-token, GitHub-token, privát kulcs, jelszó). A minták szűk keresésre szóltak, ezért ez nem teljes garancia.
+- **Tartalom:** a #36–#38 és a #39–#44 naplófájl került fel. A #45–#50 szakasz még nincs bennük, mert azt nem írtam meg.
+- **Nem pusholt:** az untracked fájlok (`jobs/.../ref/*`, `docs/audit-merge-approval-2026-10-21.md`, `fixtures/vcn-v1/generate.yaml`, `.fork_scratch/`) nem commitoltak, és nem mentek fel.
+
+Pótoljam a naplót a #45–#50 szakasszal? Az helyi commit lenne, és a következő pushhoz újra kifejezett szó kell.
+~~~~~
+
+### 2026-11-08 20:00 — Felhasználó
+
+~~~~~
+igen potold
+~~~~~
+
+### 2026-11-08 20:00 — Claude
+
+~~~~~
+Forrásnak a session `.jsonl` transcriptet használom. Először megnézem a napló formátumát és azt, hol ér véget.
 ~~~~~
