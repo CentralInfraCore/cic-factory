@@ -55,6 +55,7 @@ valid_id agent-id "$AGENT_ID" || exit 1
 
 WORK_BIN="${WORK_BIN:-work}"
 command -v "$WORK_BIN" >/dev/null || { echo "[ERROR] nincs work a PATH-on (WORK_BIN)" >&2; exit 1; }
+command -v jq >/dev/null || { echo "[ERROR] a jq szükséges" >&2; exit 1; }
 command -v direnv >/dev/null || { echo "[ERROR] a direnv szükséges: az agent profilját az .envrc adja át" >&2; exit 1; }
 
 JOB_DIR="$WORKDIR/jobs/$JOB_ID"
@@ -77,8 +78,26 @@ CFG="${CFG/#\~/$HOME}"
 CFG="$(cd "$CFG" && pwd)"
 
 if [[ -e "$WORKSPACE" ]]; then
-    if "$WORK_BIN" info "$TICKET" >/dev/null 2>&1; then
-        echo "[*] Meglévő work-szál: $TICKET -- újraélesztés"
+    if INFO=$("$WORK_BIN" info "$TICKET" 2>/dev/null); then
+        # A ticketnév létezése még nem azonosság: a job-id '.'/'_' jelei '-'-re
+        # képződnek, tehát két különböző job ugyanazt a ticketet adhatja, és a
+        # ticketet más is létrehozhatta. Három tényt kötünk: job (a title
+        # hordozza), workspace (a szál munkakönyvtára), és a ticket maga. Ha bármelyik
+        # nem egyezik, nem nyitjuk meg -- és nem is törlünk.
+        T_CWD=$(printf '%s\n' "$INFO" | sed -n '/^{/,/^}/p' | jq -r '.cwd // empty' 2>/dev/null) || T_CWD=""
+        T_TITLE=$(printf '%s\n' "$INFO" | sed -n '/^{/,/^}/p' | jq -r '.title // empty' 2>/dev/null) || T_TITLE=""
+        WS_REAL=$(cd "$WORKSPACE" && pwd -P)
+        CWD_REAL=""; [[ -n "$T_CWD" && -d "$T_CWD" ]] && CWD_REAL=$(cd "$T_CWD" && pwd -P)
+        if [[ "$CWD_REAL" != "$WS_REAL" || "$T_TITLE" != "factory job: $JOB_ID" ]]; then
+            echo "[!] A(z) $TICKET work-szál létezik, de nem ehhez a jobhoz és workspace-hez tartozik:" >&2
+            echo "    várt cwd:   $WS_REAL" >&2
+            echo "    szál cwd:   ${T_CWD:-(nincs)}" >&2
+            echo "    várt title: factory job: $JOB_ID" >&2
+            echo "    szál title: ${T_TITLE:-(nincs)}" >&2
+            echo "    Nem nyitom meg és nem törlök. Nézd meg: $WORK_BIN info $TICKET" >&2
+            exit 1
+        fi
+        echo "[*] Meglévő work-szál (job és workspace egyezik): $TICKET -- újraélesztés"
         exec "$WORK_BIN" open "$TICKET" "${EXTRA[@]}"
     fi
     echo "[!] A workspace már létezik, és nincs hozzá work-szál: $WORKSPACE" >&2
@@ -132,5 +151,11 @@ A munka NEM tekinthető késznek, amíg az output nincs commitolva és pusholva 
 $BRANCH ágra: a workspace törlése előtt a run-job.sh ezt ellenőrzi.
 EOF
 
-exec "$WORK_BIN" open "$TICKET" --dir "$WORKSPACE" --title "factory job: $JOB_ID" \
-    --prompt-file "$PROMPT_FILE" "${EXTRA[@]}"
+# Nem exec: az exec lecserélné a folyamatot, és az EXIT trap -- vele a promptfájl
+# törlése -- sosem futna le. A `work open` az indításkor beolvassa a fájlt
+# (eseményként a sorba teszi), utána nincs rá szükség.
+rc=0
+"$WORK_BIN" open "$TICKET" --dir "$WORKSPACE" --title "factory job: $JOB_ID" \
+    --prompt-file "$PROMPT_FILE" "${EXTRA[@]}" || rc=$?
+rm -f "$PROMPT_FILE"
+exit "$rc"

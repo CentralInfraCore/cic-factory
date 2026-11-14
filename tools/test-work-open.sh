@@ -70,8 +70,14 @@ commit_spec() { git -C "$1/repo" add -A >/dev/null 2>&1; git -C "$1/repo" commit
 mkstub() {   # <fix>: a work csonkja
     cat > "$1/work" <<'STUB'
 #!/usr/bin/env bash
-if [[ "${1:-}" == info ]]; then exit "${STUB_INFO_RC:-1}"; fi
+if [[ "${1:-}" == info ]]; then
+    [[ "${STUB_INFO_RC:-1}" -ne 0 ]] && exit "${STUB_INFO_RC:-1}"
+    printf '{\n  "cwd": "%s",\n  "title": "%s"\n}\nstate dir: /x\n' "${STUB_INFO_CWD:-}" "${STUB_INFO_TITLE:-}"
+    exit 0
+fi
 printf '%s\n' "$@" > "$STUB_LOG"
+[[ -n "${STUB_RC:-}" ]] && exit "$STUB_RC"
+exit 0
 STUB
     chmod +x "$1/work"
 }
@@ -141,12 +147,59 @@ check "  megmondja, mi van benne"            "1" "$(grep -c 'nem git klón\|Üre
 rm -rf "$R"
 
 echo
-echo "Meglévő workspace, él hozzá szál: újraéleszti"
+echo "Meglévő workspace, él hozzá szál: csak akkor él újra, ha job ÉS workspace egyezik"
+revive() {   # <fix> <cwd> <title>
+    local r="$1"
+    ( cd "$r/repo" && env HOME="$r/home" XDG_DATA_HOME="$r/xdg" WORK_BIN="$r/work" STUB_LOG="$r/stub.log" \
+        STUB_INFO_RC=0 STUB_INFO_CWD="$2" STUB_INFO_TITLE="$3" bash tools/work-open.sh t agent-01 ) >"$r/out.log" 2>&1
+    echo $?
+}
 R=$(fixture); WS="$R/repo/jobs/t/workspace"; mkdir -p "$WS"
-( cd "$R/repo" && env HOME="$R/home" XDG_DATA_HOME="$R/xdg" WORK_BIN="$R/work" STUB_LOG="$R/stub.log" \
-    STUB_INFO_RC=0 bash tools/work-open.sh t agent-01 ) >"$R/out.log" 2>&1
-check "lefut"                                "0" "$?"
+check "egyező cwd + title: újraéleszt"       "0" "$(revive "$R" "$WS" 'factory job: t')"
 check "  open task-t, --dir NÉLKÜL"          "0" "$(grep -cx -- '--dir' "$R/stub.log")"
+rm -rf "$R"
+R=$(fixture); WS="$R/repo/jobs/t/workspace"; mkdir -p "$WS" "$R/other-ws"
+check "ugyanaz a ticket, MÁSIK workspace: elutasít" "1" "$(revive "$R" "$R/other-ws" 'factory job: t')"
+check "  a work open-t nem hívta"            "0" "$([ -e "$R/stub.log" ] && echo 1 || echo 0)"
+check "  megnevezi az eltérést"              "1" "$(grep -c 'nem ehhez a jobhoz' "$R/out.log")"
+rm -rf "$R"
+R=$(fixture); WS="$R/repo/jobs/t/workspace"; mkdir -p "$WS"
+check "ugyanaz a ticket, MÁSIK job (title): elutasít" "1" "$(revive "$R" "$WS" 'factory job: masik')"
+check "  a work open-t nem hívta"            "0" "$([ -e "$R/stub.log" ] && echo 1 || echo 0)"
+rm -rf "$R"
+R=$(fixture); WS="$R/repo/jobs/t/workspace"; mkdir -p "$WS"
+check "a szál cwd-je nem létezik: elutasít"  "1" "$(revive "$R" "/nincs/ilyen" 'factory job: t')"
+rm -rf "$R"
+
+echo
+echo "A promptfájl életciklusa"
+# a csonk a kapott --prompt-file ÚTJÁT is leírja, hogy a kilépés utáni létezése mérhető legyen
+R=$(fixture)
+cat > "$R/work" <<'STUB'
+#!/usr/bin/env bash
+[[ "${1:-}" == info ]] && exit 1
+while (( $# )); do [[ "$1" == --prompt-file ]] && { echo "$2" > "$STUB_LOG.path"; [[ -s "$2" ]] && echo present > "$STUB_LOG.during"; }; shift; done
+exit "${STUB_RC:-0}"
+STUB
+chmod +x "$R/work"
+wopen "$R" --skip-spec-gate >/dev/null
+PF=$(cat "$R/stub.log.path")
+check "a work open alatt a fájl megvolt, tartalommal" "present" "$(cat "$R/stub.log.during" 2>/dev/null)"
+check "  siker után a promptfájl törölve"    "0" "$([ -e "$PF" ] && echo 1 || echo 0)"
+rm -rf "$R"
+R=$(fixture)
+cat > "$R/work" <<'STUB'
+#!/usr/bin/env bash
+[[ "${1:-}" == info ]] && exit 1
+while (( $# )); do [[ "$1" == --prompt-file ]] && echo "$2" > "$STUB_LOG.path"; shift; done
+exit 3
+STUB
+chmod +x "$R/work"
+RC=$( ( cd "$R/repo" && env HOME="$R/home" XDG_DATA_HOME="$R/xdg" WORK_BIN="$R/work" STUB_LOG="$R/stub.log" \
+    bash tools/work-open.sh t agent-01 --skip-spec-gate ) >"$R/out.log" 2>&1; echo $? )
+PF=$(cat "$R/stub.log.path")
+check "work open hibája: az exit kód átjön" "3" "$RC"
+check "  hiba után is törölve a promptfájl"  "0" "$([ -e "$PF" ] && echo 1 || echo 0)"
 rm -rf "$R"
 
 echo
