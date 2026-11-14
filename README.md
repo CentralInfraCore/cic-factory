@@ -216,6 +216,7 @@ own tree.
 
 | tag | jegyzet |
 |---|---|
+| `core/@v0.5.0` | [docs/RELEASE-0.5.0.md](docs/RELEASE-0.5.0.md) — the commit signature manifest binds the signer's public key (`cic-tree-manifest/v4`). **Minor; a v0.4.x verifier rejects v4 commits, so adopt before switching the shared hook** |
 | `core/@v0.4.1` | [docs/RELEASE-0.4.1.md](docs/RELEASE-0.4.1.md) — `check-docs.sh` no longer treats session transcripts in `theads/` as documentation. **Patch; no migration** |
 | `core/@v0.4.0` | [docs/RELEASE-0.4.0.md](docs/RELEASE-0.4.0.md) — the signature binds the commit context and the release tag itself; the tag it ships as is signed with the new tool. **The first tag-level signature; no forced migration** |
 | `core/@v0.3.0` | [docs/RELEASE-0.3.0.md](docs/RELEASE-0.3.0.md) — M1 through measurement. **The close now commits, and a review must name its run** |
