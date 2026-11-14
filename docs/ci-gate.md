@@ -54,7 +54,7 @@ adnia, ha nem ő az approver.
 | nem mergelhető (konfliktus, ismeretlen), zárt vagy draft PR | REFUSED |
 | a két egymás utáni leolvasás között a HEAD, az állapot, a draft, a mergelhetőség, a célág commitja vagy a kapuk eredménye változott | REFUSED |
 
-A merge `gh pr merge --squash --match-head-commit <HEAD>`: ha a HEAD közben mozdul, a GitHub is megtagadja. Azonos nevű eredmények (újrafutás, két alkalmazás) közül a legrosszabb számít, egyet sem dobunk el. Hálózati hiba
+A merge `gh pr merge --<mód> --match-head-commit <HEAD>` (a `<mód>` a repó beállításából jön: az első engedélyezett a `merge`, `squash`, `rebase` sorrendben; a `--merge-method` felülírja, ha a repó engedi; ha nincs engedélyezett mód vagy a beállítás nem olvasható, a kapu elutasít): ha a HEAD közben mozdul, a GitHub is megtagadja. Azonos nevű eredmények (újrafutás, két alkalmazás) közül a legrosszabb számít, egyet sem dobunk el. Hálózati hiba
 után az eszköz előbb a PR állapotát olvassa vissza, és nem próbálkozik vakon újra.
 
 ## Amit nem old meg
@@ -105,7 +105,7 @@ a szkript nem ír jóváhagyást GitHubra, és csak a listán szereplő PR-t mer
    továbbment, egy mára elavult alapon lett megítélve: a CI-ja nem a merge eredményét írja le. Ilyenkor a lánc **megáll** (8-as kilépési kód), és semmit nem mergel ehhez a PR-hoz;
 2. kivárja (`ci-gate.py watch`), hogy a `REQUIRE_FILE` minden ellenőrzése sikeres legyen azon a HEAD-en (piros vagy lejárat: megáll);
 3. újra **friss**, a merge-hez a lehető legközelebb (várakozás közben a célág mozdulhatott);
-4. `gh pr merge --squash --match-head-commit SHA`;
+4. `gh pr merge --<mód> --match-head-commit SHA` (a mód a repó beállításából; lásd fent);
 5. kivárja a `POSTMERGE_FILE` készletet a merge-commiton. Ha nem zöld, a lánc megáll: a következő PR nem kerül egy olyan `main`-re, amit az előző elrontott.
 
 **`--allow-behind`:** a tulajdonos kifejezett döntése, hogy egy zöld, de a célághoz képest lemaradt HEAD-et is mergelni lehet. Egy közös alapról induló, egymástól független PR-okból

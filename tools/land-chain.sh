@@ -15,7 +15,9 @@
 #      a closed or draft PR, or one that GitHub does not call mergeable;
 #   2. wait (tools/ci-gate.py watch) until every check of REQUIRE_FILE passed on that head; red or timeout stops the chain;
 #   3. fresh again, as close to the merge as it goes (the base may have moved while waiting);
-#   4. `gh pr merge --squash --match-head-commit SHA`;
+#   4. `gh pr merge --<method> --match-head-commit SHA`, where <method> is MERGE_METHOD from the environment if the owner names one and the
+#      repository allows it, else the first method the repository allows, read from its settings (merge, squash, rebase; a merge commit keeps the
+#      commits of the PR, and the signing block in their messages, as they are). None allowed, or settings that cannot be read: exit 2, before anything;
 #   5. wait for the post-merge profile (POSTMERGE_FILE) on the merge commit; anything but green stops the chain, so a later PR is
 #      never merged on top of a main that the earlier one broke. What that proves is what the profile names: for CentralInfraCore/cic-primitive-forms
 #      it is the LIGHT set a push to main runs (the unit tests, the corpus, the coverage, the parity), not the mutation and the fuzz. Those are
@@ -43,6 +45,21 @@ for item in "$@"; do
   [ ${#item} -ge 42 ] || { echo "item '$item': the head must be the full 40-character sha" >&2; exit 2; }
 done
 
+# the merge method, read from the repository's own settings: nothing is hard-coded, and nothing is guessed
+ALLOWED=$(gh api "repos/$REPO" --jq '[.allow_merge_commit,.allow_squash_merge,.allow_rebase_merge]|map(tostring)|join(" ")' 2>/dev/null) || ALLOWED=""
+read -r A_MERGE A_SQUASH A_REBASE <<<"$ALLOWED"
+METHOD=""
+if [ -n "${MERGE_METHOD:-}" ]; then
+  case "$MERGE_METHOD" in merge) ok=$A_MERGE ;; squash) ok=$A_SQUASH ;; rebase) ok=$A_REBASE ;; *) ok=bad ;; esac
+  [ "$ok" = true ] || { echo "merge method '$MERGE_METHOD' is not allowed on $REPO (merge=${A_MERGE:-?} squash=${A_SQUASH:-?} rebase=${A_REBASE:-?})" >&2; exit 2; }
+  METHOD=$MERGE_METHOD
+elif [ "$A_MERGE" = true ]; then METHOD=merge
+elif [ "$A_SQUASH" = true ]; then METHOD=squash
+elif [ "$A_REBASE" = true ]; then METHOD=rebase
+else echo "no merge method is allowed on $REPO, or its settings cannot be read (merge=${A_MERGE:-?} squash=${A_SQUASH:-?} rebase=${A_REBASE:-?})" >&2; exit 2
+fi
+echo "merge method: $METHOD"
+
 total=$#; i=0
 for item in "$@"; do
   i=$((i+1)); N=${item%%:*}; SHA=${item#*:}
@@ -57,7 +74,7 @@ for item in "$@"; do
   python3 "$HERE/ci-gate.py" watch "$REPO#$N" --head "$SHA" --require-from "$REQ" --max-wait 14400 || { echo "STOP: #$N is not green on $SHA" >&2; exit 4; }
   python3 "$HERE/ci-gate.py" fresh "$REPO#$N" --head "$SHA" $BEHIND; rc=$?
   [ $rc -eq 0 ] || { echo "STOP: #$N is not fresh any more after the wait; nothing was merged for it" >&2; [ $rc -eq 3 ] && exit 3; exit 8; }
-  gh pr merge "$N" -R "$REPO" --squash --match-head-commit "$SHA" || { echo "STOP: gh pr merge failed for #$N" >&2; exit 6; }
+  gh pr merge "$N" -R "$REPO" "--$METHOD" --match-head-commit "$SHA" || { echo "STOP: gh pr merge failed for #$N" >&2; exit 6; }
   mc=$(gh pr view "$N" -R "$REPO" --json mergeCommit -q .mergeCommit.oid)
   [ -n "$mc" ] || { echo "STOP: #$N has no merge commit after the merge" >&2; exit 6; }
   echo "merged #$N as $mc; waiting for the post-merge profile"
