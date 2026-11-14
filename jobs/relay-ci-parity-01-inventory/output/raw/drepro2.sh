@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 export PATH=/ch/bin:$PATH CARGO_HOME=/ch CARGO_TARGET_DIR=/t
 git config --global --add safe.directory /w; cd /w; git checkout -q -- .
 echo "### exit codes of cargo-mutants itself (stdout and stderr kept apart)"

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 export PATH=/ch/bin:$PATH CARGO_HOME=/ch CARGO_TARGET_DIR=/t
 git config --global --add safe.directory /w; git config --global user.email a@b; git config --global user.name x
 cd /w

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set -u
 git config --global --add safe.directory /src; cd /src; export GOFLAGS="$GOFLAGS -buildvcs=false"
 echo "go: $(go version)"; echo "commit: $(cat .git/HEAD 2>/dev/null | head -1)"

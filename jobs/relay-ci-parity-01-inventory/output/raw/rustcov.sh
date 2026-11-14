@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 export PATH=/ch/bin:$PATH CARGO_HOME=/ch CARGO_TARGET_DIR=/t2
 git config --global --add safe.directory /w; cd /w; git checkout -q -- .; git status --short | head
 rustup component add llvm-tools-preview 2>&1 | tail -1
