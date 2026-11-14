@@ -1,0 +1,369 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.2.0, pluggy-1.7.0
+rootdir: <path>
+configfile: pytest.ini
+plugins: platformdirs-4.14.5, cov-7.1.0
+collected 14 items
+
+tests/test_tools/test_mutation_policy.py FFFFFFF.FFFFFF                  [100%]
+
+=================================== FAILURES ===================================
+_________ test_r1_an_unviable_mutant_does_not_change_the_primary_score _________
+
+tmp_path = PosixPath('/tmp/pytest-of-user/pytest-50/test_r1_an_unviable_mutant_doe0')
+
+    def test_r1_an_unviable_mutant_does_not_change_the_primary_score(tmp_path):
+        (tmp_path / "a").mkdir()
+        (tmp_path / "b").mkdir()
+        rc_a, a = run_verify(tmp_path / "a", [C] * 5)
+        rc_b, b = run_verify(tmp_path / "b", [C, C, C, C, U])
+        assert rc_a == 0 and rc_b == 0
+>       assert "mutation-policy/2" in primary_line(a)
+                                      ^^^^^^^^^^^^^^^
+
+tests/test_tools/test_mutation_policy.py:94: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+text = 'rust PLAN_VALID_NONEMPTY [mutation-policy/1]: planned=5 caught=5 missed=0 timeout=0 unviable=0\nrust score: caught/planned = 5/5; caught/(planned-unviable) = 5/5\n'
+
+    def primary_line(text):
+        lines = [ln for ln in text.splitlines() if "(primary" in ln]
+>       assert lines, f"no primary score line in the output:\n{text}"
+E       AssertionError: no primary score line in the output:
+E         rust PLAN_VALID_NONEMPTY [mutation-policy/1]: planned=5 caught=5 missed=0 timeout=0 unviable=0
+E         rust score: caught/planned = 5/5; caught/(planned-unviable) = 5/5
+E         
+E       assert []
+
+tests/test_tools/test_mutation_policy.py:84: AssertionError
+___________ test_the_unviable_ratio_is_always_printed_even_when_zero ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-user/pytest-50/test_the_unviable_ratio_is_alw0')
+
+    def test_the_unviable_ratio_is_always_printed_even_when_zero(tmp_path):
+        (tmp_path / "z").mkdir()
+        _, text = run_verify(tmp_path / "z", [C] * 5)
+>       assert "unviable (mandatory metric, report-only): 0/5 = 0.00%" in text
+E       AssertionError: assert 'unviable (mandatory metric, report-only): 0/5 = 0.00%' in 'rust PLAN_VALID_NONEMPTY [mutation-policy/1]: planned=5 caught=5 missed=0 timeout=0 unviable=0\nrust score: caught/planned = 5/5; caught/(planned-unviable) = 5/5\n'
+
+tests/test_tools/test_mutation_policy.py:104: AssertionError
+______________ test_the_legacy_primary_of_policy_1_stays_visible _______________
+
+tmp_path = PosixPath('/tmp/pytest-of-user/pytest-50/test_the_legacy_primary_of_pol0')
+
+    def test_the_legacy_primary_of_policy_1_stays_visible(tmp_path):
+        (tmp_path / "l").mkdir()
+        _, text = run_verify(tmp_path / "l", [C, C, C, C, U])
+>       assert "legacy (policy/1 primary): caught/planned = 4/5" in text
+E       AssertionError: assert 'legacy (policy/1 primary): caught/planned = 4/5' in 'rust PLAN_VALID_NONEMPTY [mutation-policy/1]: planned=5 caught=4 missed=0 timeout=0 unviable=1\nrust score: caught/planned = 4/5; caught/(planned-unviable) = 4/4\n'
+
+tests/test_tools/test_mutation_policy.py:110: AssertionError
+____ test_primary_score_states_and_gate_result[summaries0-0-5/5 = 100.00%] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-user/pytest-50/test_primary_score_states_and_0')
+summaries = ['CaughtMutant', 'CaughtMutant', 'CaughtMutant', 'CaughtMutant', 'CaughtMutant']
+rc = 0, shown = '5/5 = 100.00%'
+
+    @pytest.mark.parametrize(
+        "summaries, rc, shown",
+        [
+            ([C] * 5, 0, "5/5 = 100.00%"),
+            (
+                [C, C, C, C, M],
+                1,
+                "4/5 = 80.00%",
+            ),  # a survivor: red, and the score is a number below 100
+            (
+                [U] * 5,
+                0,
+                "NOT_APPLICABLE (ALL_UNVIABLE)",
+            ),  # nothing evaluable: not 100%; unviable does not fail
+            (
+                [U, U, U, U, T],
+                1,
+                "NOT_APPLICABLE (NO_EVALUABLE_MUTANT)",
+            ),  # a timeout is red; the score does not apply
+        ],
+    )
+    def test_primary_score_states_and_gate_result(tmp_path, summaries, rc, shown):
+        (tmp_path / "s").mkdir()
+        got_rc, text = run_verify(tmp_path / "s", summaries)
+        assert got_rc == rc, text
+>       assert shown in primary_line(text)
+                        ^^^^^^^^^^^^^^^^^^
+
+tests/test_tools/test_mutation_policy.py:138: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+text = 'rust PLAN_VALID_NONEMPTY [mutation-policy/1]: planned=5 caught=5 missed=0 timeout=0 unviable=0\nrust score: caught/planned = 5/5; caught/(planned-unviable) = 5/5\n'
+
+    def primary_line(text):
+        lines = [ln for ln in text.splitlines() if "(primary" in ln]
+>       assert lines, f"no primary score line in the output:\n{text}"
+E       AssertionError: no primary score line in the output:
+E         rust PLAN_VALID_NONEMPTY [mutation-policy/1]: planned=5 caught=5 missed=0 timeout=0 unviable=0
+E         rust score: caught/planned = 5/5; caught/(planned-unviable) = 5/5
+E         
+E       assert []
+
+tests/test_tools/test_mutation_policy.py:84: AssertionError
+_____ test_primary_score_states_and_gate_result[summaries1-1-4/5 = 80.00%] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-user/pytest-50/test_primary_score_states_and_1')
+summaries = ['CaughtMutant', 'CaughtMutant', 'CaughtMutant', 'CaughtMutant', 'MissedMutant']
+rc = 1, shown = '4/5 = 80.00%'
+
+    @pytest.mark.parametrize(
+        "summaries, rc, shown",
+        [
+            ([C] * 5, 0, "5/5 = 100.00%"),
+            (
+                [C, C, C, C, M],
+                1,
+                "4/5 = 80.00%",
+            ),  # a survivor: red, and the score is a number below 100
+            (
+                [U] * 5,
+                0,
+                "NOT_APPLICABLE (ALL_UNVIABLE)",
+            ),  # nothing evaluable: not 100%; unviable does not fail
+            (
+                [U, U, U, U, T],
+                1,
+                "NOT_APPLICABLE (NO_EVALUABLE_MUTANT)",
+            ),  # a timeout is red; the score does not apply
+        ],
+    )
+    def test_primary_score_states_and_gate_result(tmp_path, summaries, rc, shown):
+        (tmp_path / "s").mkdir()
+        got_rc, text = run_verify(tmp_path / "s", summaries)
+        assert got_rc == rc, text
+>       assert shown in primary_line(text)
+                        ^^^^^^^^^^^^^^^^^^
+
+tests/test_tools/test_mutation_policy.py:138: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+text = 'rust PLAN_VALID_NONEMPTY [mutation-policy/1]: planned=5 caught=4 missed=1 timeout=0 unviable=0\nrust score: caught/planned = 4/5; caught/(planned-unviable) = 4/5\n::error::rust: Rust verdicts that fail the gate: missed=1\n'
+
+    def primary_line(text):
+        lines = [ln for ln in text.splitlines() if "(primary" in ln]
+>       assert lines, f"no primary score line in the output:\n{text}"
+E       AssertionError: no primary score line in the output:
+E         rust PLAN_VALID_NONEMPTY [mutation-policy/1]: planned=5 caught=4 missed=1 timeout=0 unviable=0
+E         rust score: caught/planned = 4/5; caught/(planned-unviable) = 4/5
+E         ::error::rust: Rust verdicts that fail the gate: missed=1
+E         
+E       assert []
+
+tests/test_tools/test_mutation_policy.py:84: AssertionError
+_ test_primary_score_states_and_gate_result[summaries2-0-NOT_APPLICABLE (ALL_UNVIABLE)] _
+
+tmp_path = PosixPath('/tmp/pytest-of-user/pytest-50/test_primary_score_states_and_2')
+summaries = ['Unviable', 'Unviable', 'Unviable', 'Unviable', 'Unviable'], rc = 0
+shown = 'NOT_APPLICABLE (ALL_UNVIABLE)'
+
+    @pytest.mark.parametrize(
+        "summaries, rc, shown",
+        [
+            ([C] * 5, 0, "5/5 = 100.00%"),
+            (
+                [C, C, C, C, M],
+                1,
+                "4/5 = 80.00%",
+            ),  # a survivor: red, and the score is a number below 100
+            (
+                [U] * 5,
+                0,
+                "NOT_APPLICABLE (ALL_UNVIABLE)",
+            ),  # nothing evaluable: not 100%; unviable does not fail
+            (
+                [U, U, U, U, T],
+                1,
+                "NOT_APPLICABLE (NO_EVALUABLE_MUTANT)",
+            ),  # a timeout is red; the score does not apply
+        ],
+    )
+    def test_primary_score_states_and_gate_result(tmp_path, summaries, rc, shown):
+        (tmp_path / "s").mkdir()
+        got_rc, text = run_verify(tmp_path / "s", summaries)
+        assert got_rc == rc, text
+>       assert shown in primary_line(text)
+                        ^^^^^^^^^^^^^^^^^^
+
+tests/test_tools/test_mutation_policy.py:138: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+text = 'rust PLAN_VALID_NONEMPTY [mutation-policy/1]: planned=5 caught=0 missed=0 timeout=0 unviable=5\nrust score: caught/planned = 0/5; caught/(planned-unviable) = 0/0\n'
+
+    def primary_line(text):
+        lines = [ln for ln in text.splitlines() if "(primary" in ln]
+>       assert lines, f"no primary score line in the output:\n{text}"
+E       AssertionError: no primary score line in the output:
+E         rust PLAN_VALID_NONEMPTY [mutation-policy/1]: planned=5 caught=0 missed=0 timeout=0 unviable=5
+E         rust score: caught/planned = 0/5; caught/(planned-unviable) = 0/0
+E         
+E       assert []
+
+tests/test_tools/test_mutation_policy.py:84: AssertionError
+_ test_primary_score_states_and_gate_result[summaries3-1-NOT_APPLICABLE (NO_EVALUABLE_MUTANT)] _
+
+tmp_path = PosixPath('/tmp/pytest-of-user/pytest-50/test_primary_score_states_and_3')
+summaries = ['Unviable', 'Unviable', 'Unviable', 'Unviable', 'Timeout'], rc = 1
+shown = 'NOT_APPLICABLE (NO_EVALUABLE_MUTANT)'
+
+    @pytest.mark.parametrize(
+        "summaries, rc, shown",
+        [
+            ([C] * 5, 0, "5/5 = 100.00%"),
+            (
+                [C, C, C, C, M],
+                1,
+                "4/5 = 80.00%",
+            ),  # a survivor: red, and the score is a number below 100
+            (
+                [U] * 5,
+                0,
+                "NOT_APPLICABLE (ALL_UNVIABLE)",
+            ),  # nothing evaluable: not 100%; unviable does not fail
+            (
+                [U, U, U, U, T],
+                1,
+                "NOT_APPLICABLE (NO_EVALUABLE_MUTANT)",
+            ),  # a timeout is red; the score does not apply
+        ],
+    )
+    def test_primary_score_states_and_gate_result(tmp_path, summaries, rc, shown):
+        (tmp_path / "s").mkdir()
+        got_rc, text = run_verify(tmp_path / "s", summaries)
+        assert got_rc == rc, text
+>       assert shown in primary_line(text)
+                        ^^^^^^^^^^^^^^^^^^
+
+tests/test_tools/test_mutation_policy.py:138: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+text = 'rust PLAN_VALID_NONEMPTY [mutation-policy/1]: planned=5 caught=0 missed=0 timeout=1 unviable=4\nrust score: caught/planned = 0/5; caught/(planned-unviable) = 0/1\n::error::rust: Rust verdicts that fail the gate: timeout=1\n'
+
+    def primary_line(text):
+        lines = [ln for ln in text.splitlines() if "(primary" in ln]
+>       assert lines, f"no primary score line in the output:\n{text}"
+E       AssertionError: no primary score line in the output:
+E         rust PLAN_VALID_NONEMPTY [mutation-policy/1]: planned=5 caught=0 missed=0 timeout=1 unviable=4
+E         rust score: caught/planned = 0/5; caught/(planned-unviable) = 0/1
+E         ::error::rust: Rust verdicts that fail the gate: timeout=1
+E         
+E       assert []
+
+tests/test_tools/test_mutation_policy.py:84: AssertionError
+__________________ test_zero_denominator_is_neither_100_nor_0 __________________
+
+    def test_zero_denominator_is_neither_100_nor_0():
+        cases = {
+            "NO_MUTANTS_PLANNED": {
+                "planned": 0,
+                "caught": 0,
+                "missed": 0,
+                "timeout": 0,
+                "unviable": 0,
+            },
+            "ALL_UNVIABLE": {
+                "planned": 4,
+                "caught": 0,
+                "missed": 0,
+                "timeout": 0,
+                "unviable": 4,
+            },
+            "NO_EVALUABLE_MUTANT": {
+                "planned": 4,
+                "caught": 0,
+                "missed": 0,
+                "timeout": 1,
+                "unviable": 3,
+            },
+        }
+        for reason, acct in cases.items():
+>           s = qg.primary_score(acct)
+                ^^^^^^^^^^^^^^^^
+E           AttributeError: module 'quality_gate' has no attribute 'primary_score'
+
+tests/test_tools/test_mutation_policy.py:176: AttributeError
+_________ test_a_missing_accounting_is_unverifiable_not_a_score[None] __________
+
+acct = None
+
+    @pytest.mark.parametrize("acct", [None, {}, {"caught": 3}])
+    def test_a_missing_accounting_is_unverifiable_not_a_score(acct):
+>       assert qg.primary_score(acct) == {
+               ^^^^^^^^^^^^^^^^
+            "state": "UNVERIFIABLE",
+            "reason": "MEASUREMENT_MISSING",
+        }
+E       AttributeError: module 'quality_gate' has no attribute 'primary_score'
+
+tests/test_tools/test_mutation_policy.py:183: AttributeError
+_________ test_a_missing_accounting_is_unverifiable_not_a_score[acct1] _________
+
+acct = {}
+
+    @pytest.mark.parametrize("acct", [None, {}, {"caught": 3}])
+    def test_a_missing_accounting_is_unverifiable_not_a_score(acct):
+>       assert qg.primary_score(acct) == {
+               ^^^^^^^^^^^^^^^^
+            "state": "UNVERIFIABLE",
+            "reason": "MEASUREMENT_MISSING",
+        }
+E       AttributeError: module 'quality_gate' has no attribute 'primary_score'
+
+tests/test_tools/test_mutation_policy.py:183: AttributeError
+_________ test_a_missing_accounting_is_unverifiable_not_a_score[acct2] _________
+
+acct = {'caught': 3}
+
+    @pytest.mark.parametrize("acct", [None, {}, {"caught": 3}])
+    def test_a_missing_accounting_is_unverifiable_not_a_score(acct):
+>       assert qg.primary_score(acct) == {
+               ^^^^^^^^^^^^^^^^
+            "state": "UNVERIFIABLE",
+            "reason": "MEASUREMENT_MISSING",
+        }
+E       AttributeError: module 'quality_gate' has no attribute 'primary_score'
+
+tests/test_tools/test_mutation_policy.py:183: AttributeError
+______________ test_primary_score_measures_only_evaluable_mutants ______________
+
+    def test_primary_score_measures_only_evaluable_mutants():
+>       s = qg.primary_score(
+            ^^^^^^^^^^^^^^^^
+            {"planned": 10, "caught": 6, "missed": 2, "timeout": 1, "unviable": 1}
+        )
+E       AttributeError: module 'quality_gate' has no attribute 'primary_score'
+
+tests/test_tools/test_mutation_policy.py:194: AttributeError
+_____________________________ test_unviable_ratio ______________________________
+
+    def test_unviable_ratio():
+>       assert qg.unviable_ratio({"planned": 300, "unviable": 83})[
+               ^^^^^^^^^^^^^^^^^
+            "value"
+        ] == pytest.approx(27.6667, abs=1e-3)
+E       AttributeError: module 'quality_gate' has no attribute 'unviable_ratio'
+
+tests/test_tools/test_mutation_policy.py:205: AttributeError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests/test_tools/test_mutation_policy.py::test_a_survivor_is_still_red_whatever_the_score_is
+FAILED tests/test_tools/test_mutation_policy.py::test_r1_an_unviable_mutant_does_not_change_the_primary_score
+FAILED tests/test_tools/test_mutation_policy.py::test_the_unviable_ratio_is_always_printed_even_when_zero
+FAILED tests/test_tools/test_mutation_policy.py::test_the_legacy_primary_of_policy_1_stays_visible
+FAILED tests/test_tools/test_mutation_policy.py::test_primary_score_states_and_gate_result[summaries0-0-5/5 = 100.00%]
+FAILED tests/test_tools/test_mutation_policy.py::test_primary_score_states_and_gate_result[summaries1-1-4/5 = 80.00%]
+FAILED tests/test_tools/test_mutation_policy.py::test_primary_score_states_and_gate_result[summaries2-0-NOT_APPLICABLE (ALL_UNVIABLE)]
+FAILED tests/test_tools/test_mutation_policy.py::test_primary_score_states_and_gate_result[summaries3-1-NOT_APPLICABLE (NO_EVALUABLE_MUTANT)]
+FAILED tests/test_tools/test_mutation_policy.py::test_zero_denominator_is_neither_100_nor_0
+FAILED tests/test_tools/test_mutation_policy.py::test_a_missing_accounting_is_unverifiable_not_a_score[None]
+FAILED tests/test_tools/test_mutation_policy.py::test_a_missing_accounting_is_unverifiable_not_a_score[acct1]
+FAILED tests/test_tools/test_mutation_policy.py::test_a_missing_accounting_is_unverifiable_not_a_score[acct2]
+FAILED tests/test_tools/test_mutation_policy.py::test_primary_score_measures_only_evaluable_mutants
+FAILED tests/test_tools/test_mutation_policy.py::test_unviable_ratio - Attrib...
+========================= 13 failed, 1 passed in 0.87s =========================

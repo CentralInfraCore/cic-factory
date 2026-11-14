@@ -1,0 +1,68 @@
+---
+module: make_fixtures
+description: 'PR-04: cut small test fixtures out of the REAL tool outputs (nothing
+  is invented). Go:   the real objinventory output and the real cover profile of the
+  goastdump module (15 functions). Rust: the functions of cic-canonical/src/lib.rs
+  from the real `cargo llvm-cov --json` export, their real c++filt names, and the
+  real cargo-mutants listing/outcomes restricted to that file.'
+tags:
+- loader
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: load
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls: []
+- name: FILE
+  kind: const
+  description: ''
+  references: []
+- name: llvm
+  kind: const
+  description: ''
+  references: []
+- name: d
+  kind: const
+  description: ''
+  references: []
+- name: fns
+  kind: const
+  description: ''
+  references: []
+- name: sub
+  kind: const
+  description: ''
+  references: []
+- name: syms
+  kind: const
+  description: ''
+  references: []
+- name: names
+  kind: const
+  description: ''
+  references: []
+- name: mut
+  kind: const
+  description: ''
+  references: []
+- name: names_set
+  kind: const
+  description: ''
+  references: []
+- name: rows
+  kind: const
+  description: ''
+  references: []
+- name: base
+  kind: const
+  description: ''
+  references: []
+- name: oc
+  kind: const
+  description: ''
+  references: []

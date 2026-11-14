@@ -1,0 +1,202 @@
+{
+ "attribution": {
+  "go:goastdump": {
+   "attributed": 134,
+   "partial": 0,
+   "profile_files_not_in_inventory": 0,
+   "unattributed": 0
+  },
+  "go:root": {
+   "attributed": 2807,
+   "partial": 0,
+   "profile_files_not_in_inventory": 3,
+   "unattributed": 9
+  },
+  "rust": {
+   "mutants": 300,
+   "mutants_ambiguous": 9,
+   "mutants_mapped": 289,
+   "mutants_unmapped": 0,
+   "mutants_without_function": 2,
+   "test_code_excluded": 257
+  }
+ },
+ "coverage_kinds": [
+  "statement",
+  "line",
+  "region"
+ ],
+ "digest": "6bccf3fb9a8fcfd972305ccfa4be30ee497ec705d6278ac7d0fb24596f92700e",
+ "id_contract": "object-id/1",
+ "identity": {
+  "commit": "852594ae6180828dac090038cc443a6ac3e57bd4",
+  "tree": "d2a15b0b8eb3e3d2c461d2c5e6a744b281845e79",
+  "uncommitted_paths": 0
+ },
+ "inputs": {
+  "go-coverprofile:goastdump": {
+   "bytes": 4745,
+   "sha256": "814823a1d22d27acaf48d1c4766575d9f7451a5af0615986c21e78ba01af14c5"
+  },
+  "go-coverprofile:root": {
+   "bytes": 168653,
+   "sha256": "20a87243f5d9a092816ca32952f613d91b218f5b20b6b30de0e0a350132211f7"
+  },
+  "go-inventory:goastdump": {
+   "bytes": 2906,
+   "sha256": "5b3e0d2cd5aceda119a2154e7a6c57bdf108156b756821013c724057917fc109"
+  },
+  "go-inventory:root": {
+   "bytes": 97287,
+   "sha256": "72cfe598aeec513cca562683e34cbc3d08b5dacc32e4b2a506c01c17ee7c1159"
+  },
+  "llvm-cov-json": {
+   "bytes": 612602,
+   "sha256": "5c04809d9d6f86a4cacd993171a4d81476708c2f50cc154e07f0994fee0a17b7"
+  },
+  "rust-mutant-list": {
+   "bytes": 519224,
+   "sha256": "9891a8c8006b6f38631fa2d914452c9116fa50acfd2ca72450afac14210b6732"
+  },
+  "rust-outcomes:0": {
+   "bytes": 67935,
+   "sha256": "b02106eb7fcd8c00107f7e277fe4ee801e8060498b60bb846c1818d184e359ec"
+  },
+  "rust-outcomes:1": {
+   "bytes": 67233,
+   "sha256": "736c1692604e17ae0f3fddafa78f01b0aaedadc835fc6f281a4f3752acddcc65"
+  },
+  "rust-outcomes:2": {
+   "bytes": 67659,
+   "sha256": "dc6b9b46d20252ca9ee976918e927a51407cfd9e1553e2380fda689a50c79172"
+  },
+  "rust-outcomes:3": {
+   "bytes": 67153,
+   "sha256": "8aa4339970857ff4f0e9b09e5c284ccefd31a8ef7f2f14f0c6a122d93b1ee4b0"
+  },
+  "rust-outcomes:4": {
+   "bytes": 69907,
+   "sha256": "48c0068c7aec7f0d92753c9a192775dd11524d45fe0f2b5793c4f7a988ae2d77"
+  },
+  "rust-outcomes:5": {
+   "bytes": 68063,
+   "sha256": "86812c847bf44aff3e88211248bb4075043b00184dd9fbee4f5e81e394e09ffb"
+  },
+  "rust-outcomes:6": {
+   "bytes": 67532,
+   "sha256": "4b26d355c8ce71af3a895f6bf116133e6b1e94e23c206c81a1e3ebc845ccc485"
+  },
+  "rust-outcomes:7": {
+   "bytes": 63408,
+   "sha256": "32cbb91ec077939a74171cf8e385fe20a9c3619302669bc8328c5e2ce6e73038"
+  },
+  "scope": {
+   "bytes": 2173,
+   "sha256": "d97561002f925816287c4c4a5598277560001fe82a1489a2b3a96d17d3a43b6f"
+  }
+ },
+ "policy": "mutation-policy/2",
+ "schema": "object-evidence/1",
+ "scope": {
+  "digest": "36e408bea0bc70b44530de401a5615b7b7cc9fbb9fa86a7c33f18869b505defd",
+  "schema": "measurement-scope/1",
+  "version": 1
+ },
+ "summary": {
+  "by_unit": {
+   "goastdump": {
+    "fields": {
+     "coverage": {
+      "MEASURED": 15,
+      "NOT_APPLICABLE": 0,
+      "UNVERIFIABLE": 0
+     },
+     "mutation": {
+      "MEASURED": 0,
+      "NOT_APPLICABLE": 0,
+      "UNVERIFIABLE": 15
+     },
+     "tests": {
+      "MEASURED": 0,
+      "NOT_APPLICABLE": 0,
+      "UNVERIFIABLE": 15
+     }
+    },
+    "objects": 15
+   },
+   "root": {
+    "fields": {
+     "coverage": {
+      "MEASURED": 453,
+      "NOT_APPLICABLE": 0,
+      "UNVERIFIABLE": 11
+     },
+     "mutation": {
+      "MEASURED": 0,
+      "NOT_APPLICABLE": 0,
+      "UNVERIFIABLE": 464
+     },
+     "tests": {
+      "MEASURED": 0,
+      "NOT_APPLICABLE": 0,
+      "UNVERIFIABLE": 464
+     }
+    },
+    "objects": 464
+   },
+   "rust": {
+    "fields": {
+     "coverage": {
+      "MEASURED": 196,
+      "NOT_APPLICABLE": 0,
+      "UNVERIFIABLE": 0
+     },
+     "mutation": {
+      "MEASURED": 141,
+      "NOT_APPLICABLE": 55,
+      "UNVERIFIABLE": 0
+     },
+     "tests": {
+      "MEASURED": 0,
+      "NOT_APPLICABLE": 0,
+      "UNVERIFIABLE": 196
+     }
+    },
+    "objects": 196
+   }
+  },
+  "fields": {
+   "coverage": {
+    "MEASURED": 664,
+    "NOT_APPLICABLE": 0,
+    "UNVERIFIABLE": 11
+   },
+   "mutation": {
+    "MEASURED": 141,
+    "NOT_APPLICABLE": 55,
+    "UNVERIFIABLE": 479
+   },
+   "tests": {
+    "MEASURED": 0,
+    "NOT_APPLICABLE": 0,
+    "UNVERIFIABLE": 675
+   }
+  },
+  "objects": 675,
+  "reasons": {
+   "coverage:UNVERIFIABLE:FILE_NOT_IN_PROFILE": 8,
+   "coverage:UNVERIFIABLE:NONDETERMINISTIC": 3,
+   "mutation:NOT_APPLICABLE:NO_MUTANTS_LISTED": 55,
+   "mutation:UNVERIFIABLE:TOOL_LIMIT": 479,
+   "tests:UNVERIFIABLE:TOOL_LIMIT": 675
+  }
+ },
+ "tools": {
+  "c++filt": "GNU c++filt (GNU Binutils for Debian) 2.40",
+  "cargo-llvm-cov": "0.9.1",
+  "cargo-mutants": "27.1.0",
+  "go": "go1.26.10",
+  "objinventory": "objinventory/1",
+  "rustc": "1.96.1"
+ }
+}

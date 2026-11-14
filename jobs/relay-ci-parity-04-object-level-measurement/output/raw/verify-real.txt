@@ -1,0 +1,53 @@
+### 1. the real record, with the checkout and every input (L1/L2/L3)
+L1 INTEGRITY_OK
+L2 BOUND_TO_INPUTS
+L3 PARTIAL
+   proven: go unit 'goastdump': 15 objects equal the independent `func` line count
+   proven: go unit 'root': 464 objects equal the independent `func` line count
+   proven: rust: every function that cargo-mutants lists has an object
+   unproven: rust: a function that has neither a mutant nor a coverage entry could not be enumerated independently
+(no combined 'verified': a digest does not prove where a measurement came from)
+exit=0
+
+### 2. the same record, no checkout and no inputs: L2 must be NOT_CHECKED, L3 only PARTIAL
+L1 INTEGRITY_OK
+L2 NOT_CHECKED
+   findings: no checkout and no input files were given
+L3 PARTIAL
+   unproven: go: no source tree was given, the object list was not compared with an independent count
+   unproven: rust: no mutant listing was given
+   unproven: rust: a function that has neither a mutant nor a coverage entry could not be enumerated independently
+(no combined 'verified': a digest does not prove where a measurement came from)
+exit=0
+
+### 3. an object removed, the digest and the summary recomputed consistently (an attacker who fixes the record)
+L1 INTEGRITY_OK
+L2 BOUND_TO_INPUTS
+L3 FAIL
+   findings: go unit 'root': 463 objects but 464 top-level `func` lines in the source
+   proven: go unit 'goastdump': 15 objects equal the independent `func` line count
+   proven: rust: every function that cargo-mutants lists has an object
+(no combined 'verified': a digest does not prove where a measurement came from)
+exit=1
+
+### 4. an input file changed after the measurement (the coverage profile)
+L1 INTEGRITY_OK
+L2 FAIL
+   findings: input 'go-coverprofile:root' does not match the digest in the record
+L3 PARTIAL
+   proven: go unit 'goastdump': 15 objects equal the independent `func` line count
+   proven: go unit 'root': 464 objects equal the independent `func` line count
+   proven: rust: every function that cargo-mutants lists has an object
+   unproven: rust: a function that has neither a mutant nor a coverage entry could not be enumerated independently
+(no combined 'verified': a digest does not prove where a measurement came from)
+exit=1
+
+### 5. a record whose coverage kind says 'branch'
+L1 FAIL
+   findings: go:centralrelay/cmd/relay.CabinetActivator.Activate: coverage kind 'branch' is not one of ('statement', 'line', 'region')
+L2 NOT_CHECKED
+   findings: the record is not intact (L1)
+L3 NOT_CHECKED
+   unproven: the record is not intact (L1)
+(no combined 'verified': a digest does not prove where a measurement came from)
+exit=1

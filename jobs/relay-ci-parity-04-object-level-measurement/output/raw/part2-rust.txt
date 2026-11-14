@@ -1,0 +1,10 @@
+workspace crates: 7
+   cic-canonical -> []
+   cic-ffi -> ['connections', 'executor', 'http-executor', 'module', 'vault-adapter']
+   connections -> []
+   executor -> []
+   http-executor -> ['executor']
+   module -> ['connections']
+   vault-adapter -> ['connections', 'module']
+crates affected by a change of cic-canonical (reverse closure): ['cic-canonical']
+crates affected by a change of connections (reverse closure): ['cic-ffi', 'connections', 'module', 'vault-adapter']

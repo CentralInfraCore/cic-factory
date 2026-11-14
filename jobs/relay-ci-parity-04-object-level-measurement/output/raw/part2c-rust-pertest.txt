@@ -1,0 +1,4 @@
+unit tests in cic-canonical (lib): 3
+whole run, one profile: 1127 ms
+one profile per test (3 runs): 1937 ms => 646 ms per test
+covered code regions: whole run 99; union of the per-test runs 99; equal: True; per-test min/max 42/79
