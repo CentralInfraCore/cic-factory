@@ -26,7 +26,7 @@ ALL_OK = [run(n) for n in REQ]
 
 class Fake:
     def __init__(self, runs=None, head=H, mergeable=True, state="open", draft=False, statuses=None, merged=False,
-                 reviews=None, comments=None, base=("main", "base0"), behind=0):
+                 reviews=None, comments=None, base=("main", "base0"), behind=0, allowed=("merge", "squash", "rebase")):
         self.runs = ALL_OK if runs is None else runs
         self.head, self.mergeable, self.state, self.draft = head, mergeable, state, draft
         self.statuses, self.merged = statuses or [], merged
@@ -34,10 +34,16 @@ class Fake:
         self.comments = [] if comments is None else comments
         self.base = list(base)
         self.behind = behind
+        self.allowed = allowed
         self.asked = []
 
     def __call__(self, path):
         self.asked.append(path)
+        if path == "repos/o/r":
+            if self.allowed is None:
+                return {"full_name": "o/r"}   # a token that does not see the merge settings
+            return {"allow_merge_commit": "merge" in self.allowed, "allow_squash_merge": "squash" in self.allowed,
+                    "allow_rebase_merge": "rebase" in self.allowed}
         if path.startswith("repos/o/r/compare/"):
             return {"behind_by": self.behind}
         if path.startswith("repos/o/r/pulls/7/reviews"):
@@ -226,8 +232,27 @@ class Merging(unittest.TestCase):
 
     def test_a_green_approved_head_is_merged_by_exactly_that_head(self):
         code, calls, said = self.go()
-        self.assertEqual((code, calls), (0, [["pr", "merge", "7", "--repo", R, "--squash", "--match-head-commit", H]]))
+        self.assertEqual((code, calls), (0, [["pr", "merge", "7", "--repo", R, "--merge", "--match-head-commit", H]]))
         self.assertIn("MERGED", said)
+
+    def test_the_merge_method_is_the_first_the_repository_allows_and_is_never_hard_coded(self):
+        for allowed, flag in ((("merge", "squash", "rebase"), "--merge"), (("squash", "rebase"), "--squash"), (("rebase",), "--rebase"),
+                              (("merge",), "--merge")):
+            code, calls, said = self.go(Fake(reviews=[approved()], allowed=allowed))
+            self.assertEqual((code, calls), (0, [["pr", "merge", "7", "--repo", R, flag, "--match-head-commit", H]]), allowed)
+
+    def test_an_explicit_method_is_used_only_when_the_repository_allows_it(self):
+        code, calls, _ = self.go(merge_method="squash")
+        self.assertEqual((code, calls), (0, [["pr", "merge", "7", "--repo", R, "--squash", "--match-head-commit", H]]))
+        code, calls, said = self.go(Fake(reviews=[approved()], allowed=("merge",)), merge_method="squash")
+        self.assertEqual((code, calls), (1, []))
+        self.assertIn("squash is not allowed", said)
+
+    def test_no_allowed_method_or_unreadable_settings_refuse_and_merge_nothing(self):
+        for allowed in ((), None):
+            code, calls, said = self.go(Fake(reviews=[approved()], allowed=allowed))
+            self.assertEqual((code, calls), (1, []), allowed)
+            self.assertIn("REFUSED", said)
 
     def test_without_the_approval_read_from_github_nothing_is_merged(self):
         for fake in (Fake(), Fake(reviews=[approved(H2)]), Fake(reviews=[approved(login="stranger")])):
@@ -285,7 +310,8 @@ class Merging(unittest.TestCase):
     def test_it_only_writes_through_gh_pr_merge(self):
         fake = Fake(reviews=[approved()])
         self.go(fake)
-        self.assertTrue(all(p.startswith("repos/o/r/") for p in fake.asked))
+        # every read is a GET under the repository; "repos/o/r" itself is the read of its merge settings
+        self.assertTrue(all(p == "repos/o/r" or p.startswith("repos/o/r/") for p in fake.asked))
 
 
 class Strictness(unittest.TestCase):
@@ -408,7 +434,7 @@ class Landing(unittest.TestCase):
                      script=[lambda f: setattr(f, "runs", ALL_OK), approve])
         code, gh, lines = land(f)
         self.assertEqual(code, 0, lines)
-        self.assertEqual(gh.calls, [["pr", "merge", "7", "--repo", R, "--squash", "--match-head-commit", H]])
+        self.assertEqual(gh.calls, [["pr", "merge", "7", "--repo", R, "--merge", "--match-head-commit", H]])
         self.assertTrue(any("waiting" in l and "running: test" in l for l in lines), lines)
         self.assertTrue(any("waiting" in l and "approval" in l for l in lines), lines)
 

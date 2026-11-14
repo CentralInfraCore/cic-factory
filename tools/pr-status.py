@@ -12,7 +12,7 @@ base now, whether the base moved, the CI result for that very HEAD, the review s
     pr-status.py --pr OWNER/REPO#N     one PR only
 
 It only reads. Every GitHub call is `gh api -X GET <path>`; nothing else is ever run, and the tests check that. The merge stays a
-decision bound to the exact HEAD this prints: `gh pr merge N --squash --match-head-commit <head>`.
+decision bound to the exact HEAD this prints: `gh pr merge N --<method> --match-head-commit <head>` (the method is the repository's own setting, see ci-gate.py).
 
 Exit status: 0 always when it could read; 2 if a repository or PR could not be read (the row says why).
 """

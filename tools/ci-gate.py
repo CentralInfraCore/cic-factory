@@ -240,10 +240,32 @@ def watch(get, repo, n, head, required, interval, max_wait, advisory=(), sleep=t
         sleep(interval)
 
 
+# The owner's order when the repository allows more than one: a merge commit keeps the commits of the PR (and the signing block in their
+# messages) as they are; a squash or a rebase writes new ones.
+MERGE_METHODS = (("merge", "allow_merge_commit"), ("squash", "allow_squash_merge"), ("rebase", "allow_rebase_merge"))
+
+
+def pick_merge_method(get, repo, wanted=None):
+    """The merge method for `gh pr merge`, read from the repository's own settings: (method, why). `wanted` is the owner's explicit
+    choice and is honoured only when the repository allows it. Nothing is guessed: settings that cannot be read, or a repository that
+    allows no method, give (None, why) and the caller refuses."""
+    settings = get("repos/%s" % repo)
+    if not any(key in settings for _, key in MERGE_METHODS):
+        return None, "the settings of %s do not say which merge methods are allowed (a token without push access does not see them)" % repo
+    allowed = [m for m, key in MERGE_METHODS if settings.get(key) is True]
+    if not allowed:
+        return None, "%s allows no merge method" % repo
+    if wanted:
+        if wanted in allowed:
+            return wanted, "merge method %s (asked for, allowed)" % wanted
+        return None, "merge method %s is not allowed on %s (allowed: %s)" % (wanted, repo, ", ".join(allowed))
+    return allowed[0], "merge method %s (the first allowed of: %s)" % (allowed[0], ", ".join(allowed))
+
+
 SNAPSHOT = ("head_now", "state", "base", "base_sha", "behind", "draft", "mergeable", "verdict", "failing", "waiting")
 
 
-def merge(get, repo, n, head, required, approvers, dry_run=False, gh=run_gh, say=print, advisory=()):
+def merge(get, repo, n, head, required, approvers, dry_run=False, gh=run_gh, say=print, advisory=(), merge_method=None):
     """Merge exactly `head`, or refuse and say why. Returns the exit status."""
     ok, why = approval(get, repo, n, head, approvers)
     say(why)
@@ -273,7 +295,12 @@ def merge(get, repo, n, head, required, approvers, dry_run=False, gh=run_gh, say
     if not approval(get, repo, n, head, approvers)[0]:
         say("REFUSED: the approval was withdrawn between the readings")
         return 1
-    cmd = ["pr", "merge", str(n), "--repo", repo, "--squash", "--match-head-commit", head]
+    method, why = pick_merge_method(get, repo, merge_method)
+    if method is None:
+        say("REFUSED: " + why)
+        return 1
+    say(why)
+    cmd = ["pr", "merge", str(n), "--repo", repo, "--" + method, "--match-head-commit", head]
     if dry_run:
         say("DRY RUN: gh " + " ".join(cmd))
         return 0
@@ -291,7 +318,7 @@ def merge(get, repo, n, head, required, approvers, dry_run=False, gh=run_gh, say
 
 
 def land(get, repo, n, required, approvers, after=(), keep_current=False, post_merge_required=None, interval=60, max_wait=14400,
-         advisory=(), dry_run=False, gh=run_gh, sleep=time.sleep, now=time.monotonic, say=print):
+         advisory=(), dry_run=False, gh=run_gh, sleep=time.sleep, now=time.monotonic, say=print, merge_method=None):
     """Follow one PR to its merge, as far as the policy allows, and stop where it does not. No head is given: it follows the head
     the PR has, and the approval (head-bound, read from GitHub) is what pins the commit that may be merged. Each round:
 
@@ -378,7 +405,7 @@ def land(get, repo, n, required, approvers, after=(), keep_current=False, post_m
             if stop is not None:
                 return stop
             continue
-        code = merge(get, repo, n, head, required, approvers, dry_run, gh, say, advisory)
+        code = merge(get, repo, n, head, required, approvers, dry_run, gh, say, advisory, merge_method)
         if code != 0 or dry_run:
             return code
         merged = get("repos/%s/pulls/%d" % (repo, n))
@@ -456,6 +483,7 @@ def main(argv=None, get=ps.gh_get, gh=run_gh, sleep=time.sleep):
             p.add_argument("--max-wait", type=int, default=3600)
         if name == "merge":
             p.add_argument("--approver", action="append", required=True, help="GitHub login whose approval of this head counts")
+            p.add_argument("--merge-method", choices=[m for m, _ in MERGE_METHODS], help="default: the first method the repository allows (merge, squash, rebase)")
             p.add_argument("--dry-run", action="store_true")
     p = sub.add_parser("fresh")
     p.add_argument("pr")
@@ -468,6 +496,7 @@ def main(argv=None, get=ps.gh_get, gh=run_gh, sleep=time.sleep):
     p.add_argument("--after", action="append", default=[], metavar="OWNER/REPO#M", help="a PR that must be merged first")
     p.add_argument("--keep-current", action="store_true", help="merge the base into the PR branch when it is behind (the head moves)")
     p.add_argument("--post-merge-from", help="the post-merge profile: after the merge, wait for it on the merge commit")
+    p.add_argument("--merge-method", choices=[m for m, _ in MERGE_METHODS], help="default: the first method the repository allows (merge, squash, rebase)")
     p.add_argument("--interval", type=int, default=60)
     p.add_argument("--max-wait", type=int, default=14400)
     p.add_argument("--dry-run", action="store_true")
@@ -493,9 +522,9 @@ def main(argv=None, get=ps.gh_get, gh=run_gh, sleep=time.sleep):
         if a.cmd == "land":
             return land(get, repo, n, required, set(a.approver), [target(x) for x in a.after], a.keep_current,
                         load_required(a.post_merge_from)[0] if a.post_merge_from else None, a.interval, a.max_wait, advisory,
-                        a.dry_run, gh, sleep)
+                        a.dry_run, gh, sleep, merge_method=a.merge_method)
         if a.cmd == "merge":
-            return merge(get, repo, n, a.head, required, set(a.approver), a.dry_run, gh, advisory=advisory)
+            return merge(get, repo, n, a.head, required, set(a.approver), a.dry_run, gh, advisory=advisory, merge_method=a.merge_method)
         r = (watch(get, repo, n, a.head, required, a.interval, a.max_wait, advisory, sleep) if a.cmd == "watch"
              else read(get, repo, n, a.head, required, advisory))
     except ps.ReadError as e:

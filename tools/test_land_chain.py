@@ -16,6 +16,7 @@ SHA1, SHA2 = "1" * 40, "2" * 40
 GH = """#!/bin/bash
 echo "$@" >> "$STUB_LOG"
 case "$1 $2" in
+  "api repos/o/r") echo "${STUB_ALLOWED:-true true true}"; exit 0 ;;
   "pr merge") exit "${STUB_MERGE_RC:-0}" ;;
   "pr view") for a in "$@"; do [ "$a" = "mergeCommit" ] && { echo "m1m1m1m1m1m1m1m1m1m1m1m1m1m1m1m1m1m1m1m1"; exit 0; }; done; exit 0 ;;
 esac
@@ -85,6 +86,23 @@ class Chain(unittest.TestCase):
         # fresh is asked before the wait and again right before the merge, for each PR
         seq = [" ".join(c.split()[:2]) for c in calls if c.split()[0] == "ci-gate" or c.startswith("pr merge")]
         self.assertEqual(seq[:5], ["ci-gate fresh", "ci-gate watch", "ci-gate fresh", "pr merge", "ci-gate post-merge"])
+
+    def test_the_merge_method_comes_from_the_repository_settings(self):
+        for allowed, flag in (("true true true", "--merge"), ("false true true", "--squash"), ("false false true", "--rebase")):
+            open(self.log, "w").close()   # the log is per run
+            rc, out, calls = self.run_chain(*self.base("7:" + SHA1), STUB_ALLOWED=allowed)
+            self.assertEqual(rc, 0, out)
+            self.assertIn(" " + flag + " ", self.merges(calls)[0], allowed)
+
+    def test_an_explicit_method_must_be_allowed_and_no_method_means_nothing_is_merged(self):
+        rc, out, calls = self.run_chain(*self.base("7:" + SHA1), STUB_ALLOWED="true false false", MERGE_METHOD="squash")
+        self.assertEqual((rc, self.merges(calls)), (2, []), out)
+        rc, out, calls = self.run_chain(*self.base("7:" + SHA1), STUB_ALLOWED="false false false")
+        self.assertEqual((rc, self.merges(calls)), (2, []), out)
+        open(self.log, "w").close()
+        rc, out, calls = self.run_chain(*self.base("7:" + SHA1), STUB_ALLOWED="true true true", MERGE_METHOD="rebase")
+        self.assertEqual(rc, 0, out)
+        self.assertIn(" --rebase ", self.merges(calls)[0])
 
     def test_a_stale_pull_request_is_not_merged_and_the_chain_stops_with_8(self):
         rc, out, calls = self.run_chain(*self.base("7:" + SHA1), STUB_FRESH_7=1)

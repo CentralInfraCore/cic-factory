@@ -25,7 +25,7 @@ tools/pr-status.py --json                # géppel olvasható
 | `draft`, `UNREAD` | piszkozat; vagy valami nem volt olvasható (a sor megmondja, mi) |
 
 Az ítélet **tanács, hogy nézz rá, nem merge-engedély**. A merge a tulajdonos döntése, a kiírt HEAD-hez kötve:
-`gh pr merge N --squash --match-head-commit <teljes HEAD>`.
+`gh pr merge N --<mód> --match-head-commit <teljes HEAD>` (a módot a repó beállítása adja, lásd `docs/ci-gate.md`).
 
 ## Amit a CI-oszlop számol
 
