@@ -83,8 +83,12 @@ Minden itt szereplő funkció **report-only**: nem vezet be új blokkoló kaput 
   az `unviable` arányt külön kötelező metrikaként; a policy verzióját. A régi `caught/planned` érték **marad kiírva** (a
   folytonosság és az átláthatóság miatt), de nem elsődleges.
 - **A policy változása gate-logika változás:** a tervező FULL-ra eszkalál (a `quality_gate.py` már a `GATE_LOGIC_PATHS`-ban van).
-- Negatív teszt: az `unviable` mutáns **nem változtatja** a score-t; a `timeout` nem tűnik el; a policy-verzió eltérése a
-  riport és a kapu közt piros.
+- **Nulla nevező.** Ha `caught + missed == 0` (nincs értékelhető mutáns), a score **nem** automatikusan 100%, és nem 0%:
+  `NOT_APPLICABLE` (indokolt eset: pl. minden mutáns `unviable`, vagy a terv üres-érvényes), vagy `UNVERIFIABLE` (ha a mérés
+  hiányzik vagy sérült). A pontos eset **okkóddal** jelölt (`ALL_UNVIABLE`, `NO_MUTANTS_PLANNED`, `MEASUREMENT_MISSING` …). Ez a globális és
+  az objektumszintű score-ra is vonatkozik.
+- Tesztek: lásd a „Negatív tesztek” R- és N-csoportját (az `unviable` nem változtatja a score-t; a `timeout` nem tűnik el; a nulla nevező;
+  a policy-verzió eltérése a riport és a kapu közt piros).
 
 ### I.B Mérési scope (`measurement-scope/1`)
 
@@ -108,11 +112,26 @@ Minden itt szereplő funkció **report-only**: nem vezet be új blokkoló kaput 
   típus, függvénynév), mit **nem** (a sorszám és a fájl-pozíció attribútum, nem kulcs, hogy a sorok eltolódása ne cserélje le az
   azonosítót). Két különböző objektum azonosítója **nem eshet egybe**; ha az eszközkimenetben ez előfordulhat (túlterhelés, azonos
   nevű closure, `init`), a szerződés kezelje, és legyen rá teszt.
+- **A szemantikai forrásobjektum és az instrumentált példány külön fogalom.** A forrásobjektum az, amit a forráskód kijelöl (az `object-id/1`
+  kulcsa); a **példány** az, amit az eszköz kimenete külön sorként ad (pl. egy generikus függvény több monomorfizált példánya az `llvm-cov`-ban,
+  trait-implementáció metódusa, closure / függvényliterál, a Go `init.0`, `init.1` …, több build-tag szerinti változat). A szerződés rögzíti:
+  - hogyan képződik le egy példány egy forrásobjektumra (determinisztikus, dokumentált szabály);
+  - több példány egyetlen forrásobjektumhoz rendelésekor **hogyan összegez** a mérés (és az összegzés **jelölt**: a rekord megőrzi a példány-szintű adatot,
+    az összegzett érték nem helyettesíti azt, és az összegzés szabálya a rekordban szerepel);
+  - egy closure/függvényliterál melyik forrásobjektumhoz tartozik (pl. a legbelső nevesített függvényhez), és ez **dokumentált**.
+- **Nem egyértelmű hozzárendelésnél a mező `UNVERIFIABLE`** (`AMBIGUOUS_MAPPING`): ha egy példány több forrásobjektumra is illeszkedhet, vagy egyikre
+  sem, **nem választunk önkényesen** (nem „az első”, nem „a legközelebbi”). Az ilyen példányok és objektumok **darabszáma** a riportban kötelező.
 - A leltár **rendezett, egyedi, digestelt** (a PR-03 `mutation-plan/1` mintája).
 
 ### I.D Függvény-szintű lefedettség-hozzárendelés
 
 - **Go:** a `coverprofile` blokkjait a függvény-spanekre képezd le: objektumonként lefedett/összes utasítás.
+  **A hozzárendelési algoritmus dokumentált és tesztelt**: egy blokk akkor rendelhető egy objektumhoz, ha a span-ja **teljesen** egyetlen objektum
+  span-ján belül van (egymásba ágyazott closure esetén a dokumentált szabály szerinti legbelső objektumhoz). Ha egy blokk **részlegesen metsz**
+  egy objektumot, több objektum határát átfedi, vagy **egyikbe sem** esik (pl. csomagszintű inicializáció), akkor **nem rendelhető**: az érintett
+  mezők `UNVERIFIABLE` (`PARTIAL_BLOCK` / `UNATTRIBUTED_BLOCK`), a **nem hozzárendelt blokkok száma** a riportban kötelező.
+- **Tilos arányosítással, súlyozással vagy becsléssel pontosnak látszó objektumszintű coverage-értéket előállítani** (pl. egy átfedő blokk lefedettségének
+  „felosztása” az objektumok között). Ami nem rendelhető egyértelműen, az nem kap számot.
 - **Rust:** az `llvm-cov export` függvény-szintű adata (sor- és **régió**-lefedettség).
 - **Elnevezési fegyelem:** amit a stabil eszközök adnak, az **utasítás-**, **sor-** és **régió**-lefedettség. **Ne nevezd „branch coverage”-nek**,
   ami nem az (a séma számára a mérés fajtája felsorolt, megkülönböztetett mező; lásd a negatív teszteket).
@@ -138,8 +157,19 @@ Az objektumok, a mezők és az okok **darabszáma** a riportban kötelező.
 - Egy rekord: a commit és a fa azonossága, a **bemenetek digestjei** (coverprofile, `llvm-cov` JSON, `outcomes.json`, a PR-03 terv
   digestje, a scope-fájl digestje), az **eszközverziók** (Go, rustc, cargo-mutants, gremlins, llvm-cov), az objektumok rendezett
   listája a mezőállapotokkal, az összesítők, a **rekord digestje** (kanonikus JSON, a PR-03 mintája).
-- **Offline verifier** (a `quality_gate.py` mintájára): a rekord épségét, a sémát, a digestet, az összesítők egyezését az objektumokkal,
-  a bemeneti digestek jelenlétét ellenőrzi. Megváltoztatott vagy ismeretlen eszközverzió → a rekord **használhatatlan** (nem „figyelmeztetés”).
+- **Offline verifier** (a `quality_gate.py` mintájára), amely **három, külön deklarált szintet** ellenőriz és külön is kiír:
+  - **L1 — rekordintegritás** (`INTEGRITY_OK`): séma, digest, az összesítők egyezése az objektumokkal, a bemeneti digestek jelenléte. Ez **csak** az adat
+    belső konzisztenciáját bizonyítja; egy következetesen újraszámolt digestű, meghamisított rekordot **nem** fog meg.
+  - **L2 — forrásbemenetekhez kötés** (`BOUND_TO_INPUTS`): a rekord a **commit/fa azonosságát** és a **bemeneti fájlok digestjét** tartalmazza; ha a verifier
+    hozzáfér a bemeneti fájlokhoz és a fa-azonossághoz (`git ls-tree` / a checkout), **újraszámolja** és összeveti. Ha nem fér hozzá, az eredmény
+    **`NOT_CHECKED`**, nem `PASS`.
+  - **L3 — mérési teljesség** (`COMPLETE_FOR_SCOPE`): az objektumleltár a **scope-hoz képest teljes-e**, **független felsorolással** összevetve (Go: `go list` + a
+    `go/ast` újraszámlálása; Rust: az `llvm-cov` függvényhalmaza és a `cargo mutants` span-jei; a mutációs oldalon a PR-03 `plan = measured` ellenőrzése). A
+    rész-bizonyítás **`PARTIAL`**, a bizonyított és a nem bizonyított rész felsorolva.
+  - **Nincs egyetlen „VERIFIED”.** A kimenet és a riport a három szintet külön adja, a szintek nevei fixek (`INTEGRITY_OK`, `BOUND_TO_INPUTS`, `COMPLETE_FOR_SCOPE`).
+    **Egy digest nem bizonyítja a mérés eredetét**: azt, hogy a megjelölt eszközök ténylegesen a megjelölt fán futottak, az L1–L3 **nem** igazolja
+    (a hitelesítés PR-08/09 témája); ezt a riport **kimondja**.
+  Megváltoztatott vagy ismeretlen eszközverzió → a rekord **használhatatlan** (nem „figyelmeztetés”).
 - A rekord **mérési kimenet**, nem publikáció (a közzététel PR-08/09).
 
 ### I.H Globális és objektumszintű metrikák elkülönítése
@@ -192,21 +222,47 @@ különben a státusz `UNVERIFIABLE`/„nem megvalósítható most”, indoklás
 
 ## Negatív tesztek (kötelezőek)
 
-**Minden negatív teszt a javítás előtti állapoton is lefusson, és ott az ELVÁRT OKBÓL BUKJON** — nyers kimenettel. A bukás-tesztben a
-konkrét hibaüzenetet is ellenőrizd (a PR-02/03 tanulsága: rossz okból is lehet piros: `bad substitution`, üres git-fa, `ImportError`).
-A bukás-bizonyíték szétválasztandó: **a hibát reprodukáló** bukás vs. **szerkezeti** („a lépés nem létezik”) bukás; csak az első bizonyíték.
+**Két külön fajta; ne keverd.** Az „a javítás előtti állapoton bukjon” **csak ott követelmény és bizonyíték, ahol van javítás előtti állapot.**
 
-1. **Azonosító-ütközés:** két különböző objektum azonos `object-id/1`-gyel → elutasítva.
-2. **Hozzárendelhetetlen objektum:** `UNVERIFIABLE` (konkrét okkóddal), **nem** `MEASURED`, nem üres, nem sikeres.
-3. **Hiányzó vagy olvashatatlan bemenet** (coverprofile, `llvm-cov` JSON, `outcomes.json`): **nem nulla mérés és nem siker**; a rekord nem keletkezik.
-4. **Meghamisított rekord:** megváltoztatott digest, törölt objektum, módosított összesítő, hiányzó bemeneti digest → a verifier elutasítja.
-5. **Ismeretlen vagy módosított eszközverzió** → a rekord használhatatlan.
-6. **Elnevezési fegyelem:** egy riport, amely régió/utasítás-lefedettséget `branch`-ként jelöl, **elutasított** (a séma enum-ja).
-7. **Globális ≠ objektumszintű:** globálisan zöld mérés `UNVERIFIABLE` objektumokkal **nem** jelenhet meg egyetlen „verified/success” értékként.
-8. **Policy:** az `unviable` nem változtatja a score-t; a `timeout` nem tűnik el; a `mutation-policy` verzió-eltérése riport és kapu közt piros;
-   a `missed > 0` továbbra is piros (a 90%-os score nem gyengíti).
-9. **Scope:** indoklás nélküli kizárás elutasítva; a scope-fájlban nem szereplő produkciós fájl hiba (nem csendes kihagyás).
-10. **Nem-determinizmus:** ingadozó Go-lefedettségű objektum `NONDETERMINISTIC`, nem kap pontos értéket.
+### R. Regressziós tesztek — a **meglévő** viselkedést módosítják vagy védik
+
+A régi (`852594a`) állapoton is lefutnak. A **módosított** viselkedés tesztjei ott az **ELVÁRT OKBÓL BUKNAK**, nyers kimenettel és a konkrét hibaüzenettel
+(a PR-02/03 tanulsága: rossz okból is lehet piros: `bad substitution`, üres git-fa, `ImportError`). A bizonyíték csak a **hibát reprodukáló** bukás; a **szerkezeti**
+(„a modul/lépés nem létezik”) bukás nem bizonyíték. Az **őrző** tesztek (a nem változó viselkedést védik) **mindkét állapoton zöldek**.
+
+- **R1 (módosított, a régin bukik):** az `unviable` mutáns **nem változtatja az elsődleges score-t** (a régi elsődleges `caught/planned` ezt megteszi: ott buknia kell).
+- **R2 (őrző, mindkettőn zöld):** a `missed > 0` továbbra is piros; a `timeout` továbbra is piros és **kiírt** (nem tűnik el a nevezőből sem a kimenetből); az `unviable` továbbra sem buktat.
+- **R3 (őrző, mindkettőn zöld):** a meglévő blokkoló kapuk (a `verify.yml` per-csomag padlói, a Rust `--fail-under-lines 90`, a mutációs ratchet, a PR-03 `completeness`)
+  változatlanul működnek: a meglévő tesztjeik változtatás nélkül zöldek.
+
+### N. Az **új szerződések** negatív tesztjei (`object-id/1`, `measurement-scope/1`, `object-evidence/1`, a verifier)
+
+A régi állapotban **nincs mit futtatni** (a verifier maga sem létezik): itt a „régi kódon bukik” **nem** követelmény és **nem** bizonyíték. A bizonyíték helyette,
+**mindegyik N-tesztnél**:
+
+1. a működő verifier a **valódi fixture-ön elfogadja** a jó bemenetet (a fixture a valódi eszközből van, az eredete leírva);
+2. a hibás bemenetet a **konkrét, elvárt hibaüzenettel** utasítja el (nem „valamilyen” hibával);
+3. **ellenpróba a tesztre:** a verifier megfelelő ellenőrzését egy **scratch-másolaton kiiktatva** a hozzá tartozó teszt **bukik** (a teszt tud bukni), nyers kimenettel;
+4. a hibás bemenet a **valós eszközkimenetből származtatott**, a származtatás leírva.
+
+- **N1 Azonosító-ütközés:** két különböző objektum azonos `object-id/1`-gyel → elutasítva.
+- **N2 Hozzárendelhetetlen objektum:** `UNVERIFIABLE` (konkrét okkóddal), **nem** `MEASURED`, nem üres, nem sikeres.
+- **N3 Hiányzó vagy olvashatatlan bemenet** (coverprofile, `llvm-cov` JSON, `outcomes.json`): **nem nulla mérés és nem siker**; a rekord nem keletkezik.
+- **N4 Meghamisított rekord (L1):** megváltoztatott digest, törölt objektum, módosított összesítő, hiányzó bemeneti digest → a verifier elutasítja.
+- **N5 Ismeretlen vagy módosított eszközverzió** → a rekord használhatatlan.
+- **N6 Elnevezési fegyelem:** egy riport, amely régió/utasítás-lefedettséget `branch`-ként jelöl, **elutasított** (a séma enum-ja).
+- **N7 Globális ≠ objektumszintű:** globálisan zöld mérés `UNVERIFIABLE` objektumokkal **nem** jelenhet meg egyetlen „verified/success” értékként.
+- **N8 Scope:** indoklás nélküli kizárás elutasítva; a scope-fájlban nem szereplő produkciós fájl hiba (nem csendes kihagyás).
+- **N9 Nem-determinizmus:** ingadozó Go-lefedettségű objektum `NONDETERMINISTIC`, nem kap pontos értéket.
+- **N10 Példány és forrásobjektum:** egy generikus/trait/closure/`init` példány, amely több forrásobjektumra illeszkedhet vagy egyikre sem → `UNVERIFIABLE`
+  (`AMBIGUOUS_MAPPING`), **nem önkényes választás**; több példány egy objektumhoz → a dokumentált összegzés, a példány-szintű adat megőrizve.
+- **N11 Blokk-hozzárendelés:** részlegesen metsző blokk, objektumhatárt átfedő blokk, csomagszintű (függvényen kívüli) blokk, egymásba ágyazott függvényliterál →
+  a dokumentált szabály szerint, **arányosítás nélkül**; a nem hozzárendelt blokkok száma a riportban.
+- **N12 Nulla nevező:** `caught + missed == 0` → **nem** 100% és nem 0%: `NOT_APPLICABLE` (`ALL_UNVIABLE`/`NO_MUTANTS_PLANNED`) vagy `UNVERIFIABLE` (`MEASUREMENT_MISSING`);
+  objektumszinten és globálisan is.
+- **N13 A három szint külön (L1/L2/L3):** (a) a **következetesen újraszámolt digestű**, objektumot törölt rekord az **L1-et átmegy**, az **L3-on elbukik**
+  (független felsorolás); (b) a megváltoztatott bemeneti fájl **L2-n** bukik; (c) a bemenetek nélkül az L2 **`NOT_CHECKED`**, nem `PASS`; (d) a kimenet soha nem
+  tartalmaz egyetlen összevont „VERIFIED” értéket.
 
 ## Mérési korlátok (a jelentésben kimondandó)
 
@@ -226,10 +282,10 @@ A bukás-bizonyíték szétválasztandó: **a hibát reprodukáló** bukás vs. 
 2. A `measurement-scope/1` fájl verziózott, minden kizárásnak oka van, a `goastdump` külön szakaszban szerepel.
 3. Az `object-id/1` szerződés dokumentált, tesztelt; a Go és a Rust objektumleltár **mért** számokkal (hány objektum, hány hozzárendelhető, hány `UNVERIFIABLE`, miért).
 4. Minden objektum minden bizonyíték-mezője `MEASURED`/`NOT_APPLICABLE`/`UNVERIFIABLE`; **nincs hiányzó mező**.
-5. Az `object-evidence/1` rekord kanonikus, digestelt; az offline verifier a 4.–5. negatív tesztet elutasítással teljesíti.
+5. Az `object-evidence/1` rekord kanonikus, digestelt; az offline verifier az N4, N5 és N13 tesztet konkrét elutasítással teljesíti, és **három külön szintet** ad (L1 `INTEGRITY_OK`, L2 `BOUND_TO_INPUTS`/`NOT_CHECKED`, L3 `COMPLETE_FOR_SCOPE`/`PARTIAL`), egyetlen összevont „VERIFIED” nélkül.
 6. A II. rész minden tételére van **mért megvalósíthatósági jelentés** és javaslat; ami nem megvalósítható, az indoklással `UNVERIFIABLE`/nem megvalósítható.
 7. A `goastdump` hiányzó lefedettsége **objektumonként osztályozott**, ellenőrizhető indoklással.
-8. A **tíz negatív teszt** mind a javítás előtti állapoton **az elvárt okból** bukik (nyers kimenet), és az új kódon zöld.
+8. **R-tesztek:** a módosított viselkedés tesztje a régi állapoton az elvárt okból bukik (nyers kimenet), az őrzők mindkét állapoton zöldek. **N-tesztek:** a valós fixture-ön elfogadás, hibás bemenetre konkrét üzenettel elutasítás, és **ellenpróba** (kiiktatott ellenőrzés → bukó teszt); az új kódon mind zöld.
 9. A meglévő blokkoló kapuk **változatlanok** (a diffben ellenőrizve); az új kimenet nem required check.
 10. **Valódi GitHub Actions futás** a PR fejére (zöld), és legalább egy **szándékosan hibás, nem mergelendő** futás (pl. meghamisított rekord, vagy hiányzó bemenet) **piros** — run id-kkal; különben **nem mérve**.
 
@@ -241,7 +297,8 @@ A bukás-bizonyíték szétválasztandó: **a hibát reprodukáló** bukás vs. 
 - **Mért érték hiánya ≠ 0 és ≠ siker:** a hiányzó bizonyíték `UNVERIFIABLE`, nem hallgatólagos megfelelés.
 - Minden shard `success` ≠ minden tervezett mutáns kapott ítéletet; globális zöld ≠ objektumszintű bizonyíték.
 - Egy sikeres helyi futás ≠ hogy a CI-kapu hibás bemenetnél pirosra vált: ahol ezt állítod, mérd le.
-- A teszt zöldje ≠ hogy a teszt bukni tud: a negatív tesztet a javítás nélküli állapoton is futtasd, és ellenőrizd, hogy az elvárt okból bukik.
+- A teszt zöldje ≠ hogy a teszt bukni tud: a **regressziós** negatív tesztet a javítás nélküli állapoton is futtasd, és ellenőrizd, hogy az elvárt okból bukik; az **új szerződés** tesztjénél ellenpróbával (kiiktatott ellenőrzés → bukó teszt) mutasd, hogy a teszt tud bukni. A „nem létezik” miatti bukás nem bizonyíték.
+- Rekord-digest ≠ a mérés eredete: az L1 az adat belső konzisztenciáját igazolja, nem azt, hogy az eszköz a megjelölt fán futott; amit az L1–L3 nem bizonyít, azt mondd ki.
 - A hiányzó bizonyíték nem bizonyíték: amit nem futtattál, azt ne írd le mért tényként.
 
 ## Verifikáció és bizonyítás
@@ -260,8 +317,7 @@ A bukás-bizonyíték szétválasztandó: **a hibát reprodukáló** bukás vs. 
 A cic-factory klónban: `jobs/relay-ci-parity-04-object-level-measurement/output/`
 
 - `output/pr04-report.md` — magyarul: vizsgált commitok; a klón tisztasága; a feltárt eszköz-képességek (valódi kimenet alapján); az I. rész funkciói
-  (előtte/utána, mért számokkal); a II. rész **megvalósíthatósági jelentései** és javaslatai (tulajdonosi döntésekhez); a tíz negatív teszt és a bukásuk
-  bizonyítéka **az elvárt okból** (a hibát reprodukáló és a szerkezeti bukás szétválasztva); a `goastdump` osztályozás; a policy-döntések
+  (előtte/utána, mért számokkal); a II. rész **megvalósíthatósági jelentései** és javaslatai (tulajdonosi döntésekhez); az R- és N-tesztek és a bizonyítékuk (R: a régi állapoton **az elvárt okból** bukás, a hibát reprodukáló és a szerkezeti bukás szétválasztva; N: elfogadás, konkrét elutasítás, ellenpróba); az L1/L2/L3 szintek külön eredménye és a bizonyítási határ kimondása; a `goastdump` osztályozás; a policy-döntések
   megvalósítása és az ütközések (mi változott a `mutation-policy/1`-hez képest); GitHub Actions run id-k (zöld **és** szándékosan piros);
   claim-evidence tábla (`Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat`); nyitott döntések; amit nem mértél.
 - `output/raw/` — nyers kimenetek és mérőscriptek (minden `.sh` első sora `#!/usr/bin/env bash`, a gate ShellCheck-et fut `--severity=error`-ral;
@@ -275,7 +331,7 @@ A CIC_Relay módosítás a Relay-klónban, külön ágon, PR-ként (lásd lent).
 - A három döntés megvalósítva és dokumentálva; a buktató szemantika változatlan (diffben ellenőrizve); az ütközések kimondva.
 - I.A–I.I mért, tesztelt, report-only; a II. rész minden tétele mért megvalósíthatósági jelentéssel és javaslattal lezárva.
 - Az `UNVERIFIABLE` darabszámok és okok riportálva; nincs hiányzó mező, nincs hallgatólagos siker.
-- A tíz negatív teszt a javítás előtti állapoton az elvárt okból bukik, nyers kimenettel.
+- Az R-tesztek (módosított viselkedés) a régi állapoton az elvárt okból buknak, az őrzők mindkét állapoton zöldek; az N-tesztek (új szerződések) a valós fixture-ön elfogadnak, konkrét üzenettel elutasítanak, és az ellenpróbájuk (kiiktatott ellenőrzés → bukó teszt) megvan. Mind nyers kimenettel.
 - Valódi GitHub Actions run id a PR headSha-jára (zöld), és a szándékosan hibás futásra (piros), vagy **nem mérve**.
 - A CIC_Relay PR leírása pontosan azt állítja, ami mérve van; nincs új blokkoló kapu, nincs tesztkihagyás.
 
