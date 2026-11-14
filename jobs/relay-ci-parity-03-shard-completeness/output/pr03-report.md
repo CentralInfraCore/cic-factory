@@ -54,7 +54,9 @@ Az `unviable` **nem egyenletes**: shard 4: 0, shard 2: 19. Fájlonként: `connec
 ## 5. F1–F3 megvalósítása
 
 **F1 — azonosító-szerződés (`mutant-id/1`).** Az azonosító a cargo-mutants `name`-je. A terv az azonosítókat **rendezve és egyedien** tárolja, a digest a kanonikus alakból készül (nem a nyers listából), tehát a sorrend és a shard-kiosztás nem számít. Két különböző mutáns azonos azonosítóval **érvénytelen terv** (nem összeolvad). Szerződés-verzió, séma vagy eszközverzió eltérése piros.
-**F2 — ítéletek (`mutation-policy/1`).** `caught`, `missed`, `timeout`, `unviable` külön számolva; a nevező a **tervezett** szám, az összegnek egyeznie kell vele. `missed` és `timeout` buktat; `unviable` **kiírt, nem buktat** (a kapu eddigi viselkedése). A kiskapu elleni védelem (review-megjegyzés): **nincs** futásidejű eltérés-kapcsoló; a szabály a kódban, verziózva van, és a `quality_gate.py` a gate-logika része (a módosítása a tervezőt FULL-ra eszkalálja és review-t igényel). Az `unviable` kezelésének megváltoztatása tehát szabály-verzióváltás, nem kivétel.
+**F2 — ítéletek (`mutation-policy/1`).** `caught`, `missed`, `timeout`, `unviable` külön számolva; a nevező a **tervezett** szám, az összegnek egyeznie kell vele. `missed` és `timeout` buktat; `unviable` **kiírt, nem buktat** (a kapu eddigi viselkedése).
+
+**Eltérés a spec szó szerinti szövegétől, kimondva.** A #51 F2 azt írta, hogy a döntésig a kód „a szigorúbb változatot alkalmazza”. A szigorúbb olvasat (az `unviable` is bukjon) a mért 83/300 mellett **minden futást tartósan pirosra festene**, ezért **nem** ezt alkalmaztam, hanem a gate eddigi viselkedését (nem buktat, kiírt), és a döntést a tulajdonosra bíztam (12. 1.). Ez az én döntésem volt, nem a specé; ha a szigorúbb olvasat kell, az a `mutation-policy/2` verzióváltása, és a 83 `unviable` indoklását (melyik kategória, milyen képlet) előbb jóvá kell hagyni. A kiskapu elleni védelem (review-megjegyzés): **nincs** futásidejű eltérés-kapcsoló; a szabály a kódban, verziózva van, és a `quality_gate.py` a gate-logika része (a módosítása a tervezőt FULL-ra eszkalálja és review-t igényel). Az `unviable` kezelésének megváltoztatása tehát szabály-verzióváltás, nem kivétel.
 **F3 — terv-állapotok.** `PLAN_VALID_NONEMPTY`, `PLAN_VALID_EMPTY`, `PLAN_INVALID`, a kimenetben név szerint. Az üres-érvényes bizonyítéka a **terv-rekordba kötött** felsorolási eredmény: kilépési kód 0, a nyers kimenet 0 bájtja és annak sha256-ja, vagy a tervező kimondott döntése (`skipped` ok). Egy nulla bájtos fájl vagy egy hamisított `exit_code` nem elég. Hiányzó, sérült, digestjével nem egyező terv mindig piros. A `skipped` job nem bizonyíték: a kapu a terv állapotából dönt.
 
 ## 6. Negatív tesztek és a bukásuk bizonyítéka
@@ -101,19 +103,28 @@ Megoldás (konzervatív, diff-alapú): ha a módosított `.rs` fájl diffje a r�
 
 ## 10. GitHub Actions
 
-| Futás | Run id | Eredmény |
-|---|---|---|
-| Relay PR, zöld (`275ebea`) | **nem mérve** (a push és a PR a tulajdonosra vár) | — |
-| Szándékosan hibás ág (`69e72d9`, 3. shard nem ad riportot) | **nem mérve** | — |
+| PR | Fej | Workflow | Run id | Eredmény |
+|---|---|---|---|---|
+| Relay #171 (a valódi változtatás) | `275ebea` | `mutation-pr` | 43632063607 | **success** |
+| | | `verify` | 43632063601 | **success** (a `python` job: a teljes `pytest`, 318 teszt) |
+| | | `manifest-check` | 43632063578 | success |
+| Relay #172 (draft, DO NOT MERGE, a 3. shard nem ad riportot) | `69e72d9` | `mutation-pr` | 43632092127 | **failure** (a `completeness` és a `mutation-pr`) |
+| | | `verify` | 43632092112 | **failure** (a `python` job: 1 failed, 317 passed) |
+| | | `manifest-check` | 43632092230 | success |
 
-Amit a CI-futás fog mutatni (és most nem mérve): hogy a valódi GitHub-futásban a `completeness` jó, ha mindent beadnak, és piros, ha a 3. shard riportja hiányzik; hogy a `--in-diff`-es PR-útvonal azonosítói megegyeznek a tervével (a **teljes** útvonalat mértem valódi eszközzel, a diff-módot csak a fake-cargós lépésteszt és a `cargo mutants --in-diff` kézi próbák igazolják).
+**#171, zöld út.** A `plan` job logja: `go_full=true rust_full=true` (a PR a gate-logikát érinti), `rust mutants to test: 300`, `rust shards: 8`; mind a 6 Go-chunk és a 8 Rust-shard **success**. A `completeness` job kimenete (a valódi GitHub-futásból):
+`rust PLAN_VALID_NONEMPTY [mutation-policy/1]: planned=300 caught=217 missed=0 timeout=0 unviable=83` · `rust score: caught/planned = 217/300; caught/(planned-unviable) = 217/217` · `go PLAN_VALID_NONEMPTY: planned=31 ok=29 no-mutants=2 timed_out=5`.
+A GitHub-futás tehát **pontosan** a helyi, valódi méréssel egyező számokat adott (217/83), és a Go-oldali teljesség (31 tervezett csomag, mind egyszer mérve) valódi `gremlins`-szel is igazolt.
+
+**#172, a piros út, kétszeresen.** (1) A `completeness` job `##[error]rust: missing shard report(s): [3] of 8` üzenettel bukott, és vele a `mutation-pr` gate: **ez volt a cél**, a valódi GitHub-futásban. (2) **Nem várt, de értékes:** a `verify` `python` jobja is bukott, mert a saját bekötési tesztem (`test_the_reports_are_handed_in_and_collected_under_matching_names[mutation-pr.yml]`) elutasítja a szándékos hibát (`assert '${{ always() && matrix.shard != 3 }}' == '${{ always() }}'`). A hiba tehát **a mutációs futás előtt, a szöveg szintjén is** megfogható; a `completeness` pedig akkor is megfogja, ha valaki a szöveg-tesztet megkerülné. A két védvonal független.
+A #172 lezárva, nem mergelve.
 
 ## 11. Claim-evidence tábla
 
 | Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat |
 |---|---|---|---|---|
 | A mutációs jobok ma nem adnak át riportot | implemented (mérve, szöveg) | `grep upload-artifact .github/workflows`: csak `verify.yml` | `grep -rn upload-artifact .github/workflows` a `7ac6e80`-on | alacsony |
-| A valódi 8 shard a 300 tervezett mutánst pontosan egyszer fedi | implemented (valódi eszközzel mérve) | `raw/real-run-summary.txt`, `raw/real-verify.txt` 1. eset | `bash raw/realverify.sh` | `cargo-mutants 27.1.0`-ra érvényes; CI-ban nem mérve |
+| A valódi 8 shard a 300 tervezett mutánst pontosan egyszer fedi | implemented (valódi eszközzel mérve) | `raw/real-run-summary.txt`, `raw/real-verify.txt` 1. eset | `bash raw/realverify.sh` | `cargo-mutants 27.1.0`-ra érvényes; a GitHub-futás ugyanezt adta (10.) |
 | Hiányzó/kétszeres shard, hiányzó/ismeretlen ítélet, meghamisított terv piros | implemented (valódi adaton) | `raw/real-verify.txt` 2–7 | uo. | alacsony |
 | A jogos üres felsorolás 0 bájt, exit 0; a hibás exit 6 | implemented (mérve) | `raw/list-json-empty-and-failed.txt` | `bash raw/emptyjson.sh` | alacsony |
 | A régi `gate` minden job `success` mellett is zöld hiányos mérésnél | implemented (mérve) | `raw/new-tests-on-old-code.txt`: `assert 0 != 0`, stdout `plan=success go=success rust=success…` | pytest a `7ac6e80` fán | alacsony |
@@ -124,8 +135,10 @@ Amit a CI-futás fog mutatni (és most nem mérve): hogy a valódi GitHub-futás
 | Az új `check-coverprofile` a törött profilt a küszöbtől függetlenül elutasítja | implemented | `test_a_broken_coverage_profile_is_neither_zero_nor_success` (5 eset); valódi profilon elfogad | pytest | alacsony |
 | A küszöbök, padlók, baseline változatlanok | implemented (diffben ellenőrizve) | `git diff` a `275ebea`-n; `.mutation-baseline.json` változatlan | `git diff 7ac6e80 275ebea -- .mutation-baseline.json` | alacsony |
 | A `goastdump` a root-küszöbökkel elbukna | implemented (mérve, nem a gate-en át) | `raw/goastdump-measurement.txt` | `bash raw/goastdump.sh` | a gate saját futtatását nem mértem |
-| A CI-ban zöld a `275ebea`-n | **nem mérve** | — | a Relay PR futása | magas, amíg nincs futás |
-| A CI-ban piros a hibás ágon | **nem mérve** | — | a bizonyító ág futása | magas, amíg nincs futás |
+| A CI zöld a `275ebea`-n | implemented (mérve) | 10.: run `43632063607` (mutation-pr), `43632063601` (verify), `43632063578` (manifest-check), mind `success`, headSha `275ebea` | `gh run list -R CentralInfraCore/CIC_Relay --commit 275ebea…` | alacsony |
+| A CI piros a hibás ágon | implemented (mérve) | 10.: run `43632092127`, `##[error]rust: missing shard report(s): [3] of 8`; run `43632092112`: a bekötési teszt is bukik | `gh run view 43632092127 --log` | alacsony |
+| A GitHub-futás a helyi méréssel egyező számot ad | implemented (mérve) | 10.: `planned=300 caught=217 unviable=83` a CI-ban és a `raw/real-run-summary.txt`-ben | összevetés | alacsony |
+| A Go-oldali teljesség valódi gremlins-futásban | implemented (mérve) | 10.: `go PLAN_VALID_NONEMPTY: planned=31 ok=29 no-mutants=2 timed_out=5` | `gh run view 43632063607 --log` | alacsony |
 | A diff-módú (`--in-diff`) shard-azonosítók egyeznek a tervvel | **nem mérve valódi eszközzel** | csak a fake-cargós lépésteszt | PR-futás | közepes |
 | A heti `mutation.yml` (csak Go) | **nem kezelve** | — | PR-07 | alacsony |
 
@@ -139,12 +152,12 @@ Amit a CI-futás fog mutatni (és most nem mérve): hogy a valódi GitHub-futás
 
 ## 13. Nem mérve / korlátok
 
-- GitHub Actions: lásd 10.
+- GitHub Actions: lásd 10. A #171 futása **rust_full** módú volt (a PR a gate-logikát érinti): a **diff-módú** (`--in-diff … --shard`) útvonal valódi GitHub-futásban **nem mérve**.
 - **Shard-fedezet a 8-as plafon fölött** (>320 mutáns): valódi eszközzel nem mértem; a verifier a shard-számtól független (egységteszt: 8 shard 5 mutánsra), és a 300-as terv a plafon alatt van.
 - A valódi, egy folyamatban futó FULL és a külön shardok **ugyanazt** a 300-as halmazt adják, a diff-módú shard-futást (`--in-diff … --shard`) valódi eszközzel nem futtattam.
 - A teljes repó `pytest`-je helyben nem fordítható (`requests` hiányzik a scratch venv-ben); a CI `python` jobja dönt.
-- A Go-oldali teljesség a gremlins valódi futásával (chunk-riport) helyben nem mérve; a `gremlins_gate.py --report` a fake `gremlins`-szel tesztelt, a valódi kimenet-elemzés a már meglévő `measured()`.
+- A Go-oldali teljesség helyben fake `gremlins`-szel tesztelt; valódi `gremlins`-szel a **CI-futás** mérte (10.).
 
 ## 14. Aláírás és push
 
-A commitok a Vault `commit-msg` hook futásával készültek (aláírási metaadat a commit-üzenetben); az érvényességet **nem ellenőriztem**. Co-Authored-By vagy AI-re utaló sor nincs. A push-okat a tulajdonos futtatja (a környezet elutasítja). A szándékosan hibás ágból **nem** nyitok mergelhetőnek tűnő PR-t: draft, „DO NOT MERGE” címmel, a munkaágra mutatva, és futás után lezárom.
+A commitok a Vault `commit-msg` hook futásával készültek (aláírási metaadat a commit-üzenetben); az érvényességet **nem ellenőriztem**. Co-Authored-By vagy AI-re utaló sor nincs. A push-okat a tulajdonos futtatja (a környezet elutasítja). A szándékosan hibás ágból **nem** nyitottam mergelhetőnek tűnő PR-t: a #172 draft, „DO NOT MERGE” címmel, a munkaágra (nem a `main`-re) mutat, és a futás rögzítése után lezártam.
