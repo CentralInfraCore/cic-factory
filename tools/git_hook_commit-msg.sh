@@ -55,7 +55,7 @@ fi
 #
 # Verziózott: a régi aláírások a v1 (tar) úton ellenőrizhetők tovább, a
 # verify-signatures.sh mindkettőt tudja.
-MANIFEST_VERSION="cic-tree-manifest/v3"
+MANIFEST_VERSION="cic-tree-manifest/v4"
 OBJECT_FORMAT=$(git rev-parse --show-object-format 2>/dev/null || echo sha1)
 
 # A v3 a commit KONTEXTUSÁT is beleköti, nem csak a fáját.
@@ -79,6 +79,26 @@ OBJECT_FORMAT=$(git rev-parse --show-object-format 2>/dev/null || echo sha1)
 #   pedig nem futtatja újra ezt a hookot (mérve) — a régi blokkot változatlanul
 #   viszi át egy ÚJ szülő alá, tehát minden rebase-elt commit ellenőrizhetetlenné
 #   vált volna. Ebben a projektben a rebase minden PR előtt kötelező.
+# v4 additionally binds the SIGNER'S PUBLIC KEY.
+#
+# Under v3 the digest did not depend on who signed it: the same digest could be
+# re-signed with any other key, the [certificate] block swapped, and the commit
+# still verified. v4 puts the public key (base64 DER SubjectPublicKeyInfo, taken
+# from the certificate Vault returns) into the signed manifest, so the signature
+# commits to the key that made it.
+#
+# This binds the key; it does not make the key trusted. Whether the key belongs
+# to an authorised signer is a separate check against a trust anchor.
+#
+# The certificate is therefore fetched BEFORE signing, not after.
+CERT=$(vault_fetch_cert) || exit 1
+if ! SIGNER_KEY=$(printf '%s\n' "$CERT" | openssl x509 -noout -pubkey 2>/dev/null \
+        | openssl pkey -pubin -outform DER 2>/dev/null | openssl base64 -A) \
+   || [[ -z "$SIGNER_KEY" ]]; then
+    echo "[!] The certificate returned by Vault has no readable public key; not signing." >&2
+    exit 1
+fi
+
 AUTHOR="$(git var GIT_AUTHOR_IDENT 2>/dev/null | sed 's/ [0-9]* [+-][0-9]*$//')"
 COMMITTER="$(git var GIT_COMMITTER_IDENT 2>/dev/null | sed 's/ [0-9]* [+-][0-9]*$//')"
 # Az üzenet a blokk hozzáfűzése ELŐTT.
@@ -98,6 +118,7 @@ MSG_SHA=$(printf '%s' "$MSG_BODY" | openssl dgst -sha256 -binary | openssl base6
 DIGEST_B64=$( {
     printf '%s\n' "$MANIFEST_VERSION"
     printf 'object-format: %s\n' "$OBJECT_FORMAT"
+    printf 'signer-public-key: %s\n' "$SIGNER_KEY"
     printf 'author: %s\n' "$AUTHOR"
     printf 'committer: %s\n' "$COMMITTER"
     printf 'message-sha256: %s\n' "$MSG_SHA"
@@ -108,7 +129,20 @@ DIGEST_B64=$( {
 
 # ===== Vault aláírás és tanúsítvány =====
 SIGNATURE=$(vault_sign_digest "$DIGEST_B64") || exit 1
-CERT=$(vault_fetch_cert) || exit 1
+
+# Self-check: the signature must verify against the key the manifest names.
+# The certificate comes from a KV path, the signature from the transit key; if
+# the two have drifted apart (key rotated, certificate not), every commit signed
+# from now on would be unverifiable. Fail here, not in CI after the push.
+printf '%s\n' "$CERT" | openssl x509 -noout -pubkey > "$tmpdir/pub.pem" 2>/dev/null
+printf '%s' "$DIGEST_B64" | openssl base64 -d -A > "$tmpdir/dig.bin"
+printf '%s' "${SIGNATURE#vault:v1:}" | openssl base64 -d -A > "$tmpdir/sig.der" 2>/dev/null
+if ! openssl pkeyutl -verify -pubin -inkey "$tmpdir/pub.pem" \
+        -in "$tmpdir/dig.bin" -sigfile "$tmpdir/sig.der" >/dev/null 2>&1; then
+    echo "[!] The Vault signature does not verify against the certificate's public key." >&2
+    echo "    The transit key and the stored certificate do not belong together; not signing." >&2
+    exit 1
+fi
 
 # ===== Metaadat blokk hozzáfűzése =====
 {

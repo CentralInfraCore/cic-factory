@@ -107,7 +107,7 @@ echo alma > "$A/f.txt"; git -C "$A" add f.txt
 git -C "$A" commit -q -m "commit A — az eredeti" 2>"$ENVROOT/a.err"
 C_A=$(git -C "$A" rev-parse HEAD)
 check "a hook aláírta" "1" "$(git -C "$A" log -1 --format=%B | grep -c 'signing-metadata')"
-check "  v3 manifestet ír" "1" "$(git -C "$A" log -1 --format=%B | grep -c 'manifest = cic-tree-manifest/v3')"
+check "  v4 manifestet ír" "1" "$(git -C "$A" log -1 --format=%B | grep -c 'manifest = cic-tree-manifest/v4')"
 verify "$A" "$C_A~1..$C_A" > "$ENVROOT/v_ok.log"
 check "  a verifier elfogadja (digest egyezik)" "0" "$?"
 check "  GO-t mond" "1" "$(grep -c ': GO ' "$ENVROOT/v_ok.log")"
@@ -289,6 +289,100 @@ echo "10. A régi aláírások továbbra is verifikálhatók"
 check "a verifier ismeri a v2-t" "1" "$(grep -c 'cic-tree-manifest/v2)' "$VERIFY")"
 check "  és a legacy (manifest-sor nélküli) ágat" "1" \
     "$(grep -c 'legacy\|üres' "$VERIFY" | head -1 | grep -c '^[1-9]')"
+
+echo
+echo "11. Kulcscsere: ugyanaz a digest, MÁS kulccsal újra aláírva (v4)"
+# A v3 digestje nem függött az aláírótól: a rögzített digestet bárki újra
+# aláírhatta a saját kulcsával, kicserélhette a [certificate] blokkot, és a
+# commit GO-t kapott. A v4 a kulcsot a manifestbe köti.
+openssl ecparam -name prime256v1 -genkey -noout -out "$ENVROOT/keys/other.pem" 2>/dev/null
+openssl req -new -x509 -key "$ENVROOT/keys/other.pem" -out "$ENVROOT/keys/other-cert.pem" \
+    -days 2 -subj "/CN=other" 2>/dev/null
+
+# resign_with <repo> <key> <cert>: a HEAD rögzített digestjét aláírja a megadott
+# kulccsal, és kicseréli a signature sort meg a tanúsítványt. A digest marad.
+resign_with() {
+    local r="$1" key="$2" cert="$3" d sig
+    d=$(git -C "$r" log -1 --format=%B | grep -oP '^digest = \K\S+' | head -1)
+    printf '%s' "$d" | base64 -d > "$ENVROOT/keys/swap.bin"
+    openssl pkeyutl -sign -inkey "$key" -in "$ENVROOT/keys/swap.bin" \
+        -out "$ENVROOT/keys/swap.der" 2>/dev/null
+    sig="vault:v1:$(base64 -w0 < "$ENVROOT/keys/swap.der")"
+    { git -C "$r" log -1 --format=%B | sed '/-----BEGIN CERTIFICATE-----/,$d' \
+          | sed "s|^signature = .*|signature = $sig|"
+      cat "$cert"
+    } > "$ENVROOT/swap.msg"
+    git -C "$r" commit -q --amend --no-verify -F "$ENVROOT/swap.msg"
+}
+
+# Kontroll: ugyanazzal a kulccsal újra aláírva GO -- tehát a csere mechanikája
+# ép, és a lenti elutasítás a KULCS miatt van, nem egy elrontott üzenet miatt.
+S=$(mkrepo S)
+echo korte > "$S/f.txt"; git -C "$S" add f.txt
+git -C "$S" commit -q -m "commit S" 2>/dev/null
+resign_with "$S" "$ENVROOT/keys/key.pem" "$ENVROOT/keys/cert.pem"
+HS=$(git -C "$S" rev-parse HEAD)
+verify "$S" "$HS~1..$HS" > "$ENVROOT/v_same.log"
+check "kontroll: azonos kulccsal újra aláírva GO" "0" "$?"
+
+resign_with "$S" "$ENVROOT/keys/other.pem" "$ENVROOT/keys/other-cert.pem"
+HS=$(git -C "$S" rev-parse HEAD)
+check "  a tanúsítvány tényleg kicserélődött" "1" \
+    "$(git -C "$S" log -1 --format=%B | sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' \
+       | openssl x509 -noout -subject 2>/dev/null | grep -c 'CN *= *other')"
+verify "$S" "$HS~1..$HS" > "$ENVROOT/v_swap.log"
+check "  más kulccsal: a verifier elutasítja" "1" "$?"
+check_log "  a v4 digest-eltérést nevezi meg" "a digest NEM erre a commitra illik (v4 manifest)" "$ENVROOT/v_swap.log"
+
+# Ugyanez v3-mal: a v3 hookot a v4-ből állítjuk elő (verzió vissza, kulcs-sor ki),
+# és MÉRJÜK, hogy a sed tényleg landolt.
+V3=$(mkrepo V3)
+sed -e 's|cic-tree-manifest/v4|cic-tree-manifest/v3|' -e "/printf 'signer-public-key:/d" \
+    "$HOOK" > "$ENVROOT/hook-v3.sh"
+check "v3 hook-másolat: a kulcs-sor kikerült" "0" "$(grep -c 'signer-public-key:' "$ENVROOT/hook-v3.sh")"
+sed -i "s|$HOOK|$ENVROOT/hook-v3.sh|" "$V3/hooks/commit-msg"
+echo korte > "$V3/f.txt"; git -C "$V3" add f.txt
+git -C "$V3" commit -q -m "commit V3" 2>/dev/null
+HV=$(git -C "$V3" rev-parse HEAD)
+check "  v3 manifestet írt" "1" "$(git -C "$V3" log -1 --format=%B | grep -c 'manifest = cic-tree-manifest/v3')"
+verify "$V3" "$HV~1..$HV" > /dev/null
+check "  a v3 történet továbbra is verifikál" "0" "$?"
+resign_with "$V3" "$ENVROOT/keys/other.pem" "$ENVROOT/keys/other-cert.pem"
+HV=$(git -C "$V3" rev-parse HEAD)
+verify "$V3" "$HV~1..$HV" > /dev/null
+check "  v3 alatt a kulcscsere ÁTMEGY (ezt zárja a v4)" "0" "$?"
+
+echo
+echo "12. Lánc a PEM-ben: levél + CICrootCA"
+# A következő kiadástól a Vault a levél mellett a root CA-t is visszaadja. A hook
+# és a verifier az ELSŐ tanúsítvány kulcsát köti -- ez csak akkor helyes, ha a
+# levél áll elöl. Fordított sorrendnél a hook önellenőrzése megállítja a commitot.
+openssl ecparam -name prime256v1 -genkey -noout -out "$ENVROOT/keys/root.pem" 2>/dev/null
+openssl req -new -x509 -key "$ENVROOT/keys/root.pem" -out "$ENVROOT/keys/root-cert.pem" \
+    -days 2 -subj "/CN=CICrootCA-test" 2>/dev/null
+openssl req -new -key "$ENVROOT/keys/key.pem" -subj "/CN=signer" -out "$ENVROOT/keys/leaf.csr" 2>/dev/null
+openssl x509 -req -in "$ENVROOT/keys/leaf.csr" -CA "$ENVROOT/keys/root-cert.pem" \
+    -CAkey "$ENVROOT/keys/root.pem" -CAcreateserial -days 2 \
+    -out "$ENVROOT/keys/leaf-cert.pem" 2>/dev/null
+cp "$ENVROOT/keys/cert.pem" "$ENVROOT/keys/cert-orig.pem"
+
+cat "$ENVROOT/keys/leaf-cert.pem" "$ENVROOT/keys/root-cert.pem" > "$ENVROOT/keys/cert.pem"
+L=$(mkrepo L)
+echo szilva > "$L/f.txt"; git -C "$L" add f.txt
+git -C "$L" commit -q -m "commit L" 2>/dev/null
+HL=$(git -C "$L" rev-parse HEAD)
+check "levél elöl: a hook aláír" "1" "$(git -C "$L" log -1 --format=%B | grep -c 'signing-metadata')"
+check "  mindkét tanúsítvány a blokkban" "2" "$(git -C "$L" log -1 --format=%B | grep -c 'BEGIN CERTIFICATE')"
+verify "$L" "$HL~1..$HL" > /dev/null
+check "  a verifier elfogadja" "0" "$?"
+
+cat "$ENVROOT/keys/root-cert.pem" "$ENVROOT/keys/leaf-cert.pem" > "$ENVROOT/keys/cert.pem"
+RV=$(mkrepo RV)
+echo szilva > "$RV/f.txt"; git -C "$RV" add f.txt
+git -C "$RV" commit -q -m "commit RV" 2>"$ENVROOT/rv.err"
+check "root elöl: a commit megáll" "1" "$?"
+check_log "  az önellenőrzés nevezi meg" "does not verify against the certificate" "$ENVROOT/rv.err"
+cp "$ENVROOT/keys/cert-orig.pem" "$ENVROOT/keys/cert.pem"
 
 echo
 echo "$pass PASS, $fail FAIL"
