@@ -8,7 +8,7 @@ A PR-01 jelentés (`ref/pr01-*.md`) mérései az alap. **Küszöb vagy baseline 
 | | |
 |---|---|
 | CIC_Relay | ág `main`, commit `bc2c4e0a2eade4f798b51e03d2953304512960ed` (`gh api …/commits/main`: a PR-01 óta **nem mozdult**) |
-| Relay munkaág | `feature/relay-ci-parity-02-mutation-planner`, commit `97dd5ebe881547f0717de6853650c8e0bccf8f0f` (helyi, a push a tulajdonosra vár) |
+| Relay munkaág | `feature/relay-ci-parity-02-mutation-planner`, commit `97dd5ebe881547f0717de6853650c8e0bccf8f0f`, CIC_Relay PR **#170** |
 | cic-primitive-forms | `2f02a75592a4b0894a3b76891e9ba3741479a7c5` (`main`), csak referencia, nem módosult |
 | Toolchain a méréshez | `rust:1.96.1-bookworm@sha256:d99f7b31…c4abd8`, `cargo-mutants 27.1.0` (a CI **nem pinel**: a mérés a 27.1.0-ra érvényes) |
 
@@ -78,7 +78,7 @@ A régi kódon zöld marad (12 teszt), ahogy kell: P7 (új csomag), P8, P9 (isme
 
 - `ruff`, `black --check`, `isort --check-only`, `mypy` (6 fájl): tiszta. `bandit` (medium+): tiszta.
 - `yamllint` a két workflow-n: `document-start` **figyelmeztetés** — a változtatás előtti állapoton is megvan (a `git stash`-elt fán mérve), nem az enyém.
-- Kapcsolódó 7 teszt-fájl: **105 passed**. A repó teljes `pytest`-je a scratch venv-ben **nem futott le** (4 gyűjtési hiba: `No module named 'requests'`; a CI hash-ellenőrzött függőségekkel fut): a teljes csomag eredménye **nem mérve**, a CI futása dönt.
+- Kapcsolódó 7 teszt-fájl: **105 passed** (helyben). A repó teljes `pytest`-je a scratch venv-ben **nem futott le** (4 gyűjtési hiba: `No module named 'requests'`). A CI `python` jobja (hash-ellenőrzött függőségekkel, `verify.yml` run 43622573110) **pass** a `97dd5eb`-n; a teszt-szám részletét ebből nem olvastam ki.
 - A többi `|| true` besorolása (`grep -rn '|| true' .github/`):
   `verify.yml:31,89`, `mutation*.yml` `go mod download || true` — nem elfedő (PR-01); `verify.yml:105` `git merge-base … || true` — üres eredménynél `pkgs=./...`, vagyis **teljes** futásra esik vissza (fail-safe); `manifest-check.yml:20` `chmod +x … || true` — nem mért döntés. Egyiket sem módosítottam (nem felsorolási hibaosztály).
 
@@ -88,13 +88,24 @@ A régi kódon zöld marad (12 teszt), ahogy kell: P7 (új csomag), P8, P9 (isme
 |---|---|---|---|---|
 | A számláló sikertelen felsorolásnál nem ad `0`-t | implemented | `scripts/count_mutants.py`; `raw/count-repro-real-cargo-mutants.txt` B/C: exit 1, `n=[]` | `bash raw/countrepro.sh` pinelt konténerben | alacsony; csak cargo-mutants 27.1.0-ra mérve |
 | A jogos üres felsorolás `0`, nem hiba | implemented | uo., A: exit 0, `n=[0]` | uo. | alacsony |
-| A két workflow a számlálót használja, a hiba piros lépés | implemented (szöveg + harness) | `mutation-pr.yml`, `nightly.yml` count lépés; `test_failed_listing_fails_the_step` (8 eset) | `pytest tests/test_tools/test_mutation_workflow_enumeration.py` | **GitHub Actions-ban nem futott**: nem mérve |
+| A két workflow a számlálót használja, a hiba piros lépés | implemented (szöveg + harness) | `mutation-pr.yml`, `nightly.yml` count lépés; `test_failed_listing_fails_the_step` (8 eset) | `pytest tests/test_tools/test_mutation_workflow_enumeration.py`; a siker út a CI-ban (6.1) | a **piros (B/C) út GitHub-futásban nem futott**, azt a harness méri |
 | A teszt a régi kódon buktatja a hibát | implemented | `raw/new-tests-on-old-code.txt`: 25 failed | futtatás a `bc2c4e0` fán | alacsony |
-| A tervező P1–P6 vakfoltokat kezeli, P7–P9 nem romlott | implemented (tervező szinten) | `tests/test_tools/test_mutation_plan_probes.py` (16 teszt) | pytest scratch git-repón | **a gremlins tényleges futása a megnőtt tervvel nem mérve** |
+| A tervező P1–P6 vakfoltokat kezeli, P7–P9 nem romlott | implemented (tervező szinten) | `tests/test_tools/test_mutation_plan_probes.py` (16 teszt) | pytest scratch git-repón | a gremlins a megnőtt tervvel a #170 futásában lefutott (6.1: 6 chunk sikeres); a futásidő **nem mérve** |
 | FULL Rust felsorolás működik valódi eszközzel | implemented | E eset: 300 mutáns | `raw/countrepro.sh` | a 300 a mai állapot; a shard-teljesség a PR-03 |
-| A shardok követik a `rust_full`-t | implemented (szöveg) | `RUST_FULL` env a shard-lépésekben; `test_the_shards_follow_the_planned_mode` | pytest | **GitHub Actions-ban nem futott**: nem mérve |
-| A teljes CI zöld az új HEAD-en | **nem mérve** | — | a PR gate-futása | a PR még nincs megnyitva |
-| A `cargo-mutants` CI-beli verziója egyezik a 27.1.0-val | **nem mérve** | a CI nem pinel | a futásban a `--version` kiírása | közepes |
+| A shardok követik a `rust_full`-t | implemented (szöveg) | `RUST_FULL` env a shard-lépésekben; `test_the_shards_follow_the_planned_mode`; CI: `rust_full=true`, 8 shard sikeres (6.1) | pytest + run `43622573082` | alacsony |
+| A CI zöld a `97dd5eb`-n | implemented (mérve) | 6.1: run `43622573110` verify, `43622573082` mutation-pr, `43622573137` manifest-check, mind `success`, headSha `97dd5eb` | `gh run list -R CentralInfraCore/CIC_Relay --commit 97dd5eb…` | a hibás-felsorolás (piros) út nincs GitHub-futásban |
+| A `cargo-mutants` CI-beli verziója egyezik a 27.1.0-val | implemented (egy futásra mérve) | a `plan` job logja: `installing cargo-mutants@latest`, `cargo-mutants 27.1.0` | `gh run view 43622573082 --log` | **a pin hiánya megmarad**: egy későbbi `latest` mást adhat |
+
+### 6.1 GitHub Actions a #170 fején (`97dd5ebe881547f0717de6853650c8e0bccf8f0f`)
+
+| Workflow | Run id | Eredmény |
+|---|---|---|
+| `verify` | 43622573110 | success (benne `python`, `coverage`, `ffi`) |
+| `mutation-pr` | 43622573082 | success |
+| `manifest-check` | 43622573137 | success |
+
+A `mutation-pr` run `plan` jobjának logjából: `changed files: 8`, `go_full=true rust_full=true`, okok: `mutation-pr.yml`, `nightly.yml`, `scripts/count_mutants.py`, `scripts/mutation_plan.py` (gate logic changed); `rust mutants to test: 300 (rust_full=true)`, `rust shards: 8`. Eredmény: 6 Go chunk **success**, 8 Rust shard **success**. A PR saját változása tehát a saját tervét a teljes tervre eszkalálta, és az átment.
+Amit ez **nem** bizonyít: a hibás felsorolás (B/C) piros útja GitHub-futásban nem futott (a PR-ben nincs hibás bemenet); azt a harness és a valódi cargo-mutants mérés (4.1, 4.2) igazolja. A shard-teljesség (a 300 tervezett mutáns mind mért ítéletet kapott-e) **nem mérve**, ez a PR-03.
 
 ## 7. Nyitott, jelentve (nem része a jobnak)
 
@@ -104,7 +115,12 @@ A régi kódon zöld marad (12 teszt), ahogy kell: P7 (új csomag), P8, P9 (isme
 - A shard-teljesség (planned = measured) a **PR-03** feladata; ez a PR csak azt biztosítja, hogy a felsorolás hibája ne legyen `0`.
 - A Relay `workspace/CIC_Relay/` klón ismétlődő piszkos állapota: ok ismeretlen (lásd 1.).
 
-## 8. Aláírás és push
+## 8. Review-megjegyzések, felvéve
+
+- **P8:** a `tools/goastdump` beágyazott modul továbbra is kimarad a mutációs tervből; külön döntés, hogy kap-e saját profilt.
+- **Rust `#[cfg(test)]` ugyanabban a fájlban:** a következő planner-hardening feladatba felvenni (lásd 7.).
+
+## 9. Aláírás és push
 
 A Relay-commit a Vault `commit-msg` hook futásával készült (aláírási metaadat a commit-üzenetben); az aláírás érvényességét **nem ellenőriztem**. A commit szerzője a tulajdonos beállított git-identitása. Co-Authored-By vagy AI-re utaló sor nincs. A squash-merge trailert vihet a `main`-re: a merge módját a tulajdonos dönti.
-A Relay-ág push-át és a PR-t a tulajdonos futtatja, ha a környezet elutasítja.
+A push-okat a tulajdonos futtatta (a környezet elutasítja őket).
