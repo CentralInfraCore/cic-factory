@@ -1,0 +1,15 @@
+info: syncing channel updates for 1.96.1-x86_64-unknown-linux-gnu
+info: latest update on 2026-06-30 for version 1.96.1 (31fca3adb 2026-06-26)
+info: downloading 3 components
+cargo-mutants 27.1.0
+### A valid, empty listing
+count_mutants exit=0 n=[0] stderr=[ INFO No mutants to filter ]
+### B unreadable --in-diff
+count_mutants exit=1 n=[] stderr=[ERROR Failed to open diff file: No such file or directory (os error 2) ERROR Failed to read diff file: No such file or directory (os error 2) ::error::the listing command failed with exit status 6: cargo mutants --workspace --list --in-diff /nonexistent.diff ]
+### C broken .cargo/mutants.toml
+count_mutants exit=1 n=[] stderr=[Error: parse toml from /w/.cargo/mutants.toml  Caused by:     0: parse toml     1: TOML parse error at line 37, column 1           |        37 | exclude_re = ["("]           | ^^^^^^^^^^        duplicate key         ::error::the listing command failed with exit status 1: cargo mutants --workspace --]
+### D the workflow form under bash -e: B must now fail the step
+step fails: listing failed
+step exit code: 1
+### E FULL listing (rust_full): a real number
+count_mutants exit=0 n=[300] listing_lines=300
