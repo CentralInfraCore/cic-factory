@@ -1,0 +1,738 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.2.0, pluggy-1.7.0
+rootdir: <scratchpad>/old3
+configfile: pytest.ini
+plugins: platformdirs-4.14.5, cov-7.1.0
+collected 71 items
+
+tests/test_tools/test_quality_gate_workflows.py .F....FFFFFFFFFFFFFFFFFF [ 33%]
+FFFFF                                                                    [ 40%]
+tests/test_tools/test_mutation_plan_probes.py ................FFF..      [ 70%]
+tests/test_tools/test_mutation_workflow_enumeration.py ................. [ 94%]
+....                                                                     [100%]
+
+=================================== FAILURES ===================================
+________ test_gate_is_red_when_the_completeness_check_is_not_successful ________
+
+tmp_path = PosixPath('/tmp/pytest-of-user/pytest-19/test_gate_is_red_when_the_comp0')
+
+    def test_gate_is_red_when_the_completeness_check_is_not_successful(tmp_path):
+        # every job is a success: only the comparison of planned and measured says "no"
+        for result in ("failure", "cancelled", "skipped", ""):
+            r = gate(tmp_path, COMPLETENESS=result)
+>           assert r.returncode != 0, f"completeness={result!r}: the gate accepted it"
+E           AssertionError: completeness='failure': the gate accepted it
+E           assert 0 != 0
+E            +  where 0 = CompletedProcess(args=['bash', '-e', '-c', 'echo "plan=$PLAN go=$GO rust=$RUST baseline-guard=$GUARD"\n[ "$PLAN" = "su... ;;\n  esac\ndone\n'], returncode=0, stdout='plan=success go=success rust=success baseline-guard=success\n', stderr='').returncode
+
+tests/test_tools/test_quality_gate_workflows.py:75: AssertionError
+_ test_a_skipped_mutation_job_is_accepted_only_through_the_completeness_check[GO] _
+
+tmp_path = PosixPath('/tmp/pytest-of-user/pytest-19/test_a_skipped_mutation_job_is0')
+who = 'GO'
+
+    @pytest.mark.parametrize("who", ["GO", "RUST"])
+    def test_a_skipped_mutation_job_is_accepted_only_through_the_completeness_check(
+        tmp_path, who
+    ):
+        # skipped + the check green (it verified PLAN_VALID_EMPTY): fine; skipped + the check red: not
+        assert gate(tmp_path, **{who: "skipped"}).returncode == 0
+>       assert gate(tmp_path, **{who: "skipped", "COMPLETENESS": "failure"}).returncode != 0
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['bash', '-e', '-c', 'echo "plan=$PLAN go=$GO rust=$RUST baseline-guard=$GUARD"\n[ "$PLAN" = "su... ;;\n  esac\ndone\n'], returncode=0, stdout='plan=success go=skipped rust=success baseline-guard=success\n', stderr='').returncode
+E        +    where CompletedProcess(args=['bash', '-e', '-c', 'echo "plan=$PLAN go=$GO rust=$RUST baseline-guard=$GUARD"\n[ "$PLAN" = "su... ;;\n  esac\ndone\n'], returncode=0, stdout='plan=success go=skipped rust=success baseline-guard=success\n', stderr='') = gate(PosixPath('/tmp/pytest-of-user/pytest-19/test_a_skipped_mutation_job_is0'), **{'GO': 'skipped', 'COMPLETENESS': 'failure'})
+
+tests/test_tools/test_quality_gate_workflows.py:90: AssertionError
+_ test_a_skipped_mutation_job_is_accepted_only_through_the_completeness_check[RUST] _
+
+tmp_path = PosixPath('/tmp/pytest-of-user/pytest-19/test_a_skipped_mutation_job_is1')
+who = 'RUST'
+
+    @pytest.mark.parametrize("who", ["GO", "RUST"])
+    def test_a_skipped_mutation_job_is_accepted_only_through_the_completeness_check(
+        tmp_path, who
+    ):
+        # skipped + the check green (it verified PLAN_VALID_EMPTY): fine; skipped + the check red: not
+        assert gate(tmp_path, **{who: "skipped"}).returncode == 0
+>       assert gate(tmp_path, **{who: "skipped", "COMPLETENESS": "failure"}).returncode != 0
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['bash', '-e', '-c', 'echo "plan=$PLAN go=$GO rust=$RUST baseline-guard=$GUARD"\n[ "$PLAN" = "su... ;;\n  esac\ndone\n'], returncode=0, stdout='plan=success go=success rust=skipped baseline-guard=success\n', stderr='').returncode
+E        +    where CompletedProcess(args=['bash', '-e', '-c', 'echo "plan=$PLAN go=$GO rust=$RUST baseline-guard=$GUARD"\n[ "$PLAN" = "su... ;;\n  esac\ndone\n'], returncode=0, stdout='plan=success go=success rust=skipped baseline-guard=success\n', stderr='') = gate(PosixPath('/tmp/pytest-of-user/pytest-19/test_a_skipped_mutation_job_is1'), **{'RUST': 'skipped', 'COMPLETENESS': 'failure'})
+
+tests/test_tools/test_quality_gate_workflows.py:90: AssertionError
+_ test_nightly_report_is_a_failure_when_the_completeness_check_is_not_successful _
+
+tmp_path = PosixPath('/tmp/pytest-of-user/pytest-19/test_nightly_report_is_a_failu0')
+
+    def test_nightly_report_is_a_failure_when_the_completeness_check_is_not_successful(
+        tmp_path,
+    ):
+        scripts = tmp_path / "scripts"
+        scripts.mkdir()
+        (scripts / "ci_report.sh").write_text(
+            '#!/usr/bin/env bash\necho "$3" > "$PWD/status"\n'
+        )
+        s = step(
+            "nightly.yml",
+            "report",
+            "name",
+            "Report (open or update the issue on failure, close it on success)",
+        )
+        base = {
+            "SECURITY": "success",
+            "PLAN": "success",
+            "GO": "success",
+            "RUST": "success",
+            "TEST": "",
+            "GH_TOKEN": "x",
+        }
+        for completeness, want in (
+            ("success", "success"),
+            ("failure", "failure"),
+            ("skipped", "failure"),
+        ):
+            r = run_script(s["run"], str(tmp_path), {**base, "COMPLETENESS": completeness})
+            assert r.returncode == 0, r.stderr
+>           assert (tmp_path / "status").read_text().strip() == want, completeness
+E           AssertionError: failure
+E           assert 'success' == 'failure'
+E             
+E             - failure
+E             + success
+
+tests/test_tools/test_quality_gate_workflows.py:125: AssertionError
+___ test_the_rust_plan_record_of_a_real_listing[mutation-pr.yml-plan-extra0] ___
+
+workdir = (PosixPath('/tmp/pytest-of-user/pytest-19/test_the_rust_plan_record_of_a0'), '/tmp/pytest-of-user/pytest-19/test_the_rust_plan_record_of_a0/bin')
+workflow = 'mutation-pr.yml', job = 'plan'
+extra = {'BASE_SHA': 'HEAD', 'HEAD_SHA': 'HEAD'}
+
+    @pytest.mark.parametrize("workflow, job, extra", PLAN_STEPS)
+    def test_the_rust_plan_record_of_a_real_listing(workdir, workflow, job, extra):
+        tmp_path, bindir = workdir
+>       r, out = rust_plan_step(workflow, job, tmp_path, bindir, "LIST", extra)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tools/test_quality_gate_workflows.py:209: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_tools/test_quality_gate_workflows.py:186: in rust_plan_step
+    s = step(workflow, job, "id", "rustplan")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workflow = 'mutation-pr.yml', job = 'plan', key = 'id', value = 'rustplan'
+
+    def step(workflow, job, key, value="id"):
+        for s in load(workflow)["jobs"][job]["steps"]:
+            if (key == "id" and s.get("id") == value) or (
+                key == "name" and s.get("name") == value
+            ):
+                return s
+>       raise AssertionError(f"{workflow}: no step {value!r} in job {job!r}")
+E       AssertionError: mutation-pr.yml: no step 'rustplan' in job 'plan'
+
+tests/test_tools/test_quality_gate_workflows.py:36: AssertionError
+_____ test_the_rust_plan_record_of_a_real_listing[nightly.yml-plan-extra1] _____
+
+workdir = (PosixPath('/tmp/pytest-of-user/pytest-19/test_the_rust_plan_record_of_a1'), '/tmp/pytest-of-user/pytest-19/test_the_rust_plan_record_of_a1/bin')
+workflow = 'nightly.yml', job = 'plan'
+extra = {'BASE': 'HEAD', 'HEAD_SHA': 'HEAD'}
+
+    @pytest.mark.parametrize("workflow, job, extra", PLAN_STEPS)
+    def test_the_rust_plan_record_of_a_real_listing(workdir, workflow, job, extra):
+        tmp_path, bindir = workdir
+>       r, out = rust_plan_step(workflow, job, tmp_path, bindir, "LIST", extra)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tools/test_quality_gate_workflows.py:209: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_tools/test_quality_gate_workflows.py:186: in rust_plan_step
+    s = step(workflow, job, "id", "rustplan")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workflow = 'nightly.yml', job = 'plan', key = 'id', value = 'rustplan'
+
+    def step(workflow, job, key, value="id"):
+        for s in load(workflow)["jobs"][job]["steps"]:
+            if (key == "id" and s.get("id") == value) or (
+                key == "name" and s.get("name") == value
+            ):
+                return s
+>       raise AssertionError(f"{workflow}: no step {value!r} in job {job!r}")
+E       AssertionError: nightly.yml: no step 'rustplan' in job 'plan'
+
+tests/test_tools/test_quality_gate_workflows.py:36: AssertionError
+_ test_a_failed_listing_fails_the_plan_record_and_leaves_no_plan[mutation-pr.yml-plan-extra0] _
+
+workdir = (PosixPath('/tmp/pytest-of-user/pytest-19/test_a_failed_listing_fails_th0'), '/tmp/pytest-of-user/pytest-19/test_a_failed_listing_fails_th0/bin')
+workflow = 'mutation-pr.yml', job = 'plan'
+extra = {'BASE_SHA': 'HEAD', 'HEAD_SHA': 'HEAD'}
+
+    @pytest.mark.parametrize("workflow, job, extra", PLAN_STEPS)
+    def test_a_failed_listing_fails_the_plan_record_and_leaves_no_plan(
+        workdir, workflow, job, extra
+    ):
+        tmp_path, bindir = workdir
+>       r, out = rust_plan_step(workflow, job, tmp_path, bindir, "FAIL", extra)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tools/test_quality_gate_workflows.py:221: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_tools/test_quality_gate_workflows.py:186: in rust_plan_step
+    s = step(workflow, job, "id", "rustplan")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workflow = 'mutation-pr.yml', job = 'plan', key = 'id', value = 'rustplan'
+
+    def step(workflow, job, key, value="id"):
+        for s in load(workflow)["jobs"][job]["steps"]:
+            if (key == "id" and s.get("id") == value) or (
+                key == "name" and s.get("name") == value
+            ):
+                return s
+>       raise AssertionError(f"{workflow}: no step {value!r} in job {job!r}")
+E       AssertionError: mutation-pr.yml: no step 'rustplan' in job 'plan'
+
+tests/test_tools/test_quality_gate_workflows.py:36: AssertionError
+_ test_a_failed_listing_fails_the_plan_record_and_leaves_no_plan[nightly.yml-plan-extra1] _
+
+workdir = (PosixPath('/tmp/pytest-of-user/pytest-19/test_a_failed_listing_fails_th1'), '/tmp/pytest-of-user/pytest-19/test_a_failed_listing_fails_th1/bin')
+workflow = 'nightly.yml', job = 'plan'
+extra = {'BASE': 'HEAD', 'HEAD_SHA': 'HEAD'}
+
+    @pytest.mark.parametrize("workflow, job, extra", PLAN_STEPS)
+    def test_a_failed_listing_fails_the_plan_record_and_leaves_no_plan(
+        workdir, workflow, job, extra
+    ):
+        tmp_path, bindir = workdir
+>       r, out = rust_plan_step(workflow, job, tmp_path, bindir, "FAIL", extra)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tools/test_quality_gate_workflows.py:221: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_tools/test_quality_gate_workflows.py:186: in rust_plan_step
+    s = step(workflow, job, "id", "rustplan")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workflow = 'nightly.yml', job = 'plan', key = 'id', value = 'rustplan'
+
+    def step(workflow, job, key, value="id"):
+        for s in load(workflow)["jobs"][job]["steps"]:
+            if (key == "id" and s.get("id") == value) or (
+                key == "name" and s.get("name") == value
+            ):
+                return s
+>       raise AssertionError(f"{workflow}: no step {value!r} in job {job!r}")
+E       AssertionError: nightly.yml: no step 'rustplan' in job 'plan'
+
+tests/test_tools/test_quality_gate_workflows.py:36: AssertionError
+_ test_a_valid_empty_listing_is_a_valid_empty_plan[mutation-pr.yml-plan-extra0] _
+
+workdir = (PosixPath('/tmp/pytest-of-user/pytest-19/test_a_valid_empty_listing_is_0'), '/tmp/pytest-of-user/pytest-19/test_a_valid_empty_listing_is_0/bin')
+workflow = 'mutation-pr.yml', job = 'plan'
+extra = {'BASE_SHA': 'HEAD', 'HEAD_SHA': 'HEAD'}
+
+    @pytest.mark.parametrize("workflow, job, extra", PLAN_STEPS)
+    def test_a_valid_empty_listing_is_a_valid_empty_plan(workdir, workflow, job, extra):
+        tmp_path, bindir = workdir
+>       r, out = rust_plan_step(
+            workflow, job, tmp_path, bindir, "EMPTY", extra, COUNTED="0"
+        )
+
+tests/test_tools/test_quality_gate_workflows.py:230: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_tools/test_quality_gate_workflows.py:186: in rust_plan_step
+    s = step(workflow, job, "id", "rustplan")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workflow = 'mutation-pr.yml', job = 'plan', key = 'id', value = 'rustplan'
+
+    def step(workflow, job, key, value="id"):
+        for s in load(workflow)["jobs"][job]["steps"]:
+            if (key == "id" and s.get("id") == value) or (
+                key == "name" and s.get("name") == value
+            ):
+                return s
+>       raise AssertionError(f"{workflow}: no step {value!r} in job {job!r}")
+E       AssertionError: mutation-pr.yml: no step 'rustplan' in job 'plan'
+
+tests/test_tools/test_quality_gate_workflows.py:36: AssertionError
+__ test_a_valid_empty_listing_is_a_valid_empty_plan[nightly.yml-plan-extra1] ___
+
+workdir = (PosixPath('/tmp/pytest-of-user/pytest-19/test_a_valid_empty_listing_is_1'), '/tmp/pytest-of-user/pytest-19/test_a_valid_empty_listing_is_1/bin')
+workflow = 'nightly.yml', job = 'plan'
+extra = {'BASE': 'HEAD', 'HEAD_SHA': 'HEAD'}
+
+    @pytest.mark.parametrize("workflow, job, extra", PLAN_STEPS)
+    def test_a_valid_empty_listing_is_a_valid_empty_plan(workdir, workflow, job, extra):
+        tmp_path, bindir = workdir
+>       r, out = rust_plan_step(
+            workflow, job, tmp_path, bindir, "EMPTY", extra, COUNTED="0"
+        )
+
+tests/test_tools/test_quality_gate_workflows.py:230: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_tools/test_quality_gate_workflows.py:186: in rust_plan_step
+    s = step(workflow, job, "id", "rustplan")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workflow = 'nightly.yml', job = 'plan', key = 'id', value = 'rustplan'
+
+    def step(workflow, job, key, value="id"):
+        for s in load(workflow)["jobs"][job]["steps"]:
+            if (key == "id" and s.get("id") == value) or (
+                key == "name" and s.get("name") == value
+            ):
+                return s
+>       raise AssertionError(f"{workflow}: no step {value!r} in job {job!r}")
+E       AssertionError: nightly.yml: no step 'rustplan' in job 'plan'
+
+tests/test_tools/test_quality_gate_workflows.py:36: AssertionError
+_ test_the_plan_record_must_agree_with_the_count_step[mutation-pr.yml-plan-extra0] _
+
+workdir = (PosixPath('/tmp/pytest-of-user/pytest-19/test_the_plan_record_must_agre0'), '/tmp/pytest-of-user/pytest-19/test_the_plan_record_must_agre0/bin')
+workflow = 'mutation-pr.yml', job = 'plan'
+extra = {'BASE_SHA': 'HEAD', 'HEAD_SHA': 'HEAD'}
+
+    @pytest.mark.parametrize("workflow, job, extra", PLAN_STEPS)
+    def test_the_plan_record_must_agree_with_the_count_step(workdir, workflow, job, extra):
+        tmp_path, bindir = workdir
+>       r, _ = rust_plan_step(workflow, job, tmp_path, bindir, "LIST", extra, COUNTED="4")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tools/test_quality_gate_workflows.py:243: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_tools/test_quality_gate_workflows.py:186: in rust_plan_step
+    s = step(workflow, job, "id", "rustplan")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workflow = 'mutation-pr.yml', job = 'plan', key = 'id', value = 'rustplan'
+
+    def step(workflow, job, key, value="id"):
+        for s in load(workflow)["jobs"][job]["steps"]:
+            if (key == "id" and s.get("id") == value) or (
+                key == "name" and s.get("name") == value
+            ):
+                return s
+>       raise AssertionError(f"{workflow}: no step {value!r} in job {job!r}")
+E       AssertionError: mutation-pr.yml: no step 'rustplan' in job 'plan'
+
+tests/test_tools/test_quality_gate_workflows.py:36: AssertionError
+_ test_the_plan_record_must_agree_with_the_count_step[nightly.yml-plan-extra1] _
+
+workdir = (PosixPath('/tmp/pytest-of-user/pytest-19/test_the_plan_record_must_agre1'), '/tmp/pytest-of-user/pytest-19/test_the_plan_record_must_agre1/bin')
+workflow = 'nightly.yml', job = 'plan'
+extra = {'BASE': 'HEAD', 'HEAD_SHA': 'HEAD'}
+
+    @pytest.mark.parametrize("workflow, job, extra", PLAN_STEPS)
+    def test_the_plan_record_must_agree_with_the_count_step(workdir, workflow, job, extra):
+        tmp_path, bindir = workdir
+>       r, _ = rust_plan_step(workflow, job, tmp_path, bindir, "LIST", extra, COUNTED="4")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tools/test_quality_gate_workflows.py:243: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_tools/test_quality_gate_workflows.py:186: in rust_plan_step
+    s = step(workflow, job, "id", "rustplan")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workflow = 'nightly.yml', job = 'plan', key = 'id', value = 'rustplan'
+
+    def step(workflow, job, key, value="id"):
+        for s in load(workflow)["jobs"][job]["steps"]:
+            if (key == "id" and s.get("id") == value) or (
+                key == "name" and s.get("name") == value
+            ):
+                return s
+>       raise AssertionError(f"{workflow}: no step {value!r} in job {job!r}")
+E       AssertionError: nightly.yml: no step 'rustplan' in job 'plan'
+
+tests/test_tools/test_quality_gate_workflows.py:36: AssertionError
+_ test_no_rust_change_is_an_empty_plan_with_a_reason[mutation-pr.yml-plan-extra0] _
+
+workdir = (PosixPath('/tmp/pytest-of-user/pytest-19/test_no_rust_change_is_an_empt0'), '/tmp/pytest-of-user/pytest-19/test_no_rust_change_is_an_empt0/bin')
+workflow = 'mutation-pr.yml', job = 'plan'
+extra = {'BASE_SHA': 'HEAD', 'HEAD_SHA': 'HEAD'}
+
+    @pytest.mark.parametrize("workflow, job, extra", PLAN_STEPS)
+    def test_no_rust_change_is_an_empty_plan_with_a_reason(workdir, workflow, job, extra):
+        tmp_path, bindir = workdir
+>       r, _ = rust_plan_step(
+            workflow, job, tmp_path, bindir, "LIST", extra, RUST="false", COUNTED="0"
+        )
+
+tests/test_tools/test_quality_gate_workflows.py:251: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_tools/test_quality_gate_workflows.py:186: in rust_plan_step
+    s = step(workflow, job, "id", "rustplan")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workflow = 'mutation-pr.yml', job = 'plan', key = 'id', value = 'rustplan'
+
+    def step(workflow, job, key, value="id"):
+        for s in load(workflow)["jobs"][job]["steps"]:
+            if (key == "id" and s.get("id") == value) or (
+                key == "name" and s.get("name") == value
+            ):
+                return s
+>       raise AssertionError(f"{workflow}: no step {value!r} in job {job!r}")
+E       AssertionError: mutation-pr.yml: no step 'rustplan' in job 'plan'
+
+tests/test_tools/test_quality_gate_workflows.py:36: AssertionError
+_ test_no_rust_change_is_an_empty_plan_with_a_reason[nightly.yml-plan-extra1] __
+
+workdir = (PosixPath('/tmp/pytest-of-user/pytest-19/test_no_rust_change_is_an_empt1'), '/tmp/pytest-of-user/pytest-19/test_no_rust_change_is_an_empt1/bin')
+workflow = 'nightly.yml', job = 'plan'
+extra = {'BASE': 'HEAD', 'HEAD_SHA': 'HEAD'}
+
+    @pytest.mark.parametrize("workflow, job, extra", PLAN_STEPS)
+    def test_no_rust_change_is_an_empty_plan_with_a_reason(workdir, workflow, job, extra):
+        tmp_path, bindir = workdir
+>       r, _ = rust_plan_step(
+            workflow, job, tmp_path, bindir, "LIST", extra, RUST="false", COUNTED="0"
+        )
+
+tests/test_tools/test_quality_gate_workflows.py:251: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_tools/test_quality_gate_workflows.py:186: in rust_plan_step
+    s = step(workflow, job, "id", "rustplan")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workflow = 'nightly.yml', job = 'plan', key = 'id', value = 'rustplan'
+
+    def step(workflow, job, key, value="id"):
+        for s in load(workflow)["jobs"][job]["steps"]:
+            if (key == "id" and s.get("id") == value) or (
+                key == "name" and s.get("name") == value
+            ):
+                return s
+>       raise AssertionError(f"{workflow}: no step {value!r} in job {job!r}")
+E       AssertionError: nightly.yml: no step 'rustplan' in job 'plan'
+
+tests/test_tools/test_quality_gate_workflows.py:36: AssertionError
+_____ test_the_diff_mode_lists_with_the_diff[mutation-pr.yml-plan-extra0] ______
+
+workdir = (PosixPath('/tmp/pytest-of-user/pytest-19/test_the_diff_mode_lists_with_0'), '/tmp/pytest-of-user/pytest-19/test_the_diff_mode_lists_with_0/bin')
+workflow = 'mutation-pr.yml', job = 'plan'
+extra = {'BASE_SHA': 'HEAD', 'HEAD_SHA': 'HEAD'}
+
+    @pytest.mark.parametrize("workflow, job, extra", PLAN_STEPS)
+    def test_the_diff_mode_lists_with_the_diff(workdir, workflow, job, extra):
+        tmp_path, bindir = workdir
+>       r, _ = rust_plan_step(
+            workflow, job, tmp_path, bindir, "LIST", extra, RUST_FULL="false"
+        )
+
+tests/test_tools/test_quality_gate_workflows.py:262: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_tools/test_quality_gate_workflows.py:186: in rust_plan_step
+    s = step(workflow, job, "id", "rustplan")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workflow = 'mutation-pr.yml', job = 'plan', key = 'id', value = 'rustplan'
+
+    def step(workflow, job, key, value="id"):
+        for s in load(workflow)["jobs"][job]["steps"]:
+            if (key == "id" and s.get("id") == value) or (
+                key == "name" and s.get("name") == value
+            ):
+                return s
+>       raise AssertionError(f"{workflow}: no step {value!r} in job {job!r}")
+E       AssertionError: mutation-pr.yml: no step 'rustplan' in job 'plan'
+
+tests/test_tools/test_quality_gate_workflows.py:36: AssertionError
+_______ test_the_diff_mode_lists_with_the_diff[nightly.yml-plan-extra1] ________
+
+workdir = (PosixPath('/tmp/pytest-of-user/pytest-19/test_the_diff_mode_lists_with_1'), '/tmp/pytest-of-user/pytest-19/test_the_diff_mode_lists_with_1/bin')
+workflow = 'nightly.yml', job = 'plan'
+extra = {'BASE': 'HEAD', 'HEAD_SHA': 'HEAD'}
+
+    @pytest.mark.parametrize("workflow, job, extra", PLAN_STEPS)
+    def test_the_diff_mode_lists_with_the_diff(workdir, workflow, job, extra):
+        tmp_path, bindir = workdir
+>       r, _ = rust_plan_step(
+            workflow, job, tmp_path, bindir, "LIST", extra, RUST_FULL="false"
+        )
+
+tests/test_tools/test_quality_gate_workflows.py:262: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_tools/test_quality_gate_workflows.py:186: in rust_plan_step
+    s = step(workflow, job, "id", "rustplan")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workflow = 'nightly.yml', job = 'plan', key = 'id', value = 'rustplan'
+
+    def step(workflow, job, key, value="id"):
+        for s in load(workflow)["jobs"][job]["steps"]:
+            if (key == "id" and s.get("id") == value) or (
+                key == "name" and s.get("name") == value
+            ):
+                return s
+>       raise AssertionError(f"{workflow}: no step {value!r} in job {job!r}")
+E       AssertionError: nightly.yml: no step 'rustplan' in job 'plan'
+
+tests/test_tools/test_quality_gate_workflows.py:36: AssertionError
+_____________ test_the_go_plan_record[mutation-pr.yml-plan-extra0] _____________
+
+workdir = (PosixPath('/tmp/pytest-of-user/pytest-19/test_the_go_plan_record_mutati0'), '/tmp/pytest-of-user/pytest-19/test_the_go_plan_record_mutati0/bin')
+workflow = 'mutation-pr.yml', job = 'plan'
+extra = {'BASE_SHA': 'HEAD', 'HEAD_SHA': 'HEAD'}
+
+    @pytest.mark.parametrize("workflow, job, extra", PLAN_STEPS)
+    def test_the_go_plan_record(workdir, workflow, job, extra):
+        tmp_path, _ = workdir
+>       s = step(workflow, job, "id", "goplan")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tools/test_quality_gate_workflows.py:273: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workflow = 'mutation-pr.yml', job = 'plan', key = 'id', value = 'goplan'
+
+    def step(workflow, job, key, value="id"):
+        for s in load(workflow)["jobs"][job]["steps"]:
+            if (key == "id" and s.get("id") == value) or (
+                key == "name" and s.get("name") == value
+            ):
+                return s
+>       raise AssertionError(f"{workflow}: no step {value!r} in job {job!r}")
+E       AssertionError: mutation-pr.yml: no step 'goplan' in job 'plan'
+
+tests/test_tools/test_quality_gate_workflows.py:36: AssertionError
+_______________ test_the_go_plan_record[nightly.yml-plan-extra1] _______________
+
+workdir = (PosixPath('/tmp/pytest-of-user/pytest-19/test_the_go_plan_record_nightl0'), '/tmp/pytest-of-user/pytest-19/test_the_go_plan_record_nightl0/bin')
+workflow = 'nightly.yml', job = 'plan'
+extra = {'BASE': 'HEAD', 'HEAD_SHA': 'HEAD'}
+
+    @pytest.mark.parametrize("workflow, job, extra", PLAN_STEPS)
+    def test_the_go_plan_record(workdir, workflow, job, extra):
+        tmp_path, _ = workdir
+>       s = step(workflow, job, "id", "goplan")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_tools/test_quality_gate_workflows.py:273: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workflow = 'nightly.yml', job = 'plan', key = 'id', value = 'goplan'
+
+    def step(workflow, job, key, value="id"):
+        for s in load(workflow)["jobs"][job]["steps"]:
+            if (key == "id" and s.get("id") == value) or (
+                key == "name" and s.get("name") == value
+            ):
+                return s
+>       raise AssertionError(f"{workflow}: no step {value!r} in job {job!r}")
+E       AssertionError: nightly.yml: no step 'goplan' in job 'plan'
+
+tests/test_tools/test_quality_gate_workflows.py:36: AssertionError
+_ test_the_reports_are_handed_in_and_collected_under_matching_names[mutation-pr.yml] _
+
+workflow = 'mutation-pr.yml'
+
+    @pytest.mark.parametrize("workflow", ["mutation-pr.yml", "nightly.yml"])
+    def test_the_reports_are_handed_in_and_collected_under_matching_names(workflow):
+        doc = load(workflow)
+        jobs = doc["jobs"]
+        uploads = {
+            job: [
+                s["with"]["name"]
+                for s in jobs[job]["steps"]
+                if "upload-artifact" in str(s.get("uses"))
+            ]
+            for job in ("plan", "go", "rust")
+        }
+>       assert uploads["plan"] == ["mutation-plan"]
+E       AssertionError: assert [] == ['mutation-plan']
+E         
+E         Right contains one more item: 'mutation-plan'
+E         Use -v to get more diff
+
+tests/test_tools/test_quality_gate_workflows.py:307: AssertionError
+_ test_the_reports_are_handed_in_and_collected_under_matching_names[nightly.yml] _
+
+workflow = 'nightly.yml'
+
+    @pytest.mark.parametrize("workflow", ["mutation-pr.yml", "nightly.yml"])
+    def test_the_reports_are_handed_in_and_collected_under_matching_names(workflow):
+        doc = load(workflow)
+        jobs = doc["jobs"]
+        uploads = {
+            job: [
+                s["with"]["name"]
+                for s in jobs[job]["steps"]
+                if "upload-artifact" in str(s.get("uses"))
+            ]
+            for job in ("plan", "go", "rust")
+        }
+>       assert uploads["plan"] == ["mutation-plan"]
+E       AssertionError: assert [] == ['mutation-plan']
+E         
+E         Right contains one more item: 'mutation-plan'
+E         Use -v to get more diff
+
+tests/test_tools/test_quality_gate_workflows.py:307: AssertionError
+_ test_the_completeness_job_waits_for_the_mutation_jobs_and_always_runs[mutation-pr.yml] _
+
+workflow = 'mutation-pr.yml'
+
+    @pytest.mark.parametrize("workflow", ["mutation-pr.yml", "nightly.yml"])
+    def test_the_completeness_job_waits_for_the_mutation_jobs_and_always_runs(workflow):
+>       c = load(workflow)["jobs"]["completeness"]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'completeness'
+
+tests/test_tools/test_quality_gate_workflows.py:332: KeyError
+_ test_the_completeness_job_waits_for_the_mutation_jobs_and_always_runs[nightly.yml] _
+
+workflow = 'nightly.yml'
+
+    @pytest.mark.parametrize("workflow", ["mutation-pr.yml", "nightly.yml"])
+    def test_the_completeness_job_waits_for_the_mutation_jobs_and_always_runs(workflow):
+>       c = load(workflow)["jobs"]["completeness"]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'completeness'
+
+tests/test_tools/test_quality_gate_workflows.py:332: KeyError
+________________ test_the_gate_depends_on_the_completeness_job _________________
+
+    def test_the_gate_depends_on_the_completeness_job():
+>       assert "completeness" in load("mutation-pr.yml")["jobs"]["gate"]["needs"]
+E       AssertionError: assert 'completeness' in ['plan', 'go', 'rust', 'baseline-guard']
+
+tests/test_tools/test_quality_gate_workflows.py:339: AssertionError
+____________ test_every_shard_and_chunk_is_bound_to_the_plan_digest ____________
+
+    def test_every_shard_and_chunk_is_bound_to_the_plan_digest():
+        for workflow in ("mutation-pr.yml", "nightly.yml"):
+            text = open(os.path.join(WORKFLOWS, workflow)).read()
+>           assert "needs.plan.outputs.rust_plan_digest" in text
+E           assert 'needs.plan.outputs.rust_plan_digest' in 'name: mutation-pr\n\n# Diff-mode mutation gate of a pull request.\n#\n# What is mutated is discovered from the diff, ...ed) ;;\n              *) echo "::error::a mutation job ended as \'$r\'"; exit 1 ;;\n            esac\n          done\n'
+
+tests/test_tools/test_quality_gate_workflows.py:346: AssertionError
+___________ test_cfg_test_edit_inside_the_test_module_escalates_rust ___________
+
+repo = PosixPath('/tmp/pytest-of-user/pytest-19/test_cfg_test_edit_inside_the_0')
+
+    def test_cfg_test_edit_inside_the_test_module_escalates_rust(repo):
+        change(repo, {"crate/src/lib.rs": LIB_RS.replace("assert_eq!(f(), 1)", "assert_eq!(f(), 1u32)")})
+        out = plan(repo)
+>       assert out["rust_full"] == "true" and "#[cfg(test)]" in out["full_reasons"]
+E       AssertionError: assert ('false' == 'true'
+E         
+E         - true
+E         + false)
+
+tests/test_tools/test_mutation_plan_probes.py:229: AssertionError
+________________ test_cfg_test_removed_assertion_escalates_rust ________________
+
+repo = PosixPath('/tmp/pytest-of-user/pytest-19/test_cfg_test_removed_assertio0')
+
+    def test_cfg_test_removed_assertion_escalates_rust(repo):
+        # measured with cargo-mutants 27.1.0: removing an assertion lists 0 mutants under --in-diff
+        change(repo, {"crate/src/lib.rs": LIB_RS.replace("        assert_eq!(g(), 2);\n", "")})
+>       assert plan(repo)["rust_full"] == "true"
+E       AssertionError: assert 'false' == 'true'
+E         
+E         - true
+E         + false
+
+tests/test_tools/test_mutation_plan_probes.py:235: AssertionError
+_______ test_cfg_test_insertion_right_after_the_attribute_escalates_rust _______
+
+repo = PosixPath('/tmp/pytest-of-user/pytest-19/test_cfg_test_insertion_right_0')
+
+    def test_cfg_test_insertion_right_after_the_attribute_escalates_rust(repo):
+        change(repo, {"crate/src/lib.rs": LIB_RS.replace("mod tests {\n", "mod tests {\n    // new\n")})
+>       assert plan(repo)["rust_full"] == "true"
+E       AssertionError: assert 'false' == 'true'
+E         
+E         - true
+E         + false
+
+tests/test_tools/test_mutation_plan_probes.py:240: AssertionError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests/test_tools/test_quality_gate_workflows.py::test_gate_is_green_when_everything_passed
+PASSED tests/test_tools/test_quality_gate_workflows.py::test_gate_still_fails_on_every_other_failure[PLAN]
+PASSED tests/test_tools/test_quality_gate_workflows.py::test_gate_still_fails_on_every_other_failure[GUARD]
+PASSED tests/test_tools/test_quality_gate_workflows.py::test_gate_still_fails_on_every_other_failure[GO]
+PASSED tests/test_tools/test_quality_gate_workflows.py::test_gate_still_fails_on_every_other_failure[RUST]
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p1_test_only_change_plans_the_package
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p2_deleted_source_file_is_not_silent
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p2_deleted_test_file_is_not_silent
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p3_dependency_or_mutation_config_escalates_go_to_full[go.mod]
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p3_dependency_or_mutation_config_escalates_go_to_full[go.sum]
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p3_dependency_or_mutation_config_escalates_go_to_full[.gremlins.yaml]
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p4_gate_logic_escalates_everything
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p5_cargo_manifest_escalates_rust_to_every_mutant
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_rust_test_file_escalates_rust
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_rust_source_change_stays_narrow
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p6_testdata_change_plans_the_owning_package
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p7_new_package_is_planned
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p8_nested_module_is_still_ignored
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_package_with_only_tests_is_not_planned
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_unrelated_change_plans_nothing
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p9_unknown_base_is_fail_closed
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_cfg_test_production_edit_before_the_test_module_stays_narrow
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_cfg_test_a_new_rust_file_with_a_test_module_stays_narrow
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_counter_test_the_old_step_masks_a_failed_listing[B]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_counter_test_the_old_step_masks_a_failed_listing[C]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_counter_test_the_old_step_is_right_only_for_the_valid_empty_case
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_valid_empty_listing_succeeds_with_zero_shards[mutation-pr.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_valid_empty_listing_succeeds_with_zero_shards[nightly.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[false-B-mutation-pr.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[false-B-nightly.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[false-C-mutation-pr.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[false-C-nightly.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[true-B-mutation-pr.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[true-B-nightly.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[true-C-mutation-pr.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[true-C-nightly.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_a_real_listing_chooses_the_shards[mutation-pr.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_a_real_listing_chooses_the_shards[nightly.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_no_listing_is_piped_or_masked[mutation-pr.yml]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_no_listing_is_piped_or_masked[nightly.yml]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_no_listing_is_piped_or_masked[mutation.yml]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_every_listing_goes_through_a_checked_wrapper[mutation-pr.yml]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_every_listing_goes_through_a_checked_wrapper[nightly.yml]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_the_shards_follow_the_planned_mode
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_gate_is_red_when_the_completeness_check_is_not_successful
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_a_skipped_mutation_job_is_accepted_only_through_the_completeness_check[GO]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_a_skipped_mutation_job_is_accepted_only_through_the_completeness_check[RUST]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_nightly_report_is_a_failure_when_the_completeness_check_is_not_successful
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_the_rust_plan_record_of_a_real_listing[mutation-pr.yml-plan-extra0]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_the_rust_plan_record_of_a_real_listing[nightly.yml-plan-extra1]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_a_failed_listing_fails_the_plan_record_and_leaves_no_plan[mutation-pr.yml-plan-extra0]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_a_failed_listing_fails_the_plan_record_and_leaves_no_plan[nightly.yml-plan-extra1]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_a_valid_empty_listing_is_a_valid_empty_plan[mutation-pr.yml-plan-extra0]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_a_valid_empty_listing_is_a_valid_empty_plan[nightly.yml-plan-extra1]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_the_plan_record_must_agree_with_the_count_step[mutation-pr.yml-plan-extra0]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_the_plan_record_must_agree_with_the_count_step[nightly.yml-plan-extra1]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_no_rust_change_is_an_empty_plan_with_a_reason[mutation-pr.yml-plan-extra0]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_no_rust_change_is_an_empty_plan_with_a_reason[nightly.yml-plan-extra1]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_the_diff_mode_lists_with_the_diff[mutation-pr.yml-plan-extra0]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_the_diff_mode_lists_with_the_diff[nightly.yml-plan-extra1]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_the_go_plan_record[mutation-pr.yml-plan-extra0]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_the_go_plan_record[nightly.yml-plan-extra1]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_the_reports_are_handed_in_and_collected_under_matching_names[mutation-pr.yml]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_the_reports_are_handed_in_and_collected_under_matching_names[nightly.yml]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_the_completeness_job_waits_for_the_mutation_jobs_and_always_runs[mutation-pr.yml]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_the_completeness_job_waits_for_the_mutation_jobs_and_always_runs[nightly.yml]
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_the_gate_depends_on_the_completeness_job
+FAILED tests/test_tools/test_quality_gate_workflows.py::test_every_shard_and_chunk_is_bound_to_the_plan_digest
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_cfg_test_edit_inside_the_test_module_escalates_rust
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_cfg_test_removed_assertion_escalates_rust
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_cfg_test_insertion_right_after_the_attribute_escalates_rust
+======================== 27 failed, 44 passed in 2.87s =========================

@@ -1,0 +1,4 @@
+A empty --json: exit=0 stdout=[] bytes=0 stderr=[info: syncing channel updates for 1.96.1-x86_64-unknown-linux-gnu info: latest update on 2026-06-30 for version 1.96.1 (31fca3adb 2026-06-26) info: downloading 3 components  INFO No mutants to filter ]
+B unreadable: exit=6 bytes=0
+ INFO No mutants to filter
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  -

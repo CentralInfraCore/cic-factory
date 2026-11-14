@@ -1,0 +1,11 @@
+go version go1.26.10 linux/amd64
+pc=[0]
+FAIL: coverage below threshold
+[empty file] exit=1
+pc=[0]
+FAIL: coverage below threshold
+[mode line only] exit=1
+cover: bad mode line: garbage
+[garbage] exit=2
+cover: open /tmp/nope.out: no such file or directory
+[missing file] exit=2
