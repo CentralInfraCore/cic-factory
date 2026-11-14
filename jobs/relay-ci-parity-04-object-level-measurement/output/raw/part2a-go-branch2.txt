@@ -1,0 +1,28 @@
+### reproducibility: ./pkg/merkle twice, condition lines compared
+lines: 4
+two runs: identical
+### -branch mode on ./pkg/merkle
+Branch coverage: 19/22
+pkg/merkle/build_context.go:57:40: condition "ok" was 3 times true but never false
+pkg/merkle/build_context.go:60:24: condition "s.Key == \"-tags\"" was 27 times false but never true
+pkg/merkle/build_context.go:60:33: condition "s.Key == \"GOEXPERIMENT\"" was 27 times false but never true
+### the nested module goastdump (own go.mod): from inside it
+-- gobco .
+main.go:365:23: condition "x.Lparen.IsValid()" was 30 times false but never true
+main.go:392:5: condition "len(os.Args) < 2" was never evaluated
+main.go:404:29: condition "err != nil" was never evaluated
+exit=0
+-- gobco ./...
+nothing to instrument
+### from the root with the nested path
+tools/goastdump/main.go:365:23: condition "x.Lparen.IsValid()" was 30 times false but never true
+tools/goastdump/main.go:392:5: condition "len(os.Args) < 2" was never evaluated
+tools/goastdump/main.go:404:29: condition "err != nil" was never evaluated
+exit=0
+### a package that does not exist: is the exit status non-zero (fail-closed)?
+exit=2 : 	/gp/pkg/mod/github.com/rillig/gobco@v1.3.4/main.go:20 +0x45
+### a package without tests
+
+Condition coverage: 0/2
+p/p.go:4:5: condition "a > 1" was never evaluated
+exit=0

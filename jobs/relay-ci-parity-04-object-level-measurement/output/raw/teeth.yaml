@@ -1,0 +1,27 @@
+---
+module: teeth
+description: 'PR-04: do the N tests have teeth? Each check of scripts/object_model.py
+  / quality_gate.py is removed on a SCRATCH COPY (the repository is not touched);
+  the test that guards it must then FAIL. A test that stays green when its check is
+  gone proves nothing. Usage: teeth.py <repo> <python> <workdir>'
+tags:
+- executor
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: DEFECTS
+  kind: const
+  description: ''
+  references: []
+- name: run
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls: []
+- name: bad
+  kind: const
+  description: ''
+  references: []

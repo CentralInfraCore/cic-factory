@@ -1,0 +1,38 @@
+go version go1.26.10 linux/amd64
+### provenance and pinnability
+v1.2.2 v1.3.0 v1.3.1 v1.3.2 v1.3.3 v1.3.4 
+### install a PINNED version (a tag, resolved through the module proxy; go.sum-verified by the toolchain)
+latest tag: v1.3.4
+install exit=0
+/gp/bin/gobco
+1.3.4
+### license and module info
+Path github.com/rillig/gobco Version v1.3.4 Sum h1:4weHt9u2CyTOnEJ/7z6fAcHZvJHy1pNXm8danDh3TA8=
+README.md go.mod go.sum instrumenter.go instrumenter_test.go main.go main_test.go templates test.sh testdata util.go util_test.go version.go 
+### usage
+usage: gobco [options] package...
+  -branch
+    	cover branches, not conditions
+  -cover-test
+    	cover the test code as well
+  -help
+    	print the available command line options
+  -immediately
+    	persist the coverage immediately at each check point
+  -keep
+    	don't remove the temporary working directory
+  -list-all
+### run on the goastdump module (own go.mod), twice, and compare
+run 1 exit=0 2 ms
+run 2 exit=0 4 ms
+nothing to instrument
+two runs: identical report
+### the same tool on one root package ./pkg/merkle
+exit=0 3646 ms
+
+Condition coverage: 19/22
+pkg/merkle/build_context.go:57:40: condition "ok" was 3 times true but never false
+pkg/merkle/build_context.go:60:24: condition "s.Key == \"-tags\"" was 27 times false but never true
+pkg/merkle/build_context.go:60:33: condition "s.Key == \"GOEXPERIMENT\"" was 27 times false but never true
+### statement coverage of the same package for comparison
+ok  	centralrelay/pkg/merkle	0.005s	coverage: 98.3% of statements

@@ -1,0 +1,13 @@
+OK   N1  id collision check removed               unmodified: [1 passed, 56 deselected in 0.09s]  check removed: [1 failed, 56 deselected in 0.05s]
+OK   N4  digest check removed                     unmodified: [1 passed, 56 deselected in 0.10s]  check removed: [1 failed, 56 deselected in 0.06s]
+OK   N4  summary recount removed                  unmodified: [1 passed, 56 deselected in 0.10s]  check removed: [1 failed, 56 deselected in 0.06s]
+OK   N5  tool-version check removed (build)       unmodified: [1 passed, 56 deselected in 0.10s]  check removed: [1 failed, 56 deselected in 0.10s]
+OK   N6  coverage-kind enum check removed         unmodified: [1 passed, 56 deselected in 0.10s]  check removed: [1 failed, 56 deselected in 0.06s]
+OK   N8  unclassified file silently accepted      unmodified: [1 passed, 56 deselected in 0.09s]  check removed: [1 failed, 56 deselected in 0.05s]
+OK   N9  repeat comparison removed                unmodified: [1 passed, 56 deselected in 0.09s]  check removed: [1 failed, 56 deselected in 0.09s]
+OK   N10 ambiguous mutant resolved by guessing    unmodified: [1 passed, 56 deselected in 0.09s]  check removed: [1 failed, 56 deselected in 0.06s]
+OK   N11 partial block attributed anyway          unmodified: [1 passed, 56 deselected in 0.09s]  check removed: [1 failed, 56 deselected in 0.10s]
+OK   N12 zero denominator becomes a number        unmodified: [1 passed, 56 deselected in 0.09s]  check removed: [1 failed, 56 deselected in 0.04s]
+OK   N13 L2 input digest check removed            unmodified: [1 passed, 56 deselected in 0.19s]  check removed: [1 failed, 56 deselected in 0.12s]
+OK   N13 L3 independent count removed             unmodified: [1 passed, 56 deselected in 0.12s]  check removed: [1 failed, 56 deselected in 0.12s]
+ALL N-TESTS HAVE TEETH

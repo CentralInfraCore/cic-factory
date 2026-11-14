@@ -1,0 +1,4 @@
+package                            statement cov.     gobco conditions           gobco time
+. ./pkg/merkle                     coverage: 98.3%    Condition coverage: 19/22  4626 ms
+. ./pkg/canonicaljson              coverage: 96.7%    Condition coverage: 43/46  3534 ms
+tools/goastdump .                  coverage: 78.0%    Condition coverage: 104/160 1413 ms

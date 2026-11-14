@@ -1,0 +1,11 @@
+### II.C per-test coverage attribution, sample package ./pkg/merkle
+tests in the package: 24
+whole package, one profile: 298 ms
+one profile per test (24 invocations): 7047 ms  => 293 ms per test
+covered blocks: whole run 25; union of the per-test runs 25; equal: True; per-test min/max 2/14
+### II.D package-level change impact (go list), module-local packages
+packages in the module: 31
+deps of ./core/cabinet inside the module: 3
+packages that import pkg/canonicaljson directly (incl. tests): 6
+packages that import core/cabinet directly (incl. tests): 3
+tests in the whole module (go test -list): 817

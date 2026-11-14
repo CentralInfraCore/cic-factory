@@ -1,0 +1,13 @@
+stable: rustc 1.96.1 (31fca3adb 2026-06-26)
+### try rustup toolchain install nightly-2026-07-01 (minimal + llvm-tools-preview)
+installed nightly-2026-07-01
+rustc 1.98.0-nightly (f46ec5218 2026-06-30)
+cargo 1.98.0-nightly (a335d47ff 2026-06-26)
+start 2026-11-14T20:48:53Z
+### cargo +nightly-2026-07-01 llvm-cov --branch (workspace, locked)
+exit=0
+end 2026-11-14T20:50:20Z
+    Finished report saved to /out/llvm-cov-branch-nightly.json
+totals.branches: {'count': 146, 'covered': 124, 'percent': 84.93150684931507}
+functions: 788 with branch records: 66
+sample branch record: [63, 8, 63, 17, 1, 5, 0, 0, 4]
