@@ -91,15 +91,37 @@ trap 'rm -rf "$PROBE"' EXIT
 mkdir -p "$PROBE/bin" "$PROBE/vault"
 printf 'hvs.PROBE0000000000\n' > "$PROBE/vault/sign-token"
 printf 'PROBE-CA\n'            > "$PROBE/vault/server.crt"
-# Determinisztikus hamis Vault: nem ír alá igaziból, konstans választ ad. Így a
-# blokkban a `digest` az EGYETLEN mező, ami a manifest-számítástól függ.
-cat > "$PROBE/bin/curl" <<'FAKE'
+# Fake Vault with a REAL throwaway key. The v4 signer reads the public key from
+# the certificate and verifies the signature against it before writing a block,
+# so a constant fake answer is no longer accepted. Both probe runs share the same
+# key and certificate, so the `manifest` and `digest` lines -- the only ones
+# compared -- stay deterministic; the ECDSA signature itself is randomised and
+# is not compared.
+mkdir -p "$PROBE/keys"
+if ! openssl ecparam -name prime256v1 -genkey -noout -out "$PROBE/keys/key.pem" 2>/dev/null \
+   || ! openssl req -new -x509 -key "$PROBE/keys/key.pem" -out "$PROBE/keys/cert.pem" \
+        -days 1 -subj "/CN=provenance-probe" 2>/dev/null; then
+    echo "check-hook-provenance: NO-GO — nem sikerült próbakulcsot előállítani (openssl)"
+    exit 1
+fi
+cat > "$PROBE/bin/curl" <<FAKE
 #!/usr/bin/env bash
-last="${*: -1}"
-case "$last" in
-    *transit/sign*) printf '{"data":{"signature":"vault:v1:PROBE"}}' ;;
-    *data/crt*)     printf '{"data":{"data":{"bar":"-----BEGIN CERTIFICATE-----\\nPROBE\\n-----END CERTIFICATE-----"}}}' ;;
-    *)              printf '{}' ;;
+last="\${*: -1}"
+payload=""; prev=""
+for a in "\$@"; do [ "\$prev" = "-d" ] && payload="\$a"; prev="\$a"; done
+case "\$last" in
+    *transit/sign*)
+        d=\$(printf '%s' "\$payload" | sed -n 's/.*"input": *"\\([^"]*\\)".*/\\1/p')
+        printf '%s' "\$d" | base64 -d > "$PROBE/keys/d.bin"
+        openssl pkeyutl -sign -inkey "$PROBE/keys/key.pem" \\
+            -in "$PROBE/keys/d.bin" -out "$PROBE/keys/s.der" 2>/dev/null
+        printf '{"data":{"signature":"vault:v1:%s"}}' "\$(base64 -w0 < "$PROBE/keys/s.der")"
+        ;;
+    *data/crt*)
+        c=\$(sed ':a;N;\$!ba;s/\n/\\\\n/g' "$PROBE/keys/cert.pem")
+        printf '{"data":{"data":{"bar":"%s"}}}' "\$c"
+        ;;
+    *) printf '{}' ;;
 esac
 FAKE
 chmod +x "$PROBE/bin/curl"

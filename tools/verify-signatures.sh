@@ -110,8 +110,16 @@ manifest_digest_v2() {
 # előtt fut: `--amend`-nél a HEAD nem az új commit szülője, a `git rebase` pedig
 # nem futtatja újra a hookot, csak átviszi a régi blokkot egy új szülő alá --
 # mindkettő mérve. Ebben a projektben a rebase minden PR előtt kötelező.
-manifest_digest_v3() {
-    local c="$1" tree author committer msg_sha
+#
+# cic-tree-manifest/v4 is v3 plus a `signer-public-key:` line (base64 DER
+# SubjectPublicKeyInfo) right after `object-format:`. Under v3 the digest did not
+# depend on the signer: the same digest re-signed with another key, with the
+# [certificate] block swapped, still verified. v4 binds the key that signed.
+# It binds the key; whether that key is trusted is a separate question.
+#
+# manifest_digest_ctx <commit> <version> [<signer-key-b64>]
+manifest_digest_ctx() {
+    local c="$1" version="$2" signer_key="${3:-}" tree author committer msg_sha
     tree=$(git rev-parse "$c^{tree}")
     author=$(git log -1 --format='%an <%ae>' "$c")
     committer=$(git log -1 --format='%cn <%ce>' "$c")
@@ -128,8 +136,9 @@ manifest_digest_v3() {
     # újsorok levágása a $( ) által.
     body=$(printf '%s\n' "$body" | git stripspace --strip-comments)
     msg_sha=$(printf '%s' "$body" | openssl dgst -sha256 -binary | openssl base64 -A)
-    { printf 'cic-tree-manifest/v3\n'
+    { printf '%s\n' "$version"
       printf 'object-format: %s\n' "$(git rev-parse --show-object-format 2>/dev/null || echo sha1)"
+      [[ "$version" == "cic-tree-manifest/v4" ]] && printf 'signer-public-key: %s\n' "$signer_key"
       printf 'author: %s\n' "$author"
       printf 'committer: %s\n' "$committer"
       printf 'message-sha256: %s\n' "$msg_sha"
@@ -160,14 +169,34 @@ verify_commit() {
         return 1
     fi
 
-    local manifest mask
+    local manifest mask signer_key
     manifest=$(grep -oP '^manifest = \K\S+' <<<"$msg" | head -1)
     case "$manifest" in
+        cic-tree-manifest/v4)
+            # The key is read from the certificate the message carries -- the
+            # same certificate the ECDSA check below uses. A swapped certificate
+            # therefore changes the recomputed digest.
+            if ! signer_key=$(sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' <<<"$msg" \
+                    | openssl x509 -noout -pubkey 2>/dev/null \
+                    | openssl pkey -pubin -outform DER 2>/dev/null | openssl base64 -A) \
+               || [[ -z "$signer_key" ]]; then
+                echo "    nincs értelmezhető nyilvános kulcs a tanúsítványban (v4 manifest)"
+                return 1
+            fi
+            if [[ "$(manifest_digest_ctx "$c" cic-tree-manifest/v4 "$signer_key")" != "$rec" ]]; then
+                echo "    a digest NEM erre a commitra illik (v4 manifest)"
+                echo "      rögzített:   ${rec:0:32}…"
+                echo "      újraszámolt: $(manifest_digest_ctx "$c" cic-tree-manifest/v4 "$signer_key" | cut -c1-32)…"
+                echo "      A v4 a fán túl az aláíró nyilvános kulcsát, a szerzőt, a"
+                echo "      committert és az üzenetet is köti — ezek bármelyike eltérhet."
+                return 1
+            fi
+            ;;
         cic-tree-manifest/v3)
-            if [[ "$(manifest_digest_v3 "$c")" != "$rec" ]]; then
+            if [[ "$(manifest_digest_ctx "$c" cic-tree-manifest/v3)" != "$rec" ]]; then
                 echo "    a digest NEM erre a commitra illik (v3 manifest)"
                 echo "      rögzített:   ${rec:0:32}…"
-                echo "      újraszámolt: $(manifest_digest_v3 "$c" | cut -c1-32)…"
+                echo "      újraszámolt: $(manifest_digest_ctx "$c" cic-tree-manifest/v3 | cut -c1-32)…"
                 echo "      A v3 a fán túl a szerzőt, a committert és az üzenetet"
                 echo "      is köti — ezek bármelyike eltérhet."
                 return 1
