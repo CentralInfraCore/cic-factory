@@ -56,7 +56,9 @@ valid_id agent-id "$AGENT_ID" || exit 1
 WORK_BIN="${WORK_BIN:-work}"
 command -v "$WORK_BIN" >/dev/null || { echo "[ERROR] nincs work a PATH-on (WORK_BIN)" >&2; exit 1; }
 command -v jq >/dev/null || { echo "[ERROR] a jq szükséges" >&2; exit 1; }
-command -v direnv >/dev/null || { echo "[ERROR] a direnv szükséges: az agent profilját az .envrc adja át" >&2; exit 1; }
+# DIRENV_BIN: teszteléshez felülírható, mint a WORK_BIN.
+DIRENV_BIN="${DIRENV_BIN:-direnv}"
+command -v "$DIRENV_BIN" >/dev/null || { echo "[ERROR] a direnv szükséges: az agent profilját az .envrc adja át" >&2; exit 1; }
 
 JOB_DIR="$WORKDIR/jobs/$JOB_ID"
 META="$JOB_DIR/meta.yaml"
@@ -127,7 +129,7 @@ mkdir -p "$WORKSPACE"
 git clone -q "$REMOTE" "$CLONE"
 git -C "$CLONE" checkout -q -b "$BRANCH"
 printf 'export CLAUDE_CONFIG_DIR=%s\n' "$CFG" > "$WORKSPACE/.envrc"
-direnv allow "$WORKSPACE/.envrc"
+"$DIRENV_BIN" allow "$WORKSPACE/.envrc"
 
 PROMPT_FILE="$(mktemp)"
 trap 'rm -f "$PROMPT_FILE"' EXIT

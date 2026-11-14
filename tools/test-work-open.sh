@@ -132,8 +132,20 @@ echo "Spec-kapu"
 R=$(mkfactory); mkstub "$R"; mkdir -p "$R/xdg"
 printf 'semmi\n' > "$R/repo/jobs/t/input.md"; commit_spec "$R"
 check "NO-GO spec: elutasít"                 "1" "$(wopen "$R")"
+check "  a spec-kapu miatt, nem másért"      "1" "$([ "$(grep -c 'NO-GO' "$R/out.log")" -ge 1 ] && echo 1 || echo 0)"
 check "  nem hozott létre workspace-t"       "0" "$([ -e "$R/repo/jobs/t/workspace" ] && echo 1 || echo 0)"
 check "  a work-öt nem hívta"                "0" "$([ -e "$R/stub.log" ] && echo 1 || echo 0)"
+rm -rf "$R"
+
+echo
+echo "Hiányzó direnv: kimondja, és nem hoz létre semmit"
+# A CI-futtató nem hozza a direnv-et; az adapter ilyenkor hangosan áll meg.
+R=$(fixture)
+RC=$( ( cd "$R/repo" && env HOME="$R/home" XDG_DATA_HOME="$R/xdg" WORK_BIN="$R/work" DIRENV_BIN=/nincs/direnv \
+    STUB_LOG="$R/stub.log" bash tools/work-open.sh t agent-01 --skip-spec-gate ) >"$R/out.log" 2>&1; echo $? )
+check "elutasít"                             "1" "$RC"
+check "  megnevezi a direnv-et"              "1" "$(grep -c 'direnv' "$R/out.log")"
+check "  nem hozott létre workspace-t"       "0" "$([ -e "$R/repo/jobs/t/workspace" ] && echo 1 || echo 0)"
 rm -rf "$R"
 
 echo
