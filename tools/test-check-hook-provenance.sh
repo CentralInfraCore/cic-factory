@@ -64,7 +64,7 @@ echo "3. Elavult másolat → NO-GO"
 # Ez a valódi #82: a fájl ott van, futtatható, aláír, 0-val tér vissza — csak
 # nem azt számolja, amit a repó kiad.
 R=$(mkfix stale)
-sed 's|cic-tree-manifest/v3|cic-tree-manifest/v1-REGI|' \
+sed 's|cic-tree-manifest/v4|cic-tree-manifest/v1-REGI|' \
     "$R/tools/git_hook_commit-msg.sh" > "$R/.git/hooks/commit-msg"
 chmod +x "$R/.git/hooks/commit-msg"
 check "exit 1" "1" "$(run "$R")"
@@ -106,7 +106,7 @@ check_log "  a viselkedés dönt" "ugyanazt a blokkot adja" "$R/out.log"
 echo
 echo "7. Wrapper, ami MÁST hív → NO-GO"
 R=$(mkfix wrongwrap)
-sed 's|cic-tree-manifest/v3|cic-tree-manifest/HAMIS|' \
+sed 's|cic-tree-manifest/v4|cic-tree-manifest/HAMIS|' \
     "$R/tools/git_hook_commit-msg.sh" > "$R/shared/other.sh"
 cat > "$R/.git/hooks/commit-msg" <<W
 #!/usr/bin/env bash
@@ -132,7 +132,7 @@ echo "9. A core.hooksPath-t követi (ez volt a valódi eset)"
 # hagyná át, ami a #82-t okozta.
 R=$(mkfix haspath)
 ln -sf "$R/tools/git_hook_commit-msg.sh" "$R/.git/hooks/commit-msg"
-sed 's|cic-tree-manifest/v3|cic-tree-manifest/MEGOSZTOTT|' \
+sed 's|cic-tree-manifest/v4|cic-tree-manifest/MEGOSZTOTT|' \
     "$R/tools/git_hook_commit-msg.sh" > "$R/shared/commit-msg"
 chmod +x "$R/shared/commit-msg"
 git -C "$R" config core.hooksPath "$R/shared"
@@ -150,7 +150,7 @@ R=$(mkfix label)
 sed "/printf 'author: %s/d" "$R/tools/git_hook_commit-msg.sh" > "$R/.git/hooks/commit-msg"
 chmod +x "$R/.git/hooks/commit-msg"
 check "a címke ugyanaz marad" "1" \
-    "$(grep -c 'MANIFEST_VERSION="cic-tree-manifest/v3"' "$R/.git/hooks/commit-msg")"
+    "$(grep -c 'MANIFEST_VERSION="cic-tree-manifest/v4"' "$R/.git/hooks/commit-msg")"
 check "  exit 1" "1" "$(run "$R")"
 check_log "  a digest árulja el" "digest = " "$R/out.log"
 

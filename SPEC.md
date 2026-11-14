@@ -357,7 +357,7 @@ verify-signatures.sh → a commit üzenetéből a signing blokk
 ```
 
 **Postcondition:** a digest reprodukálható, és az aláírás érvényes a beágyazott
-tanúsítvány kulcsával.
+tanúsítvány kulcsával; v4 alatt ez a kulcs a digest része is.
 
 A submodule-kollízió lezárva (#38): a `cic-tree-manifest/v2` a Git fáját írja le
 közvetlenül, minden bejegyzés mode, típus, OID és path — a gitlink is.
@@ -367,6 +367,21 @@ kihasználható volt: egy A repóban készült aláírt blokk változtatás nél
 egy MÁSIK repó MÁSIK commitján, MÁS üzenettel, mert a két fa azonos volt — a
 verifier GO-t adott rá. A `cic-tree-manifest/v3` a fa mellé beköti a **szerzőt,
 a committert és az üzenet digestjét**.
+
+Az aláíró kulcsa bekötve (`cic-tree-manifest/v4`). A v3 digestje nem függött
+attól, ki írta alá: a rögzített digestet bárki újra aláírhatta a saját kulcsával,
+kicserélhette a `[certificate]` blokkot, és a verifier GO-t adott rá (mérve,
+`test-proof-binding.sh` 11. eset). A v4 a manifestbe a `signer-public-key:` sort
+is felveszi — a tanúsítvány nyilvános kulcsa, base64 DER SubjectPublicKeyInfo —,
+a verifier pedig ugyanezt a kulcsot a commitban hozott tanúsítványból olvassa ki.
+A hook ezért a tanúsítványt **aláírás előtt** kéri le, és aláírás után ellenőrzi,
+hogy a Vault aláírása erre a kulcsra érvényes; ha a transit kulcs és a tárolt
+tanúsítvány elvált egymástól, a commit megáll, nem a CI-ban derül ki.
+
+**Amit a v4 NEM állít:** a kulcs *kötött*, de nem *megbízható*. A verifier nem
+ellenőrzi, hogy a tanúsítványt ki adta ki — egy saját kulccsal, saját
+tanúsítvánnyal, újraszámolt digesttel készült commit továbbra is GO-t kap. Ehhez
+bizalmi horgony kell (CA-lánc vagy rögzített kulcs-lista), ami külön lépés.
 
 Két kézenfekvő mező szándékosan **kimarad**, mindkettő mérés után:
 
