@@ -1,0 +1,432 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/claude-1000/-home-sinkog-sync-claude-factory-CIC-workdir-jobs-relay-ci-parity-01-inventory-workspace/af350620-597b-4e95-b500-75750f0ef7d6/scratchpad/old
+configfile: pytest.ini
+plugins: cov-7.1.0
+collected 37 items
+
+tests/test_tools/test_mutation_plan_probes.py FFFFFFFFFFF...F.           [ 43%]
+tests/test_tools/test_mutation_workflow_enumeration.py .....FFFFFFFF..FF [ 89%]
+.FFF                                                                     [100%]
+
+=================================== FAILURES ===================================
+__________________ test_p1_test_only_change_plans_the_package __________________
+
+repo = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_p1_test_only_change_plans0')
+
+    def test_p1_test_only_change_plans_the_package(repo):
+        change(repo, {"core/cabinet/cabinet_test.go": "package cabinet // weaker\n"})
+        out = plan(repo)
+>       assert pkgs(out) == ["./core/cabinet"]
+E       AssertionError: assert [] == ['./core/cabinet']
+E         
+E         Right contains one more item: './core/cabinet'
+E         Use -v to get more diff
+
+tests/test_tools/test_mutation_plan_probes.py:102: AssertionError
+__________________ test_p2_deleted_source_file_is_not_silent ___________________
+
+repo = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_p2_deleted_source_file_is0')
+
+    def test_p2_deleted_source_file_is_not_silent(repo):
+        change(repo, {"core/cabinet/extra.go": "package cabinet\n"})
+        git(repo, "tag", "-f", "base")
+        change(repo, deletes=["core/cabinet/extra.go"])
+>       assert pkgs(plan(repo)) == ["./core/cabinet"]
+E       AssertionError: assert [] == ['./core/cabinet']
+E         
+E         Right contains one more item: './core/cabinet'
+E         Use -v to get more diff
+
+tests/test_tools/test_mutation_plan_probes.py:110: AssertionError
+___________________ test_p2_deleted_test_file_is_not_silent ____________________
+
+repo = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_p2_deleted_test_file_is_n0')
+
+    def test_p2_deleted_test_file_is_not_silent(repo):
+        change(repo, deletes=["core/cabinet/cabinet_test.go"])
+>       assert pkgs(plan(repo)) == ["./core/cabinet"]
+E       AssertionError: assert [] == ['./core/cabinet']
+E         
+E         Right contains one more item: './core/cabinet'
+E         Use -v to get more diff
+
+tests/test_tools/test_mutation_plan_probes.py:115: AssertionError
+______ test_p3_dependency_or_mutation_config_escalates_go_to_full[go.mod] ______
+
+repo = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_p3_dependency_or_mutation0')
+path = 'go.mod'
+
+    @pytest.mark.parametrize("path", ["go.mod", "go.sum", ".gremlins.yaml"])
+    def test_p3_dependency_or_mutation_config_escalates_go_to_full(repo, path):
+        change(repo, {path: BASE_FILES[path] + "# changed\n"})
+        out = plan(repo)
+>       assert out["go_full"] == "true"
+               ^^^^^^^^^^^^^^
+E       KeyError: 'go_full'
+
+tests/test_tools/test_mutation_plan_probes.py:122: KeyError
+______ test_p3_dependency_or_mutation_config_escalates_go_to_full[go.sum] ______
+
+repo = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_p3_dependency_or_mutation1')
+path = 'go.sum'
+
+    @pytest.mark.parametrize("path", ["go.mod", "go.sum", ".gremlins.yaml"])
+    def test_p3_dependency_or_mutation_config_escalates_go_to_full(repo, path):
+        change(repo, {path: BASE_FILES[path] + "# changed\n"})
+        out = plan(repo)
+>       assert out["go_full"] == "true"
+               ^^^^^^^^^^^^^^
+E       KeyError: 'go_full'
+
+tests/test_tools/test_mutation_plan_probes.py:122: KeyError
+__ test_p3_dependency_or_mutation_config_escalates_go_to_full[.gremlins.yaml] __
+
+repo = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_p3_dependency_or_mutation2')
+path = '.gremlins.yaml'
+
+    @pytest.mark.parametrize("path", ["go.mod", "go.sum", ".gremlins.yaml"])
+    def test_p3_dependency_or_mutation_config_escalates_go_to_full(repo, path):
+        change(repo, {path: BASE_FILES[path] + "# changed\n"})
+        out = plan(repo)
+>       assert out["go_full"] == "true"
+               ^^^^^^^^^^^^^^
+E       KeyError: 'go_full'
+
+tests/test_tools/test_mutation_plan_probes.py:122: KeyError
+___________________ test_p4_gate_logic_escalates_everything ____________________
+
+repo = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_p4_gate_logic_escalates_e0')
+
+    def test_p4_gate_logic_escalates_everything(repo):
+        change(repo, {"scripts/gremlins_gate.py": "# weaker gate\n"})
+        out = plan(repo)
+>       assert out["go_full"] == "true" and out["rust_full"] == "true"
+               ^^^^^^^^^^^^^^
+E       KeyError: 'go_full'
+
+tests/test_tools/test_mutation_plan_probes.py:130: KeyError
+____________ test_p5_cargo_manifest_escalates_rust_to_every_mutant _____________
+
+repo = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_p5_cargo_manifest_escalat0')
+
+    def test_p5_cargo_manifest_escalates_rust_to_every_mutant(repo):
+        change(repo, {"Cargo.toml": "[workspace]\n# changed\n"})
+        out = plan(repo)
+>       assert out["rust"] == "true" and out["rust_full"] == "true"
+                                         ^^^^^^^^^^^^^^^^
+E       KeyError: 'rust_full'
+
+tests/test_tools/test_mutation_plan_probes.py:138: KeyError
+______________________ test_rust_test_file_escalates_rust ______________________
+
+repo = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_rust_test_file_escalates_0')
+
+    def test_rust_test_file_escalates_rust(repo):
+        # cargo-mutants never mutates tests, so --in-diff would plan 0 mutants for this change
+        change(repo, {"crate/tests/it.rs": "#[test] fn t() { assert!(true); }\n"})
+        out = plan(repo)
+>       assert out["rust"] == "true" and out["rust_full"] == "true"
+                                         ^^^^^^^^^^^^^^^^
+E       KeyError: 'rust_full'
+
+tests/test_tools/test_mutation_plan_probes.py:146: KeyError
+_____________________ test_rust_source_change_stays_narrow _____________________
+
+repo = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_rust_source_change_stays_0')
+
+    def test_rust_source_change_stays_narrow(repo):
+        change(repo, {"crate/src/lib.rs": "pub fn f() { let _ = 1; }\n"})
+        out = plan(repo)
+>       assert out["rust"] == "true" and out["rust_full"] == "false"
+                                         ^^^^^^^^^^^^^^^^
+E       KeyError: 'rust_full'
+
+tests/test_tools/test_mutation_plan_probes.py:152: KeyError
+_______________ test_p6_testdata_change_plans_the_owning_package _______________
+
+repo = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_p6_testdata_change_plans_0')
+
+    def test_p6_testdata_change_plans_the_owning_package(repo):
+        change(repo, {"core/cabinet/testdata/golden.json": '{"changed": true}\n'})
+>       assert pkgs(plan(repo)) == ["./core/cabinet"]
+E       AssertionError: assert [] == ['./core/cabinet']
+E         
+E         Right contains one more item: './core/cabinet'
+E         Use -v to get more diff
+
+tests/test_tools/test_mutation_plan_probes.py:157: AssertionError
+_____________________ test_unrelated_change_plans_nothing ______________________
+
+repo = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_unrelated_change_plans_no0')
+
+    def test_unrelated_change_plans_nothing(repo):
+        change(repo, {"README.md": "changed\n"})
+        out = plan(repo)
+>       assert pkgs(out) == [] and out["rust"] == "false" and out["full_reasons"] == ""
+                                                              ^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'full_reasons'
+
+tests/test_tools/test_mutation_plan_probes.py:180: KeyError
+_______ test_failed_listing_fails_the_step[false-B-mutation-pr.yml-plan] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_failed_listing_fails_the_0')
+workflow = 'mutation-pr.yml', job = 'plan', mode = 'B', rust_full = 'false'
+
+    @pytest.mark.parametrize("workflow, job", STEPS)
+    @pytest.mark.parametrize("mode", ["B", "C"])
+    @pytest.mark.parametrize("rust_full", ["false", "true"])
+    def test_failed_listing_fails_the_step(tmp_path, workflow, job, mode, rust_full):
+        script = step_run(workflow, job, "count")
+        r, outputs = run_step(
+            script, tmp_path, mode, BASE="HEAD", RUST="true", RUST_FULL=rust_full
+        )
+>       assert r.returncode != 0, "a failed listing must not pass the planning step"
+E       AssertionError: a failed listing must not pass the planning step
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['bash', '-e', '-c', 'shards=0\nif [ "true" = "true" ]; then\n  git diff "$BASE_SHA...$HEAD_SHA"...TPUT"\n'], returncode=0, stdout='rust mutants in the diff: 0\nrust shards: 0\n', stderr='ERROR cannot read the diff\n').returncode
+
+tests/test_tools/test_mutation_workflow_enumeration.py:121: AssertionError
+_________ test_failed_listing_fails_the_step[false-B-nightly.yml-plan] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_failed_listing_fails_the_1')
+workflow = 'nightly.yml', job = 'plan', mode = 'B', rust_full = 'false'
+
+    @pytest.mark.parametrize("workflow, job", STEPS)
+    @pytest.mark.parametrize("mode", ["B", "C"])
+    @pytest.mark.parametrize("rust_full", ["false", "true"])
+    def test_failed_listing_fails_the_step(tmp_path, workflow, job, mode, rust_full):
+        script = step_run(workflow, job, "count")
+        r, outputs = run_step(
+            script, tmp_path, mode, BASE="HEAD", RUST="true", RUST_FULL=rust_full
+        )
+>       assert r.returncode != 0, "a failed listing must not pass the planning step"
+E       AssertionError: a failed listing must not pass the planning step
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['bash', '-e', '-c', 'shards=0\nif [ "$RUST" = "true" ]; then\n  if [ -n "$BASE" ]; then\n    gi...B_OUTPUT"\n'], returncode=0, stdout='Rust mutants to test: 0\nRust shards: 0\n', stderr='ERROR cannot read the diff\n').returncode
+
+tests/test_tools/test_mutation_workflow_enumeration.py:121: AssertionError
+_______ test_failed_listing_fails_the_step[false-C-mutation-pr.yml-plan] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_failed_listing_fails_the_2')
+workflow = 'mutation-pr.yml', job = 'plan', mode = 'C', rust_full = 'false'
+
+    @pytest.mark.parametrize("workflow, job", STEPS)
+    @pytest.mark.parametrize("mode", ["B", "C"])
+    @pytest.mark.parametrize("rust_full", ["false", "true"])
+    def test_failed_listing_fails_the_step(tmp_path, workflow, job, mode, rust_full):
+        script = step_run(workflow, job, "count")
+        r, outputs = run_step(
+            script, tmp_path, mode, BASE="HEAD", RUST="true", RUST_FULL=rust_full
+        )
+>       assert r.returncode != 0, "a failed listing must not pass the planning step"
+E       AssertionError: a failed listing must not pass the planning step
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['bash', '-e', '-c', 'shards=0\nif [ "true" = "true" ]; then\n  git diff "$BASE_SHA...$HEAD_SHA"...returncode=0, stdout='rust mutants in the diff: 0\nrust shards: 0\n', stderr='ERROR TOML parse error: duplicate key\n').returncode
+
+tests/test_tools/test_mutation_workflow_enumeration.py:121: AssertionError
+_________ test_failed_listing_fails_the_step[false-C-nightly.yml-plan] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_failed_listing_fails_the_3')
+workflow = 'nightly.yml', job = 'plan', mode = 'C', rust_full = 'false'
+
+    @pytest.mark.parametrize("workflow, job", STEPS)
+    @pytest.mark.parametrize("mode", ["B", "C"])
+    @pytest.mark.parametrize("rust_full", ["false", "true"])
+    def test_failed_listing_fails_the_step(tmp_path, workflow, job, mode, rust_full):
+        script = step_run(workflow, job, "count")
+        r, outputs = run_step(
+            script, tmp_path, mode, BASE="HEAD", RUST="true", RUST_FULL=rust_full
+        )
+>       assert r.returncode != 0, "a failed listing must not pass the planning step"
+E       AssertionError: a failed listing must not pass the planning step
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['bash', '-e', '-c', 'shards=0\nif [ "$RUST" = "true" ]; then\n  if [ -n "$BASE" ]; then\n    gi...'], returncode=0, stdout='Rust mutants to test: 0\nRust shards: 0\n', stderr='ERROR TOML parse error: duplicate key\n').returncode
+
+tests/test_tools/test_mutation_workflow_enumeration.py:121: AssertionError
+_______ test_failed_listing_fails_the_step[true-B-mutation-pr.yml-plan] ________
+
+tmp_path = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_failed_listing_fails_the_4')
+workflow = 'mutation-pr.yml', job = 'plan', mode = 'B', rust_full = 'true'
+
+    @pytest.mark.parametrize("workflow, job", STEPS)
+    @pytest.mark.parametrize("mode", ["B", "C"])
+    @pytest.mark.parametrize("rust_full", ["false", "true"])
+    def test_failed_listing_fails_the_step(tmp_path, workflow, job, mode, rust_full):
+        script = step_run(workflow, job, "count")
+        r, outputs = run_step(
+            script, tmp_path, mode, BASE="HEAD", RUST="true", RUST_FULL=rust_full
+        )
+>       assert r.returncode != 0, "a failed listing must not pass the planning step"
+E       AssertionError: a failed listing must not pass the planning step
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['bash', '-e', '-c', 'shards=0\nif [ "true" = "true" ]; then\n  git diff "$BASE_SHA...$HEAD_SHA"...TPUT"\n'], returncode=0, stdout='rust mutants in the diff: 0\nrust shards: 0\n', stderr='ERROR cannot read the diff\n').returncode
+
+tests/test_tools/test_mutation_workflow_enumeration.py:121: AssertionError
+_________ test_failed_listing_fails_the_step[true-B-nightly.yml-plan] __________
+
+tmp_path = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_failed_listing_fails_the_5')
+workflow = 'nightly.yml', job = 'plan', mode = 'B', rust_full = 'true'
+
+    @pytest.mark.parametrize("workflow, job", STEPS)
+    @pytest.mark.parametrize("mode", ["B", "C"])
+    @pytest.mark.parametrize("rust_full", ["false", "true"])
+    def test_failed_listing_fails_the_step(tmp_path, workflow, job, mode, rust_full):
+        script = step_run(workflow, job, "count")
+        r, outputs = run_step(
+            script, tmp_path, mode, BASE="HEAD", RUST="true", RUST_FULL=rust_full
+        )
+>       assert r.returncode != 0, "a failed listing must not pass the planning step"
+E       AssertionError: a failed listing must not pass the planning step
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['bash', '-e', '-c', 'shards=0\nif [ "$RUST" = "true" ]; then\n  if [ -n "$BASE" ]; then\n    gi...B_OUTPUT"\n'], returncode=0, stdout='Rust mutants to test: 0\nRust shards: 0\n', stderr='ERROR cannot read the diff\n').returncode
+
+tests/test_tools/test_mutation_workflow_enumeration.py:121: AssertionError
+_______ test_failed_listing_fails_the_step[true-C-mutation-pr.yml-plan] ________
+
+tmp_path = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_failed_listing_fails_the_6')
+workflow = 'mutation-pr.yml', job = 'plan', mode = 'C', rust_full = 'true'
+
+    @pytest.mark.parametrize("workflow, job", STEPS)
+    @pytest.mark.parametrize("mode", ["B", "C"])
+    @pytest.mark.parametrize("rust_full", ["false", "true"])
+    def test_failed_listing_fails_the_step(tmp_path, workflow, job, mode, rust_full):
+        script = step_run(workflow, job, "count")
+        r, outputs = run_step(
+            script, tmp_path, mode, BASE="HEAD", RUST="true", RUST_FULL=rust_full
+        )
+>       assert r.returncode != 0, "a failed listing must not pass the planning step"
+E       AssertionError: a failed listing must not pass the planning step
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['bash', '-e', '-c', 'shards=0\nif [ "true" = "true" ]; then\n  git diff "$BASE_SHA...$HEAD_SHA"...returncode=0, stdout='rust mutants in the diff: 0\nrust shards: 0\n', stderr='ERROR TOML parse error: duplicate key\n').returncode
+
+tests/test_tools/test_mutation_workflow_enumeration.py:121: AssertionError
+_________ test_failed_listing_fails_the_step[true-C-nightly.yml-plan] __________
+
+tmp_path = PosixPath('/tmp/pytest-of-sinkog/pytest-10/test_failed_listing_fails_the_7')
+workflow = 'nightly.yml', job = 'plan', mode = 'C', rust_full = 'true'
+
+    @pytest.mark.parametrize("workflow, job", STEPS)
+    @pytest.mark.parametrize("mode", ["B", "C"])
+    @pytest.mark.parametrize("rust_full", ["false", "true"])
+    def test_failed_listing_fails_the_step(tmp_path, workflow, job, mode, rust_full):
+        script = step_run(workflow, job, "count")
+        r, outputs = run_step(
+            script, tmp_path, mode, BASE="HEAD", RUST="true", RUST_FULL=rust_full
+        )
+>       assert r.returncode != 0, "a failed listing must not pass the planning step"
+E       AssertionError: a failed listing must not pass the planning step
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['bash', '-e', '-c', 'shards=0\nif [ "$RUST" = "true" ]; then\n  if [ -n "$BASE" ]; then\n    gi...'], returncode=0, stdout='Rust mutants to test: 0\nRust shards: 0\n', stderr='ERROR TOML parse error: duplicate key\n').returncode
+
+tests/test_tools/test_mutation_workflow_enumeration.py:121: AssertionError
+_____________ test_no_listing_is_piped_or_masked[mutation-pr.yml] ______________
+
+workflow = 'mutation-pr.yml'
+
+    @pytest.mark.parametrize("workflow", ["mutation-pr.yml", "nightly.yml", "mutation.yml"])
+    def test_no_listing_is_piped_or_masked(workflow):
+        text = open(os.path.join(WORKFLOWS, workflow)).read()
+>       assert not re.search(r"cargo mutants[^\n]*--list[^\n]*\|", text), "a listing is piped"
+E       AssertionError: a listing is piped
+E       assert not <re.Match object; span=(2343, 2413), match='cargo mutants --workspace --list --in-diff /tmp/p>
+E        +  where <re.Match object; span=(2343, 2413), match='cargo mutants --workspace --list --in-diff /tmp/p> = <function search at 0x74423a4f6400>('cargo mutants[^\\n]*--list[^\\n]*\\|', 'name: mutation-pr\n\n# Diff-mode mutation gate of a pull request.\n#\n# What is mutated is discovered from the diff, ...ed) ;;\n              *) echo "::error::a mutation job ended as \'$r\'"; exit 1 ;;\n            esac\n          done\n')
+E        +    where <function search at 0x74423a4f6400> = re.search
+
+tests/test_tools/test_mutation_workflow_enumeration.py:138: AssertionError
+_______________ test_no_listing_is_piped_or_masked[nightly.yml] ________________
+
+workflow = 'nightly.yml'
+
+    @pytest.mark.parametrize("workflow", ["mutation-pr.yml", "nightly.yml", "mutation.yml"])
+    def test_no_listing_is_piped_or_masked(workflow):
+        text = open(os.path.join(WORKFLOWS, workflow)).read()
+>       assert not re.search(r"cargo mutants[^\n]*--list[^\n]*\|", text), "a listing is piped"
+E       AssertionError: a listing is piped
+E       assert not <re.Match object; span=(5210, 5283), match='cargo mutants --workspace --list --in-diff /tmp/s>
+E        +  where <re.Match object; span=(5210, 5283), match='cargo mutants --workspace --list --in-diff /tmp/s> = <function search at 0x74423a4f6400>('cargo mutants[^\\n]*--list[^\\n]*\\|', 'name: nightly\n\n# The nightly check of main.\n#\n#   security     every night: govulncheck and the cargo-deny adviso...is issue. $details"\n          fi\n          bash scripts/ci_report.sh nightly-failure "$title" "$status" "$details"\n')
+E        +    where <function search at 0x74423a4f6400> = re.search
+
+tests/test_tools/test_mutation_workflow_enumeration.py:138: AssertionError
+_____ test_every_listing_goes_through_the_checked_counter[mutation-pr.yml] _____
+
+workflow = 'mutation-pr.yml'
+
+    @pytest.mark.parametrize("workflow", ["mutation-pr.yml", "nightly.yml"])
+    def test_every_listing_goes_through_the_checked_counter(workflow):
+        text = open(os.path.join(WORKFLOWS, workflow)).read()
+        listings = re.findall(r"cargo mutants[^\n]*--list", text)
+        assert listings, "no listing found: the test has lost its subject"
+        counted = re.findall(r"count_mutants\.py[^\n]*\\?\n?[^\n]*cargo mutants[^\n]*--list", text)
+>       assert len(counted) == len(listings)
+E       AssertionError: assert 0 == 1
+E        +  where 0 = len([])
+E        +  and   1 = len(['cargo mutants --workspace --list'])
+
+tests/test_tools/test_mutation_workflow_enumeration.py:149: AssertionError
+_______ test_every_listing_goes_through_the_checked_counter[nightly.yml] _______
+
+workflow = 'nightly.yml'
+
+    @pytest.mark.parametrize("workflow", ["mutation-pr.yml", "nightly.yml"])
+    def test_every_listing_goes_through_the_checked_counter(workflow):
+        text = open(os.path.join(WORKFLOWS, workflow)).read()
+        listings = re.findall(r"cargo mutants[^\n]*--list", text)
+        assert listings, "no listing found: the test has lost its subject"
+        counted = re.findall(r"count_mutants\.py[^\n]*\\?\n?[^\n]*cargo mutants[^\n]*--list", text)
+>       assert len(counted) == len(listings)
+E       AssertionError: assert 0 == 2
+E        +  where 0 = len([])
+E        +  and   2 = len(['cargo mutants --workspace --list', 'cargo mutants --workspace --list'])
+
+tests/test_tools/test_mutation_workflow_enumeration.py:149: AssertionError
+___________________ test_the_shards_follow_the_planned_mode ____________________
+
+    def test_the_shards_follow_the_planned_mode():
+        # the listing and the shard run must agree: a FULL plan must not run narrowed shards
+        for workflow in ("mutation-pr.yml", "nightly.yml"):
+            text = open(os.path.join(WORKFLOWS, workflow)).read()
+>           assert "rust_full" in text
+E           assert 'rust_full' in 'name: mutation-pr\n\n# Diff-mode mutation gate of a pull request.\n#\n# What is mutated is discovered from the diff, ...ed) ;;\n              *) echo "::error::a mutation job ended as \'$r\'"; exit 1 ;;\n            esac\n          done\n'
+
+tests/test_tools/test_mutation_workflow_enumeration.py:156: AssertionError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p7_new_package_is_planned
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p8_nested_module_is_still_ignored
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_package_with_only_tests_is_not_planned
+PASSED tests/test_tools/test_mutation_plan_probes.py::test_p9_unknown_base_is_fail_closed
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_counter_test_the_old_step_masks_a_failed_listing[B]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_counter_test_the_old_step_masks_a_failed_listing[C]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_counter_test_the_old_step_is_right_only_for_the_valid_empty_case
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_valid_empty_listing_succeeds_with_zero_shards[mutation-pr.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_valid_empty_listing_succeeds_with_zero_shards[nightly.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_a_real_listing_chooses_the_shards[mutation-pr.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_a_real_listing_chooses_the_shards[nightly.yml-plan]
+PASSED tests/test_tools/test_mutation_workflow_enumeration.py::test_no_listing_is_piped_or_masked[mutation.yml]
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_p1_test_only_change_plans_the_package
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_p2_deleted_source_file_is_not_silent
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_p2_deleted_test_file_is_not_silent
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_p3_dependency_or_mutation_config_escalates_go_to_full[go.mod]
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_p3_dependency_or_mutation_config_escalates_go_to_full[go.sum]
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_p3_dependency_or_mutation_config_escalates_go_to_full[.gremlins.yaml]
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_p4_gate_logic_escalates_everything
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_p5_cargo_manifest_escalates_rust_to_every_mutant
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_rust_test_file_escalates_rust
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_rust_source_change_stays_narrow
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_p6_testdata_change_plans_the_owning_package
+FAILED tests/test_tools/test_mutation_plan_probes.py::test_unrelated_change_plans_nothing
+FAILED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[false-B-mutation-pr.yml-plan]
+FAILED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[false-B-nightly.yml-plan]
+FAILED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[false-C-mutation-pr.yml-plan]
+FAILED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[false-C-nightly.yml-plan]
+FAILED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[true-B-mutation-pr.yml-plan]
+FAILED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[true-B-nightly.yml-plan]
+FAILED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[true-C-mutation-pr.yml-plan]
+FAILED tests/test_tools/test_mutation_workflow_enumeration.py::test_failed_listing_fails_the_step[true-C-nightly.yml-plan]
+FAILED tests/test_tools/test_mutation_workflow_enumeration.py::test_no_listing_is_piped_or_masked[mutation-pr.yml]
+FAILED tests/test_tools/test_mutation_workflow_enumeration.py::test_no_listing_is_piped_or_masked[nightly.yml]
+FAILED tests/test_tools/test_mutation_workflow_enumeration.py::test_every_listing_goes_through_the_checked_counter[mutation-pr.yml]
+FAILED tests/test_tools/test_mutation_workflow_enumeration.py::test_every_listing_goes_through_the_checked_counter[nightly.yml]
+FAILED tests/test_tools/test_mutation_workflow_enumeration.py::test_the_shards_follow_the_planned_mode
+======================== 25 failed, 12 passed in 2.02s =========================
