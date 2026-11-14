@@ -8,6 +8,12 @@
 #       Egy már futó/lefutott job átvétele. Enélkül nem-interaktív
 #       futásban a wrapper megáll, és megmondja, mit kell tenni.
 #
+#   --force-clean
+#       Friss futásnál a workspace törlése előtt a wrapper megnézi, van-e mit
+#       elveszíteni: élő folyamat a workspace-ban, nem commitolt vagy pusholatlan
+#       munka, nem ellenőrizhető tartalom. Ilyenkor megáll. A --force ezt NEM
+#       írja felül; csak ez, tudatosan, és kiírja, mit veszít.
+#
 #   --skip-spec-gate
 #              Kihagyja a kötelező validate-spec.sh kaput. Csak akkor, ha
 #              tudatosan iterálsz egy specen és tudod, hogy még NO-GO.
@@ -160,14 +166,19 @@ AGENT_ID="agent-01"
 RESUME=0
 SKIP_SPEC_GATE=0
 FORCE=0
+FORCE_CLEAN=0
 for arg in "$@"; do
     case "$arg" in
         --resume) RESUME=1 ;;
         --skip-spec-gate) SKIP_SPEC_GATE=1 ;;
         --force) FORCE=1 ;;
+        --force-clean) FORCE_CLEAN=1 ;;
         *) AGENT_ID="$arg" ;;
     esac
 done
+
+# workspace_loss_report: tools/lib-workspace-guard.sh (a work-open.sh is ezt használja).
+source "$WORKDIR/tools/lib-workspace-guard.sh"
 
 # Az azonosítókból path épül, és a path egyik vége egy `rm -rf`. Eddig semmi
 # nem nézte meg az alakjukat: `../../evil` a workspace-gyökéren kívülre oldódott
@@ -595,6 +606,25 @@ else
     if [[ -L "$WORKSPACE" ]]; then
         echo "[!] A workspace symlink, nem könyvtár. Nem törlöm rajta keresztül." >&2
         exit 1
+    fi
+    # A törlés előtt megnézzük, van-e mit elveszíteni. A workspace-ban élhet
+    # egy interaktív szál (pl. `work`), és a klónjaiban lehet pusholatlan
+    # munka; a `rm -rf` ezt eddig szó nélkül vitte el. Fail-closed: ami nem
+    # ellenőrizhető, az is blokkol.
+    if [[ -e "$WS_RESOLVED" ]]; then
+        WS_ISSUES=$(workspace_loss_report "$WS_RESOLVED")
+        if [[ -n "$WS_ISSUES" ]]; then
+            if [[ "$FORCE_CLEAN" -eq 1 ]]; then
+                echo "[!] A --force-clean törli a workspace-t, és ezt veszíti el:" >&2
+                printf '%s\n' "$WS_ISSUES" >&2
+            else
+                echo "[!] A workspace nem törölhető, mert elveszne belőle valami:" >&2
+                printf '%s\n' "$WS_ISSUES" >&2
+                echo "    Kezeld le (commit + push, vagy állítsd le a szálat), folytasd --resume-mal," >&2
+                echo "    vagy tudatosan: --force-clean. A --force ezt NEM írja felül." >&2
+                exit 1
+            fi
+        fi
     fi
     rm -rf "$WS_RESOLVED"
     mkdir -p "$WORKSPACE"
