@@ -1,0 +1,26 @@
+### exit codes of cargo-mutants itself (stdout and stderr kept apart)
+A valid, empty listing (diff applies, no mutable code): exit=0 stdout_bytes=0 stderr=[info: syncing channel updates for 1.96.1-x86_64-unknown-linux-gnu info: latest update on 2026-06-30 for version 1.96.1 (31fca3adb 2026-06-26) info: downloading 3 components  INFO No mutants to filter ]
+B failed listing (unreadable diff):                    exit=6 stdout_bytes=0
+C failed listing (broken .cargo/mutants.toml):         exit=1 stdout_bytes=0
+
+### the workflow line, bash -e (GitHub default), for A / B / C
+n=0
+n=0
+(C):
+n=0
+
+### same line WITHOUT '|| true', bash -e (no pipefail): A / B
+step exit code: 1
+step exit code: 1
+
+### with 'bash -eo pipefail', '|| true' kept: B (is the failure then visible?)
+n=0
+step exit code: 0
+
+### a failure-aware form: list to a file, check the listing command first, then count
+n=0 (listing succeeded)
+exit=0
+LISTING FAILED (exit 6)
+ERROR Failed to open diff file: No such file or directory (os error 2)
+ERROR Failed to read diff file: No such file or directory (os error 2)
+exit=1

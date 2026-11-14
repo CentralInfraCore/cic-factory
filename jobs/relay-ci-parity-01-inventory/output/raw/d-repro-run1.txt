@@ -1,0 +1,77 @@
+### environment
+rustc 1.96.1 (31fca3adb 2026-06-26)
+cargo 1.96.1 (356927216 2026-06-26)
+cargo-mutants 27.1.0
+bc2c4e0a2eade4f798b51e03d2953304512960ed
+
+### 1. valid full listing (nightly.yml:148 form)
+
+$ [valid full listing]
+n=300
+step exit code: 0
+
+### 2. valid diff with a real code change (mutation-pr.yml:65 form)
+ 1 file changed, 1 insertion(+)
+12 /tmp/pr.diff
+
+$ [in-diff, real change]
+n=1
+step exit code: 0
+
+### 3. valid, legitimately empty: a diff that touches no mutable code (doc comment only)
+
+$ [in-diff, comment only]
+ INFO No mutants to filter
+n=0
+step exit code: 0
+
+### 4. the listing command FAILS (stderr shown, as in the CI log)
+--- 4a. --in-diff points at a file that cannot be read
+
+$ [in-diff, unreadable diff file]
+ERROR Failed to open diff file: No such file or directory (os error 2)
+ERROR Failed to read diff file: No such file or directory (os error 2)
+n=0
+step exit code: 0
+--- 4b. the same command with the pipe checked (what a fail-closed step would see)
+2
+pipefail pipeline exit: 6 / 6
+--- 4c. only the cargo-mutants config is broken (build and tests are untouched)
+listing alone:
+exit=1 stdout_lines=0
+Error: parse toml from /w/.cargo/mutants.toml
+
+Caused by:
+    0: parse toml
+    1: TOML parse error at line 37, column 1
+          |
+       37 | exclude_re = ["("]
+          | ^^^^^^^^^^
+       duplicate key
+       
+
+$ [full listing, broken config]
+Error: parse toml from /w/.cargo/mutants.toml
+
+Caused by:
+    0: parse toml
+    1: TOML parse error at line 37, column 1
+          |
+       37 | exclude_re = ["("]
+          | ^^^^^^^^^^
+       duplicate key
+       
+n=0
+step exit code: 0
+--- 4d. unpinned tool version drift is not reproduced here (ci installs 'tool: cargo-mutants' with no version)
+--- 4e. a failed listing, then the plan decision as in the workflow
+n=0 shards=0  -> rust job condition (rust_shards != '0') = SKIPPED
+
+### 5. without '|| true' under bash -e (what the workflow would do if only the || true were removed)
+ WARN Diff content doesn't match source file path="cic-canonical/src/lib.rs" lineno=1 diff_content="// only a comment" source_content="//! CIC Canonical Object Encoding — number normalization (spec #1)."
+ERROR Diff content doesn't match source file: cic-canonical/src/lib.rs line 1
+diff has:   "// only a comment"
+source has: "//! CIC Canonical Object Encoding — number normalization (spec #1)."
+The diff might be out of date with this source tree.
+
+step exit code: 1   (a legitimately empty listing now fails the step)
