@@ -56,7 +56,7 @@ def quote(o):
 yaml.dump(quote(d), open(f"{root}/repo/jobs/t/meta.yaml", "w", encoding="utf-8"),
           sort_keys=False, allow_unicode=True)
 PY
-    git init -q --bare "$r/remote.git"
+    git init -q --bare --initial-branch=main "$r/remote.git"
     git -C "$r/repo" init -q
     git -C "$r/repo" config user.email t@t
     git -C "$r/repo" config user.name t
