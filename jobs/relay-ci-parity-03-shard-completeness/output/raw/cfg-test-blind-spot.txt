@@ -1,0 +1,11 @@
+### 1. a change INSIDE the #[cfg(test)] module of http-executor/src/lib.rs (line 815)
+@@ -815 +815 @@ mod tests {
+mutants listed: 0
+cargo-mutants says: info: syncing channel updates for 1.96.1-x86_64-unknown-linux-gnu info: latest update on 2026-06-30 for version 1.96.1 (
+### 2. a change in PRODUCTION code of the same file (line 100)
+@@ -100 +100 @@ impl EgressPolicy {
+mutants listed: 1
+### 3. a change that REMOVES an assertion in the test module (a weaker test)
+first assert in test module at line 834:         assert!(entries.iter().all(|e| e.signature.is_some()));
+@@ -834 +833,0 @@ mod tests {
+mutants listed: 0

@@ -1,0 +1,26 @@
+# cargo-mutants 27.1.0, CIC_Relay 7ac6e80, rust:1.96.1-bookworm; 300 mutants
+## the FULL run (one process): {'total_mutants': 300, 'caught': 217, 'missed': 0, 'timeout': 0, 'unviable': 83}
+## the 8 shards, each run on its own (--shard k/8):
+shard 0/8: total=38 caught=34 missed=0 timeout=0 unviable=4
+shard 1/8: total=38 caught=28 missed=0 timeout=0 unviable=10
+shard 2/8: total=38 caught=19 missed=0 timeout=0 unviable=19
+shard 3/8: total=38 caught=22 missed=0 timeout=0 unviable=16
+shard 4/8: total=38 caught=38 missed=0 timeout=0 unviable=0
+shard 5/8: total=38 caught=27 missed=0 timeout=0 unviable=11
+shard 6/8: total=38 caught=24 missed=0 timeout=0 unviable=14
+shard 7/8: total=34 caught=25 missed=0 timeout=0 unviable=9
+sum of shards: {'total_mutants': 300, 'caught': 217, 'missed': 0, 'timeout': 0, 'unviable': 83}
+shard names == plan names (as sets): True; each exactly once: True
+## where the unviable mutants are (full run), by source file:
+connections/src/vault/mod.rs: 16 unviable of 40
+ffi/src/lib.rs: 13 unviable of 47
+http-executor/src/lib.rs: 13 unviable of 90
+connections/src/vault/port.rs: 9 unviable of 17
+vault-adapter/src/lib.rs: 9 unviable of 15
+executor/src/lib.rs: 5 unviable of 9
+module/src/sealing.rs: 5 unviable of 11
+vault-adapter/src/transit.rs: 5 unviable of 18
+vault-adapter/src/countersign.rs: 4 unviable of 20
+module/src/lib.rs: 3 unviable of 15
+connections/src/lib.rs: 1 unviable of 7
+score: caught/planned = 217/300 = 72.33%; caught/(planned-unviable) = 217/217 = 100.00%

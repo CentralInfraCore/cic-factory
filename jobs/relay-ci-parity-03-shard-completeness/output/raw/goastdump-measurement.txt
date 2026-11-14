@@ -1,0 +1,18 @@
+go version go1.26.10 linux/amd64
+### coverage of the nested module
+ok  	goastdump	0.004s	coverage: 78.0% of statements
+### gremlins v0.6.0 on the nested module
+install exit=0
+   TIMED OUT CONDITIONALS_NEGATION at main.go:375:15
+ NOT COVERED CONDITIONALS_BOUNDARY at main.go:392:18
+ NOT COVERED CONDITIONALS_NEGATION at main.go:392:18
+ NOT COVERED CONDITIONALS_NEGATION at main.go:404:33
+ NOT COVERED ARITHMETIC_BASE at testdata/sample.go:61:8
+   TIMED OUT CONDITIONALS_NEGATION at main.go:379:17
+
+Mutation testing completed in 2 seconds 928 milliseconds
+Killed: 0, Lived: 0, Not covered: 8
+Timed out: 30, Not viable: 0, Skipped: 0
+Test efficacy: 0.00%
+Mutator coverage: 0.00%
+gremlins exit=0 seconds=3

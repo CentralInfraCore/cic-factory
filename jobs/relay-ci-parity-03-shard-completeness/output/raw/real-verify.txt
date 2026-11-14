@@ -1,0 +1,42 @@
+### plan record from the real 'cargo mutants --list --json' output of the full tree
+PLAN_VALID_NONEMPTY: 300 mutants, digest 31a8d991519601f9
+### bind the 8 real shard outcomes to the plan
+shard 0/8: 38 verdicts bound to plan 31a8d991519601f9
+shard 1/8: 38 verdicts bound to plan 31a8d991519601f9
+shard 2/8: 38 verdicts bound to plan 31a8d991519601f9
+shard 3/8: 38 verdicts bound to plan 31a8d991519601f9
+shard 4/8: 38 verdicts bound to plan 31a8d991519601f9
+shard 5/8: 38 verdicts bound to plan 31a8d991519601f9
+shard 6/8: 38 verdicts bound to plan 31a8d991519601f9
+shard 7/8: 34 verdicts bound to plan 31a8d991519601f9
+
+### 1. complete run
+rust PLAN_VALID_NONEMPTY [mutation-policy/1]: planned=300 caught=217 missed=0 timeout=0 unviable=83
+rust score: caught/planned = 217/300; caught/(planned-unviable) = 217/217
+exit=0
+
+### 2. a shard report is missing (shard 3 never ran)
+rust: missing shard report(s): [3] of 8
+exit=1
+
+### 3. a shard is reported twice
+rust: rv-work/reports/shard-2.json: shard 2 was reported twice (also rv-work/reports/shard-2-again.json)
+exit=1
+
+### 4. a planned mutant has no verdict (one outcome dropped from shard 5, counters kept consistent)
+rust: 1 planned mutant(s) have no verdict, e.g. 'http-executor/src/lib.rs:371:5: replace verify_chain -> bool with true'
+exit=1
+shard 5/8: 38 verdicts bound to plan 31a8d991519601f9
+
+### 5. a verdict is tampered with (one mutant name changed by a character in shard 1)
+rust: 1 verdict(s) for mutants that are not in the plan, e.g. 'ffi/src/lib.rs:223:9: replace flow::parse_allow_hosts -> Vec<String> with vec![]x'
+exit=1
+shard 1/8: 38 verdicts bound to plan 31a8d991519601f9
+
+### 6. the plan is tampered with (one mutant removed from the plan file, digest kept)
+rust: PLAN_INVALID: the plan rv-work/rust-plan.json does not match its digest (tampered or corrupt)
+exit=1
+
+### 7. the plan file is missing
+rust: PLAN_INVALID: the plan rv-work/rust-plan.json is missing or unreadable: [Errno 2] No such file or directory: 'rv-work/rust-plan.json'
+exit=1
