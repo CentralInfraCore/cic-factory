@@ -103,6 +103,83 @@ mutációs (A, B) és a lefedettségi riportokat egy helyen értékeli:
   bevonás (csomagok, coverage, mutációs idő), és adj javaslatot. A tulajdonos dönt arról, hogy
   kap-e saját mutációs profilt. A mai viselkedés (kimarad) változatlan marad.
 
+### E. Kötelező kiegészítések a review alapján (F1–F3)
+
+Ezek az A–C szakasz részei és kötelezőek. Ha valamelyiket a mért adat alapján nem lehet
+teljesíteni, ne hagyd ki csendben: mondd ki a jelentésben, mit mértél és miért.
+
+#### F1 — A mutánsazonosító kanonizálási szerződése (A. szakasz)
+
+A tervezett és a mért mutánsok egyezése csak akkor értelmes, ha az azonosító stabil. Add meg és
+verziózd a szerződést (pl. `mutant-id/1`), egy dokumentumban és a kapu-scriptben:
+
+- Mi alkotja az azonosítót (forrásfájl, függvény, a mutáció pozíciója és fajtája, a csere
+  szövege). Az azonosító **ne függjön a lista sorrendjétől** és a shard-kiosztástól.
+- A terv digestje a **kanonikus** (rendezett, a verziót tartalmazó) alakból készüljön, nem a
+  nyers `--list` kimenetből.
+- Két különböző mutáns azonosítója **nem eshet egybe**. Ha az eszköz kimenetében ez előfordulhat
+  (azonos szöveg, azonos sor), a szerződés kezelje, és legyen rá teszt.
+- A terv-verzió változása (új szerződés-verzió) esetén a régi riport **nem** hasonlítható össze
+  csendben az újjal: a kapu piros, nem egyezés.
+
+Tesztek, amelyek a javítás előtti állapoton az elvárt okból buknak:
+1. ugyanaz a mutánshalmaz **kevert sorrendben** → ugyanaz a digest, a kapu zöld;
+2. két különböző mutáns **azonos azonosítóval** → a terv elutasítva;
+3. a riport azonosítója egy karakterrel **eltér** a tervétől → hiányzó és ismeretlen ítélet, piros;
+4. a terv és a riport **eltérő szerződés-verzióval** → piros, nem zöld.
+
+#### F2 — A timeout és az unviable nem tűnhet el a nevezőből (A. és B. szakasz)
+
+A pontszámot (és bármely küszöb-döntést) nem lehet a nevező szűkítésével javítani.
+
+- A kapu minden ítéletet **külön számlál**: `caught`, `missed`, `timeout`, `unviable`. A tervezett
+  mutánsok száma = ezek összege. Ha nem egyezik, a kapu piros.
+- A `timeout` **nem** számít automatikusan elkapott mutánsnak, az `unviable` sem tűnik el: a
+  jelentés és a kapu kimenete mindkettőt kiírja. A pontszám képlete a jelentésben szerepel; a
+  nevezője **a tervezett**, nem a lefutott mutánsszám, vagy az ettől való eltérés explicit,
+  megindokolt és a kapu kimenetében látható.
+- A kezelési javaslatot a **mért** arányokra alapozd (mennyi a mai `timeout` és `unviable` a
+  300 Rust mutánsból és a Go csomagokban). A végleges döntést a tulajdonos hagyja jóvá; a kód
+  addig a **szigorúbb** változatot alkalmazza.
+- Egy ítélet-kategória átsorolása (pl. `unviable` → nem számít) **nem** történhet a PR-ben a
+  küszöb vagy a baseline módosítása nélkül, a #169 2. szabálya szerint.
+
+Tesztek:
+1. egy `timeout`-os mutáns **nem** javítja a pontszámot, és megjelenik a kimenetben;
+2. a nevező kisebb a tervezettnél (kihagyott `unviable`) → a kapu piros, hacsak a kihagyás
+   explicit és indokolt módon szerepel;
+3. az ítéletek összege nem egyezik a tervezett számmal → piros.
+
+#### F3 — A terv három állapota (A., B. és C. szakasz)
+
+A kapu a **tervről** három, egymástól külön állapotot különböztessen meg, és a kimenetében név
+szerint jelenítse meg őket (a nevek javaslatok; átnevezheted, ha a kódbázis más mintát követ, de
+a három állapot és a „hiányzó = mindig piros” elv maradjon):
+
+| Állapot | Jelentése | Kapu |
+|---|---|---|
+| `PLAN_VALID_NONEMPTY` | érvényes, nem üres terv | a teljesség ellenőrzése fut |
+| `PLAN_VALID_EMPTY` | **bizonyítottan** érvényes, üres terv (a felsorolás sikeres, nincs mutálható kód) | zöld, külön állapotként jelölve |
+| `PLAN_INVALID` | hiányzó, sérült, nem olvasható, nem verifikálható (digest, verzió, séma) | **mindig piros** |
+
+- A `PLAN_VALID_EMPTY` bizonyítéka a **sikeres felsorolás** (a PR-02 `count_mutants.py` kilépési
+  kódja 0, és a nyers lista fájl létezik és üres). Egy hiányzó fájl, vagy egy nulla bájtos, de nem
+  a sikeres felsorolásból jövő terv **nem** üres-érvényes.
+- A megkülönböztetés a **riportoldalon** is él: üres riport egy nem üres tervhez piros; üres
+  riport üres-érvényes tervhez zöld.
+- A `skipped` job nem bizonyíték: ha a Rust vagy Go job kimaradt, a kapu a terv állapotából
+  döntse el, hogy ez jogos-e (`PLAN_VALID_EMPTY`), nem a `skipped` eredményből.
+
+Tesztek (mindegyik a javítás előtti állapoton is fusson és az elvárt okból bukjon):
+1. üres, de sikeres felsorolásból származó terv → `PLAN_VALID_EMPTY`, zöld;
+2. hiányzó terv-fájl → `PLAN_INVALID`, piros;
+3. sérült terv (hibás digest vagy séma) → `PLAN_INVALID`, piros;
+4. nulla bájtos terv-fájl, amelyhez nincs sikeres felsorolás → `PLAN_INVALID`, piros;
+5. `PLAN_VALID_EMPTY` terv és nem üres riport (ítélet ismeretlen mutánsra) → piros.
+
+Mindhárom pontnál a bukás-tesztben a **konkrét hibaüzenetet** is ellenőrizd, és a régi kódon nézd
+meg, hogy az elvárt okból bukik (a PR-02 tanulsága: rossz okból is lehet piros).
+
 ## Negatív tesztek (kötelezőek)
 
 A #169 „Self-testing” 3., 4. és 5. próbája, a Relay valóságára:
@@ -165,7 +242,7 @@ A cic-factory klónban: `jobs/relay-ci-parity-03-shard-completeness/output/`
 - `output/pr03-report.md` — magyarul: vizsgált commitok; a klón tisztasága; a feltárt riportformátumok
   (a valódi kimenet alapján); javítások soronként (előtte/utána); negatív tesztek és a bukásuk
   bizonyítéka (**az elvárt okból**); GitHub Actions run id-k (zöld **és** szándékosan piros);
-  a `timeout`/`unviable` kezelés javaslata és indoka; adósság-lista (Go coverage a 90% alatt,
+  a mutánsazonosító szerződése (F1); a `timeout`/`unviable` kezelés javaslata, a mért arányok és indoka (F2); a három terv-állapot (F3); adósság-lista (Go coverage a 90% alatt,
   12 csomag a mutációs baseline-ban); a `#[cfg(test)]` és a `goastdump` mérése és javaslata;
   claim-evidence tábla (`Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat`);
   nyitott döntések; amit nem mértél.
@@ -185,6 +262,9 @@ A CIC_Relay módosítás a Relay-klónban, külön ágon, PR-ként (lásd lent).
 - A `#[cfg(test)]` és a `goastdump` lemérve; a `goastdump` kapcsán a döntés a tulajdonosé.
 - Valódi GitHub Actions run id a PR headSha-jára (zöld), és a piros útra (szándékos hiba), vagy **nem mérve**.
 - A numerikus küszöbök és baseline-ok változatlanok (a diffben ellenőrizve).
+- F1: a mutánsazonosító szerződése dokumentált és verziózott; a négy F1-teszt a régi állapoton az elvárt okból bukik.
+- F2: az ítéletek külön számláltak, a nevező a tervezett szám (vagy az eltérés explicit); a három F2-teszt mérve.
+- F3: a három terv-állapot a kapu kimenetében név szerint megjelenik; az öt F3-teszt mérve, a hiányzó/sérült terv mindig piros.
 - A CIC_Relay PR leírása pontosan azt állítja, ami mérve van.
 
 ## Git instrukciók
