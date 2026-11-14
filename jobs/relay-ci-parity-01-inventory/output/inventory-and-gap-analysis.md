@@ -4,7 +4,7 @@ Job: `relay-ci-parity-01-inventory` · issue: `CentralInfraCore/CIC_Relay#169` (
 Jelleg: **mérés és dokumentáció.** A Relay forrását, workflow-it és scriptjeit nem módosítottam, a CIC_Relay felé PR-t nem nyitottam.
 Nyers kimenetek és a mérő scriptek: `output/raw/`. A kapuhiba reprodukciója külön: `output/gate-defect-repro.md`.
 
-> **Aláírás:** a friss klónban a `commit-msg` hook (Vault-aláírás) nem él; az aláírást a tulajdonos pótolja.
+> **Aláírás:** a cic-factory klónban a `commit-msg` hook lefutott és aláírási metaadatot fűzött a commitüzenethez („Commit message updated with signing metadata”). A hook aláírásának érvényességét **nem ellenőriztem**; a tulajdonos verifikálja. A CIC_Relay és a Forms klónba nem commitoltam.
 
 ## 1. Vizsgált commitok
 
