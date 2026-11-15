@@ -1,0 +1,18 @@
+Raw measurement of the hardening integration regression test, bound to identifiers.
+
+repo:            CentralInfraCore/CIC_Relay
+measured_commit: e43f2a826ca2adee717a0a7ae18ca220016fb7c1  (main, merge of PR #190)
+measured_tree:   6b9cc314e759e3485a7d278c52de2cc6a5a8e928  (git rev-parse e43f2a8^{tree})
+test_file:       cmd/relay/hardening_integration_test.go
+test_blob:       5690d615def1841cc687b7b2f52ff3423ea48acc  (git rev-parse e43f2a8:cmd/relay/hardening_integration_test.go)
+egress_test:     cmd/relay/egress_client_test.go (isolatedEgressClient refuses non-loopback dials)
+merge_commits:   9629baf(#173) e6d7616(#176) 156cc81(#182) 07bbce8(#180) 676f79c(#177) 8faf00c(#179) c5ae320(#181) e43f2a8(#190)
+method:          the tree was exported (git archive) from e43f2a8 into a scratch directory; each of the
+                 13 mutations in mutations.json replaces one protection (file, replaced text -> with),
+                 runs the tests, and the original file is restored (all restored files verified byte-identical)
+runtime:         docker image golang:1.26.11, --network none (no network at all during the runs)
+date:            2026-11-15
+files:           00-baseline.txt (unmutated: PASS), M01..M13 raw go test output, summary.json, mutations.json
+rule:            a mutation counts only if the named test FAILS; baseline must PASS.
+note:            an earlier one-off measurement (tree 3d82b63b34cba0d9488f3fb5fca539443a31e63d == main 8faf00c)
+                 was not saved as raw output; it is superseded by this run and is not claimed as evidence.

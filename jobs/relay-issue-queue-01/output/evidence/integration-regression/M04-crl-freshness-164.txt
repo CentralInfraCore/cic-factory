@@ -1,0 +1,65 @@
+=== RUN   TestActuate_RedirectToNonAllowedHost_NotFollowed
+=== RUN   TestActuate_RedirectToNonAllowedHost_NotFollowed/link-local_metadata
+=== RUN   TestActuate_RedirectToNonAllowedHost_NotFollowed/other_host
+=== RUN   TestActuate_RedirectToNonAllowedHost_NotFollowed/other_loopback_port
+--- PASS: TestActuate_RedirectToNonAllowedHost_NotFollowed (0.00s)
+    --- PASS: TestActuate_RedirectToNonAllowedHost_NotFollowed/link-local_metadata (0.00s)
+    --- PASS: TestActuate_RedirectToNonAllowedHost_NotFollowed/other_host (0.00s)
+    --- PASS: TestActuate_RedirectToNonAllowedHost_NotFollowed/other_loopback_port (0.00s)
+=== RUN   TestHardeningIntegration_ProdStartupDeclarationsAndCRL
+=== RUN   TestHardeningIntegration_ProdStartupDeclarationsAndCRL/declared,_valid_and_fresh_CRL:_starts
+=== RUN   TestHardeningIntegration_ProdStartupDeclarationsAndCRL/CIC_TRUST_MODE_unset:_refuses
+=== RUN   TestHardeningIntegration_ProdStartupDeclarationsAndCRL/CRL_issuer_policy_undeclared_in_prod:_refuses
+=== RUN   TestHardeningIntegration_ProdStartupDeclarationsAndCRL/required_issuer_without_a_CRL:_refuses
+=== RUN   TestHardeningIntegration_ProdStartupDeclarationsAndCRL/expired_CRL:_refuses
+    hardening_integration_test.go:89: 
+        	Error Trace:	/src/cmd/relay/hardening_integration_test.go:89
+        	Error:      	An error is expected but got nil.
+        	Test:       	TestHardeningIntegration_ProdStartupDeclarationsAndCRL/expired_CRL:_refuses
+=== RUN   TestHardeningIntegration_ProdStartupDeclarationsAndCRL/CRL_signed_by_another_key_under_the_same_name:_refuses
+=== RUN   TestHardeningIntegration_ProdStartupDeclarationsAndCRL/declared_fingerprint_matches_no_CA_of_the_bundle:_refuses
+=== RUN   TestHardeningIntegration_ProdStartupDeclarationsAndCRL/issuer_policy_none,_explicitly:_starts
+--- FAIL: TestHardeningIntegration_ProdStartupDeclarationsAndCRL (0.01s)
+    --- PASS: TestHardeningIntegration_ProdStartupDeclarationsAndCRL/declared,_valid_and_fresh_CRL:_starts (0.00s)
+    --- PASS: TestHardeningIntegration_ProdStartupDeclarationsAndCRL/CIC_TRUST_MODE_unset:_refuses (0.00s)
+    --- PASS: TestHardeningIntegration_ProdStartupDeclarationsAndCRL/CRL_issuer_policy_undeclared_in_prod:_refuses (0.00s)
+    --- PASS: TestHardeningIntegration_ProdStartupDeclarationsAndCRL/required_issuer_without_a_CRL:_refuses (0.00s)
+    --- FAIL: TestHardeningIntegration_ProdStartupDeclarationsAndCRL/expired_CRL:_refuses (0.00s)
+    --- PASS: TestHardeningIntegration_ProdStartupDeclarationsAndCRL/CRL_signed_by_another_key_under_the_same_name:_refuses (0.00s)
+    --- PASS: TestHardeningIntegration_ProdStartupDeclarationsAndCRL/declared_fingerprint_matches_no_CA_of_the_bundle:_refuses (0.00s)
+    --- PASS: TestHardeningIntegration_ProdStartupDeclarationsAndCRL/issuer_policy_none,_explicitly:_starts (0.00s)
+=== RUN   TestHardeningIntegration_ProdComponentsOnBothLoadPaths
+=== RUN   TestHardeningIntegration_ProdComponentsOnBothLoadPaths/signed_by_the_operator_CA,_not_revoked
+=== RUN   TestHardeningIntegration_ProdComponentsOnBothLoadPaths/signed_by_the_operator_CA,_revoked_in_its_CRL
+=== RUN   TestHardeningIntegration_ProdComponentsOnBothLoadPaths/signed_by_a_CA_outside_the_operator_bundle
+=== RUN   TestHardeningIntegration_ProdComponentsOnBothLoadPaths/signed_by_an_unrelated_CA_that_is_not_in_the_bundle
+--- PASS: TestHardeningIntegration_ProdComponentsOnBothLoadPaths (0.01s)
+    --- PASS: TestHardeningIntegration_ProdComponentsOnBothLoadPaths/signed_by_the_operator_CA,_not_revoked (0.00s)
+    --- PASS: TestHardeningIntegration_ProdComponentsOnBothLoadPaths/signed_by_the_operator_CA,_revoked_in_its_CRL (0.00s)
+    --- PASS: TestHardeningIntegration_ProdComponentsOnBothLoadPaths/signed_by_a_CA_outside_the_operator_bundle (0.00s)
+    --- PASS: TestHardeningIntegration_ProdComponentsOnBothLoadPaths/signed_by_an_unrelated_CA_that_is_not_in_the_bundle (0.00s)
+=== RUN   TestHardeningIntegration_AuthorizationProofAndConcurrency
+=== RUN   TestHardeningIntegration_AuthorizationProofAndConcurrency/authorization:_a_protected_operation_needs_the_token_on_every_path
+=== RUN   TestHardeningIntegration_AuthorizationProofAndConcurrency/compile_route:_token,_then_input_validation
+=== RUN   TestHardeningIntegration_AuthorizationProofAndConcurrency/proof_persistence:_the_commit_returned_is_the_audit_repository's_HEAD,_and_the_chain_verifies
+=== RUN   TestHardeningIntegration_AuthorizationProofAndConcurrency/evidence_required:_an_outage_is_a_503_that_says_the_workflow_already_ran,_and_leaks_no_detail
+=== RUN   TestHardeningIntegration_AuthorizationProofAndConcurrency/an_unprotected_workflow_still_runs_anonymously,_and_is_recorded
+=== RUN   TestHardeningIntegration_AuthorizationProofAndConcurrency/concurrent_workflows:_every_record_lands_once_and_the_signed_chain_verifies
+--- PASS: TestHardeningIntegration_AuthorizationProofAndConcurrency (0.55s)
+    --- PASS: TestHardeningIntegration_AuthorizationProofAndConcurrency/authorization:_a_protected_operation_needs_the_token_on_every_path (0.06s)
+    --- PASS: TestHardeningIntegration_AuthorizationProofAndConcurrency/compile_route:_token,_then_input_validation (0.04s)
+    --- PASS: TestHardeningIntegration_AuthorizationProofAndConcurrency/proof_persistence:_the_commit_returned_is_the_audit_repository's_HEAD,_and_the_chain_verifies (0.07s)
+    --- PASS: TestHardeningIntegration_AuthorizationProofAndConcurrency/evidence_required:_an_outage_is_a_503_that_says_the_workflow_already_ran,_and_leaks_no_detail (0.02s)
+    --- PASS: TestHardeningIntegration_AuthorizationProofAndConcurrency/an_unprotected_workflow_still_runs_anonymously,_and_is_recorded (0.07s)
+    --- PASS: TestHardeningIntegration_AuthorizationProofAndConcurrency/concurrent_workflows:_every_record_lands_once_and_the_signed_chain_verifies (0.30s)
+=== RUN   TestHardeningIntegration_Egress
+=== RUN   TestHardeningIntegration_Egress/the_default_doer_(what_main_wires)_does_not_dial_an_allow-listed_private_destination
+=== RUN   TestHardeningIntegration_Egress/a_redirect_to_a_non-allowed_host_is_returned,_not_followed
+=== RUN   TestHardeningIntegration_Egress/an_over-cap_response_is_a_typed_error
+--- PASS: TestHardeningIntegration_Egress (0.00s)
+    --- PASS: TestHardeningIntegration_Egress/the_default_doer_(what_main_wires)_does_not_dial_an_allow-listed_private_destination (0.00s)
+    --- PASS: TestHardeningIntegration_Egress/a_redirect_to_a_non-allowed_host_is_returned,_not_followed (0.00s)
+    --- PASS: TestHardeningIntegration_Egress/an_over-cap_response_is_a_typed_error (0.00s)
+FAIL
+FAIL	centralrelay/cmd/relay	0.576s
+FAIL
