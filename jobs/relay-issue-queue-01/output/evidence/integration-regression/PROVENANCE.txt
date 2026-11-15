@@ -16,3 +16,4 @@ files:           00-baseline.txt (unmutated: PASS), M01..M13 raw go test output,
 rule:            a mutation counts only if the named test FAILS; baseline must PASS.
 note:            an earlier one-off measurement (tree 3d82b63b34cba0d9488f3fb5fca539443a31e63d == main 8faf00c)
                  was not saved as raw output; it is superseded by this run and is not claimed as evidence.
+correction:      summary.json for M13 listed 4 of its 6 failing tests; the two missing ids (the integration egress test and its subtest) were added from the raw M13 output (review F6). Every other entry was re-checked against its raw output: counts match.

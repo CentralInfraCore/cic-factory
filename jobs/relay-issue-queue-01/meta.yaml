@@ -7,7 +7,7 @@ target:
   path: ""
 kb_focus: []
 agent:
-  config_dir: "/home/sinkog/.claude-personal"
+  config_dir: "~/.claude-personal"
   model: "opus"
   max_turns: ""
   session_id: ""

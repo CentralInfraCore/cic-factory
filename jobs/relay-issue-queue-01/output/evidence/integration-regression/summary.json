@@ -41,8 +41,8 @@
   "FAILS as required (3 failing tests)",
   [
    "TestHardeningIntegration_ProdStartupDeclarationsAndCRL",
-   "TestHardeningIntegration_ProdStartupDeclarationsAndCRL/declared_fingerprint_matches_no_CA_of_the_bundle:_refuses",
-   "TestHardeningIntegration_ProdStartupDeclarationsAndCRL/required_issuer_without_a_CRL:_refuses"
+   "TestHardeningIntegration_ProdStartupDeclarationsAndCRL/required_issuer_without_a_CRL:_refuses",
+   "TestHardeningIntegration_ProdStartupDeclarationsAndCRL/declared_fingerprint_matches_no_CA_of_the_bundle:_refuses"
   ]
  ],
  [
@@ -66,8 +66,8 @@
   "FAILS as required (3 failing tests)",
   [
    "TestHardeningIntegration_Egress",
-   "TestHardeningIntegration_Egress/a_redirect_to_a_non-allowed_host_is_returned,_not_followed",
-   "TestHardeningIntegration_Egress/the_default_doer_(what_main_wires)_does_not_dial_an_allow-listed_private_destination"
+   "TestHardeningIntegration_Egress/the_default_doer_(what_main_wires)_does_not_dial_an_allow-listed_private_destination",
+   "TestHardeningIntegration_Egress/a_redirect_to_a_non-allowed_host_is_returned,_not_followed"
   ]
  ],
  [
@@ -107,9 +107,11 @@
   "FAILS as required (6 failing tests)",
   [
    "TestActuate_RedirectToNonAllowedHost_NotFollowed",
+   "TestActuate_RedirectToNonAllowedHost_NotFollowed/other_loopback_port",
    "TestActuate_RedirectToNonAllowedHost_NotFollowed/link-local_metadata",
    "TestActuate_RedirectToNonAllowedHost_NotFollowed/other_host",
-   "TestActuate_RedirectToNonAllowedHost_NotFollowed/other_loopback_port"
+   "TestHardeningIntegration_Egress",
+   "TestHardeningIntegration_Egress/a_redirect_to_a_non-allowed_host_is_returned,_not_followed"
   ]
  ]
 ]

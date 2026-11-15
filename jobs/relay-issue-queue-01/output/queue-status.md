@@ -34,4 +34,4 @@ Alap: `CentralInfraCore/CIC_Relay`, default ág `main`, jelenlegi `main@e43f2a8`
 
 - A GitHub által generált merge-commitok nem a fejlesztői kulccsal aláírtak; a commit-aláírás átalakulása a tulajdonos oldalán van.
 - Más szál PR-jai (#183, #184, CI-mérés) is mozogtak; ezekhez nem nyúltam.
-- A `work event done` a ticket-formátum hiba (`ismeretlen ticket formátum: relay-issue-queue-01`) miatt nem futott le; az esemény a `$WORK_ROOT/events/pending/` alatt maradt.
+- A `work event done` kezdetben a ticket-formátum hiba miatt nem futott le (a `WORK_TICKET` a slugot kapja, a runtime neve eltér); az esemény azóta a megkerüléssel (`WORK_TICKET` a runtime nevére állítva) sikeresen lezárva. A hiba javítása külön, a másik repóban előkészített patch (nincs alkalmazva).
