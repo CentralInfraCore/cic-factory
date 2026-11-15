@@ -1,0 +1,9 @@
+L1 INTEGRITY_OK
+L2 BOUND_TO_INPUTS
+L3 PARTIAL
+   proven: go unit 'goastdump': the 15 object ids are IDENTICAL to the independent enumeration (a set, not a count)
+   proven: go unit 'root': the 464 object ids are IDENTICAL to the independent enumeration (a set, not a count)
+   proven: rust: every function that cargo-mutants lists has an object
+   unproven: rust: no independent object inventory was given, so a function with neither a mutant nor a coverage entry cannot be enumerated independently
+stability NOT_STABLE: 0/662 measured coverages seen identical in >= 20 runs, 662 not shown, nondeterministic objects: 0
+(no combined 'verified': a digest does not prove where a measurement came from)

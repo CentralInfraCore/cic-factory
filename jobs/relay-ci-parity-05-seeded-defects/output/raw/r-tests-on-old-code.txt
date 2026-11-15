@@ -1,0 +1,139 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.2.0, pluggy-1.7.0
+rootdir: $HOME/.cache/relay-ci-parity-05/old
+configfile: pytest.ini
+plugins: platformdirs-4.14.5, cov-7.1.0
+collected 46 items
+
+tests/test_tools/test_object_model.py .........F......F................. [ 73%]
+...........F                                                             [100%]
+
+=================================== FAILURES ===================================
+_______________ test_n11_a_block_inside_one_object_is_attributed _______________
+
+    def test_n11_a_block_inside_one_object_is_attributed():
+        cov, st = objs_for(
+            [fn("A", (1, 1), (5, 2))], [(2, 2, 3, 10, 2, 1), (3, 10, 4, 3, 1, 0)]
+        )
+        # PR-05: a measured coverage says how many runs it comes from; ONE run shows nothing about determinism
+>       assert cov["A"] == {
+            "state": om.MEASURED,
+            "kind": "statement",
+            "total": 3,
+            "covered": 2,
+            "runs": 1,
+            "determinism": "NOT_SHOWN",
+        }
+E       AssertionError: assert {'state': 'ME... 'covered': 2} == {'state': 'ME...ered': 2, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Right contains 2 more items:
+E         {'determinism': 'NOT_SHOWN', 'runs': 1}
+E         Use -v to get more diff
+
+tests/test_tools/test_object_model.py:249: AssertionError
+__ test_n9_an_object_whose_coverage_differs_between_runs_is_nondeterministic ___
+
+    def test_n9_an_object_whose_coverage_differs_between_runs_is_nondeterministic():
+        base = [(2, 2, 3, 10, 2, 1), (3, 10, 4, 3, 1, 1)]
+        other = [
+            (2, 2, 3, 10, 2, 1),
+            (3, 10, 4, 3, 1, 0),
+        ]  # DERIVED: the second block was not covered in this run
+        inv = {
+            "files": [
+                {
+                    "file": "a.go",
+                    "funcs": [fn("A", (1, 1), (5, 2)), fn("Stable", (7, 1), (9, 2))],
+                }
+            ]
+        }
+        blocks = [("m/a.go", *b) for b in base] + [("m/a.go", 8, 2, 8, 9, 1, 1)]
+        rep = [("m/a.go", *b) for b in other] + [("m/a.go", 8, 2, 8, 9, 1, 1)]
+        objs, _ = om.go_objects("root", "m", inv, blocks, repeats=[rep])
+        by = {o["name"]: o["coverage"] for o in objs}
+>       assert by["A"] == {
+            "state": om.UNVERIFIABLE,
+            "reason": "NONDETERMINISTIC",
+            "range": [2, 3],
+            "total": 3,
+            "runs": 2,
+        }
+E       AssertionError: assert {'state': 'UN...], 'total': 3} == {'state': 'UN...otal': 3, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Right contains 1 more item:
+E         {'runs': 2}
+E         Use -v to get more diff
+
+tests/test_tools/test_object_model.py:340: AssertionError
+__ test_r_pr05_an_object_with_only_zero_statement_blocks_is_not_a_measurement __
+
+    def test_r_pr05_an_object_with_only_zero_statement_blocks_is_not_a_measurement():
+        # found by the PR-05 re-derivation on the real Relay (pkg/obs.NoopSink.Record*): the PR-04 builder said
+        # MEASURED 0/0, a ratio of nothing; it is NOT_APPLICABLE (NO_STATEMENTS), like an object without a block
+        cov, _ = objs_for(
+            [fn("Empty", (1, 1), (1, 20)), fn("A", (3, 1), (5, 2))],
+            [(1, 14, 1, 16, 0, 1), (4, 2, 4, 9, 1, 1)],
+        )
+>       assert cov["Empty"] == {"state": om.NOT_APPLICABLE, "reason": "NO_STATEMENTS"}
+E       AssertionError: assert {'state': 'ME... 'covered': 0} == {'state': 'NO...O_STATEMENTS'}
+E         
+E         Differing items:
+E         {'state': 'MEASURED'} != {'state': 'NOT_APPLICABLE'}
+E         Left contains 3 more items:
+E         {'covered': 0, 'kind': 'statement', 'total': 0}
+E         Right contains 1 more item:
+E         {'reason': 'NO_STATEMENTS'}
+E         Use -v to get more diff
+
+tests/test_tools/test_object_model.py:862: AssertionError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests/test_tools/test_object_model.py::test_the_repo_scope_is_valid_and_versioned
+PASSED tests/test_tools/test_object_model.py::test_every_tracked_go_and_rust_file_of_the_repo_is_classified
+PASSED tests/test_tools/test_object_model.py::test_n8_a_file_the_scope_does_not_classify_is_an_error
+PASSED tests/test_tools/test_object_model.py::test_n8_an_exclusion_without_a_reason_is_rejected
+PASSED tests/test_tools/test_object_model.py::test_the_scope_needs_a_schema_and_an_integer_version
+PASSED tests/test_tools/test_object_model.py::test_go_object_ids
+PASSED tests/test_tools/test_object_model.py::test_the_build_variants_of_one_name_are_two_objects_not_a_collision
+PASSED tests/test_tools/test_object_model.py::test_n1_two_different_objects_with_the_same_id_are_rejected
+PASSED tests/test_tools/test_object_model.py::test_the_real_goastdump_unit
+PASSED tests/test_tools/test_object_model.py::test_n11_a_block_that_cuts_an_object_is_not_attributed_and_no_value_is_made_up
+PASSED tests/test_tools/test_object_model.py::test_n11_a_block_that_spans_several_objects_is_not_attributed
+PASSED tests/test_tools/test_object_model.py::test_n11_a_block_outside_every_object_is_counted_not_dropped
+PASSED tests/test_tools/test_object_model.py::test_n11_a_function_literal_belongs_to_the_function_that_contains_it
+PASSED tests/test_tools/test_object_model.py::test_an_object_without_a_statement_is_not_applicable_not_zero
+PASSED tests/test_tools/test_object_model.py::test_a_block_that_appears_twice_is_covered_if_any_occurrence_is
+PASSED tests/test_tools/test_object_model.py::test_a_failed_inventory_file_is_an_error
+PASSED tests/test_tools/test_object_model.py::test_a_profile_without_blocks_or_mode_is_an_error_not_zero
+PASSED tests/test_tools/test_object_model.py::test_rust_object_keys_fold_instances_closures_and_disambiguators
+PASSED tests/test_tools/test_object_model.py::test_n10_the_real_instances_of_one_function_are_one_object_with_the_instance_detail_kept
+PASSED tests/test_tools/test_object_model.py::test_cfg_test_spans_cover_exactly_the_marked_items
+PASSED tests/test_tools/test_object_model.py::test_a_production_function_after_a_cfg_test_item_is_not_test_code
+PASSED tests/test_tools/test_object_model.py::test_cfg_test_without_an_end_is_an_error
+PASSED tests/test_tools/test_object_model.py::test_test_code_of_the_real_file_is_excluded_and_counted
+PASSED tests/test_tools/test_object_model.py::test_real_mutants_map_to_objects_by_the_last_segment_of_the_function_name
+PASSED tests/test_tools/test_object_model.py::test_a_function_without_a_listed_mutant_is_not_applicable_not_a_perfect_score
+PASSED tests/test_tools/test_object_model.py::test_n12_an_object_whose_mutants_are_all_unviable_has_no_score
+PASSED tests/test_tools/test_object_model.py::test_a_mutant_that_fits_two_objects_is_ambiguous_not_guessed
+PASSED tests/test_tools/test_object_model.py::test_a_symbol_without_a_demangled_name_is_an_error_not_a_dropped_object
+PASSED tests/test_tools/test_object_model.py::test_the_record_of_the_real_fixtures_is_intact
+PASSED tests/test_tools/test_object_model.py::test_n4_a_changed_record_is_rejected
+PASSED tests/test_tools/test_object_model.py::test_n2_every_field_of_every_object_has_a_valid_state_and_a_coded_reason
+PASSED tests/test_tools/test_object_model.py::test_n5_an_unknown_tool_version_makes_the_record_unusable
+PASSED tests/test_tools/test_object_model.py::test_n6_a_coverage_kind_that_is_not_measured_cannot_be_branch
+PASSED tests/test_tools/test_object_model.py::test_n7_the_global_and_the_object_level_view_are_separate_and_unverifiable_is_counted
+PASSED tests/test_tools/test_object_model.py::test_a_record_bound_to_another_policy_version_is_rejected
+PASSED tests/test_tools/test_object_model.py::test_duplicate_object_ids_cannot_be_built
+PASSED tests/test_tools/test_object_model.py::test_n13_l2_is_not_checked_without_inputs_and_fails_on_a_changed_input
+PASSED tests/test_tools/test_object_model.py::test_n13_a_consistently_forged_record_passes_l1_but_not_l3
+PASSED tests/test_tools/test_object_model.py::test_n13_a_record_that_is_not_intact_is_not_trusted_by_the_later_levels
+PASSED tests/test_tools/test_object_model.py::test_n13_the_verifier_output_has_three_levels_and_no_combined_verdict
+PASSED tests/test_tools/test_object_model.py::test_the_rust_l3_names_a_function_that_has_no_object
+PASSED tests/test_tools/test_object_model.py::test_no_go_or_rust_source_lives_under_tests_outside_testdata
+PASSED tests/test_tools/test_object_model.py::test_a_source_file_under_tests_is_not_production_in_the_scope
+FAILED tests/test_tools/test_object_model.py::test_n11_a_block_inside_one_object_is_attributed
+FAILED tests/test_tools/test_object_model.py::test_n9_an_object_whose_coverage_differs_between_runs_is_nondeterministic
+FAILED tests/test_tools/test_object_model.py::test_r_pr05_an_object_with_only_zero_statement_blocks_is_not_a_measurement
+========================= 3 failed, 43 passed in 0.29s =========================

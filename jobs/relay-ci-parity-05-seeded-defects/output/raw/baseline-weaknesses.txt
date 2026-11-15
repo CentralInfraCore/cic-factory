@@ -1,0 +1,21 @@
+honest record: 18 objects (15 go goastdump, 3 rust)
+[control] honest record                          -> L1=INTEGRITY_OK L2=BOUND_TO_INPUTS L3=PARTIAL
+   L3 unproven:
+     rust: a function that has neither a mutant nor a coverage entry could not be enumerated independently
+
+[W1] set identity: swap one goastdump object for a fake id, same count, resealed
+   swapped 18 objects                 -> L1=INTEGRITY_OK L2=BOUND_TO_INPUTS L3=PARTIAL   (L3 should be FAIL; a count cannot see a swap)
+
+[W2] can the L3 ever be PASS (COMPLETE_FOR_SCOPE) with the honest record and every input given?
+   honest record -> L3=PARTIAL   (always PARTIAL: the Rust part has no independent inventory)
+
+[W3] re-sealed VALUE forgery: one objects coverage changed to 100%, digest and summary recomputed, inputs untouched
+   go:goastdump.collector.call: 18/26 -> 26/26   -> L1=INTEGRITY_OK L2=BOUND_TO_INPUTS L3=PARTIAL   (no level re-derives the value from the inputs)
+   the same change WITHOUT re-sealing -> L1=FAIL L2=NOT_CHECKED L3=NOT_CHECKED   (the naive tamper is the only one the digest catches)
+
+[W4] duplicates
+   same id twice, resealed -> L1=FAIL L2=NOT_CHECKED L3=NOT_CHECKED   L1 findings: ['the object ids are not sorted and unique']
+   another id for the SAME source object, count kept equal (one other object removed), resealed -> L1=INTEGRITY_OK L2=BOUND_TO_INPUTS L3=PARTIAL
+
+[W5] determinism: does a record say how many runs a measured coverage value comes from?
+   a MEASURED coverage field: ['covered', 'kind', 'state', 'total', 'uncovered']   -> 'runs' present: False

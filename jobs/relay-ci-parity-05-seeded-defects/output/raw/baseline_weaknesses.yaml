@@ -1,0 +1,138 @@
+---
+module: baseline_weaknesses
+description: 'PR-05 baseline: what the PR-04 verifier (object_model.py at CIC_Relay
+  d38a1d5 / main) really does with seeded defects. Measurement only: nothing is changed.
+  Inputs are the real PR-04 fixtures (goastdump unit + cic-canonical Rust file). usage:
+  baseline_weaknesses.py <repo-root>'
+tags:
+- executor
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: repo
+  kind: const
+  description: ''
+  references: []
+- name: FIX
+  kind: const
+  description: ''
+  references: []
+- name: J
+  kind: const
+  description: ''
+  references: []
+- name: T
+  kind: const
+  description: ''
+  references: []
+- name: objects
+  kind: function
+  decorators: []
+  description: ''
+  references:
+  - object_model.rust_objects
+  - quality_gate.rust_verdicts
+  - object_model.go_objects
+  - object_model.parse_coverprofile
+  calls:
+  - J
+  - T
+  - object_model.go_objects
+  - object_model.parse_coverprofile
+  - object_model.rust_objects
+  - quality_gate.rust_verdicts
+- name: checkout
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls: []
+- name: inputs
+  kind: const
+  description: ''
+  references: []
+- name: TOOLS
+  kind: const
+  description: ''
+  references: []
+- name: SCOPE
+  kind: const
+  description: ''
+  references: []
+- name: honest
+  kind: const
+  description: ''
+  references: []
+- name: mutants
+  kind: const
+  description: ''
+  references: []
+- name: reseal
+  kind: function
+  decorators: []
+  description: ''
+  references:
+  - object_model.canonical_digest
+  - object_model.summarize
+  calls:
+  - object_model.canonical_digest
+  - object_model.summarize
+  - r.items
+- name: run
+  kind: function
+  decorators: []
+  description: ''
+  references:
+  - object_model.verify_record
+  calls:
+  - object_model.verify_record
+- name: r
+  kind: const
+  description: ''
+  references: []
+- name: i
+  kind: const
+  description: ''
+  references: []
+- name: fake
+  kind: const
+  description: ''
+  references: []
+- name: r
+  kind: const
+  description: ''
+  references: []
+- name: o
+  kind: const
+  description: ''
+  references: []
+- name: before
+  kind: const
+  description: ''
+  references: []
+- name: r2
+  kind: const
+  description: ''
+  references: []
+- name: r
+  kind: const
+  description: ''
+  references: []
+- name: r
+  kind: const
+  description: ''
+  references: []
+- name: dup
+  kind: const
+  description: ''
+  references: []
+- name: gi
+  kind: const
+  description: ''
+  references: []
+- name: c
+  kind: const
+  description: ''
+  references: []

@@ -1,0 +1,6 @@
+FAILED tests/test_tools/test_seeded_defects.py::test_each_seeded_defect_is_caught_at_the_expected_level_with_its_own_code[A.9c]
+FAILED tests/test_tools/test_seeded_defects.py::test_all_cases_run_together_and_the_harness_reports_ok
+FAILED tests/test_tools/test_seeded_defects.py::test_r_f1_runs_and_determinism_are_part_of_the_comparison
+FAILED tests/test_tools/test_seeded_defects.py::test_r_f1_the_derived_runs_are_counted_from_the_bound_profiles
+FAILED tests/test_tools/test_seeded_defects.py::test_f1_the_forged_stability_passes_l1_and_is_caught_only_by_l2
+================== 5 failed, 1 passed, 61 deselected in 0.21s ==================
