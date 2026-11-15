@@ -1,0 +1,80 @@
+[
+ {
+  "name": "M01-recorder-lock-161",
+  "file": "core/nexus/recorder/recorder.go",
+  "replaced": "\tr.mu.Lock()\n\tdefer r.mu.Unlock()\n",
+  "with": ""
+ },
+ {
+  "name": "M02-trust-mode-default-159",
+  "file": "cmd/relay/pki_bootstrap.go",
+  "replaced": "\tif mode == \"\" {\n\t\treturn \"\", fmt.Errorf(",
+  "with": "\tif mode == \"\" {\n\t\treturn TrustModeDev, nil\n\t\treturn \"\", fmt.Errorf("
+ },
+ {
+  "name": "M03-crl-signature-164",
+  "file": "core/cabinet/pki_verify.go",
+  "replaced": "func VerifyCRLSignature(crl *x509.RevocationList, issuers []*x509.Certificate) error {\n",
+  "with": "func VerifyCRLSignature(crl *x509.RevocationList, issuers []*x509.Certificate) error {\n\treturn nil\n"
+ },
+ {
+  "name": "M04-crl-freshness-164",
+  "file": "core/cabinet/pki_verify.go",
+  "replaced": "func CheckCRLFresh(crl *x509.RevocationList, f *CRLFreshness) error {\n",
+  "with": "func CheckCRLFresh(crl *x509.RevocationList, f *CRLFreshness) error {\n\treturn nil\n"
+ },
+ {
+  "name": "M05-crl-issuer-policy-164",
+  "file": "cmd/relay/pki_crl.go",
+  "replaced": "func enforceCRLIssuerPolicy(p crlIssuerPolicy, caCerts []*x509.Certificate, accepted []*x509.RevocationList) error {\n",
+  "with": "func enforceCRLIssuerPolicy(p crlIssuerPolicy, caCerts []*x509.Certificate, accepted []*x509.RevocationList) error {\n\treturn nil\n"
+ },
+ {
+  "name": "M06-shared-trust-context-166",
+  "file": "cmd/relay/bootstrap.go",
+  "replaced": "\t\treturn fmt.Errorf(\"loadEmbeddedComponents: the shared trust context (pkiAssets) is required\")\n\t}\n",
+  "with": "\t\treturn fmt.Errorf(\"loadEmbeddedComponents: the shared trust context (pkiAssets) is required\")\n\t}\n\townAssets, ownErr := loadPKIAssets(embeddedFS, \"embedded/pki\", logger)\n\tif ownErr != nil {\n\t\treturn ownErr\n\t}\n\tpkiAssets = ownAssets\n"
+ },
+ {
+  "name": "M07-evidence-required-165",
+  "file": "core/cabinet/service.go",
+  "replaced": "\tif c.evidenceRequired && !proof.Persisted {",
+  "with": "\tif false && c.evidenceRequired && !proof.Persisted {"
+ },
+ {
+  "name": "M08-egress-dial-guard-163",
+  "file": "cmd/relay/egress_client.go",
+  "replaced": "\t\tControl: func(_, address string, _ syscall.RawConn) error {\n",
+  "with": "\t\tControl: func(_, address string, _ syscall.RawConn) error {\n\t\t\treturn nil\n"
+ },
+ {
+  "name": "M09-egress-response-cap-163",
+  "file": "cmd/relay/cic_flow_host_funcs.go",
+  "replaced": "\t\tif resp.ContentLength > egressMaxResponseBytes {",
+  "with": "\t\tif false && resp.ContentLength > egressMaxResponseBytes {"
+ },
+ {
+  "name": "M10-boundary-authorization-157",
+  "file": "core/cabinet/service.go",
+  "replaced": "\tif len(c.protected) > 0 {",
+  "with": "\tif false && len(c.protected) > 0 {"
+ },
+ {
+  "name": "M11-input-validation-157",
+  "file": "core/modules/schemacompile/validate.go",
+  "replaced": "func ValidateSchemaRef(schema, version string) error {\n",
+  "with": "func ValidateSchemaRef(schema, version string) error {\n\treturn nil\n"
+ },
+ {
+  "name": "M12-api-token-check-157",
+  "file": "cmd/relay/api_auth.go",
+  "replaced": "func (s *relayServer) tokenAuthorized(r *http.Request) bool {\n",
+  "with": "func (s *relayServer) tokenAuthorized(r *http.Request) bool {\n\treturn true\n"
+ },
+ {
+  "name": "M13-redirect-following-163",
+  "file": "cmd/relay/egress_client.go",
+  "replaced": "\t\tCheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },\n",
+  "with": ""
+ }
+]

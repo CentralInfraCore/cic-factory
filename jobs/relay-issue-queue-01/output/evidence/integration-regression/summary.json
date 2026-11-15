@@ -1,0 +1,117 @@
+[
+ [
+  "00-baseline",
+  "PASS",
+  []
+ ],
+ [
+  "M01-recorder-lock-161",
+  "FAILS as required (2 failing tests)",
+  [
+   "TestHardeningIntegration_AuthorizationProofAndConcurrency",
+   "TestHardeningIntegration_AuthorizationProofAndConcurrency/concurrent_workflows:_every_record_lands_once_and_the_signed_chain_verifies"
+  ]
+ ],
+ [
+  "M02-trust-mode-default-159",
+  "FAILS as required (2 failing tests)",
+  [
+   "TestHardeningIntegration_ProdStartupDeclarationsAndCRL",
+   "TestHardeningIntegration_ProdStartupDeclarationsAndCRL/CIC_TRUST_MODE_unset:_refuses"
+  ]
+ ],
+ [
+  "M03-crl-signature-164",
+  "FAILS as required (2 failing tests)",
+  [
+   "TestHardeningIntegration_ProdStartupDeclarationsAndCRL",
+   "TestHardeningIntegration_ProdStartupDeclarationsAndCRL/CRL_signed_by_another_key_under_the_same_name:_refuses"
+  ]
+ ],
+ [
+  "M04-crl-freshness-164",
+  "FAILS as required (2 failing tests)",
+  [
+   "TestHardeningIntegration_ProdStartupDeclarationsAndCRL",
+   "TestHardeningIntegration_ProdStartupDeclarationsAndCRL/expired_CRL:_refuses"
+  ]
+ ],
+ [
+  "M05-crl-issuer-policy-164",
+  "FAILS as required (3 failing tests)",
+  [
+   "TestHardeningIntegration_ProdStartupDeclarationsAndCRL",
+   "TestHardeningIntegration_ProdStartupDeclarationsAndCRL/required_issuer_without_a_CRL:_refuses",
+   "TestHardeningIntegration_ProdStartupDeclarationsAndCRL/declared_fingerprint_matches_no_CA_of_the_bundle:_refuses"
+  ]
+ ],
+ [
+  "M06-shared-trust-context-166",
+  "FAILS as required (2 failing tests)",
+  [
+   "TestHardeningIntegration_ProdComponentsOnBothLoadPaths",
+   "TestHardeningIntegration_ProdComponentsOnBothLoadPaths/signed_by_the_operator_CA,_not_revoked"
+  ]
+ ],
+ [
+  "M07-evidence-required-165",
+  "FAILS as required (2 failing tests)",
+  [
+   "TestHardeningIntegration_AuthorizationProofAndConcurrency",
+   "TestHardeningIntegration_AuthorizationProofAndConcurrency/evidence_required:_an_outage_is_a_503_that_says_the_workflow_already_ran,_and_leaks_no_detail"
+  ]
+ ],
+ [
+  "M08-egress-dial-guard-163",
+  "FAILS as required (3 failing tests)",
+  [
+   "TestHardeningIntegration_Egress",
+   "TestHardeningIntegration_Egress/the_default_doer_(what_main_wires)_does_not_dial_an_allow-listed_private_destination",
+   "TestHardeningIntegration_Egress/a_redirect_to_a_non-allowed_host_is_returned,_not_followed"
+  ]
+ ],
+ [
+  "M09-egress-response-cap-163",
+  "FAILS as required (2 failing tests)",
+  [
+   "TestHardeningIntegration_Egress",
+   "TestHardeningIntegration_Egress/an_over-cap_response_is_a_typed_error"
+  ]
+ ],
+ [
+  "M10-boundary-authorization-157",
+  "FAILS as required (2 failing tests)",
+  [
+   "TestHardeningIntegration_AuthorizationProofAndConcurrency",
+   "TestHardeningIntegration_AuthorizationProofAndConcurrency/authorization:_a_protected_operation_needs_the_token_on_every_path"
+  ]
+ ],
+ [
+  "M11-input-validation-157",
+  "FAILS as required (2 failing tests)",
+  [
+   "TestHardeningIntegration_AuthorizationProofAndConcurrency",
+   "TestHardeningIntegration_AuthorizationProofAndConcurrency/compile_route:_token,_then_input_validation"
+  ]
+ ],
+ [
+  "M12-api-token-check-157",
+  "FAILS as required (2 failing tests)",
+  [
+   "TestHardeningIntegration_AuthorizationProofAndConcurrency",
+   "TestHardeningIntegration_AuthorizationProofAndConcurrency/authorization:_a_protected_operation_needs_the_token_on_every_path"
+  ]
+ ],
+ [
+  "M13-redirect-following-163",
+  "FAILS as required (6 failing tests)",
+  [
+   "TestActuate_RedirectToNonAllowedHost_NotFollowed",
+   "TestActuate_RedirectToNonAllowedHost_NotFollowed/other_loopback_port",
+   "TestActuate_RedirectToNonAllowedHost_NotFollowed/link-local_metadata",
+   "TestActuate_RedirectToNonAllowedHost_NotFollowed/other_host",
+   "TestHardeningIntegration_Egress",
+   "TestHardeningIntegration_Egress/a_redirect_to_a_non-allowed_host_is_returned,_not_followed"
+  ]
+ ]
+]
