@@ -1,0 +1,23 @@
+L1 INTEGRITY_OK
+L2 BOUND_TO_INPUTS
+L3 PARTIAL
+   proven: go unit 'goastdump': the 15 object ids are IDENTICAL to the independent enumeration (a set, not a count)
+   proven: go unit 'root': the 464 object ids are IDENTICAL to the independent enumeration (a set, not a count)
+   proven: rust: every function that cargo-mutants lists has an object
+   unproven: rust: no independent object inventory was given, so a function with neither a mutant nor a coverage entry cannot be enumerated independently
+stability NOT_STABLE: 0/662 measured coverages seen identical in >= 20 runs, 662 not shown, nondeterministic objects: 0
+OK   control (honest bundle)  expected {'L1': 'INTEGRITY_OK', 'L2': 'BOUND_TO_INPUTS', 'L3': 'PARTIAL'}  got {'L1': 'INTEGRITY_OK', 'L2': 'BOUND_TO_INPUTS', 'L3': 'PARTIAL'}
+OK   A.1   an object is deleted (record re-sealed)  -> L3=FAIL codes=['SET_MISMATCH']
+OK   A.2   a non-existent object is inserted (re-sealed)  -> L3=FAIL codes=['SET_MISMATCH']
+OK   A.3   an object is swapped, the count is unchanged (re-sealed)  -> L3=FAIL codes=['SET_MISMATCH']
+OK   A.4a  an object is duplicated under the SAME id  -> L1=FAIL codes=['DUPLICATE_ID']
+OK   A.4b  the same source object under ANOTHER id, count kept equal (re-sealed)  -> L3=FAIL codes=['SET_MISMATCH']
+OK   A.5a  a measured value is changed, the record is NOT re-sealed  -> L1=FAIL codes=['DIGEST_MISMATCH']
+OK   A.5b  a measured value is changed AND the record is re-sealed  -> L2=FAIL codes=['REDERIVATION_MISMATCH']
+OK   A.6   evidence from another commit (re-sealed)  -> L2=FAIL codes=['COMMIT_MISMATCH']
+OK   A.7   a forged input digest in the record (re-sealed)  -> L2=FAIL codes=['INPUT_DIGEST_MISMATCH']
+OK   A.8a  a mandatory field is missing (re-sealed)  -> L1=FAIL codes=['MISSING_FIELD']
+OK   A.8b  every object of a unit the scope requires is missing (re-sealed)  -> L3=FAIL codes=['MISSING_UNIT', 'MUTANT_FUNCTION_MISSING']
+OK   A.9a  a coverage seen in ONE run is claimed stable (re-sealed)  -> L1=FAIL codes=['BAD_DETERMINISM']
+OK   A.9b  an object whose coverage differs between runs  -> NOT_STABLE
+SEEDED DEFECTS: every control honest and every defect caught

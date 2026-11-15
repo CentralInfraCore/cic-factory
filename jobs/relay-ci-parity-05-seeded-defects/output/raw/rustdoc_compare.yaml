@@ -1,0 +1,72 @@
+---
+module: rustdoc_compare
+description: 'PR-05 B: rustdoc JSON (pinned nightly-2026-07-01, format_version 60)
+  as an independent Rust object inventory, compared with the record.'
+tags: []
+category: []
+used_in: []
+entrypoint: false
+related_nodes: []
+objects:
+- name: B5
+  kind: const
+  description: ''
+  references: []
+- name: rec
+  kind: const
+  description: ''
+  references: []
+- name: objs
+  kind: const
+  description: ''
+  references: []
+- name: tyname
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - t.get
+- name: docs
+  kind: const
+  description: ''
+  references: []
+- name: fv
+  kind: const
+  description: ''
+  references: []
+- name: kind
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - b.startswith
+- name: crate_of
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls: []
+- name: name_of
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls: []
+- name: unq
+  kind: const
+  description: ''
+  references: []
+- name: D
+  kind: const
+  description: ''
+  references: []
+- name: R
+  kind: const
+  description: ''
+  references: []
+- name: inter
+  kind: const
+  description: ''
+  references: []

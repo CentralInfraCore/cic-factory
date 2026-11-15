@@ -1,0 +1,5 @@
+runs: 20 blocks: 2917
+varying blocks: 3
+  centralrelay/core/nexus/operator/watcher.go:303.17,305.4  covered in 3/20 runs
+  centralrelay/core/nexus/operator/watcher.go:310.17,312.4  covered in 2/20 runs
+  centralrelay/core/nexus/operator/watcher.go:373.19,375.14  covered in 5/20 runs

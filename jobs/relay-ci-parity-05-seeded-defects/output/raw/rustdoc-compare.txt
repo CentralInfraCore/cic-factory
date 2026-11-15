@@ -1,0 +1,6 @@
+format_version: [60] | function items: {'free': 53, 'inherent': 85, 'trait': 155} total 293
+record objects: 196 {'trait': 39, 'inherent': 103, 'free': 54}
+record ids WITHOUT a crate path (the #[no_mangle] symbols): 5 ['rust:cic_ffi_abi_version', 'rust:cic_ffi_connection_request', 'rust:cic_ffi_free', 'rust:cic_ffi_ping', 'rust:cic_ffi_run_flow']
+(crate, name) multiset: rustdoc 293, record 196, in both 172
+  in the record, not in rustdoc: 24 {('connections', 'subject'): 2, ('connections', 'scope'): 1, ('vault_adapter', 'login'): 2, ('vault_adapter', 'read_sealed'): 2, ('vault_adapter', 'new'): 5, ('vault_adapter', 'countersign'): 4, ('vault_adapter', 'sign'): 1, ('vault_adapter', 'verify'): 1}
+  in rustdoc, not in the record: 121 {('connections', 'eq'): 17, ('connections', 'clone'): 21, ('connections', 'fmt'): 20, ('connections', 'hash'): 4, ('connections', 'cmp'): 4, ('connections', 'partial_cmp'): 4, ('connections', 'default'): 4, ('executor', 'fmt'): 4}
