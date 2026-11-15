@@ -16,12 +16,12 @@ workplace:
   - "cic-factory"
   - "CIC_Relay"
   branch: "feature/relay-issue-queue-01"
-status: "pending"
-spec_gate: ""
+status: "done"
+spec_gate: "skipped"
 lease_expires: ""
 run_id: ""
 attempt: ""
-result_digest: ""
+result_digest: "619918faefb7901feabd8cd69b4a6902ba6e9b2a150ab9f639410012ce795a9f"
 reviewed_run_id: ""
 error_message: ""
 usage:
@@ -40,4 +40,4 @@ usage:
 timestamps:
   created: "2026-11-14T20:14:09Z"
   started: ""
-  completed: ""
+  completed: "2026-11-15T14:21:01Z"
