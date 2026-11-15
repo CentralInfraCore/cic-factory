@@ -9,9 +9,9 @@ A Relay-implementáció mergelése a tulajdonos döntése szerint **HOLD** a kö
 | | |
 |---|---|
 | CIC_Relay `main` | `9629baf` (tartalmazza a PR-04 merge-et és a `d38a1d5`-öt) |
-| Relay munkaág | `feature/relay-ci-parity-05-seeded-defects` **`8dd858b`** → Relay PR **#183** (`--base main`) |
-| Bizonyító (piros-út) ág | `ci-proof/relay-ci-parity-05-red-path` **`c1a23d2`** → Relay **#184** (draft, DO NOT MERGE, a munkaágra mutat) — **szándékosan hibás** |
-| Diff | 8 fájl, +1627/−65: `scripts/object_model.py`, `scripts/seeded_defects.py`, `scripts/mutation_plan.py` (+1 sor), a workflow, 4 tesztfájl; termékkód nincs |
+| Relay munkaág | `feature/relay-ci-parity-05-seeded-defects`: `8dd858b` (első implementáció) → **`e5e2ccd`** (F1 javítás) → Relay PR **#183**, **MERGELVE** merge-committal **`7386565669c84b3c2477425e6b0d3332e752432a`**, az ellenőrzött `e5e2ccd` fejhez kötve (`--match-head-commit`) |
+| Bizonyító (piros-út) ág | `ci-proof/relay-ci-parity-05-red-path` **`c1a23d2`** → Relay **#184** (draft, a `8dd858b`-re építve) — **szándékosan hibás; LEZÁRVA merge nélkül** |
+| Diff (`8dd858b`; az F1 commit +124/−3, 3 fájl) | 8 fájl, +1627/−65: `scripts/object_model.py`, `scripts/seeded_defects.py`, `scripts/mutation_plan.py` (+1 sor), a workflow, 4 tesztfájl; termékkód nincs |
 | Mérési környezet | pinelt `rust:1.96.1-bookworm@sha256:d99f7b31f49909348dc59b51f3c95d1efded1701ffb222f095aaab7de3c4abd8`, `golang:1.26.10`, konténerek `--user "$(id -u):$(id -g)"`-rel, cache `~/.cache/relay-ci-parity-05` (felhasználói tulajdon, 4,2 GB) |
 | **A klón tisztasága** | **Nem volt tiszta.** A `CIC_Relay-pr05` klónban `git status --short` 212 bejegyzést mutat: 189 módosított és 23 nem követett `.yaml` fájl (a korábbi PR-ekben is megfigyelt jelenség). Az ok **nem megállapított**; a CI a pusholt commitot futtatta, nem ezt a munkafát. A diff-ellenőrzések `origin/main...HEAD` alapúak, ezért ettől függetlenek. |
 | Aláírás | friss klón: placeholder identitás, Vault-aláírás nincs; a tulajdonos pótolja |
@@ -55,9 +55,29 @@ Eredmény a valós Relay `main` rekordján (675 objektum), helyben és a CI-ban 
 | A.8a | kötelező mező hiányzik | L1 FAIL | `MISSING_FIELD` |
 | A.8b | egy kötelező egység minden objektuma hiányzik | L3 FAIL | `MISSING_UNIT`, `MUTANT_FUNCTION_MISSING` |
 | A.9a | egyszer látott lefedettség „stabilnak" mondva | L1 FAIL | `BAD_DETERMINISM` |
+| A.9c | hamis stabilitás (`runs=20`, `OBSERVED_STABLE`), újrapecsételve (az F1 javítással, `e5e2ccd`) | L2 FAIL | `REDERIVATION_MISMATCH` |
 | A.9b | futások között eltérő lefedettség | NOT_STABLE | egyezik |
 
 A rekord stabilitása a valós main-en: `NOT_STABLE`, 0/662 mért lefedettség látott ≥ 20 futásban (mind egyszeri). **A rekord tehát nem állítja stabilnak magát.**
+
+### 4a. Review F1 — hamis stabilitási állítás (A.9c), `e5e2ccd`
+
+A review megállapította, hogy a `_cmp_cov` nem hasonlította össze a `runs` és `determinism` mezőket: egy egyszeri mérés rekordja `runs=20`, `OBSERVED_STABLE` állítással, újrapecsételve átment volna L1-en és L2-n. **A hiba valódi volt** (a régi verifieren az A.9c `L2=BOUND_TO_INPUTS`, kód nélkül átcsúszik: `raw/f1-tests-on-previous-verifier.txt`, 5 új teszt bukik).
+
+| Elem | Javítás |
+|---|---|
+| bemenetek | az építő minden ismételt Go-profilt bemenetként köt (`go-coverprofile-repeat:<unit>:<i>`), digesttel |
+| újralevezetés | `derive_go_coverage` / `derive_rust_coverage` a kötött profilokból számolja a `runs`-t és a `determinism`-t |
+| összehasonlítás | `_cmp_cov` hasonlítja a `runs`-t és `determinism`-t is (`REDERIVATION_MISMATCH`) |
+| új eset | **A.9c**: újrapecsételt hamis stabilitás → `L2 FAIL REDERIVATION_MISMATCH`; saját „fog" (a `runs/determinism` összehasonlítás kiiktatására az A.9c átcsúszik) |
+
+Mérve: helyben a valós rekordon (`raw/f1-real-record-local.txt`) és a CI-ban `e5e2ccd`-n (`object-evidence` **43698718231**, `raw/ci-183-f1-green-object-evidence-43698718231.txt`): a becsületes verdiktek változatlanok (L1 OK, L2 OK, L3 PARTIAL, `NOT_STABLE`), mind a 14 eset a várt szinten és kóddal elkapva.
+
+**Dokumentált korlát (review):** húsz bemeneti profil megléte **nem bizonyít húsz független végrehajtást**: a verifier a kötött fájlokból számol, de azt, hogy a fájlok tényleg különálló futásokból jöttek, nem látja. A futások eredetének igazolása az evidence provenance (PR-08) feladata; addig az `OBSERVED_STABLE` csak annyit állít, hogy a megadott profilok azonosak.
+
+### 4b. Review F2 — a piszkos munkafa
+
+`raw/f2-dirty-clone-probes.txt`: tiszta klónon sem a klónozás, sem az aláíró commit-hook, sem a `pytest tests/`, sem a teljes `go test ./...` nem hozta létre a módosított `.yaml` fájlokat. **Az ok nem megállapított**; a tartalom a `tools/go.meta.gen.py` kimenetére hasonlít (hipotézis, nem bizonyíték: külső folyamat generálja a companion YAML-okat). A mérések tiszta klónban (`relay2`) futottak, ahol csak a PR-05 fájlok tértek el.
 
 ## 5. A harness ellenpróbája és a CI piros útja
 
@@ -71,7 +91,9 @@ A rekord stabilitása a valós main-en: `NOT_STABLE`, 0/662 mért lefedettség l
 | `verify` **43692321934** (`python` job) | failure, **9 teszt bukik**, mind a halmazellenőrzéshez/fogakhoz tartozik: A.1, A.2, A.3, A.4b, az összes-eset teszt, az R-teszt (count-only vs. set), a különbség-megnevezés, a másolat-zöld kontroll, a „go set comparison" fog | `raw/ci-184-red-python-43692321934.txt` |
 | `mutation-pr`, `manifest-check` | success | — |
 
-Zöld (#183, `8dd858b`): `object-evidence` **43692319961**, `verify` **43692319972**, `mutation-pr` **43692319971**, `manifest-check` **43692319946** — mind success. Az `object-evidence` workflow report-only, **nem required check**.
+Zöld (#183, `8dd858b`, az első implementáció): `object-evidence` **43692319961**, `verify` **43692319972**, `mutation-pr` **43692319971**, `manifest-check` **43692319946** — mind success. Az `object-evidence` workflow report-only, **nem required check**.
+**Zöld az F1 javítás után (#183, `e5e2ccd9943aafe35487d9c6da5f8c4447723f4b`):** `verify` 43698718316, `mutation-pr` és a shardok 43698718242, `manifest-check` 43698718275, `object-evidence` 43698718231 — mind success (25/25 check).
+**Main a merge után (`7386565669c84b3c2477425e6b0d3332e752432a`):** `verify` 43701778146 success, `manifest-check` 43701778106 success, kézi `object-evidence` 43701788247 success (`raw/ci-main-7386565-object-evidence-43701788247.txt`: L3 `PARTIAL`, a harness minden kontrollja becsületes, minden hiba elkapva). A `mutation-pr` PR-only, a mainen nem futott.
 Megjegyzés: a #184 két piros workflow-ja a draft ág saját vizsgálati eredménye; a #183-at nem érinti.
 
 ## 6. R- és N-tesztek bizonyítéka
@@ -110,7 +132,8 @@ Megjegyzés: a #184 két piros workflow-ja a draft ág saját vizsgálati eredm�
 
 | Állítás | Státus | Bizonyíték | Verifikációs módszer | Kockázat |
 |---|---|---|---|---|
-| A 13 eset a várt szinten és kóddal bukik | mért | `raw/seeded-defects.txt`, CI 43692319961 (`8dd858b`) | valódi rekord, pinelt kép | alacsony |
+| A 13 eset a várt szinten és kóddal bukik (az A.9c-vel 14, lásd 4a) | mért | `raw/seeded-defects.txt`, CI 43692319961 (`8dd858b`) | valódi rekord, pinelt kép | alacsony |
+| Az A.9c (hamis stabilitás) a régi verifieren átcsúszik, az újon elkapva | mért | `raw/f1-tests-on-previous-verifier.txt`, CI 43698718231 (`e5e2ccd`) | régi és új verifier | a `runs` a kötött profilokból jön, a futások függetlenségét nem bizonyítja |
 | A harness piros, ha a verifier gyengül | mért | CI 43692321957 (`c1a23d2`) + 43692321934 | szándékosan hibás ág | a gyengítés egyetlen fajtája (Go halmaz); a többi csak „fogak"-teszt |
 | A.3 régen átment, most bukik | mért | `raw/baseline-weaknesses.txt` vs. §4 | régi és új fa | alacsony |
 | R-tesztek a régi fán buknak | mért | `raw/r-tests-on-old-code.txt` (3/43) | régi fa másolata | alacsony |
@@ -127,6 +150,7 @@ Megjegyzés: a #184 két piros workflow-ja a draft ág saját vizsgálati eredm�
 - `object-id` szerződés a 5 crate nélküli `#[no_mangle]` id-ra.
 - A Rust független leltár a `syn`-nal: nem mért.
 - A `unviable` figyelmeztetési szint (33% javaslat), `mutation-policy/3`, `gobco` (licenc) továbbra is HOLD; a heti `mutation.yml` bekötése PR-07.
-- A Relay #183 mergelése **HOLD** a következő review-ig; a #184 draft marad a jelentés rögzítéséig (a lezárás tulajdonosi lépés).
+- A Relay #183 **mergelve** (`7386565`, a tulajdonos kifejezett utasítására, a review MERGE GO-ja után); a #184 lezárva merge nélkül.
+- A futások eredetének igazolása (húsz profil ≠ húsz független futás): PR-08 (evidence provenance).
 - Takarítás (tulajdonos): `sudo rm -rf ~/.cache/relay-ci-parity-04/{target-nightly,target,target-pt,gp,gc}` és a PR-03 `target-full`. A `backup/pr04-before-rebuild` ág megmarad. A `meta.yaml` státuszát nem érintettem.
-- A klón 212 piszkos bejegyzésének oka nem megállapított.
+- A klón 212 piszkos bejegyzésének oka nem megállapított (§4b).

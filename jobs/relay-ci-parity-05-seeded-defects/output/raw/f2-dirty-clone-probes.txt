@@ -1,0 +1,10 @@
+F2 (PR-05 review): can the 189 modified + 23 untracked .yaml files of the CIC_Relay-pr05 clone be reproduced?
+Pristine probe clone of 8dd858b (git status --short | wc -l = 0 before every probe):
+  git clone (local, --no-hardlinks)                 -> 0 dirty entries
+  git commit with the global commit-msg hook active  -> 0
+  pytest tests/ (scratch venv; 48 errors: pytest-mock missing, unrelated) -> 0
+  go test -count=1 ./... (golang:1.26.10, --user uid:gid) -> 0
+Not reproduced. Content of a dirty file looks like tools/go.meta.gen.py output (regex generator artifacts, e.g. cabinet.ModuleIDcabinet).
+mtimes: 23 files 09:21, 192 files 09:35; 09:35 is the author's own `git stash pop` (rewrites mtimes), so mtimes do not date the origin.
+Cause: NOT ESTABLISHED. Hypothesis, not evidence: an external process writes companion .yaml files under the workdir.
+The measured record was built in a separate clean clone (relay2); its git status showed only the PR-05 files, no .yaml.
