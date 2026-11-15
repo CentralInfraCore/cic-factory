@@ -11,7 +11,7 @@ Alap: `CentralInfraCore/CIC_Relay`, default ág `main`, jelenlegi `main@8faf00c`
 | #163 actuate egress | #180 | `07bbce8` | **lezárva** |
 | #165 proof persistence | #177 | `676f79c` | **lezárva** |
 | #164 CRL | #179 | `8faf00c` | **lezárva** |
-| #157 compile autorizáció | #181 | — | **nyitva, HOLD**: a review F1 (az autorizáció a közös végrehajtási határon, ne a végponton) nincs javítva |
+| #157 compile autorizáció | #181 (nyitva) | — | `208d4c3` helyi (a `fce9d2a` volt pusholva) | gofmt, vet, staticcheck, `go test ./...` + `-race` ok; manifest diff üres | **a HOLD oka javítva helyben**: autorizáció a `Setx` végrehajtási határán (védett komponensek, `/set` opcionális), típushelyes YAML, token-sanity, docs; push és új review vár | `issue-157.md` |
 | #162 capability binding | — | — | **nyitva, HOLD**: a signing oldalon nincs rögzített boríték (`issue-162.md`) |
 | #155 | — | — | **nyitva, HOLD**: külön, nem nyilvános kezelés alatt (nem része a nyilvános outputnak) |
 

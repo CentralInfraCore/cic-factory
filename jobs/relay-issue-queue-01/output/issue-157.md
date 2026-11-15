@@ -28,6 +28,30 @@ A régi viselkedés emulálva (a `authenticated` átengedi a kérést, a `Valida
 
 `gofmt -s -l` üres; `go vet ./...` üres; `staticcheck` (cmd/relay, schemacompile) rc=0; `go test -count=1 ./...` minden csomag `ok`; `go test -race` ok; `symbolsgen` után a `SYMBOLS.md` változatlan, `MANIFEST.sha256` "no drift".
 
+## Review F1 (2026-11-15): autorizáció a közös végrehajtási határon
+
+Az első változat a `/v1/schema/compile` végpontot hitelesítette; a review F1-je szerint az autorizáció a végponthoz kötött, nem a védendő művelethez, a `/set` ugyanazt a workflow-t hitelesítés nélkül elérte. A tulajdonos döntése: az autorizáció a közös végrehajtási határra kerüljön, minden belépési útvonalon ugyanaz a jogosultsági döntés.
+
+- **Megvalósítás:** `cabinet.WithProtectedModules` + `WithPrincipal`/`PrincipalFrom`: a `Setx` minden lépés előtt ellenőrzi, hogy a workflow tartalmaz-e védett komponenst; ha igen és a context-ben nincs hitelesített principal, `ErrUnauthorized` (nincs mellékhatás, korábbi védetlen lépés sem fut). A HTTP-réteg csak a principalt teszi a context-be.
+- **Védett komponensek:** `cic.artifact.sign` és a kérésből kapott repót klónozó / make célt futtató modulok (`cic.pipeline.start/test/validate/release`, `cic.repo.build`, `ci.build`). Szándékosan több, mint az aláírás: különben a `/set` láncolhatná ugyanazokat, és megkerülné a végpontok hitelesítését.
+- **Útvonalak:** compile, pipeline, repo CI = hitelesített; `/set` = új "opcionális" osztály (anonim: védetlen workflow fut; érvényes token: védett is; jelen lévő érvénytelen token = 401); ismeretlen osztály = hitelesített.
+- **További review-pontok:** típushelyes YAML (`renderStubArtifact`; `1.0`, `true`, `1e3` átmegy a regexen, de sablonban nem string), token legalább 8 különböző karakter (sanity check, nem entrópia-bizonyíték), `CIC_API_TOKEN` dokumentálva (en/hu), compose és `tools/relay-ci.sh` frissítve.
+- **Commit:** `208d4c3` az `feature/relay-157-compile-auth` ágon (az ág a main `8faf00c`-vel igazítva, ütközésmentes). **Nincs pusholva** a jelen állapotban.
+- **Javítás nélkül bukik** (emulálva: a határ-ellenőrzés ki, a régi sablon; scratchpad `157b-without-fix-summary.txt`): a `/set` mindhárom védett workflow-ja anonim hívónak lefut; a határ-teszt, a `Setx` egységteszt és a típus-teszt bukik. A szerződést rögzítő, de a régi kódon is zöld tesztek: `SetStillServesUnprotectedWorkflowsAnonymously`, `UnknownAccessClassFailsClosed`, `ClassifyEveryNativeModule`, `OrdinaryValuesKeepTheFormerBytes`.
+- **Viselkedésváltozás:** a pipeline és repo CI útvonalak, és a védett komponenst tartalmazó `/set` workflow-k tokent kérnek; a `make relay.ci` a `CIC_API_TOKEN`-t a környezetéből olvassa.
+- **Nem része:** a `ci.build` sorsa (#101), a `/set` teljes hitelesítése, mTLS. A hat mergelt PR integrációs mérése a #181 nélkül készült; a #181 mergelése után ismétlendő.
+
+| Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat |
+|---|---|---|---|---|
+| A `/set` nem kerülheti meg a védett műveleteket (aláírás, klónozás, build) anonim vagy rossz tokennel | verified | `TestBoundary_SetCannotRunProtectedOperationsAnonymously` (3 workflow); a határ-ellenőrzés nélkül bukik | Valódi cabinet-szolgáltatás, számláló modulokkal, a muxon át | közepes: számláló modulok, nem a valódi aláíró |
+| Minden belépési útvonal ugyanazt a döntést kapja | verified | `TestBoundary_EveryEntryPathRefusesAnonymousProtectedWork` (5 útvonal); `..._HandlerWithoutRouteAuth_StillRefusedAtTheBoundary` | Teszt | közepes: a pipeline/repo handler törzse minimális |
+| Az ismeretlen útvonal-osztály nem lehet publikus | verified | `TestProtectRoute_UnknownAccessClassFailsClosed` | Teszt | alacsony |
+| Minden natív modul osztályozott; elgépelt védett ID nem védhet semmit | verified | `TestProtectedModules_ClassifyEveryNativeModule` | A `registerNativeComponents` valódi modul-listáján | alacsony |
+| A YAML-artifact értékei típushelyesek | verified | `TestRenderStubArtifact_*`; a régi sablonnal a `1.0` stb. bukik | Teszt | alacsony |
+| A token-entrópia garantált | **cáfolt** | Csak hossz és 8 különböző karakter | Kódolvasás | közepes |
+| A `ci.build` védelme helyes döntés | **nem igazolt** | A #101 nyitott | — | közepes |
+| A PR frissítve van a GitHubon | **nem igaz** | Csak helyi commit `208d4c3`, push vár | — | — |
+
 ## Nyitott kérdések
 
 - **mTLS** nem készült; csak bearer token.
