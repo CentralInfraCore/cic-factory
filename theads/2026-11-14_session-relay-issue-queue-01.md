@@ -1,12 +1,12 @@
-# Thread-napló — 2026-11-14 (relay-issue-queue-01: a CIC_Relay nyitott biztonsági és megbízhatósági issue-k sorozatos feloldása; #157–#166, #160; CIC_Relay PR #173–#182, cic-factory PR #58)
+# Thread-napló — 2026-11-14 (relay-issue-queue-01: a CIC_Relay nyitott biztonsági és megbízhatósági issue-k sorozatos feloldása; #157–#166, #160; CIC_Relay PR #173–#190, cic-factory PR #58, #61, #62)
 
-Interaktív factory-job session transcriptje 2026-11-14T20:18Z-től 2026-11-15T09:36Z-ig (work-szál `task-relay-issue-queue-01`, nem `run-job.sh` futás). **Utólag készült a session `.jsonl` transcriptjéből**, nem menet közben vezetett; a fejléc ezt kimondja.
+Interaktív factory-job session transcriptje 2026-11-14T20:18Z-től 2026-11-15T14:11Z-ig (work-szál `task-relay-issue-queue-01`, nem `run-job.sh` futás). **Utólag készült a session `.jsonl` transcriptjéből**, nem menet közben vezetett; a fejléc ezt kimondja.
 
 Csak a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude szöveges válaszai szerepelnek, UTC időbélyeggel. Nem szerepel: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, a work-runtime automatikus üzenetei. A felhasználó `!` parancsai `$` előtaggal, kimenet nélkül.
 
-Normalizálás: a `/home/<felhasználó>/` útvonal-előtag `~/`-re cserélve, a Vault-aláírás-blobok `vault:v1:[…]`-re rövidítve, egy külső szervezet neve `<szervezet>`-re cserélve. **Kihagyva:** a #155 privát biztonsági kezelés alatt álló technikai részletei; az érintett bekezdések és sorok helyén jelölés áll (24 helyen). Emiatt a napló ott nem szó szerinti.
+Normalizálás: a `/home/<felhasználó>/` útvonal-előtag `~/`-re cserélve, a Vault-aláírás-blobok `vault:v1:[…]`-re rövidítve, egy külső szervezet neve `<szervezet>`-re cserélve. **Kihagyva:** a #155 privát biztonsági kezelés alatt álló technikai részletei; az érintett bekezdések és sorok helyén jelölés áll (35 helyen). Emiatt a napló ott nem szó szerinti.
 
-A napló a naplózási kérés feldolgozása közben készült: a kérésre adott lezáró összefoglaló már nem szerepel benne. A napló nem helyettesíti a PR-okat és a git-történetet; azok maradnak a forrás.
+A napló a naplózási kérés feldolgozása közben készült (a naplófrissítés kérése a 2026-11-15-i #62-merge után): a kérésre adott lezáró összefoglaló már nem szerepel benne. A korábbi naplóváltozat (cic-factory #61) a 2026-11-15T09:36Z-ig tartó szakaszt tartalmazta; ez a változat a teljes session-t újragenerálja. A napló nem helyettesíti a PR-okat és a git-történetet; azok maradnak a forrás.
 
 ### 2026-11-14 20:18 — Claude
 
@@ -2130,4 +2130,1123 @@ Minden egyezik a jóváhagyott állapottal (HEAD `208d4c3`, main `8faf00c`, 15/1
 
 ~~~~~
 #181 mergelve (`c5ae320`). Lezárom a #157-et a lezáró kommenttel.
+~~~~~
+
+### 2026-11-15 09:40 — Claude
+
+~~~~~
+A napló a kérés feldolgozása közben készült, ezért a lezáró válaszom már nem lehet benne. Ezt a fejlécben kimondom, újragenerálom, utolsó ellenőrzés után commitolom.
+~~~~~
+
+### 2026-11-15 09:40 — Claude
+
+~~~~~
+A napló commitolva (`8824304`) a saját ágán. Visszaváltok a job ágára, hogy a munkafa az eredeti állapotban maradjon, és rögzítem a jegyzetekben.
+~~~~~
+
+### 2026-11-15 09:41 — Claude
+
+~~~~~
+A #181 mergelve (`c5ae320`), a #157 lezárva, a beszélgetés naplója elkészült és commitolva, de a push a te parancsodra vár.
+
+**Kérlek, futtasd te** (a napló a saját ágán van, nem a #58-on):
+
+```
+! cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push -u origin log/relay-issue-queue-01-session
+```
+
+A push után megnyitom a PR-t (merge nélkül).
+
+## Mergelés és lezárás
+A #181-et a jóváhagyott `208d4c3` HEAD-en mergeltem. Előtte ellenőriztem, hogy a HEAD és a main (`8faf00c`) változatlan, 15/15 CI zöld, `CLEAN`. A #157 lezáró kommentje rögzíti az acceptance-lefedettséget, és a nem lefedettet (mTLS, `ci.build` a #101-ben, a `/set` teljes hitelesítése). A review ezt kifejezetten nem teljes körű autorizációs jóváhagyásnak minősítette, ezt a kommentbe is beírtam.
+
+| | Állapot |
+|---|---|
+| Mergelt PR | **7**: #173, #176, #182, #180, #177, #179, #181 |
+| Lezárt issue | **8**: #157, #159, #160, #161, #163, #164, #165, #166 |
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+| `main` | `c5ae320` |
+
+## A beszélgetés naplója
+- **Hely:** `theads/2026-11-14_session-relay-issue-queue-01.md`, commit `8824304` a `log/relay-issue-queue-01-session` ágon.
+- **Forma:** a `CLAUDE.md` szerint csak transcript: 25 felhasználói és 141 Claude-szakasz, UTC időbélyeggel, a beillesztett review-k szó szerint. Eszközhívás és kimenet, rendszer-emlékeztető és task-notification nincs benne.
+- **Utólagos készítés:** a napló a session `.jsonl` transcriptjéből készült, nem menet közben, és a fejléc ezt kimondja. A naplózási kérésre adott lezáró összefoglaló nincs benne.
+- **A #155 részletei:** 24 helyen kihagytam, az érintett bekezdések vagy sorok helyén jelölés áll. Emiatt a napló ott nem szó szerinti, ezt is rögzíti a fejléc. Az ellenőrzés tiszta: a szigorú kifejezések, a titkok, a személyes adat és a privát útvonal 0 találat.
+- **Normalizálás:** a `/home/<felhasználó>/` előtag `~/`-re, a Vault-aláírás-blobok rövidítve. A work-runtime másik szervezetének nevét is cserélnem kellett: egyetlen üzenetemben szerepelt, a már publikus szövegekben sehol.
+
+## #58 (cic-factory output): HOLD, a review három pontja
+Ezeket most nem javítottam, mert a kérésed a mergelésre, a lezárásra és a naplóra szólt:
+- **F1, aláírási gate:** a hibát a GitHub által generált tesztmerge okozza. A javítás friss, aláírt commit(ok) az aktuális main tetején.
+- **F2, integrációs mérés:** a teszt-forrás és a nyers kimenet nincs commitolva. A review szerint a #181 mergelése után tartós regressziós tesztként külön Relay PR-ban rögzítendő. A #181 határ-tesztjét érdemes belevenni.
+- **F3, queue státusz:** most már a hét mergelt PR és nyolc lezárt issue áll fenn, a #157 sorának oszlopszáma is hibás.
+
+Ha kéred, a következő lépésem az F3 és az F1 a #58-on, utána az integrációs teszt Relay PR-ja.
+
+## Változatlanul
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+- **#162:** HOLD, a signing szerződésre vár.
+- **`meta.yaml`:** tulajdonosi lezárásra vár.
+- **Work event:** a gyökérok megvan (`WORK_TICKET` a `task-` előtag nélküli slug), a tool javítása és az esemény lezárása a te döntésed.
+~~~~~
+
+### 2026-11-15 09:54 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+A hét PR-os javítási sorozat lezárult. A következő lépések sorrendjén viszont változtatnék, hogy a factory #58-at csak egyszer kelljen véglegesíteni és újraaláírni.
+
+### **Javasolt végrehajtási sorrend**
+
+1. **F2 – Integrációs regressziós teszt:** külön Relay PR, mind a hét változtatás együttes ellenőrzésével. Az autorizációs negatív kontrollokat is tartalmazza.
+2. **F3 – Factory output aktualizálása:** nyolc lezárt issue, hét mergelt javító PR, az integrációs mérés nyers bizonyítékai és commitazonosítói, javított táblázat.
+3. **F1 – Aláírás:** a végleges #58 tartalom frissen aláírva az aktuális main tetején.
+4. Új CI és tartalmi review.
+5. A job tulajdonosi lezárása.
+
+### **A két különálló kérdés**
+
+- **Work event:** külön factory issue és PR. A ticketformátum konzisztenciáját regressziós teszttel kell biztosítani.
+- **Session transcript:** publikálás előtt a teljes Git-történetet is ellenőrizni kell bizalmas tartalomra, nem csak az aktuális fájlt.
+
+A #155 privát kezelése és a #162 signing szerződése továbbra is produkciós jóváhagyást blokkoló tételek.
+
+**Az integrációs regressziós teszt elkészítésére GO. A factory #58 merge-je addig HOLD.**
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 09:55 — Claude
+
+~~~~~
+Az integrációs regressziós tesztre GO. A sorrend: F2 (Relay PR), F3, F1, aztán új CI és review. A #58 merge-e HOLD. A tesztet a mergelt `main`-re építem, mind a hét változtatás együttes ellenőrzésével, az autorizációs negatív kontrollokkal, és mutációs bizonyítékkal, hogy mindegyik védelem eltávolítására bukik. Előbb a friss main-ről új ágat nyitok.
+~~~~~
+
+### 2026-11-15 09:56 — Claude
+
+~~~~~
+Két szépséghibát hagytam a fájlban: a `issueLeafFrom` segéd nem létezik, és az egyedi run-id ellenőrzés zavaros. Kijavítom mindkettőt, és kitisztítom a felesleges változót.
+~~~~~
+
+### 2026-11-15 10:00 — Claude
+
+~~~~~
+Mind a tizenkét védelem-eltávolítást észleli a teszt, és mindegyik a várt al-tesztet buktatja, az alap zöld, a követett fájlok visszaálltak. Kapusor a teszt-fájlra, majd commit.
+~~~~~
+
+### 2026-11-15 10:02 — Claude
+
+~~~~~
+Minden kapu tiszta, az egyidejűségi teszt `-race` mellett háromszor is stabil. Commitolom a teszt-fájlt, és elkészítem a PR-leírást.
+~~~~~
+
+### 2026-11-15 10:02 — Claude
+
+~~~~~
+You've hit your 5-hour limit · resets 12:50pm (Europe/Budapest)
+~~~~~
+
+### 2026-11-15 11:51 — Claude
+
+~~~~~
+A commit-üzenetekben egy találat van. Megnézem, mi az, mielőtt bármit mondanék róla.
+~~~~~
+
+### 2026-11-15 11:52 — Claude
+
+~~~~~
+Az integrációs regressziós teszt helyben kész és bizonyított (`0634f95`). A PR megnyitásához két push kell a te parancsodra.
+
+**Kérlek, futtasd te:**
+
+```
+! cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/CIC_Relay && git push -u origin feature/relay-hardening-integration-test
+! cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push -u origin log/relay-issue-queue-01-session
+```
+
+A push után megnyitom mindkét PR-t (a Relay PR-leírása kész). A #58 merge-e HOLD marad.
+
+## F2: az integrációs regressziós teszt
+A teszt a mergelt main-re (`c5ae320`) épül, egyetlen fájl, 406 sor, workflow-hoz nem nyúl. Mind a hét változtatást együtt, a valódi belépési pontokon vizsgálja, minden esetnek negatív kontrollja van:
+- **Indulás és CRL:** prod indulási deklarációk, lejárt CRL, azonos nevű, más kulcsú CRL, hiányzó CRL egy követelt kibocsátóra.
+- **Betöltés:** az ágyazott és a telepített út azonos ítélete, visszavont tanúsítvány, az operátor bundle-jén kívüli CA.
+- **Autorizáció, proof, egyidejűség:** védett művelet token nélkül minden úton refuse-ol és nem hagy rekordot, a visszaadott commit az audit repó HEAD-je, a 503 `evidence_required`, nyolc egyidejű workflow mind pontosan egyszer rögzül, a lánc ellenőrizhető.
+- **Egress:** az alapértelmezett kliens privát célt nem tárcsáz, a redirectet nem követi, a plafon felett típusos hiba.
+
+**Bukni tudás:** tizenkét védelmet egyenként eltávolítottam (egy szerkesztés, utána visszaállítva). Mind a tizenkettőt észleli a teszt, mindegyiket a nevére szóló al-teszt: a recorder zára, a trust-mode default, a CRL-aláírás, a frissesség, a kibocsátó-policy, a közös trust context, a kötelező evidence, az egress dial-őr és plafon, a határ-autorizáció, a bemenet-validáció és a token-ellenőrzés. Az alap zöld, a követett fájlok visszaálltak. A kapuk tiszták (`gofmt`, `vet`, `staticcheck`, `go test ./...`), az egyidejűségi teszt `-race` mellett háromszor is stabil, a `SYMBOLS.md` és a manifest változatlan.
+
+**Nem fedi le** (a PR is felsorolja): a Rust paritás-tesztet (saját CI-je van), a valódi Vaultot, a köztes CA-t, a folyamat-újraindítást és a futás közbeni CRL-elavulást (#189), a valódi ágyazott modult (#188). A CRL–kibocsátó kötés mutációját sem: azt egységteszt fedi, mert két azonos nevű CA kell hozzá a trust store-ban.
+
+## A review többi pontja
+- **Az első mérés fája:** a mért fa (`720b2ad`) és a hatodik merge utáni main (`8faf00c`) fája azonos (`3d82b63b…`), ez bizonyítja, hogy mit mértünk. A review F2 harmadik pontja így teljesül.
+- **Nyers kimenetek:** a baseline és a tizenkét mutációs futás kimenete, plusz a származás (commitok, fa-azonosítók) tartósan mentve. A szigorú kifejezésekre, útvonalra és Vault-blobra átvizsgáltam: tiszta. A factory outputba az F3-nál kerül.
+- **Session transcript:** a publikálás előtt a teljes történetet átnéztem (egy commit, egy fájl): az üzenet és a diff tiszta. Az egyetlen találat a hook által minden aláírt commitra tett Vault-aláírás-blokk, amely a main-en lévő publikus commitokon is ott van.
+
+## Következő lépések a review sorrendje szerint
+- **F3 (factory output frissítése)** a teszt Relay PR-jának mergelése után jön, mert a commitazonosítókat az adja: nyolc lezárt issue, hét mergelt PR, a javított #157 sor, a nyers bizonyítékok.
+- **F1 (új aláírt commit az aktuális main tetején)** a végleges tartalommal.
+- **Új CI és tartalmi review**, majd a job tulajdonosi lezárása.
+- **Work event:** a review szerint külön issue és PR, regressziós teszttel. A tool a `<szervezet>/work-runtime` repóban van, nem a cic-factory-ban. Melyik repóba nyissam az issue-t?
+- **#155 és #162:** változatlanul a produkciós jóváhagyást blokkoló, elkülönített tételek.
+~~~~~
+
+### 2026-11-15 12:13 — Felhasználó
+
+~~~~~
+$ cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/CIC_Relay && git push -u origin feature/relay-hardening-integration-test
+~~~~~
+
+### 2026-11-15 12:14 — Claude
+
+~~~~~
+A PR megnyílt: **#190**. A main azonban közben mozdult (`7386565`, a branch alapja `c5ae320`), ezért megnézem, mi került be, és hogy a teszt az új main-en is átmegy.
+~~~~~
+
+### 2026-11-15 12:15 — Claude
+
+~~~~~
+A teszt az új main-en is átmegy. A `Exit code 1` csak a `grep -vc` visszatérési kódja volt, mert a nem-ok csomagok száma 0.
+
+A #190 PR (`feature/relay-hardening-integration-test`) a `main` `7386565`-ig tartó változásaira is tisztán összefésülhető. A main csak a másik szál mérési eszközeit kapta (#183: Python szkriptek és tesztek, Go kódhoz nem nyúl). Az összefésült eredményen az integrációs teszt és a teljes csomag (nulla nem-ok csomag) is zöld. A PR leírása a baseline-t a `c5ae320`-ra köti, ezt a mérést a leírás nem érinti.
+
+## Állapot
+- **#190:** nyitva, merge nélkül. A mergelés a HEAD-hez kötött review és az új CI után jön. A merge előtt még egyszer ellenőrzöm, hogy a main nem mozdult-e.
+- **A napló (cic-factory `log/relay-issue-queue-01-session`):** a push még nem történt meg, a második parancsod vár:
+  ```
+  ! cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push -u origin log/relay-issue-queue-01-session
+  ```
+  A teljes történet ellenőrzött és tiszta.
+
+## Következő lépések a review sorrendje szerint
+1. **#190 merge-e** a review és az új CI után. A commitazonosítókat ez adja.
+2. **F3:** a factory output frissítése: hét mergelt PR, nyolc lezárt issue, javított #157 sor, a nyers mérési kimenetek (tartósan mentve) és a commitok, plusz a #190.
+3. **F1:** a végleges #58 tartalom új, aláírt commitként az aktuális main tetején.
+4. **Új CI és tartalmi review**, majd a job tulajdonosi lezárása.
+
+## Kérdés
+A work event regressziós tesztjéhez külön issue és PR kell. A tool a `<szervezet>/work-runtime` repóban van, nem a cic-factory-ban. Melyik repóba nyissam az issue-t? A hibaüzenet oka és a javítási javaslat az egyik mellékelt jegyzetben készen van.
+
+## Változatlanul
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+- **#162:** HOLD, a signing szerződésre vár.
+- **#185–#189:** nyitva.
+- **Produkciós jóváhagyás:** HOLD, a #155 és a #162 rendezéséig.
+~~~~~
+
+### 2026-11-15 12:15 — Felhasználó
+
+~~~~~
+$ cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push -u origin log/relay-issue-queue-01-session
+~~~~~
+
+### 2026-11-15 12:15 — Claude
+
+~~~~~
+A naplóág megérkezett. Megnyitom hozzá a PR-t a `main`-re, merge nélkül, az ellenőrzések és a kihagyások nyílt jelzésével.
+~~~~~
+
+### 2026-11-15 12:16 — Claude
+
+~~~~~
+A napló PR-ja megnyílt: **cic-factory #59**, merge nélkül, a tartalmi review-ig HOLD. A leírás nyíltan közli, hogy a napló utólag készült, hogy a #155 részletei 24 helyen kimaradtak (ezért ott nem szó szerinti), mit normalizáltam, és milyen ellenőrzések előzték meg.
+
+## Három nyitott PR
+| PR | HEAD | CI most |
+|---|---|---|
+| CIC_Relay **#190** (integrációs regressziós teszt) | `0634f95` | 13 ellenőrzésből 3 fut, hiba nincs, `MERGEABLE` |
+| cic-factory **#59** (beszélgetés-napló) | `8824304` | 1 ellenőrzés fut, `MERGEABLE` |
+| cic-factory **#58** (job output) | `76db9bb` | a `gate` **FAILURE** (a review F1-je: az aláírási gate) |
+
+A #59 aláírási kapuja is a #58-hoz hasonló mintát követhet: a GitHub által generált tesztmerge-commit aláíratlan. A #59 ellenőrzése még fut, a #58 hibáját nem ismételtem meg újra.
+
+## A review sorrendje szerint a következők
+1. **#190:** a CI vége és a HEAD-hez kötött review után mergelem. Közben a main-t figyelem, mert a másik szál változtatja. Az új main-re (`7386565`) az összefésülés tiszta és a teszt zöld volt.
+2. **F3:** a factory output frissítése. Hét mergelt PR, nyolc lezárt issue, a javított #157 sor, a nyers mérési kimenetek és a commitazonosítók. A kimenetek tartósan mentve vannak, és a mért fa azonosságát is bizonyítottam (`720b2ad` és `8faf00c` fája azonos).
+3. **F1:** a végleges tartalom új, aláírt commitként az aktuális main tetején. Ezzel a #58 kapuja is kijavul, a #59-nél is ugyanez a teendő, ha ott is elbukik.
+4. **Új CI, tartalmi review**, a job tulajdonosi lezárása.
+
+## Kérdések és változatlan tételek
+- **Work event:** melyik repóba nyissam az issue-t a regressziós teszthez? A tool a `<szervezet>/work-runtime`-ban van, nem a cic-factory-ban.
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+- **#162:** HOLD, a signing szerződésre vár.
+- **#185–#189, `meta.yaml`:** nyitva, tulajdonosi lezárásra.
+- **Produkciós jóváhagyás:** HOLD, a #155 és a #162 rendezéséig.
+~~~~~
+
+### 2026-11-15 12:18 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+A work event hibáját **a&#x20;**`<szervezet>/work-runtime`**&#x20;repóban kell kezelni**, mert ott található a hibás implementáció.
+
+Nem indokolt CIC-specifikus kerülőmegoldást építeni a factoryba.
+
+A javítás elfogadási feltételei:
+
+- A támogatott ticketformátumok explicit dokumentálása.
+- Az esemény létrehozásakor és lezárásakor azonos validációs szabály alkalmazása.
+- Regressziós teszt a hibát előidéző ticketformátumra.
+- A korábban függőben maradt esemény szabályos lezárhatósága.
+- Idempotens eseményfeldolgozás.
+
+A többi végrehajtási sorrendet elfogadom.
+
+| PR                                                                                            | Következő lépés                      |
+| --------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Relay [#190](https://github.com/CentralInfraCore/CIC_Relay/pull/190?utm_source=chatgpt.com)   | Tartalmi review + CI                 |
+| Factory [#59](https://github.com/CentralInfraCore/cic-factory/pull/59?utm_source=chatgpt.com) | Bizalmassági és tartalmi review + CI |
+| Factory [#58](https://github.com/CentralInfraCore/cic-factory/pull/58?utm_source=chatgpt.com) | F1–F3 rendezése, végleges review     |
+
+A #59 esetében az utólagos rekonstrukció és a kihagyások egyértelmű megjelölése helyes. A bizalmas tartalom védelme elsőbbséget élvez a szó szerinti naplózás követelményével szemben.
+
+A produkciós jóváhagyás változatlanul **HOLD**.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 12:19 — Claude
+
+~~~~~
+A work event hibáját tehát a `<szervezet>/work-runtime` repóban kell kezelni, nem a factoryban. Ez egy másik szervezet repója, ezért semmit nem nyitok meg és nem pusholok: megnézem a helyi klónt, és a javítást helyi ágon, regressziós teszttel készítem elő. Előbb a repó állapota, a tesztinfrastruktúra és az esemény-életciklus.
+~~~~~
+
+### 2026-11-15 12:22 — Claude
+
+~~~~~
+A work event hibájának javítása elkészült és bizonyított. Az eszközhöz nem nyúltam, mert a javítás kezelése és bevezetése a te döntésed. A `<szervezet>/work-runtime` repóban nem nyitottam issue-t, és nem pusholtam semmit.
+
+## Amit találtam
+- **Gyökérok:** az indító (`bin/work`) a `WORK_TICKET`-et a runtime ticket-részeként exportálja. `task-foo` szálnál ez `foo`, `repo-bar` szálnál `bar`. A `resolve()` ezt nem tudja visszafordítani.
+- **Miért nem látszott:** Jira és ADO szálnál a ticket-rész azonos az azonosítóval. A README szerint az agenten belül a `WORK_TICKET` az alapértelmezett ticket, ezt a szerződést a `task` és `repo` szálak nem tartották.
+
+## A javítás
+- A `resolve()` ticket nélkül előbb a `WORK_RUNTIME`-ot használja, majd a `WORK_TICKET` + `WORK_PROVIDER` párt.
+- Ez csak env-fallbacknél érvényes. Explicit argumentumra a korábbi szabály marad, a bare `foo` explicit argumentumként továbbra is hiba.
+- A README-ben táblázat írja le a támogatott ticketformátumokat.
+
+## Elfogadási feltételek
+| Feltétel | Állapot |
+|---|---|
+| Formátumok dokumentálása | kész |
+| Azonos szabály létrehozásnál és lezárásnál | kész: ugyanaz a függvény, azonos hibaüzenet |
+| Regressziós teszt | kész: javítás nélkül 23 ok és **19 hiba**, javítással 42 ok és 0 hiba |
+| A függő esemény lezárhatósága | **igazolva, a lezárás nem történt meg:** a javított eszköz a szál env-jével eléri a valódi eseményt (a telepített nem) |
+| Idempotens feldolgozás | **részben:** a `done` ismételhető, a `next` atomikus. A létrehozás szándékosan nem idempotens, nincs idempotencia-kulcs. Ha a feltétel ezt is jelenti, az nincs megvalósítva |
+
+## A munka módja és helye
+A tulajdonos 4 fájlja nem commitolt módosítást tartalmaz, és pont azokat érinti, amelyeket a javítás is (`lib/common.sh`, `bin/work`). Ezért az eredeti munkafát nem szerkesztettem. A javítást a munkafa pillanatnyi állapotának másolatán készítettem, és a patch tisztán alkalmazható az eredetire (`git apply --check` rendben). Az eredeti tovább 4 nem commitolt fájllal áll.
+
+A patch, a hibajelentés és a teszt-naplók a `$WORK_ROOT/evidence/work-runtime-fix/` könyvtárban vannak, nem repóban. Alkalmazás, ha úgy döntesz:
+
+```
+cd "$WORK_HOME" && git apply "$WORK_ROOT/evidence/work-runtime-fix/0001-work-make-the-env-derived-ticket-resolvable-document.patch"
+```
+
+Az alkalmazás az élő szálak parancsait is megváltoztatja, mert az eszköz a `$WORK_HOME`-ból fut. A patch szerzője a másolatban használt helyi azonosító.
+
+## A függő esemény lezárása
+Az eseményt nem zártam le, az a te döntésed. A javítás nélkül így megy: `WORK_TICKET="$WORK_RUNTIME" work event next`, majd `WORK_TICKET="$WORK_RUNTIME" work event done <id>`. A javítás után simán `work event next` és `work event done <id>`.
+
+## Korlátok
+Nincs `shellcheck`, csak `bash -n` és a teszt futott. A teszt ideiglenes állapotot használ, a `tmux`/`claude` indítási út nem része.
+
+## A három nyitott PR és a többi tétel
+- **#190 (Relay), #59 (napló):** tartalmi review és CI a te oldaladon.
+- **#58:** az F1–F3 rendezése a #190 mergelése után jön, mert a commitazonosítókat az adja.
+- **Változatlanul:** #155 privát P0, #162 HOLD, #185–#189 nyitva, a `meta.yaml` tulajdonosi lezárásra vár. A produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 12:57 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+A work-runtime javításának iránya megfelelő. Különösen helyes, hogy nem módosította a meglévő, nem commitolt munkafádat.
+
+**A javítás elfogadására feltételes GO, az élő eszköz közvetlen módosítására HOLD.**
+
+| Elfogadási feltétel        | Eredmény         |
+| -------------------------- | ---------------- |
+| Gyökérok azonosítása       | OK               |
+| Visszafelé kompatibilitás  | OK               |
+| Regressziós bizonyíték     | 19 FAIL → 0 FAIL |
+| Javított tesztkészlet      | 42/42 PASS       |
+| Függő esemény elérhetősége | OK               |
+| ShellCheck                 | Nem mért         |
+| Élő runtime integráció     | Nem mért         |
+
+Az idempotenciát ebben a feladatban nem terjeszteném ki az esemény létrehozására. Az külön szerződésmódosítás lenne, idempotenciakulccsal és deduplikációs szabályokkal.
+
+### **További utasítás**
+
+- A work-runtime javítás maradjon külön patch, amíg a tulajdonosi módosításokat nem rendezted.
+- Az alkalmazás előtt fusson ShellCheck és a teljes meglévő tesztkészlet.
+- A függő esemény a dokumentált átmeneti megoldással lezárható, az élő runtime módosítása nélkül.
+- A runtime javítása ne blokkolja a Relay job lezárását.
+
+A CIC oldalon továbbra is a #190, #59 és végül a #58 review-ja következik.
+
+**Jó hatókörkezelés:** egy másik projektben felfedezett hibát diagnosztizált, reprodukált és javításra előkészített anélkül, hogy az éppen használt fejlesztési infrastruktúrát önhatalmúlag módosította volna.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 12:58 — Claude
+
+~~~~~
+Az irányt elfogadtad, ezért sorra veszem a feltételeket. A ShellCheck eddig „nem mért” volt, ezt előbb pótolom: Dockerből futtatom a másolaton, a javítás előtti és utáni állapotra, hogy lássuk, a patch hoz-e be új észrevételt. Az eredeti munkafához közben sem nyúlok.
+~~~~~
+
+### 2026-11-15 13:00 — Claude
+
+~~~~~
+Az átmeneti megoldással zárom le, a telepített eszköz módosítása nélkül: előbb `next` (a függő esemény `processing`-be kerül), aztán `done`.
+~~~~~
+
+### 2026-11-15 13:00 — Claude
+
+~~~~~
+Az esemény lezárva: a valós sorban is igazolt az idempotens `done`, az eszköz érintetlen. Megnézem a három CIC-oldali PR és a main állapotát.
+~~~~~
+
+### 2026-11-15 13:00 — Claude
+
+~~~~~
+A #190-nél új hiba van: az `object-evidence` bukik, ez korábban nem szerepelt. Elolvasom a tényleges naplót, mielőtt bármit állítanék.
+~~~~~
+
+### 2026-11-15 13:00 — Claude
+
+~~~~~
+A szűrő túl zajos volt. A napló végét és a `##[error]` sorokat nézem.
+~~~~~
+
+### 2026-11-15 13:01 — Claude
+
+~~~~~
+Az ok megerősítve: a szkript a main-ben megvan, a PR ágán nincs. A #190 új HEAD-je `352b682`, a CI újraindult. Háttérben figyelem.
+~~~~~
+
+### 2026-11-15 13:02 — Claude
+
+~~~~~
+A work-runtime javítása külön patch maradt, az eseményt lezártam, a ShellCheck és a tesztek eredménye megvan. A #190 CI-hibája nem a tesztemé volt: az ágat az új main-hez igazítottam, a CI újraindult.
+
+## work-runtime: a feltételek teljesítése
+| Feltétel | Eredmény |
+|---|---|
+| Külön patch, amíg a tulajdonosi módosítások nincsenek rendezve | **igen**: az eredeti munkafa érintetlen (`3ea1218`, 4 nem commitolt fájl a tiéd, a hash-e változatlan) |
+| ShellCheck | **most mértem**: a termékkódban ugyanaz a 12 korábbi találat előtte és utána, a patch egyet sem ad hozzá. Az új teszt-fájl találatmentes |
+| Teljes meglévő tesztkészlet | **nincs ilyen**: a repóban a javítás előtt egyetlen teszt sem volt. Az új `tests/test-resolve.sh` 42/42, a tulajdonos fájának másolatán a patch rárakása után is |
+| Alkalmazhatóság | `git apply --check` tiszta az aktuális munkafán |
+| Élő runtime integráció | **nem mért** (tmux/claude út, hookok): ezt a hibajelentés külön korlátként jelzi |
+| Idempotencia | a létrehozásra nem terjesztettem ki, ahogy kérted: külön szerződésmódosítás (kulcs, deduplikáció). A `done` ismételhető, a `next` atomikus |
+
+A ShellCheck a teszt-fájlomban hamis jelzést is adott: az SC1010 a `done` alparancsot kulcsszónak vette. Ezt és a többi megjegyzést kitisztítottam, a javított patch újragenerálva. A patch, a hibajelentés és a ShellCheck és teszt-naplók a `$WORK_ROOT/evidence/work-runtime-fix/` könyvtárban vannak.
+
+## A függő esemény lezárása
+Az átmeneti megoldással zártam (`WORK_TICKET="$WORK_RUNTIME" work event next`, majd `done`), a telepített eszköz módosítása nélkül. A sor: 1 pending → 0 pending, 1 done. A `done` ismétlése a valós sorban is rc 0, nem duplikál. Üres sornál a `next` „Nincs új esemény.”-t ad.
+
+## A három CIC-oldali PR
+- **Relay #190:** az `object-evidence` bukott, de nem a teszt miatt. A workflow-fájl az új main-ből jön (a #183 óta van benne a `scripts/seeded_defects.py` lépés), a futtatott fa viszont a PR régi alapjára épült, ahol a szkript még nincs. Ez ugyanaz a minta, amit a review a #179-nél leírt. Az ágat az aktuális main-hez igazítottam (`update-branch`, textuálisan tiszta), az új HEAD `352b682`, a CI fut.
+  - **Review:** az új HEAD-re új review kell, a korábbi HEAD-re nem létezett jóváhagyás.
+  - **Merge:** a CI vége után, és ha a main nem mozdul.
+- **Factory #59** (napló): a CI egy ellenőrzése zöld, `MERGEABLE`. Bizalmassági és tartalmi review és a te döntésed vár.
+- **Factory #58:** a `gate` továbbra is bukik (F1, a GitHub tesztmerge aláírása). Az F1–F3 a #190 mergelése után rendezhető, mert a commitazonosítókat az adja.
+
+## Változatlanul
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+- **#162:** HOLD, a signing szerződésre vár.
+- **#185–#189, `meta.yaml`:** nyitva, tulajdonosi lezárásra.
+- **Produkciós jóváhagyás:** HOLD, a #155 és a #162 rendezéséig.
+~~~~~
+
+### 2026-11-15 13:03 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+A jelentés alapján a work-runtime mellékszálát lezártnak tekinthetjük, a patch bevezetésének kivételével.
+Review-döntés
+Tétel    Döntés    Indoklás
+Work-runtime javítás    GO    42/42 teszt, nincs új ShellCheck-lelet
+Patch alkalmazása    HOLD    Tulajdonosi módosítások és élő runtime
+Függő esemény    DONE    Lezárás és ismételhetőség igazolva
+Relay #190    HOLD    Új HEAD, CI és tartalmi review szükséges
+Factory #59    HOLD    Bizalmassági és tartalmi review
+Factory #58    HOLD    F1–F3 rendezése szükséges
+
+Következő lépések
+1. A work-runtime patch maradjon elkülönítve. Nem blokkolja a CIC fejlesztését.
+2. A #190 tartalmi review-ja a 352b682 HEAD-en.
+3. A #59 review-ja, a teljes commitelőzmény bizalmassági ellenőrzésével együtt.
+4. A #190 merge után a #58 három leletének rendezése.
+5. Sikeres ellenőrzések után a factory job tulajdonosi lezárása.
+A #155 privát kezelése és a #162 signing szerződése változatlanul produkciós blokkoló.
+
+Új architekturális döntésre ezen a mellékszálon nincs szükség. A munka most már a bizonyítékok rögzítéséről és a fejlesztési ciklus szabályos lezárásáról szól.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 13:03 — Claude
+
+~~~~~
+A döntéstábla szerint a #190, #59 és #58 a review-ra vár, az én részem most a CI-eredmények ellenőrzése. Megnézem, lefutott-e a #190 új HEAD-jén a CI.
+~~~~~
+
+### 2026-11-15 13:04 — Claude
+
+~~~~~
+Az igazítás működött: az `object-evidence` most `SUCCESS`, a korábbi hiba megszűnt. A `verify`, `mutation-pr`, `manifest`, `coverage`, `completeness` és `baseline-guard` is zöld. Csak a `rust` ellenőrzés fut még, hiba nincs. A háttérfigyelő jelezni fog, ha az is lefutott.
+
+A #190 az `352b682` HEAD-en tartalmazza a main-t (`7386565`), és `MERGEABLE`. Nem mergelem: a döntéstábla szerint a tartalmi review-ra vár, és az új HEAD-re a korábbi nem érvényes. A merge csak review és teljes zöld CI után jön, és előtte újra megnézem, hogy a main nem mozdult-e.
+
+## Hol tart minden
+| Tétel | Állapot |
+|---|---|
+| work-runtime javítás | GO, a patch elkülönítve. A bevezetés HOLD (a te módosításaid és az élő runtime miatt) |
+| Függő esemény | lezárva |
+| Relay #190 | `352b682`, a CI egy ellenőrzés híján zöld, tartalmi review vár |
+| Factory #59 | bizalmassági és tartalmi review vár, a teljes történetet átnéztem, tiszta |
+| Factory #58 | HOLD, az F1–F3 a #190 mergelése után |
+
+## A #190 mergelése utáni lépéseim
+1. **F3:** a factory output frissítése a commitazonosítókkal és a nyers kimenetekkel (tartósan mentve vannak). Hét mergelt PR, nyolc lezárt issue, javított táblázat, a #190 és az `object-evidence` tanulsága.
+2. **F1:** a végleges tartalom friss, aláírt commitként az aktuális main tetején. Ugyanez kell a #59-nél is, ha ott a gate elbukik.
+3. **Új CI, tartalmi review**, majd a job tulajdonosi lezárása.
+
+## Változatlanul
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+- **#162:** HOLD, a signing szerződésre vár.
+- **#185–#189, `meta.yaml`:** nyitva, tulajdonosi lezárásra.
+- **Produkciós jóváhagyás:** HOLD.
+~~~~~
+
+### 2026-11-15 13:05 — Claude
+
+~~~~~
+A figyelő lefutott. A tényleges állapotot a GitHubon ellenőrzöm.
+~~~~~
+
+### 2026-11-15 13:06 — Claude
+
+~~~~~
+A #190 CI-ja teljes és zöld az `352b682` HEAD-en: 13 ellenőrzés, nincs függőben, nincs hiba, `CLEAN`. A main nem mozdult (`7386565`), és az ág tartalmazza.
+
+A #190-et nem mergelem. A döntéstábla szerint HOLD, mert az új HEAD-re tartalmi review kell, a korábbi HEAD-re nincs jóváhagyás. A zöld CI nem jóváhagyás.
+
+Amint a review a `352b682`-re MERGE-et mond, azon a HEAD-en mergelem, feltéve hogy a main addig nem mozdul. Ha mozdul, előbb igazítani kell, és új CI kell.
+
+## Utána, a megbeszélt sorrendben
+1. **F3:** a factory output frissítése. Hét mergelt PR, nyolc lezárt issue, javított táblázat, a nyers mérési kimenetek és a commitazonosítók.
+2. **F1:** a végleges tartalom friss, aláírt commitként az aktuális main tetején, hogy a #58 kapuja rendben legyen. A #59-nél is, ha ott a gate elbukik.
+3. **Új CI, tartalmi review**, majd a job tulajdonosi lezárása.
+
+## Változatlanul
+- **#59:** bizalmassági és tartalmi review vár, a teljes történetet átnéztem.
+- **work-runtime patch:** külön, a bevezetés HOLD.
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+- **#162:** HOLD, a signing szerződésre vár.
+- **#185–#189, `meta.yaml`:** nyitva, tulajdonosi lezárásra.
+- **Produkciós jóváhagyás:** HOLD.
+~~~~~
+
+### 2026-11-15 13:17 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Review – CIC_Relay #190 és cic-factory #59
+Mindkét PR-t közvetlenül a GitHubon ellenőriztem.
+PR    Ellenőrzött HEAD    CI    Döntés
+Relay #190    352b682    SUCCESS    HOLD – F1
+Factory #59    8824304    SUCCESS    Tartalmi GO
+Factory #58    76db9bb    Korábbi FAILURE    HOLD
+
+1. Relay #190 – integrációs regressziós teszt
+A 406 soros, kizárólag tesztkódot érintő változtatás szakmailag megfelelő irányú.
+- PKI és CRL pozitív, illetve negatív kontrollok.
+- Embedded és installed modulbetöltés összehasonlítása.
+- Autorizációs határ ellenőrzése.
+- Proof persistence és recorder-hibakezelés.
+- Nyolc párhuzamos workflow és a bizonyítéklánc ellenőrzése.
+- Egress-korlátozások.
+F1 – P2: a negatív egress-teszt nem teljesen izolált.
+
+A redirect-teszt egy valódi cloud metadata végpontra mutat. Amennyiben egy későbbi regresszió visszaállítja a redirect követését, a teszt tényleges hálózati hozzáférést kísérelhet meg.
+
+A javítás egyszerű: második lokális httptest.Server, saját találatszámlálóval, amelynek értéke kötelezően nulla marad.
+
+Így a teszt nemcsak a visszakapott státuszkódot, hanem a tiltott második kérés elmaradását is bizonyítja, külső infrastruktúra érintése nélkül.
+
+Ezen kívül nem azonosítottam merge-blokkoló problémát.
+2. Factory #59 – beszélgetésnapló
+Ellenőriztem a teljes, 2133 soros dokumentumot és az egyetlen hozzá tartozó commitot.
+Ellenőrzés    Eredmény
+Felhasználói szakaszok    25
+Claude-szakaszok    141
+Utólagos előállítás feltüntetése    Megfelelő
+Kihagyások és normalizálás dokumentálása    Megfelelő
+Ismert credential-minták    0 találat
+Privát útvonalak és külső szervezet neve    0 találat
+Signing gate    SUCCESS
+
+A vizsgálat nem jelent abszolút garanciát minden érzékeny információ hiányára, de a dokumentum tartalmát elfogadhatónak ítélem.
+
+Tartalmi GO a 8824304 HEAD-re.
+
+Viszont a GitHub aktuális mergeable értéke false. A main változása miatt az ág igazítása és új ellenőrzése szükséges.
+Végrehajtási sorrend
+1. #190 F1 javítása, új CI és review.
+2. #59 igazítása az aktuális main-hez.
+3. A jóváhagyott PR-ok mergelése.
+4. #58 F1–F3 rendezése.
+5. Factory job lezárása.
+A produkciós biztonsági jóváhagyás változatlanul HOLD.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 13:18 — Claude
+
+~~~~~
+Három teendő van: a #190 F1-je (az egress negatív teszt ne érintsen valódi hálózatot), a #59 aláírt, igazított újragyártása, és közben a #190 mergelése csak új review után jöhet. Az F1-gyel kezdem. Előbb a helyi ágat az `origin`-ra állítom (a GitHub merge-commitja óta előrébb jár), és elolvasom az érintett teszteket.
+~~~~~
+
+### 2026-11-15 13:21 — Claude
+
+~~~~~
+Mindkét elem helyben kész. Előkészítem a PR-leírásokat, hogy a push után egy paranccsal frissíthetők legyenek.
+~~~~~
+
+### 2026-11-15 13:21 — Claude
+
+~~~~~
+A #190 F1-je javítva és bizonyítva, a #59 pedig aláírt, igazított commitként előkészítve. Mindkettő helyben van, két push kell a te parancsodra.
+
+**Kérlek, futtasd te:**
+
+```
+! cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/CIC_Relay && git push origin feature/relay-hardening-integration-test
+! cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push -u origin log/relay-issue-queue-01-session-r2
+```
+
+A push után a #190 leírását frissítem, és figyelem a CI-t. A naplóhoz új PR-t nyitok.
+
+## Relay #190: F1 (`851d9ef`)
+A reviewernek igaza volt, és a hiba nagyobb volt, mint amit jelzett. Ugyanez a minta a már mergelt #180 egységtesztjében is megvolt, ott a redirect-cél a `169.254.169.254` és az `https://evil.example/` volt. Ha egy regresszió visszakapcsolná a redirect-követést, a teszt valódi kapcsolatot próbált volna nyitni, mielőtt elbukik. Az azonos hibaosztály miatt mindkettőt ebben a PR-ban javítottam, külön megjelölve.
+- **Integrációs teszt:** a redirect-cél egy második helyi szerver saját számlálóval, amelynek nullának kell maradnia. A teszt azt is ellenőrzi, hogy a redirect szó szerint visszakerül a hívóhoz.
+- **Egységteszt:** elkülönítő kliens, amely minden nem-loopback tárcsázást a névfeloldás előtt megtagad és számol.
+- **Bizonyíték hálózat nélkül:** a teszteket `--network none` konténerben futtattam. A jelenlegi kódon zöldek. A redirect-követés visszakapcsolásakor a számlálókon buknak (megtagadott tárcsázás a `169.254.169.254:80` és az `evil.example:443` felé, egy találat a helyi célon), és egyik hiba sem hálózati hiba.
+- **Kapuk:** `gofmt`, `vet`, `staticcheck`, `go test ./...` és `-race` tiszta, a `SYMBOLS.md` és a manifest változatlan.
+
+A PR-leírásba az F1 szakasz és a tizenharmadik mutáció is bekerül.
+
+## Factory #59: igazítás
+A GitHub merge-commit aláíratlan, ezért nem `update-branch`-et használtam. A naplót egyetlen új, aláírt commitként tettem a friss main (`8b48e5c`) tetejére (`d35e583`):
+- a szülője az `origin/main`, merge-commit nincs;
+- a fájl azonos a reviewelt `8824304`-gyel, a diff üres;
+- a signing metadata jelen van.
+
+A main közben a másik szál munkáit kapta (#57, #60). A `theads/`-hez nem nyúlt.
+
+**Döntés a push módjáról:** új ágra (`-r2`) készítettem, így nincs történet-átírás, és nem kell force-push. A #59 helyére új PR jön, a #59-et lezárnám. Ha inkább a #59-et tartanád meg, annak módja a `--force-with-lease` a régi ágra. Ez a saját ágad átírása, ezért nem ezt választottam.
+
+## A review sorrendje szerint tovább
+1. **#190:** F1 push után új CI és új review a friss HEAD-re. Mergelés csak ezek után, a main újraellenőrzésével.
+2. **#59 (vagy az új PR):** az igazított HEAD-re a tartalmi GO megerősítése, majd mergelés.
+3. **#58:** F1–F3. Az F3-hoz kellenek a #190 commitazonosítói.
+4. **Factory job tulajdonosi lezárása.**
+
+A #155 (privát P0) és a #162 (signing szerződés) változatlanul a produkciós jóváhagyást blokkolják.
+~~~~~
+
+### 2026-11-15 13:21 — Felhasználó
+
+~~~~~
+$ cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/CIC_Relay && git push origin feature/relay-hardening-integration-test
+~~~~~
+
+### 2026-11-15 13:21 — Claude
+
+~~~~~
+A Relay-push megvan. Frissítem a #190 leírását az F1 szakasszal és a tizenharmadik mutációval, ellenőrzöm, hogy a main nem mozdult-e, és figyelem a CI-t.
+~~~~~
+
+### 2026-11-15 13:22 — Claude
+
+~~~~~
+A #190 push megérkezett, a PR leírása az F1 szakasszal és a tizenharmadik mutációval frissítve. A HEAD `851d9ef`, a main nem mozdult (`7386565`), az ág tartalmazza, és `MERGEABLE`. A CI most fut (9 ellenőrzés), a háttérfigyelő jelezni fog.
+
+A #190-et nem mergelem. Az új HEAD-re új review kell, a korábbi `352b682`-re adott döntés nem érvényes. A merge a review és a teljes zöld CI után jön, a main újraellenőrzésével.
+
+## Még a te push-od vár
+A cic-factory napló új, aláírt, igazított commitja (`d35e583`) helyben van, de a második parancs még nem futott:
+
+```
+! cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push -u origin log/relay-issue-queue-01-session-r2
+```
+
+Utána új PR-t nyitok hozzá (a leírás kész), a #59-et pedig lezárnám, mint felváltottat. A tartalom a reviewelt `8824304`-gyel azonos, ezért a tartalmi GO érdemben átvihető, de a HEAD megváltozott, így formálisan a megerősítésed kell.
+
+## Sorrend
+1. A #190 CI-ja és review-ja az új HEAD-re, majd mergelés.
+2. Az új napló-PR igazítása és a review megerősítése, majd mergelés.
+3. A #58 F1–F3: az F3 a #190 commitazonosítóit használja.
+4. A factory job tulajdonosi lezárása.
+
+## Változatlanul
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+- **#162:** HOLD, a signing szerződésre vár.
+- **work-runtime patch:** külön, a bevezetés HOLD.
+- **Produkciós jóváhagyás:** HOLD.
+~~~~~
+
+### 2026-11-15 13:22 — Felhasználó
+
+~~~~~
+$ cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push -u origin log/relay-issue-queue-01-session-r2
+~~~~~
+
+### 2026-11-15 13:22 — Claude
+
+~~~~~
+Az új ág megérkezett. Megnyitom a PR-t a `main`-re (a leírás kész), előtte ellenőrzöm, hogy a factory main nem mozdult-e.
+~~~~~
+
+### 2026-11-15 13:22 — Claude
+
+~~~~~
+A PR megnyílt: **cic-factory #61**. A #59-et felváltottnak jelölöm, hogy ne maradjon két azonos tartalmú PR, ami véletlenül mergelődhet. A lezárás visszavonható.
+~~~~~
+
+### 2026-11-15 13:22 — Claude
+
+~~~~~
+A napló igazított PR-ja megnyílt: **cic-factory #61** (`d35e583`), merge nélkül. A #59-et felváltottként lezártam egy kommenttel, amely leírja, miért van új PR. A lezárás visszavonható, a #59-et bármikor újranyithatod.
+
+A #61 a friss main (`8b48e5c`) közvetlen gyereke, merge-commit nélkül, egyetlen fájllal. Az aláírási kapu ellenőrzése még fut, `MERGEABLE`. A tartalom a reviewelt `8824304`-gyel azonos. A tartalmi GO érdemben átvihető, de a HEAD megváltozott, ezért a megerősítésed kell.
+
+## Három nyitott PR
+| PR | HEAD | Állapot |
+|---|---|---|
+| Relay **#190** | `851d9ef` | CI fut, új review kell a HEAD-re |
+| Factory **#61** | `d35e583` | aláírási gate fut, tartalmi megerősítés kell |
+| Factory **#58** | `76db9bb` | HOLD, a gate bukik (F1), F1–F3 rendezése hátra |
+
+A #58 gate-je az F1 miatt bukik: a GitHub által generált tesztmerge-commit aláíratlan. Ezt a végleges tartalom új, aláírt commitja javítja a friss main tetején.
+
+## Sorrend
+1. **#190:** CI és review az új HEAD-re. Mergelés csak ezek után, a main újraellenőrzésével.
+2. **#61:** a tartalmi megerősítés után mergelés.
+3. **#58:** az F3-hoz a #190 commitazonosítói kellenek, ezért csak a #190 mergelése után jön. F3: hét mergelt PR, nyolc lezárt issue, javított táblázat, nyers mérési kimenetek. F1: a végleges tartalom friss, aláírt commitként a main tetején.
+4. **Factory job tulajdonosi lezárása.**
+
+## Változatlanul
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+- **#162:** HOLD, a signing szerződésre vár.
+- **work-runtime patch:** külön, a bevezetés HOLD.
+- **Produkciós jóváhagyás:** HOLD.
+~~~~~
+
+### 2026-11-15 13:24 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Review – #190 és #61
+Mindkét új HEAD-et ellenőriztem közvetlenül a GitHubon.
+PR    Ellenőrzött HEAD    Tartalmi döntés    CI
+Relay #190    851d9ef    GO    Folyamatban
+Factory #61    d35e583    GO    Folyamatban
+Factory #58    76db9bb    HOLD    F1–F3
+
+Relay #190 – F1 lezárva
+A javítás megfelelő, sőt túlmutat az eredeti review-kérésen:
+- Az integrációs teszt második lokális HTTP-szervert használ.
+- Külön számláló ellenőrzi a tiltott kérés elmaradását.
+- A korábbi unit tesztek is izolált hálózati klienst kaptak.
+- A tiltott cím feloldása előtt megtörténik az elutasítás.
+- A változtatás kizárólag tesztkódot érint.
+Nincs új merge-blokkoló lelet. A PR-leírásban a tizenkét mutációs futásra vonatkozó mondatot még tizenháromra kell pontosítani; ez nem blokkoló.
+Factory #61 – tartalmi azonosság igazolva
+A korábban jóváhagyott #59 és az új #61 dokumentumának Git blob azonosítója egyaránt:
+
+69320df29da20a49838620f870df19e92714f4bc
+
+A fájlok tartalmát is összehasonlítottam: bájtszinten azonosak. Az új commit tartalmazza az aláírási blokkot.
+
+A korábbi tartalmi és bizalmassági jóváhagyás átvihető az új HEAD-re.
+Végrehajtási döntés
+Mindkét PR mergelhető, amint a saját HEAD-jén teljesen zöld a CI, és a base változatlan.
+
+Utána következhet a #58 rendezése és a factory job lezárása.
+
+A produkciós biztonsági jóváhagyás változatlanul HOLD (#155, #162).
+</pasted_content id="1732">
+
+ mergeld amit lehet
+~~~~~
+
+### 2026-11-15 13:24 — Claude
+
+~~~~~
+Mindkét PR-t akkor mergelhetem, ha a saját HEAD-jén teljesen zöld a CI és a base változatlan. Előbb a #190 leírásában maradt „tizenkét” említést pontosítom (nem blokkoló, de a reviewer kérte), és megnézem mindkét PR állapotát.
+~~~~~
+
+### 2026-11-15 13:25 — Claude
+
+~~~~~
+Most még nem mergelhetek egyiket sem, a mergelés a CI vége után jön.
+
+| PR | HEAD (egyezik a reviewelttel) | CI | Base |
+|---|---|---|---|
+| Relay #190 | `851d9ef` | 13-ból 12 kész, hiba nincs, 1 függőben | `7386565`, változatlan, az ág tartalmazza |
+| Factory #61 | `d35e583` | egyetlen ellenőrzés (az aláírási gate) függőben | `8b48e5c`, változatlan |
+
+A #190 PR-leírásában a „tizenkét” mutációs említést tizenháromra pontosítottam, ahogy a reviewer kérte. Már nincs benne „twelve”.
+
+## Mi történik, ha a CI lefut
+Két háttérfigyelő fut, a #190-é és a #61-é. Mindkettő a saját HEAD-jén jelez, és a jelzés után **újra ellenőrzöm** a tényleges állapotot, nem a jelzésre hagyatkozom. Mergelek, ha:
+- az összes ellenőrzés kész és zöld (a `rust` a #190-nél, a gate a #61-nél),
+- a HEAD még a reviewelt (`851d9ef`, illetve `d35e583`),
+- a base változatlan (a Relay main `7386565`, a factory main `8b48e5c`).
+
+Ha a main közben mozdul, előbb igazítok és új CI kell. A factory-n az igazítás nem `update-branch`, hanem új aláírt commit, mert a GitHub merge-commitja aláíratlan és a kapu elutasítja.
+
+## Utána
+1. **#58 F1–F3:** az F3-hoz a #190 merge-commitja kell. Hét mergelt PR, nyolc lezárt issue, javított táblázat, nyers mérési kimenetek.
+2. **#58 végleges tartalom** friss, aláírt commitként az aktuális factory-main tetején.
+3. **A factory job tulajdonosi lezárása.**
+
+## Változatlanul
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+- **#162:** HOLD, a signing szerződésre vár.
+- **work-runtime patch:** külön, a bevezetés HOLD.
+- **Produkciós jóváhagyás:** HOLD.
+~~~~~
+
+### 2026-11-15 13:25 — Claude
+
+~~~~~
+A #61 figyelője lefutott. Mindkét PR tényleges állapotát újra ellenőrzöm, mielőtt bármit mergelek.
+~~~~~
+
+### 2026-11-15 13:25 — Claude
+
+~~~~~
+A #61 teljesíti a feltételeket: a HEAD a reviewelt, a base változatlan, a gate `SUCCESS`, `CLEAN`, a szülője a jelenlegi main. Mergelem. A #190-nél még egy ellenőrzés fut, azt nem.
+~~~~~
+
+### 2026-11-15 13:25 — Claude
+
+~~~~~
+A #190 figyelője lefutott, és az utolsó parancs szerint már nincs függő ellenőrzés. A teljes állapotot újra ellenőrzöm a merge előtt.
+~~~~~
+
+### 2026-11-15 13:26 — Claude
+
+~~~~~
+A #190 minden feltételt teljesít: a HEAD a reviewelt `851d9ef`, a base változatlan (`7386565`, az ág tartalmazza), mind a 13 ellenőrzés kész és zöld, `CLEAN`. Mergelem.
+~~~~~
+
+### 2026-11-15 13:26 — Claude
+
+~~~~~
+Mindkét PR mergelve van: a Relay **#190** (`e43f2a8`) és a cic-factory **#61** (`18e76ae`).
+
+## Mergelve
+| PR | Merge-commit | Ellenőrzés |
+|---|---|---|
+| Relay **#190** (integrációs regressziós teszt) | `e43f2a8` | a HEAD a reviewelt `851d9ef`, 13/13 CI zöld, a base változatlan |
+| Factory **#61** (beszélgetés-napló) | `18e76ae` | a HEAD a reviewelt `d35e583`, az aláírási gate zöld, a base változatlan |
+
+- **#190:** a merge-commit fája azonos a tesztelt `851d9ef` fájával, tehát a mainre pontosan az lett, amit a CI ellenőrzött. Az integrációs teszt most a main-ben van, ezért minden jövőbeli PR-nál fut.
+- **#61:** a mergelt naplófájl Git blob azonosítója `69320df…`, bájtra azonos a reviewelttel.
+
+## Állapot
+- **Relay main:** `e43f2a8`. Összesen 8 mergelt PR (#173, #176, #182, #180, #177, #179, #181, #190), 8 lezárt issue.
+- **Factory main:** `18e76ae`.
+- **A beszélgetés naplója** most a main-ben van, a #155 részleteinek kihagyásával, ahogy a fejléc jelzi.
+
+## Hátra
+A review sorrendje szerint a #58 következik, ami most már lezárható. A factory main mozdult (`18e76ae`), ezért a #58 tartalma friss, aláírt commitként kerül az új main tetejére.
+1. **F3:** a factory output frissítése: nyolc mergelt PR, nyolc lezárt issue, a javított #157 sor, a #190 és #61 azonosítói, az integrációs mérés nyers kimenetei (tartósan mentve) és a mutációs tábla.
+2. **F1:** a végleges tartalom új, aláírt commitként a friss main tetején, hogy a gate rendben legyen.
+3. **F2** teljesült: az integrációs teszt commitolva és mergelve, a nyers kimenetek és a mért fa azonossága rögzítve.
+4. **Új CI és tartalmi review**, majd a factory job tulajdonosi lezárása.
+
+Szólj, ha mehet a #58 véglegesítése.
+
+## Változatlanul
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+- **#162:** HOLD, a signing szerződésre vár.
+- **#185–#189, `meta.yaml`:** nyitva, tulajdonosi lezárásra.
+- **work-runtime patch:** külön, a bevezetés HOLD.
+- **Produkciós jóváhagyás:** HOLD, a #155 és a #162 rendezéséig.
+~~~~~
+
+### 2026-11-15 13:42 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**GO – mehet a cic-factory #58 véglegesítése.**
+
+Az F1–F3 elfogadási feltételei változatlanok.
+
+Két pontosítás:
+
+- A nyers mérési eredményeket a megfelelő commit- és tree-azonosítókhoz kell kötni, mind a 13 mutációs ellenpróbával együtt.
+- A `meta.yaml` végleges lezárása csak a #58 sikeres review-ja és mergelése után történjen.
+
+Push után kérem az új HEAD-et és a CI eredményét. A merge addig HOLD.
+
+A #155, #162 és #185–#189 külön munkacsomagban maradnak. A jelenlegi job lezárását nem blokkolják, a produkciós jóváhagyást azonban továbbra is HOLD-on tartjuk.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 13:43 — Claude
+
+~~~~~
+A #58 véglegesítésére GO. Az első lépés az F2 pontosítása: a 13 mutációs ellenpróbát újrafuttatom a **mergelt main fáján** (`e43f2a8`), hálózat nélküli konténerben, így a nyers kimenetek közvetlenül a merge-commit és fa azonosítójához köthetők. Előbb a fa exportja és a mutációs készlet bővítése a tizenharmadikkal.
+~~~~~
+
+### 2026-11-15 13:48 — Claude
+
+~~~~~
+Frissítem a #58 kimeneteit a végső állapotra (a #157 merge-eléséhez, a mérés kötéséhez).
+~~~~~
+
+### 2026-11-15 13:49 — Claude
+
+~~~~~
+A #58 véglegesítő tartalma kész és commitolva. A push még hátravan, mert azt neked kell futtatnod.
+
+- **Commit:** `c4fbda5`, a `feature/relay-issue-queue-01-final` ágon, a `main@18e76ae` tetején. A hook aláírási metaadatot írt bele. A `%G?` jelzése `N`, mert a helyi gpg-ellenőrzés nem ismeri a Vault-aláírást. A factory `verify-signatures` kapuja dönt róla, azt a CI mutatja meg.
+- **Mit tartalmaz:**
+  - A `queue-status.md` a nyolc mergelt PR-ral és a nyolc lezárt issue-val frissült (#157 a #181-gyel, `c5ae320`). A #190 szerepel, a #155 és a #162 nyitva és HOLD.
+  - Az `issue-157.md` ellentmondásai javítva.
+  - Az `integration-measurement.md` újraírva.
+  - Az `evidence/integration-regression/` alatt a nyers kimenetek (`00-baseline`, `M01…M13`, `summary.json`, `mutations.json`) és egy `PROVENANCE.txt` van. Az utóbbi köti őket a Relay `e43f2a8` commitjához, a tree-hez (`6b9cc314…`), a teszt blobjához (`5690d615…`) és a nyolc merge-commithoz. A futás `--network none` mellett ment.
+- **Mérés eredménye:** az alap zöld, és mind a 13 ellenpróba megbuktatja a tesztet.
+- **Nem szerepel bizonyítékként:** a korábbi egyszeri mérés. Annak nyers kimenete nem lett elmentve, ezt a `PROVENANCE.txt` kimondja.
+- **`meta.yaml`:** változatlan, a lezárás a #58 review-ja és mergelése után a tiéd.
+- **Ellenőrzés:** a tartalomban nincs #155-ös részlet, token, kulcs, személyes adat vagy privát útvonal. A commit-üzenetben nincs `Co-Authored-By`.
+
+A régi ágat (`76db9bb`) a `backup/relay-issue-queue-01-76db9bb` ág őrzi. Két út van a pusholásra:
+
+1. **Új PR, nincs force:**
+   `! cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push -u origin feature/relay-issue-queue-01-final`
+   Utána új PR nyílik, és a #58-at lezárjuk. A log-ágaknál is így csináltuk.
+2. **A #58 ágának felülírása:**
+   `! cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push --force-with-lease origin feature/relay-issue-queue-01-final:feature/relay-issue-queue-01`
+   Ez átírja a #58 ágát.
+
+Az elsőt ajánlom. Push után jelentem az új HEAD-et és a CI eredményét. A merge addig HOLD.
+~~~~~
+
+### 2026-11-15 13:52 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**Az 1. megoldást támogatom: új PR, force-push nélkül.**
+
+Az új mérés bizonyítási szempontból tisztább, mert nem hivatkozik elveszett nyers eredményekre.
+
+A további sorrend:
+
+1. Push az új feature ágra.
+2. Új PR megnyitása, a #58 lezárása felváltottként.
+3. Signing gate ellenőrzése.
+4. Független, HEAD-hez kötött review, mind a 13 ellenpróba és a provenance ellenőrzésével.
+5. Merge után a `meta.yaml` tulajdonosi lezárása.
+
+A `c4fbda5` tartalmi jóváhagyása a tényleges diff ellenőrzéséig **HOLD**.
+
+A produkciós jóváhagyás változatlanul HOLD.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 13:52 — Claude
+
+~~~~~
+Az 1. utat követem. A push neked van fenntartva, ezért ezt futtasd:
+
+```
+! cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push -u origin feature/relay-issue-queue-01-final
+```
+
+Amint a branch fent van, ezt csinálom:
+
+1. Megnyitom az új PR-t `main` alapra, és hivatkozom benne a #58-ra mint felváltottra. Az új PR bodyja angol lesz.
+2. A #58-ra írok egy "superseded by #N" kommentet. A #58-at nem zárom le, amíg nem szólsz.
+3. Megnézem a signing gate-et és a CI-t a `c4fbda5` HEAD-en. Jelentem a HEAD-et és az eredményt.
+
+A tartalmi jóváhagyás HOLD marad, amíg a review meg nem nézi a tényleges diffet. A merge és a `meta.yaml` lezárása a tiéd. A produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 13:55 — Felhasználó
+
+~~~~~
+$ cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push -u origin feature/relay-issue-queue-01-final
+~~~~~
+
+### 2026-11-15 13:58 — Claude
+
+~~~~~
+Az új PR a cic-factory #62: https://github.com/CentralInfraCore/cic-factory/pull/62
+
+- **HEAD:** `c4fbda502d00a121828e576d9106234b91dc014a`. Ez egyezik a lokális committal. A PR `MERGEABLE`, a base a `main`.
+- **CI:** a `gate` check `COMPLETED/SUCCESS`. Ez a signing gate-et is magában foglalja, a külön ellenőrzés nem fut. A zöld CI nem jóváhagyás.
+- **A #58:** kommentet írtam rá, hogy a #62 váltja fel. Nem zártam le, a lezárás a tiéd.
+- **Review:** a `c4fbda5` tartalmi jóváhagyása HOLD, amíg a független, HEAD-hez kötött review át nem nézi a tényleges diffet. Ebbe beletartozik mind a 13 ellenpróba és a `PROVENANCE.txt`.
+- **Merge:** HOLD. A `meta.yaml` lezárása a merge után a tiéd.
+- **Produkciós jóváhagyás:** HOLD. A #155 és a #162 külön munkacsomag.
+~~~~~
+
+### 2026-11-15 14:02 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Review – cic-factory #62
+Döntés: HOLD – három kisebb tartalmi korrekció szükséges. A mérési eredmények megfelelőek.
+
+Ellenőrzött HEAD: c4fbda502d00a121828e576d9106234b91dc014a
+Korábbi lelet    Eredmény
+F1 – aláírási kapu    CLOSED
+F2 – integrációs bizonyíték    CLOSED
+F3 – státusz és dokumentáció    PARTIAL
+
+CI gate: 43721602495 – SUCCESS.
+A mérés ellenőrzése
+Mind a 14 nyers tesztkimenetet ellenőriztem.
+- Baseline: PASS.
+- Mutációs ellenpróbák: 13/13 megfelelő teszthiba.
+- Fordítási vagy infrastruktúrahiba miatt bukó ellenpróba: 0.
+- A Relay tesztfájljának blobazonosítója egyezik a provenance-ban szereplő értékkel.
+- A korábbi, elveszett nyers mérés kizárása megfelelő.
+Új leletek
+F4 – P2: privát útvonal a meta.yaml fájlban.
+
+A config_dir mező abszolút, felhasználóspecifikus útvonalat tartalmaz. Ez ellentmond a bizalmassági ellenőrzés jelentésének. Publikálás előtt hordozható hivatkozásra kell cserélni.
+
+F5 – P3: elavult work-event státusz.
+
+A queue-status.md utolsó bekezdése szerint az esemény pending állapotban maradt. Az eseményt időközben sikeresen lezártuk. A jelentést ennek megfelelően frissíteni kell.
+
+F6 – P3: hiányos M13 összesítés.
+
+A summary.json hat bukó tesztet deklarál, de csak négyet sorol fel. A nyers kimenetben mind a hat megtalálható. Két integrációs tesztazonosító hiányzik az összesítésből.
+Végső értékelés
+A fejlesztési és mérési munkát elfogadom. Új Relay-mérés nem szükséges.
+
+A három dokumentációs korrekció után új aláírt commit, CI és rövid záró review következzen.
+
+A #58 felváltottként lezárható. A #62 merge-je és a job végleges lezárása addig HOLD.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 14:02 — Claude
+
+~~~~~
+A három korrekció megvan egy új aláírt commitban (`43f1266`), de a push még hátravan. Ezt futtasd:
+
+```
+! cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push origin feature/relay-issue-queue-01-final
+```
+
+- **F4:** a `meta.yaml` `config_dir` értéke `~/.claude-personal` lett, ahogy a többi job `meta.yaml`-jában is. A job könyvtárában már nincs `/home/` útvonal. Ez azt jelenti, hogy a `meta.yaml` mégsem maradt teljesen változatlan. Ez a reviewer kérése volt, és csak ezt az egy mezőt érinti. A `status` a lezáráskor továbbra is a tiéd.
+- **F5:** a `queue-status.md` utolsó bekezdése már azt írja, hogy a work event a megkerüléssel sikeresen lezárult. A javítópatch külön, a másik repóban van előkészítve, és nincs alkalmazva.
+- **F6:** a `summary.json` M13 bejegyzése most mind a 6 bukó tesztet listázza. A hiányzó kettő a `TestHardeningIntegration_Egress` és az almenete volt. Mind a 13 bejegyzést újra összevetettem a nyers kimenettel, és csak az M13 tért el. A javítást a `PROVENANCE.txt` egy `correction:` sorban rögzíti.
+
+Push után megvárom a CI-t, és jelentem az új HEAD-et. A záró review és a merge HOLD. A #58-at nem zártam le, mert a lezárás a tiéd.
+~~~~~
+
+### 2026-11-15 14:03 — Felhasználó
+
+~~~~~
+$ cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push origin feature/relay-issue-queue-01-final
+~~~~~
+
+### 2026-11-15 14:08 — Claude
+
+~~~~~
+A cic-factory #62 új HEAD-je `43f12661503dddbe37c7d1bd6138f25154f437df`, és a `gate` check `COMPLETED/SUCCESS` rajta. A signing gate ebben benne van.
+
+Az F4, F5 és F6 javítása ebben a commitban van. A tartalmuk az előző üzenetben szerepel. A zöld CI nem jóváhagyás.
+
+A záró review a `43f1266`-ra következik. A #62 merge-je, a #58 lezárása és a `meta.yaml` lezárása HOLD, és a tiéd. A produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 14:10 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Záró review – cic-factory #62
+Döntés: MERGE GO.
+
+Ellenőrzött HEAD: 43f12661503dddbe37c7d1bd6138f25154f437df
+Lelet    Állapot    Ellenőrzés
+F1 – Signing gate    CLOSED    CI SUCCESS
+F2 – Integrációs bizonyíték    CLOSED    13/13 ellenpróba
+F3 – Státusztábla    CLOSED    Aktualizálva
+F4 – Privát útvonal    CLOSED    A végleges fában nincs
+F5 – Work-event státusz    CLOSED    Lezárás dokumentálva
+F6 – M13 összesítés    CLOSED    Mind a hat tesztazonosító szerepel
+
+A 14 nyers tesztkimenet és a summary.json összehasonlítása során 0 eltérést találtam.
+- CI: 43722290511 – SUCCESS.
+- GitHub: MERGEABLE.
+- Új merge-blokkoló lelet: nincs.
+Megjegyzés: az F4-ben javított útvonal a korábbi commitban továbbra is megtalálható; a javítás nem történettörlés.
+Engedélyezett következő lépések
+1. #62 mergelése az ellenőrzött HEAD-en, változatlan base mellett.
+2. #58 lezárása felváltottként.
+3. A relay-issue-queue-01 job tulajdonosi lezárása.
+A fejlesztési munkacsomag lezárható. A produkciós jóváhagyás továbbra is HOLD.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 14:10 — Claude
+
+~~~~~
+A review MERGE GO-t ad, de ez nem kifejezett merge-kérés nekem, ezért a merge-et és a lezárásokat nem futtatom. A merge-parancs a jóváhagyott HEAD-hez van kötve, így csak az ellenőrzött commit mergelődik:
+
+```
+! gh pr merge 62 --repo CentralInfraCore/cic-factory --merge --match-head-commit 43f12661503dddbe37c7d1bd6138f25154f437df
+```
+
+Ha szeretnéd, hogy én futtassam, írd ki, hogy "mergeld te".
+
+A merge után a teendők:
+1. A #58 lezárása felváltottként (`gh api -X PATCH repos/CentralInfraCore/cic-factory/pulls/58 -f state=closed`). Ezt kérésre én is megcsinálom.
+2. A `relay-issue-queue-01` `meta.yaml` lezárása. Ez a tiéd.
+3. A thread-napló frissítése a merge utáni commitban. Ehhez előbb át kell néznem a tartalmát, és a push-ot ugyanúgy te futtatod.
+
+Az F4 megjegyzése érvényes: a korábbi útvonal a `c4fbda5`-ben a git-történetben megmarad. Ez a `~/.claude-personal` útvonal, nem titok, ezért nem javasolok történetátírást. A produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 14:10 — Felhasználó
+
+~~~~~
+$ gh pr merge 62 --repo CentralInfraCore/cic-factory --merge --match-head-commit 43f12661503dddbe37c7d1bd6138f25154f437df
+~~~~~
+
+### 2026-11-15 14:10 — Claude
+
+~~~~~
+A cic-factory #62 mergelve lett: `439bef60f04d425160ed49332c832c686f1265b2`, az ellenőrzött `43f1266` HEAD-en.
+
+A #58 még nyitva van. Szólj, ha én zárjam le felváltottként. A `relay-issue-queue-01` `meta.yaml` lezárása a tiéd. A produkciós jóváhagyás HOLD, és a #155 meg a #162 külön munkacsomag.
+~~~~~
+
+### 2026-11-15 14:11 — Felhasználó
+
+~~~~~
+zárd le a #58-at felváltottként
+~~~~~
+
+### 2026-11-15 14:11 — Claude
+
+~~~~~
+A #58-at lezártam felváltottként. A #62 kommentje már hivatkozik rá. A lezárási idő 2026-11-15T14:11:09Z.
+
+A `meta.yaml` lezárása a tiéd. A produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 14:11 — Felhasználó
+
+~~~~~
+frissítsd a thread-naplót
 ~~~~~
