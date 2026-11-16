@@ -1,0 +1,12 @@
+--- FAIL: TestEmbeddedAndInstalled_SameVerdictAndCapability
+    --- FAIL: TestEmbeddedAndInstalled_SameVerdictAndCapability/untrusted_chain
+    --- FAIL: TestEmbeddedAndInstalled_SameVerdictAndCapability/wrong_EKU
+--- FAIL: TestLoadModule_PKIVerification_WrongChain
+--- FAIL: TestLoadModule_PKIVerification_WrongEKU
+--- FAIL: TestLoadModule_RejectedSigner_LeavesNoModuleRegistered
+--- FAIL: TestLoadModule_SignerCertificate_Acceptable_And_Unacceptable
+    --- FAIL: TestLoadModule_SignerCertificate_Acceptable_And_Unacceptable/expired_signer
+    --- FAIL: TestLoadModule_SignerCertificate_Acceptable_And_Unacceptable/revoked_signer
+    --- FAIL: TestLoadModule_SignerCertificate_Acceptable_And_Unacceptable/signer_that_is_not_valid_yet
+--- FAIL: TestProd_ModuleSignedOutsideOperatorBundle_RejectedOnBothPaths
+    --- FAIL: TestProd_ModuleSignedOutsideOperatorBundle_RejectedOnBothPaths/signed_by_a_CA_outside_the_operator_bundle

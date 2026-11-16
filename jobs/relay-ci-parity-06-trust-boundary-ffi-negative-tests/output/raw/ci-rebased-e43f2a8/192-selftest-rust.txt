@@ -1,0 +1,5 @@
+2026-11-15T19:51:02.7967809Z OK   P1-rust  control: exit 0, line coverage 98.45%
+2026-11-15T19:51:02.7970423Z FAIL P1-rust  every test of the Rust workspace is disabled: exit 0, line coverage 4.97% (the gate's own floor is 90)
+2026-11-15T19:51:02.7973158Z OK   P2-rust  control: exit 0, 15 caught
+2026-11-15T19:51:02.7973889Z OK   P2-rust  a planted function whose tests assert nothing (missed mutants): exit 2, 15 missed
+2026-11-15T19:51:02.7974632Z OK   the checkout was not modified (git status before == after)

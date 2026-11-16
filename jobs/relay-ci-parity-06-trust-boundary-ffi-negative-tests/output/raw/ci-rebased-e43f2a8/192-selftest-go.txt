@@ -1,0 +1,5 @@
+2026-11-15T19:49:40.7310016Z OK   P1-go    control: exit 0, pkg/merkle: 98.3% (min 0%)
+2026-11-15T19:49:40.7310429Z FAIL P1-go    the test suite of pkg/merkle is weakened: exit 0, pkg/merkle: 0% (min 0%), marker missing
+2026-11-15T19:49:40.7310770Z OK   P2-go    control: exit 0, killed 23, timed out 3, lived 0, not covered 0; efficacy 100.00
+2026-11-15T19:49:40.7311265Z FAIL P2-go    a planted function whose tests assert nothing (surviving mutants): exit 0, killed 13, timed out 4, lived 9, not covered 0; efficacy 65.38
+2026-11-15T19:49:40.7311635Z OK   the checkout was not modified (git status before == after)

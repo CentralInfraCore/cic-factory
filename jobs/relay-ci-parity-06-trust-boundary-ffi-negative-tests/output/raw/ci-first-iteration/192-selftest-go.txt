@@ -1,0 +1,6 @@
+OK   P1-go    control: exit 0, pkg/merkle: 98.3% (min 0%)
+FAIL P1-go    the test suite of pkg/merkle is weakened: exit 0, pkg/merkle: 0% (min 0%), marker missing
+OK   P2-go    control: exit 0, killed 23, timed out 3, lived 0, not covered 0; efficacy 100.00
+FAIL P2-go    a planted function whose tests assert nothing (surviving mutants): exit 0, killed 14, timed out 3, lived 9, not covered 0; efficacy 65.38
+OK   the checkout was not modified (git status before == after)
+GATE SELF-TEST: A CONTROL OR A DEFECT DID NOT BEHAVE AS EXPECTED

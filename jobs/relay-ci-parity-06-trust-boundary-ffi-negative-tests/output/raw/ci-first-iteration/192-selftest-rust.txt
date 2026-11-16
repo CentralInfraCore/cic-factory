@@ -1,0 +1,6 @@
+OK   P1-rust  control: exit 0, line coverage 98.45%
+FAIL P1-rust  every test of the Rust workspace is disabled: exit 0, line coverage 4.97% (the gate's own floor is 90)
+OK   P2-rust  control: exit 0, 15 caught
+OK   P2-rust  a planted function whose tests assert nothing (missed mutants): exit 2, 15 missed
+OK   the checkout was not modified (git status before == after)
+GATE SELF-TEST: A CONTROL OR A DEFECT DID NOT BEHAVE AS EXPECTED

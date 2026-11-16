@@ -1,0 +1,6 @@
+FAILED tests/test_tools/test_quality_gate.py::test_check_tools_accepts_the_pinned_versions_and_names_them
+FAILED tests/test_tools/test_quality_gate.py::test_check_tools_rejects_a_modified_missing_unknown_or_unpinned_tool[coverage-go-tools0-TOOL_UNUSABLE-UNUSABLE]
+FAILED tests/test_tools/test_quality_gate.py::test_check_tools_rejects_a_modified_missing_unknown_or_unpinned_tool[mutation-go-tools5-TOOL_UNVERIFIABLE-UNVERIFIABLE]
+FAILED tests/test_tools/test_quality_gate.py::test_check_tools_rejects_a_modified_missing_unknown_or_unpinned_tool[coverage-go-tools7-TOOL_NOT_PINNED-UNVERIFIABLE]
+FAILED tests/test_tools/test_quality_gate.py::test_the_pins_agree_with_what_the_workflows_install
+======================== 5 failed, 548 passed in 35.13s ========================

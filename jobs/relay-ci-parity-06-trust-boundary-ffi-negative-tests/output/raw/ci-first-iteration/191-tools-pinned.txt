@@ -1,0 +1,18 @@
+43722012201 | go (chunk 0) | tools pinned: go=go1.26.11, gremlins=v0.6.0 h1:3G2ROO0I3q4bb5bxElQIUITTuEbl1iOfVYFqunGwrJI=
+43722012201 | go (chunk 1) | tools pinned: go=go1.26.11, gremlins=v0.6.0 h1:3G2ROO0I3q4bb5bxElQIUITTuEbl1iOfVYFqunGwrJI=
+43722012201 | go (chunk 2) | tools pinned: go=go1.26.11, gremlins=v0.6.0 h1:3G2ROO0I3q4bb5bxElQIUITTuEbl1iOfVYFqunGwrJI=
+43722012201 | go (chunk 3) | tools pinned: go=go1.26.11, gremlins=v0.6.0 h1:3G2ROO0I3q4bb5bxElQIUITTuEbl1iOfVYFqunGwrJI=
+43722012201 | go (chunk 4) | tools pinned: go=go1.26.11, gremlins=v0.6.0 h1:3G2ROO0I3q4bb5bxElQIUITTuEbl1iOfVYFqunGwrJI=
+43722012201 | go (chunk 5) | tools pinned: go=go1.26.11, gremlins=v0.6.0 h1:3G2ROO0I3q4bb5bxElQIUITTuEbl1iOfVYFqunGwrJI=
+43722012201 | plan | tools pinned: cargo-mutants=27.1.0, rustc=1.96.1
+43722012201 | rust (shard 0/8) | tools pinned: cargo-mutants=27.1.0, rustc=1.96.1
+43722012201 | rust (shard 1/8) | tools pinned: cargo-mutants=27.1.0, rustc=1.96.1
+43722012201 | rust (shard 2/8) | tools pinned: cargo-mutants=27.1.0, rustc=1.96.1
+43722012201 | rust (shard 3/8) | tools pinned: cargo-mutants=27.1.0, rustc=1.96.1
+43722012201 | rust (shard 4/8) | tools pinned: cargo-mutants=27.1.0, rustc=1.96.1
+43722012201 | rust (shard 5/8) | tools pinned: cargo-mutants=27.1.0, rustc=1.96.1
+43722012201 | rust (shard 6/8) | tools pinned: cargo-mutants=27.1.0, rustc=1.96.1
+43722012201 | rust (shard 7/8) | tools pinned: cargo-mutants=27.1.0, rustc=1.96.1
+43722012218 | coverage | tools pinned: go=go1.26.11
+43722012218 | rust | tools pinned: cargo-llvm-cov=0.9.1, rustc=1.96.1
+43722012230 | object-evidence | tools TOOLS_PINNED

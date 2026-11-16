@@ -1,0 +1,4 @@
+FAILED   Unmutated baseline in 17s build + 0s test
+test tests::a_panic_in_the_core_is_contained_and_reported_as_a_rejection ... FAILED
+---- tests::a_panic_in_the_core_is_contained_and_reported_as_a_rejection stdout ----
+thread 'tests::a_panic_in_the_core_is_contained_and_reported_as_a_rejection' (4844) panicked at ffi/src/lib.rs:1181:17:

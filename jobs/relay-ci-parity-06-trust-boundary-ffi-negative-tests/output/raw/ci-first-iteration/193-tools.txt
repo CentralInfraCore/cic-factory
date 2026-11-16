@@ -1,0 +1,19 @@
+-- job 132835938602
+##[error]a measuring tool is UNUSABLE: the result of this job must not be accepted
+##[error]Process completed with exit code 1.
+[TOOL_UNUSABLE] 'go' was 'go1.26.11', the pinned version is 'go1.26.10'
+-- job 132835848721
+##[error]Process completed with exit code 1.
+   findings: [TOOL_UNUSABLE] 'go' was 'go1.26.11', the pinned version is 'go1.26.10'
+tools UNUSABLE
+-- job 132835848980
+##[error]a measuring tool is UNUSABLE: the result of this job must not be accepted
+##[error]Process completed with exit code 1.
+[TOOL_UNUSABLE] 'go' was 'go1.26.11', the pinned version is 'go1.26.10'
+-- job 132836453555
+##[error]a measuring tool is UNUSABLE: the result of this job must not be accepted
+##[error]Process completed with exit code 1.
+[TOOL_UNUSABLE] 'go' was 'go1.26.11', the pinned version is 'go1.26.10'
+-- job 132837808209
+##[error]go: missing chunk report(s): [0, 1, 2, 3, 4, 5] of 6
+##[error]Process completed with exit code 1.
