@@ -1,0 +1,3 @@
+2026-11-16T21:22:41.3047749Z ##[error][BOOTSTRAP_REFUSED] the base already has the pin reference mechanism: the bootstrap is not available
+2026-11-16T21:20:00.7568127Z ##[error][BOOTSTRAP_REFUSED] the base already has the pin reference mechanism: the bootstrap is not available
+2026-11-16T21:25:45.0963166Z ##[error][BOOTSTRAP_REFUSED] the base already has the pin reference mechanism: the bootstrap is not available
