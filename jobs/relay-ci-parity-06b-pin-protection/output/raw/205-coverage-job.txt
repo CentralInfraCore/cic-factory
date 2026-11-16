@@ -1,0 +1,3 @@
+2026-11-16T22:01:42.4542888Z pin reference: UNCHANGED reference-commit=b8a132c2b7c53adf283fc621ccc8ad9a55d42e66 reference-digest=sha256:cd3ecb0ee396a131b400bcfbdc3872c6eb74906841d6fd4ef9ae0be392807ac8 head-digest=sha256:cd3ecb0ee396a131b400bcfbdc3872c6eb74906841d6fd4ef9ae0be392807ac8
+2026-11-16T22:01:42.5285288Z pin reference: UNCHANGED reference-commit=b8a132c2b7c53adf283fc621ccc8ad9a55d42e66 reference-digest=sha256:cd3ecb0ee396a131b400bcfbdc3872c6eb74906841d6fd4ef9ae0be392807ac8
+2026-11-16T22:01:42.5286022Z [TOOL_UNUSABLE] 'go' was 'go1.26.10', the pinned version is 'go1.26.11'

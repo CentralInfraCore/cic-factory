@@ -1,0 +1,2 @@
+2026-11-16T22:05:05.2309452Z go version go1.26.10 linux/amd64
+2026-11-16T22:05:05.3929159Z tools pinned (coverage-go): go=go1.26.10

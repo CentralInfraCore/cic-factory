@@ -1,0 +1,5 @@
+manifest-check	run=43965906937	attempt=1	success
+gate-selftest	run=43965907138	attempt=3	success
+verify	run=43965906954	attempt=3	success
+object-evidence	run=43965907018	attempt=3	success
+mutation-pr	run=43965906932	attempt=3	success

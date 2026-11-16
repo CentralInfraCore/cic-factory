@@ -1,0 +1,60 @@
+# reachability of the pin reference at 6f7aabb282f26d882713c1fed9c559cccf89dcd8 (git grep on the PR head)
+## the action is called by (file:line)
+.github/workflows/gate-selftest.yml:58:        uses: ./.github/actions/measurement-reference
+.github/workflows/gate-selftest.yml:106:        uses: ./.github/actions/measurement-reference
+.github/workflows/mutation-pr.yml:65:        uses: ./.github/actions/measurement-reference
+.github/workflows/mutation-pr.yml:189:        uses: ./.github/actions/measurement-reference
+.github/workflows/mutation-pr.yml:246:        uses: ./.github/actions/measurement-reference
+.github/workflows/mutation.yml:71:        uses: ./.github/actions/measurement-reference
+.github/workflows/mutation.yml:110:        uses: ./.github/actions/measurement-reference
+.github/workflows/nightly.yml:139:        uses: ./.github/actions/measurement-reference
+.github/workflows/nightly.yml:262:        uses: ./.github/actions/measurement-reference
+.github/workflows/nightly.yml:315:        uses: ./.github/actions/measurement-reference
+.github/workflows/object-evidence.yml:91:        uses: ./.github/actions/measurement-reference
+.github/workflows/verify.yml:92:        uses: ./.github/actions/measurement-reference
+.github/workflows/verify.yml:304:        uses: ./.github/actions/measurement-reference
+## the reference is consumed by (file:line of the MR_GATE/MR_PINS use)
+.github/workflows/gate-selftest.yml:62:          python3 "${MR_GATE:?the measurement reference step did not run}" check-tools \
+.github/workflows/gate-selftest.yml:63:            --pins "${MR_PINS:?}" --reference "${MR_RECORD:?}" \
+.github/workflows/gate-selftest.yml:110:          python3 "${MR_GATE:?the measurement reference step did not run}" check-tools \
+.github/workflows/gate-selftest.yml:111:            --pins "${MR_PINS:?}" --reference "${MR_RECORD:?}" \
+.github/workflows/mutation-pr.yml:70:          python3 "${MR_GATE:?the measurement reference step did not run}" check-tools \
+.github/workflows/mutation-pr.yml:71:            --pins "${MR_PINS:?}" --reference "${MR_RECORD:?}" \
+.github/workflows/mutation-pr.yml:193:          python3 "${MR_GATE:?the measurement reference step did not run}" check-tools \
+.github/workflows/mutation-pr.yml:194:            --pins "${MR_PINS:?}" --reference "${MR_RECORD:?}" \
+.github/workflows/mutation-pr.yml:250:          python3 "${MR_GATE:?the measurement reference step did not run}" check-tools \
+.github/workflows/mutation-pr.yml:251:            --pins "${MR_PINS:?}" --reference "${MR_RECORD:?}" \
+.github/workflows/mutation.yml:75:          python3 "${MR_GATE:?the measurement reference step did not run}" check-tools \
+.github/workflows/mutation.yml:76:            --pins "${MR_PINS:?}" --reference "${MR_RECORD:?}" \
+.github/workflows/mutation.yml:114:          python3 "${MR_GATE:?the measurement reference step did not run}" check-tools \
+.github/workflows/mutation.yml:115:            --pins "${MR_PINS:?}" --reference "${MR_RECORD:?}" \
+.github/workflows/nightly.yml:144:          python3 "${MR_GATE:?the measurement reference step did not run}" check-tools \
+.github/workflows/nightly.yml:145:            --pins "${MR_PINS:?}" --reference "${MR_RECORD:?}" \
+.github/workflows/nightly.yml:266:          python3 "${MR_GATE:?the measurement reference step did not run}" check-tools \
+.github/workflows/nightly.yml:267:            --pins "${MR_PINS:?}" --reference "${MR_RECORD:?}" \
+.github/workflows/nightly.yml:319:          python3 "${MR_GATE:?the measurement reference step did not run}" check-tools \
+.github/workflows/nightly.yml:320:            --pins "${MR_PINS:?}" --reference "${MR_RECORD:?}" \
+.github/workflows/object-evidence.yml:104:            --tool-pins "${MR_PINS:?the measurement reference step did not run}" | tee "$T/verify.txt"
+.github/workflows/object-evidence.yml:121:            --tool-pins "${MR_PINS:?the measurement reference step did not run}" | tee "$T/seeded-defects.tx
+.github/workflows/verify.yml:96:          python3 "${MR_GATE:?the measurement reference step did not run}" check-tools \
+.github/workflows/verify.yml:97:            --pins "${MR_PINS:?}" --reference "${MR_RECORD:?}" \
+.github/workflows/verify.yml:308:          python3 "${MR_GATE:?the measurement reference step did not run}" check-tools \
+.github/workflows/verify.yml:309:            --pins "${MR_PINS:?}" --reference "${MR_RECORD:?}" \
+## the functions and their callers in scripts/quality_gate.py
+scripts/quality_gate.py:793:def find_approval(
+scripts/quality_gate.py:806:def pin_reference(
+scripts/quality_gate.py:879:            base_script.returncode == 0 and b"pin-reference" in base_script.stdout
+scripts/quality_gate.py:905:                    app = find_approval(
+scripts/quality_gate.py:934:def cmd_pin_reference(a: argparse.Namespace) -> int:
+scripts/quality_gate.py:935:    rec = pin_reference(
+scripts/quality_gate.py:954:def verify_reference_record(record_path: str, pins_path: str) -> dict:
+scripts/quality_gate.py:994:        ref = verify_reference_record(a.reference, a.pins)
+scripts/quality_gate.py:1073:    p = sub.add_parser("pin-reference")
+scripts/quality_gate.py:1090:    p.set_defaults(fn=cmd_pin_reference)
+## the action resolves the reference (file:line)
+.github/actions/measurement-reference/action.yml:28:          python3 scripts/quality_gate.py pin-reference --mode push --head-sha "$SELF_SHA" --out "
+.github/actions/measurement-reference/action.yml:36:             && grep -q "pin-reference" "$REF/quality_gate.py"; then
+.github/actions/measurement-reference/action.yml:47:          python3 "$GATE" pin-reference --mode "$MODE" --head-sha "$HEAD_SHA" --base-ref "$BASE_RE
+.github/actions/measurement-reference/action.yml:51:          echo "MR_GATE=$GATE"
+.github/actions/measurement-reference/action.yml:52:          echo "MR_PINS=$REF/measurement-tools.json"
+.github/actions/measurement-reference/action.yml:53:          echo "MR_RECORD=$REF/record.json"
