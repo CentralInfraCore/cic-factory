@@ -1,0 +1,3 @@
+OK   untouched copy: the tests pass
+OK   tooth 'chain verification skipped': the test fails as it must (expired_signer)
+OK   tooth 'CRLs not passed to the verification': the test fails as it must (revoked_signer)

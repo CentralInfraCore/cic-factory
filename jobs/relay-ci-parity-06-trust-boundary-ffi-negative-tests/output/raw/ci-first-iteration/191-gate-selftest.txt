@@ -1,0 +1,12 @@
+OK   P1-rust  control: exit 0, line coverage 98.45%
+OK   P1-rust  every test of the Rust workspace is disabled: exit 1, line coverage 4.97% (the gate's own floor is 90)
+OK   P2-rust  control: exit 0, 15 caught
+OK   P2-rust  a planted function whose tests assert nothing (missed mutants): exit 2, 15 missed
+OK   the checkout was not modified (git status before == after)
+GATE SELF-TEST: every control green and every defect rejected by the real gate
+OK   P1-go    control: exit 0, pkg/merkle: 98.3% (min 97%)
+OK   P1-go    the test suite of pkg/merkle is weakened: exit 1, pkg/merkle: 0% (min 97%), 'FAIL: coverage below threshold'
+OK   P2-go    control: exit 0, killed 23, timed out 3, lived 0, not covered 0; efficacy 100.00
+OK   P2-go    a planted function whose tests assert nothing (surviving mutants): exit 1, killed 14, timed out 3, lived 9, not covered 0; efficacy 65.38
+OK   the checkout was not modified (git status before == after)
+GATE SELF-TEST: every control green and every defect rejected by the real gate

@@ -1,0 +1,4 @@
+2026-11-16T20:13:35.4242855Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-16T20:13:35.4881144Z test tests::a_panic_in_the_core_is_contained_and_reported_as_a_rejection ... FAILED
+2026-11-16T20:13:35.5212567Z thread 'tests::a_panic_in_the_core_is_contained_and_reported_as_a_rejection' (11644) panicked at ffi/src/lib.rs:1181:17:
+2026-11-16T20:13:35.5215068Z test result: FAILED. 29 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s

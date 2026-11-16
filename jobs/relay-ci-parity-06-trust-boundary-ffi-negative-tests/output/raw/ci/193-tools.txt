@@ -1,0 +1,14 @@
+-- job 132848158440
+##[error]a measuring tool is UNUSABLE: the result of this job must not be accepted
+[TOOL_UNUSABLE] 'go' was 'go1.26.11', the pinned version is 'go1.26.10'
+-- job 132848158517
+   findings: [TOOL_UNUSABLE] 'go' was 'go1.26.11', the pinned version is 'go1.26.10'
+tools UNUSABLE
+-- job 132848157694
+##[error]a measuring tool is UNUSABLE: the result of this job must not be accepted
+[TOOL_UNUSABLE] 'go' was 'go1.26.11', the pinned version is 'go1.26.10'
+-- job 132848780375
+##[error]a measuring tool is UNUSABLE: the result of this job must not be accepted
+[TOOL_UNUSABLE] 'go' was 'go1.26.11', the pinned version is 'go1.26.10'
+-- job 132850197274
+##[error]go: missing chunk report(s): [0, 1, 2, 3, 4, 5] of 6

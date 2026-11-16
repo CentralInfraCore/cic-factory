@@ -1,0 +1,5 @@
+OK   untouched copy: 30 tests pass
+OK   tooth 'panic backstop removed': a_panic_in_the_core_is_contained_and_reported_as_a_rejection fails as it must
+OK   tooth 'empty-result check removed': an_empty_core_result_is_a_rejection_not_an_empty_buffer fails as it must
+OK   tooth 'null pointer guard removed': the test process crashed (a_null_pointer_with_a_nonzero_length_is_read_as_empty_and_never_dereferenced cannot pass)
+OK   tooth 'out_len not zeroed up front': every_rejection_path_leaves_out_len_at_zero fails as it must

@@ -1,0 +1,4 @@
+FAILED tests/test_tools/test_quality_gate.py::test_check_tools_accepts_the_pinned_versions_and_names_them
+FAILED tests/test_tools/test_quality_gate.py::test_check_tools_rejects_a_modified_missing_unknown_or_unpinned_tool[go=go1.26.10-TOOL_UNUSABLE-UNUSABLE]
+FAILED tests/test_tools/test_quality_gate.py::test_the_pins_agree_with_what_the_workflows_install
+======================== 3 failed, 514 passed in 25.05s ========================

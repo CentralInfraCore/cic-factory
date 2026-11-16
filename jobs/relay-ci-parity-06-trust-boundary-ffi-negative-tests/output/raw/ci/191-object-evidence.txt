@@ -1,0 +1,7 @@
+tools TOOLS_PINNED
+OK   P8.a  a measuring tool's version is recorded as `unknown` (re-sealed)  -> L1=FAIL codes=['TOOL_UNKNOWN']
+OK   P8.b  a pinned tool was a different, known version (re-sealed)  -> TOOLS=UNUSABLE codes=['TOOL_UNUSABLE']
+OK   P8.c  a pinned tool is missing from the record (re-sealed)  -> TOOLS=UNVERIFIABLE codes=['TOOL_UNVERIFIABLE']
+OK   P8.d  the record names a tool that is not pinned (re-sealed)  -> TOOLS=UNVERIFIABLE codes=['TOOL_NOT_PINNED']
+OK   P8.e  the verification is a quality verdict but no pin configuration was given  -> TOOLS=UNVERIFIABLE codes=['TOOL_PINS_MISSING']
+SEEDED DEFECTS: every control honest and every defect caught

@@ -1,0 +1,1 @@
+2026-11-15T19:50:03.9722778Z [TOOL_UNUSABLE] 'go' was 'go1.26.11', the pinned version is 'go1.26.10'

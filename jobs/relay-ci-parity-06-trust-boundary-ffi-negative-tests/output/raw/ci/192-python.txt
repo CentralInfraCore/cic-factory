@@ -1,0 +1,7 @@
+FAILED tests/test_tools/test_baseline_guard.py::test_lowering_efficacy_fails
+FAILED tests/test_tools/test_baseline_guard.py::test_lowering_mutant_coverage_fails
+FAILED tests/test_tools/test_baseline_guard.py::test_cli_exit_codes
+FAILED tests/test_tools/test_gate_selftest.py::test_the_go_coverage_case_is_green_on_the_real_gate_and_goes_red_when_the_gate_is_weakened
+FAILED tests/test_tools/test_gremlins_gate.py::test_thresholds_default_and_baseline
+FAILED tests/test_tools/test_quality_gate.py::test_gremlins_gate_reports_a_failing_and_a_garbled_package
+======================== 6 failed, 547 passed in 21.16s ========================
