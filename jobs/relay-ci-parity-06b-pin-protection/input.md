@@ -13,7 +13,7 @@ A sorozat helye (`ref/issue-169-body.md`): a PR-07 (FULL/DIFF integráció, nigh
 ## Boot sequence
 
 1. `mcp__cic-graph__kb_status`, majd `search_nodes` az `axioms`, `symbols`, `contract`, `limits` fogalmakra. Ha a KB nem elérhető (a PR-06-ban az `Invalid request parameters` hibát adta), mondd ki a jelentésben; a repó fájljai a forrás.
-2. Olvasd el: `ref/issue-195-body.md`, `ref/pr06-report.md` (3. szakasz: A.8 és a korlátok; 5c.), `ref/owner-decisions-pr06-2026-11-15.md`, `ref/issue-169-body.md` („Development rules”, „Acceptance criteria”).
+2. Olvasd el: `ref/issue-195-body.md`, `ref/pr06-report.md` (3. szakasz: A.8 és a korlátok; 5c.), `ref/owner-decisions-pin-protection-2026-11-16.md` (a spec review F1/F2), `ref/owner-decisions-pr06-2026-11-15.md`, `ref/issue-169-body.md` („Development rules”, „Acceptance criteria”).
 3. Friss klón: `$WORKSPACE/CIC_Relay/` (ág `main`). **Rögzítsd a commit-azonosítót**; a `main` tartalmazza a `c18fef2`-t, különben állj meg. **Ha a `workspace/` alatt már van `CIC_Relay*` mappa, ne azt használd** (egy ismeretlen háttérfolyamat `.yaml` kísérőfájlokat generál a `.py`/`.go` fájlok mellé, és a klónt piszkossá teszi; a `yamllint` ezek miatt bukott): új klón, **explicit útvonalas `git add`, soha nem `-A`**, a `git status --short | wc -l` rögzítve a klónozás után, a mérések előtt és a végén.
 4. **Kiindulási állapot (olvasd, ne higgy a specnek):** `scripts/quality_gate.py` (`check-tools`, `load_tool_pins`, `tool_pin_findings`), `.measurement-tools.json`, `scripts/baseline_guard.py`, `.github/workflows/mutation-pr.yml` (`baseline-guard` job, `BASE_SHA`), és a **minden** `check-tools` hívás helye: `grep -rn "check-tools" .github scripts | grep -v "_test.go" | grep -v "/test_"` (a Go- és Python-tesztfájlok kizárva). Rögzítsd a hívóhelyek számát és eseményeit (`pull_request`, `push`, `schedule`, `workflow_dispatch`): a bázis-commit csak PR-nél van; a többi eseménynél a referencia **a vizsgált commit maga**, és ezt a jelentésnek ki kell mondania.
 5. **Reachability:** egy szimbólumról csak akkor mondd, hogy production-hívott/bekötött, ha megvan a hívási út `file:line`-nal (`grep -rn <szimbólum> --include=*.py --include=*.yml --include=*.go . | grep -v "_test.go" | grep -v "/test_"`). A `szimbólum létezik` ≠ `a workflow hívja`.
@@ -30,13 +30,30 @@ A sorozat helye (`ref/issue-169-body.md`): a PR-07 (FULL/DIFF integráció, nigh
 
 **A. A referencia a bázis-commitból (acceptance 1).** A `.measurement-tools.json` (`tools` és `surfaces`) **a pull request bázis-commitjából** olvasódjon, ne az ellenőrzött fából — ugyanazzal a mintával, mint a `baseline-guard`. Minden mérő felület (a #195 és a PR-06 jelentés szerinti `check-tools --surface …` hívások, az `object-evidence` verifier) ezt használja. A pin-fájl **a PR-ben szereplő változata nem referencia**, hanem **vizsgált tárgy**: eltérése a bázistól külön, látható eredmény. Push/schedule eseménynél a referencia a vizsgált commit; ezt a jelentés rögzíti, nem csendes.
 
-**B. Szándékos pin-frissítés útja (acceptance 2).** Legyen **külön, látható, tulajdonosi jóváhagyású** út, hogy egy jogos eszközfrissítés (pl. Go-verzióemelés) lehetséges maradjon: a pin-módosítás a PR-ben **megállítja** a zöld utat (piros vagy „owner approval required” állapot), amíg a jóváhagyás nincs meg. **A jóváhagyás mechanizmusa tulajdonosi döntés** (lásd lent); a job a döntött mechanizmust implementálja, nem választ helyette. Egy tool-bump és egy manipuláció ugyanabban az eredményben **nem lehet megkülönböztethetetlen**.
+**B. Szándékos pin-frissítés útja (acceptance 2) — atomi toolchain-update (review F1).** Egy jogos eszközfrissítés (pl. Go-verzióemelés) **egyetlen, atomi változás**, nem két külön PR: a **kizárólag pin-fájlt módosító külön PR hibás út**, mert az új pin és a (még régi) telepítési konfiguráció eltérése miatt a meglévő kapuk helyesen bukhatnak. A szabályos frissítés tartalma együtt:
+1. a pin módosítása (`.measurement-tools.json`);
+2. a hozzá tartozó **telepítési konfiguráció** változása (workflow `setup-go`, telepítési lépések);
+3. a **tulajdonosi jóváhagyás**, amely az **egzakt PR-HEAD-hez és az egzakt pin-digesthez** kötött;
+4. az **új eszközkészlettel elvégzett teljes ellenőrzés** (minden mérő felület zöld az új pinekkel).
 
-**C. Negatív bizonyíték (acceptance 3).** **Szándékosan hibás, nem mergelendő draft PR**, amely a pin-fájlt **és** az eszközbeállítást együtt módosítja úgy, hogy a PR-ben konzisztens (pl. a pin és a `setup-go` verzió együtt változik), és amelyet az új védelem **elutasít**. Mellé **pozitív kontroll** (a változatlan pin zöld) és **ellenpróba** (a védelem nélküli állapoton ugyanez a PR zöld lenne: R-teszt). Mérd le, hogy a PR-06 #193 esete (a pin eltér a beállítástól) továbbra is a saját okából piros.
+A jóváhagyás **nem kapuk megkerülése**: a minőségi kapuk (küszöbök, baseline-ok, mutációs és lefedettségi ellenőrzések) a frissítő PR-en is **teljes erővel futnak**; a jóváhagyás csak azt mondja, hogy a pin és a setup változása szándékos. **Új push esetén a jóváhagyás érvényét veszti** (a HEAD vagy a digest megváltozott), új jóváhagyás kell. A frissítő PR **külön, célzott, aláírt toolchain-update PR** (a review javaslata): csak a pin, a hozzá tartozó setup és a jóváhagyás szerepel benne, más változás nem. A jóváhagyás **technikai formája** (pl. a HEAD-hez és digesthez kötött, tulajdonos által kiadott jóváhagyás-rekord) tulajdonosi döntés alatt áll (lásd lent); a job a döntött formát implementálja. Egy tool-bump és egy manipuláció ugyanabban az eredményben **nem lehet megkülönböztethetetlen**.
+
+**C. Negatív bizonyíték (acceptance 3).** Nemcsak a **pin-fájlt**, hanem az **ellenőrző scriptet és a paramétereket** is védeni kell: a manipuláló PR megváltoztathatja azt is, **melyik script** és **milyen argumentumokkal** értékel. Szándékosan hibás, nem mergelendő draft PR(ek) a lenti **kötelező negatív esetekre** (táblázat), mindegyik **pozitív kontrollal** (a változatlan állapot zöld) és **ellenpróbával** (a védelem nélküli állapoton ugyanez a PR zöld lenne: R-teszt). Mérd le, hogy a PR-06 #193 esete (a pin eltér a beállítástól) továbbra is a saját okából piros.
+
+| Manipuláció | Elvárt eredmény |
+|---|---|
+| Pin és setup **együttes** módosítása jóváhagyás nélkül | **DENY** |
+| Kötelező mérőeszköz **eltávolítása** (a pinből vagy a `surfaces`-ből) | **DENY** |
+| **Hamis referencia-SHA** átadása a checknek (argumentum, env, fájl) | **DENY** |
+| **Ellenőrző script gyengítése** (a pin-/gate-script módosítása) | **DENY**, vagy **dokumentált és reprodukált védelmi rés** |
+| **Workflow-lépés eltávolítása** (a `check-tools` hívás törlése) | **dokumentált, reprodukált védelmi rés** (a teljes védelem külön, repository-szintű feladat) |
+| **Jóváhagyás utáni új push** | **új jóváhagyás szükséges** (a régi érvényét veszti) |
+
+A „dokumentált védelmi rés” azt jelenti: **valós futással reprodukálva** (negatív proof PR), nem következtetéssel. A rés nem hiba, ha pontosan ki van mondva; az **elhallgatott** rés az.
 
 **D. A check eredménye rögzíti a referenciát (acceptance 4).** A kimenet és a (PR-08-ig csak szöveges) rekord mondja ki: **melyik referencia-commitot** és **melyik digestet** (a pin-fájl SHA-256-ja) használta. Hiányzó vagy olvashatatlan referencia **fail closed**, nem csendes visszaesés a fabeli fájlra.
 
-**E. Korlátok kimondása.** Állapítsd meg és mondd ki, **mit nem véd** a megoldás. Különösen: a `pull_request` eseménynél a **workflow-fájl maga is az ellenőrzött PR-ből jön**, így a PR a `check-tools` lépést ki is törölheti vagy más argumentumokkal hívhatja; a `baseline-guard` ugyanezt a korlátot hordozza (a script a bázisból fut, a hívása a PR workflow-jában van). Mérd le (izolált másolaton vagy negatív proof PR-rel), hogy ez ma fennáll-e, és **ne állítsd, hogy a pin-védelem a manipulációt egészében megszünteti**. A teljes megoldás (required workflow / repository ruleset / `pull_request_target` a bázis workflow-jával) **repó-beállítás és biztonsági döntés**, nem ennek a jobnak a hatóköre: rögzítsd mint ajánlott következő lépést.
+**E. Korlátok kimondása (a fenti tábla utolsó két esetének mérése).** Állapítsd meg és mondd ki, **mit nem véd** a megoldás. Különösen: a `pull_request` eseménynél a **workflow-fájl maga is az ellenőrzött PR-ből jön**, így a PR a `check-tools` lépést ki is törölheti vagy más argumentumokkal hívhatja; a `baseline-guard` ugyanezt a korlátot hordozza (a script a bázisból fut, a hívása a PR workflow-jában van). Mérd le (izolált másolaton vagy negatív proof PR-rel), hogy ez ma fennáll-e, és **ne állítsd, hogy a pin-védelem a manipulációt egészében megszünteti**. A teljes megoldás (required workflow / repository ruleset / `pull_request_target` a bázis workflow-jával) **repó-beállítás és biztonsági döntés**, nem ennek a jobnak a hatóköre: rögzítsd mint ajánlott következő lépést.
 
 ## Nem része a jobnak (ne csináld)
 
@@ -52,11 +69,14 @@ A sorozat helye (`ref/issue-169-body.md`): a PR-07 (FULL/DIFF integráció, nigh
 - A pin-fájl hash-ét a **PR fájljából** számolod és azt nevezed referenciának: ez a mostani rés.
 - A védelem csak akkor zöld, ha a pin **nem változik**, de a megváltozott pin nem jelent hibát: ez nem védelem, hanem a változás hiányának jelzése.
 - A negatív PR olyan, amelyet bármely mostani check is elutasítana (pl. a pin eltér a setuptól): ez nem bizonyítja az új védelmet.
+- A pin-frissítés **két PR-ban** (előbb csak a pin, utána a setup): az átmenet piros, és a jóváhagyás kikerüli a teljes ellenőrzést.
+- A jóváhagyás egyszeri, **nem a HEAD-hez és a digesthez kötött**: egy későbbi push öröklné.
+- Csak a pin-fájlt védeni, miközben a **script és a paraméterei** (referencia-SHA, felület-lista) a PR-ből jönnek.
 - A bázis-commit olvasása hibánál csendben a fabeli fájlra esik vissza.
 
 ## Negatív tesztek és pozitív kontrollok
 
-Minden esethez: **származtatás**, **elvárt eredmény**, **kapott**, **pozitív kontroll**, **ellenpróba** (a védelem nélküli állapoton a manipuláció átmegy). Kötelező esetek (legalább): (1) a pin módosítása a setuppal együtt → elutasítva; (2) csak a `surfaces` szűkítése (egy eszköz kivétele egy felületről) → elutasítva; (3) csak egy eszköz verziójának emelése jóváhagyás nélkül → megállít; (4) jóváhagyott frissítés → átmegy és látható; (5) hiányzó/olvashatatlan bázis-referencia → fail closed; (6) a pin-fájl törlése → elutasítva; (7) push/schedule esemény → a referencia a vizsgált commit, kimondva a kimenetben.
+Minden esethez: **származtatás**, **elvárt eredmény**, **kapott**, **pozitív kontroll**, **ellenpróba** (a védelem nélküli állapoton a manipuláció átmegy). Kötelező esetek: a **C pont táblázata mind a hat sora** (mindegyik valós futással), továbbá: (a) csak a `surfaces` szűkítése → **DENY**; (b) a pin-fájl törlése → **DENY**; (c) hiányzó/olvashatatlan bázis-referencia → **fail closed**; (d) a **jóváhagyott, atomi** toolchain-update (pin + setup + jóváhagyás + teljes ellenőrzés) → **átmegy és látható**; (e) push/schedule esemény → a referencia a vizsgált commit, kimondva a kimenetben.
 
 ## Mérési korlátok (a jelentésben kimondandó)
 
@@ -68,8 +88,8 @@ Minden esethez: **származtatás**, **elvárt eredmény**, **kapott**, **pozití
 ## Elfogadási kritériumok
 
 1. A pin és a `surfaces` **bázis-commitból** olvasódik minden `check-tools` és `object-evidence` hívásnál (a hívóhelyek listája és a változatlanul maradó esetek indoklása).
-2. A pin-módosítás **látható és megállít**; a jóváhagyott frissítés útja létezik és tesztelt.
-3. A manipuláló PR **valós GitHub Actions futáson piros** (negatív proof PR), pozitív kontrollal és ellenpróbával.
+2. A pin-módosítás **látható és megállít**; a **jóváhagyott, atomi toolchain-update** (pin + setup + a HEAD-hez és digesthez kötött jóváhagyás + teljes ellenőrzés) létezik és tesztelt; **új push után a jóváhagyás érvényét veszti**; a jóváhagyás a minőségi kapukat nem kerüli meg.
+3. A C pont táblázatának **mind a hat esete** valós GitHub Actions futáson az elvárt eredményt adja (DENY, vagy reprodukált és dokumentált védelmi rés), pozitív kontrollal és ellenpróbával.
 4. A check kimenete rögzíti a **referencia-commitot és a digestet**; hiányzó referencia fail closed.
 5. A korlát (E) **mért és kimondott**; a jelentés nem állít többet, mint amit a védelem tesz.
 6. A meglévő blokkoló kapuk, küszöbök, baseline-ok és a `scripts/gremlins_gate.py` változatlanok (diffben ellenőrizve); nincs tesztkihagyás, nincs termékkód a diffben, **nincs repó-beállítás-módosítás**.
@@ -102,21 +122,24 @@ A CIC_Relay módosítás külön ágon, PR-ként (`--base main`).
 ## Definition of Done
 
 - A commit-azonosítók, az ág és a klón tisztasága rögzítve.
-- A referencia a bázis-commitból olvasódik; a pin-módosítás látható és megállít; a jóváhagyott út tesztelt.
-- A manipuláló negatív proof PR valós futáson piros, pozitív kontrollal és ellenpróbával.
+- A referencia a bázis-commitból olvasódik; a pin-módosítás látható és megállít; az atomi toolchain-update út tesztelt, a jóváhagyás HEAD- és digest-kötött, új push után érvénytelen.
+- A C pont mind a hat esete valós futáson az elvárt eredményt adja (DENY vagy reprodukált, dokumentált rés), pozitív kontrollal és ellenpróbával.
 - A check rögzíti a referencia-commitot és a digestet; a hiányzó referencia fail closed.
 - A korlát (E) mért és kimondott; a repó-beállítás javaslat (nem módosítás) szerepel.
 - A meglévő kapuk, küszöbök, baseline-ok változatlanok; nincs termékkód és repó-beállítás a diffben.
 - Valós run id (zöld és piros); a `nem mért` nem lezárás.
 - A PR leírása pontosan azt állítja, ami mérve van.
 
-## Tulajdonosi döntések (a jobnak nem kell eldöntenie; a jelentés rögzíti, melyik érvényes)
+## Tulajdonosi döntések (a spec review-ja, 2026-11-16)
 
-| Kérdés | Opciók | A spec alapértelmezése |
-|---|---|---|
-| A jóváhagyás mechanizmusa (B) | (a) a pin-módosító PR-t csak a tulajdonos által fogadott, PR-címke/`CODEOWNERS`-jóváhagyás oldja fel; (b) külön, csak a pin-fájlt módosító PR és külön check, a tulajdonos review-jával; (c) a pin-frissítés csak aláírt, a bázisból ellenőrzött commit | a job **a (b)-t javasolja és implementálja csak a kiválasztott opciót**; a döntést a tulajdonos hozza a spec review-jában |
-| Workflow-eredetű korlát (E) | repó-beállítás (required workflow / ruleset) most, vagy külön tulajdonosi lépésben | **külön lépés**, a job csak mér és javasol |
-| `cargo-mutants` / `cargo-llvm-cov` pin | ebben a jobban vagy külön | **külön** |
+| Kérdés | Döntés / javaslat |
+|---|---|
+| Pin-frissítés jóváhagyása | **Külön, célzott, aláírt és a tulajdonos által jóváhagyott toolchain-update PR**, **atomi** (pin + setup + HEAD- és digest-kötött jóváhagyás + teljes ellenőrzés); a jóváhagyás technikai formáját a job a review-ban rögzített kereteken belül javasolja, a tulajdonos hagyja jóvá |
+| Workflow eredetének védelme (a workflow-lépés eltávolítása) | **Külön kötelező feladat, a PR-07 előtt**; ennek a jobnak csak mérnie és dokumentálnia kell (reprodukált rés) |
+| Cargo mérőeszközök (`cargo-mutants`, `cargo-llvm-cov`) telepítési pinje | **Külön feladat** |
+| FULL/DIFF integráció (PR-07) | **A referencia és a workflow eredetének védelme után** |
+
+**Fejlesztési sorrend:** #195 (pin- és referenciavédelem) → workflow-eredet védelme (külön job) → PR-07 (FULL/DIFF/nightly) → PR-08 → PR-09. Nem építünk további bizonyítási réteget olyan mérési alapra, amelyet maga a vizsgált PR módosíthat.
 
 ## Git instrukciók
 
