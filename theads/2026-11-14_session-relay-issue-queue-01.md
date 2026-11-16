@@ -1,12 +1,12 @@
-# Thread-napló — 2026-11-14 (relay-issue-queue-01: a CIC_Relay nyitott biztonsági és megbízhatósági issue-k sorozatos feloldása; #157–#166, #160; CIC_Relay PR #173–#190, cic-factory PR #58, #61, #62, #63, #65)
+# Thread-napló — 2026-11-14 (relay-issue-queue-01: a CIC_Relay nyitott biztonsági és megbízhatósági issue-k sorozatos feloldása; #157–#166, #160; CIC_Relay PR #173–#190, #197; #155 lezárva; cic-factory PR #58, #61, #62, #63, #65)
 
-Interaktív factory-job session transcriptje 2026-11-14T20:18Z-től 2026-11-15T14:25Z-ig (work-szál `task-relay-issue-queue-01`, nem `run-job.sh` futás). **Utólag készült a session `.jsonl` transcriptjéből**, nem menet közben vezetett; a fejléc ezt kimondja.
+Interaktív factory-job session transcriptje 2026-11-14T20:18Z-től 2026-11-16T17:39Z-ig (work-szál `task-relay-issue-queue-01`, nem `run-job.sh` futás). **Utólag készült a session `.jsonl` transcriptjéből**, nem menet közben vezetett; a fejléc ezt kimondja.
 
 Csak a felhasználó üzenetei (beillesztett külső review-kkal, szó szerint) és Claude szöveges válaszai szerepelnek, UTC időbélyeggel. Nem szerepel: eszközhívás és kimenet, rendszer-emlékeztető, task-notification, a work-runtime automatikus üzenetei. A felhasználó `!` parancsai `$` előtaggal, kimenet nélkül.
 
-Normalizálás: a `/home/<felhasználó>/` útvonal-előtag `~/`-re cserélve, a Vault-aláírás-blobok `vault:v1:[…]`-re rövidítve, egy külső szervezet neve `<szervezet>`-re cserélve. **Kihagyva:** a #155 privát biztonsági kezelés alatt álló technikai részletei; az érintett bekezdések és sorok helyén jelölés áll (35 helyen). Emiatt a napló ott nem szó szerinti.
+Normalizálás: a `/home/<felhasználó>/` útvonal-előtag `~/`-re cserélve, a Vault-aláírás-blobok `vault:v1:[…]`-re rövidítve, egy külső szervezet neve `<szervezet>`-re cserélve. **Kihagyva:** a #155 privát biztonsági kezelés alatt álló technikai részletei; az érintett bekezdések és sorok helyén jelölés áll (110 jelölés a dokumentumban; a szám a végleges szövegből számolt). Emiatt a napló ott nem szó szerinti. A redakció kontextusalapú: a #155 push-/refspec-/szerveroldali-ref reprodukciós körei (a push újrabevezetésének tervezési anyaga) teljes bekezdésként kimaradnak. A ChatGPT Mermaid-megjelenítő generált CSS-kódja (4 helyen) eltávolítva, jelölés áll a helyén.
 
-A napló a naplózási kérés feldolgozása közben készült (a naplófrissítés kérése a #65-ben mergelt job-lezárás után): a kérésre adott lezáró összefoglaló már nem szerepel benne. A korábbi naplóváltozatok (cic-factory #61, #63) rövidebb szakaszt tartalmaztak; ez a változat a teljes session-t újragenerálja. A napló nem helyettesíti a PR-okat és a git-történetet; azok maradnak a forrás.
+A napló a naplózási kérés feldolgozása közben készült (a naplófrissítés kérése a CIC_Relay #197 mergelése és a #155 lezárása után): a kérésre adott lezáró összefoglaló már nem szerepel benne. A korábbi naplóváltozatok (cic-factory #61, #63, #65) rövidebb szakaszt tartalmaztak; ez a változat a teljes session-t újragenerálja. **A #155 redakciója szándékosan megmaradt** annak ellenére, hogy az advisory (GHSA-5489-jhgc-m947) 2026-11-15-én publikálva lett: a redakció feloldása tulajdonosi döntés. A napló nem helyettesíti a PR-okat és a git-történetet; azok maradnak a forrás.
 
 ### 2026-11-14 20:18 — Claude
 
@@ -435,13 +435,7 @@ PR    Issue    CI    Döntés
 #173 – MERGE
 HEAD: 0a6f7acb
 
-Mindhárom workflow sikeresen lefutott. A korábban vizsgált mutexes megoldás a #161 egyprocesszes konkurenciahibáját megfelelően kezeli.
-
-A több recorder példány által megosztott Git-repository továbbra sem védett, de ez dokumentált korlát. Nem tartanám vissza emiatt ezt a PR-t.
-#176 – MERGE
-HEAD: a01d7d76
-
-A CIC_TRUST_MODE kötelezővé válik, a hiányzó konfiguráció indulási hibát okoz, és a production mód külön ellenőrzi a trust store meglétét.
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
 
 A negatív tesztek megfelelőek az issue céljához. Fontos, hogy a Docker Compose továbbra is explicit dev értéket adhat át, tehát ez nem azonos a teljes deployment-környezet production hardeningjével.
 #177 – HOLD, konkrét CI-hiba
@@ -763,19 +757,7 @@ Kulcskérdés: a fejlesztői `metadata.sign` pontosan mit fed. Elolvasom a `_res
 ### 2026-11-14 21:24 — Claude
 
 ~~~~~
-Elértem a használati korlátot. Öt javító PR nyitva van, kettő issue megakadt, a #155 és a #157 még nincs kész. A háttérben nem fut ügynök.
-
 [részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
-
-## Kész
-- **#160:** diagnózis kész. A GO-2026-6859 a `main`-en már javítva van (#168), helyben ellenőriztem.
-- **Nyitott PR-ok (mind `main` base, `Refs`):**
-  - **#173** (#161): a mutex és a tesztek, plusz a review-kiegészítés (`3c240c6`).
-  - **#176** (#159): kötelező `CIC_TRUST_MODE`.
-  - **#177** (#165): `proof.persisted`, kötelező-evidence mód, strukturált 503, a manifest-hiba javítva (`deff69b`).
-  - **#179** (#164): CRL aláírás és frissesség, prodban betöltés.
-  - **#180** (#163): `actuate` egress.
-- **CI:** a #173, #176, #177, #179 CI-ja zöld, a #180-é futott.
 
 ## Megakadt, a te döntésed kell
 - **#166:** A/B döntés, a review az A-t (közös trust context) ajánlja.
@@ -797,24 +779,7 @@ A részletes állapot a helyi `notes.md`-ben van (`$WORK_ROOT/notes.md`).
 ### 2026-11-15 06:59 — Felhasználó
 
 ~~~~~
-<pasted_content id="1732">
-A jelentés alapján itt már két külön munkafolyamatot kell kezelni: a normál minőségjavítást és a biztonsági incidens kezelését.
-
 [részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
-
-A #162 esetében először az aláírt boríték szerződését kell rögzíteni. A capability_manifest módosítása nem maradhat észrevétlen az aláírás ellenőrzésekor.
-Nyitott PR-ok
-PR    Tartalom    Review prioritás
-#173    Mutex, konkurenciakezelés    P1
-#176    Kötelező trust mode    P1
-#177    Evidence perzisztencia    P1
-#179    CRL ellenőrzés    P1
-#180    Actuate egress    P1
-
-[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
-
-[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
-</pasted_content id="1732">
 ~~~~~
 
 ### 2026-11-15 07:00 — Claude
@@ -866,21 +831,7 @@ A #157 javítása commitolva és helyben ellenőrizve (`fce9d2a`), de nincs push
 
 A PR-törzs kész, push után nyitom.
 
-## #157
-- **Konkrét hatás:** a `schema` és `version` ellenőrzés nélkül jutott egy YAML-sablonba, amelynek eredményét a relay aláírja. Egy újsor tehát kulcsokat injektálhatott az aláírt artifactba.
-- **Validáció:** a handlerben 400 `invalid_field`, a nyelőben (`BuildSchema`) is. A `/set` ugyanezt a workflow-t futtatja tetszőleges payloaddal, ezért a handlerbeli ellenőrzés önmagában kevés volt.
-- **Hitelesítés:** `CIC_API_TOKEN` bearer token, állandó idejű összehasonlítással. Ha nincs beállítva, minden kérés 401. Az mTLS nincs megvalósítva.
-- **Route-osztályozás:** `apiRoutes` az egyetlen útvonal-tábla. Minden útvonal hitelesített, vagy indoklással publikus. A többi útvonal publikus marad, mert az issue csak a compile végpontot kéri.
-- **Bizonyíték:** javítás nélkül 5 teszt bukik. Három karakterizáló (az AST-teszt a régi kódon, 9 `HandleFunc` hívással bukna, ezt olvasással állapítottam meg, nem futtattam).
-- **Kapuk:** a `gofmt`, `go vet`, `staticcheck`, `go test ./...`, `-race` tiszta, a `SYMBOLS.md` és a manifest változatlan.
-- **Viselkedésváltozás:** a végpontot eddig hitelesítés nélkül hívó kliens 401-et kap, amíg a `CIC_API_TOKEN` nincs beállítva.
-
 [részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
-
-## Függő döntések
-- **#166:** a review az A-t ajánlja, de a döntés a tiéd. Még nem kezdtem el.
-- **#164:** a review prodban fail-closed szemantikát ajánl a hiányzó CRL-re, de ehhez konfig kell, amely kijelöli a kibocsátókat. Ez is a te döntésed.
-- **#162:** a review szerint HOLD, egyetértek. A signing oldalon előbb a boríték szerződését kell rögzíteni.
 
 ## Még hátra
 - **Push:** a cic-factory output (`feature/relay-issue-queue-01` ág) pusholása a te `!` parancsodra vár. A `queue-status.md` frissítve, de a #157 sora még „push vár”.
@@ -1219,7 +1170,7 @@ Itt egy lényeges architekturális problémát találtam, amelyet a zöld CI nem
 F1 – Az autorizáció a végponthoz kötött, nem a védendő művelethez (P1).
 
 A /v1/schema/compile authentikációt kapott, de a /set továbbra is publikus, miközben ugyanazt a workflow-t képes meghívni.
-#chatgpt-mermaid-_r_20o_ :is(.node,.pele-node).success :is(rect,circle,ellipse,polygon,path):where(:not(.label *)) {fill:#f2f9f2;stroke:#e6f4e6}#chatgpt-mermaid-_r_20o_ :is(.node,.pele-node).success [fill="none"]:where(:not(.label *)) {fill:none}#chatgpt-mermaid-_r_20o_ :is(.node,.pele-node).success [stroke="none"]:where(:not(.label *)) {stroke:none}#chatgpt-mermaid-_r_20o_ :is(.node,.pele-node).success :where(text,.label,.nodeLabel) {fill:#2c6732;color:#2c6732}#chatgpt-mermaid-_r_20o_ :is(.node,.pele-node).danger :is(rect,circle,ellipse,polygon,path):where(:not(.label *)) {fill:#fff0f0;stroke:#ffe2e2}#chatgpt-mermaid-_r_20o_ :is(.node,.pele-node).danger [fill="none"]:where(:not(.label *)) {fill:none}#chatgpt-mermaid-_r_20o_ :is(.node,.pele-node).danger [stroke="none"]:where(:not(.label *)) {stroke:none}#chatgpt-mermaid-_r_20o_ :is(.node,.pele-node).danger :where(text,.label,.nodeLabel) {fill:#000000;color:#000000}#chatgpt-mermaid-_r_20o_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;fill:rgb(13, 13, 13);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-_r_20o_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-_r_20o_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-_r_20o_ .error-icon{fill:rgb(243, 243, 243);}#chatgpt-mermaid-_r_20o_ .error-text{fill:rgb(13, 13, 13);stroke:rgb(13, 13, 13);}#chatgpt-mermaid-_r_20o_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-_r_20o_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-_r_20o_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-_r_20o_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-_r_20o_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-_r_20o_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-_r_20o_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-_r_20o_ .marker.cross{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-_r_20o_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;}#chatgpt-mermaid-_r_20o_ p{margin:0;}#chatgpt-mermaid-_r_20o_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";color:rgb(13, 13, 13);}#chatgpt-mermaid-_r_20o_ .cluster-label text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-_r_20o_ .cluster-label span{color:rgb(13, 13, 13);}#chatgpt-mermaid-_r_20o_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-_r_20o_ .label text,#chatgpt-mermaid-_r_20o_ span{fill:rgb(13, 13, 13);color:rgb(13, 13, 13);}#chatgpt-mermaid-_r_20o_ .node rect,#chatgpt-mermaid-_r_20o_ .node circle,#chatgpt-mermaid-_r_20o_ .node ellipse,#chatgpt-mermaid-_r_20o_ .node polygon,#chatgpt-mermaid-_r_20o_ .node path{fill:rgb(222, 234, 251);stroke:rgb(83, 154, 248);stroke-width:1px;}#chatgpt-mermaid-_r_20o_ .rough-node .label text,#chatgpt-mermaid-_r_20o_ .node .label text,#chatgpt-mermaid-_r_20o_ .image-shape .label,#chatgpt-mermaid-_r_20o_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-_r_20o_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-_r_20o_ .rough-node .label,#chatgpt-mermaid-_r_20o_ .node .label,#chatgpt-mermaid-_r_20o_ .image-shape .label,#chatgpt-mermaid-_r_20o_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-_r_20o_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-_r_20o_ .root .anchor path{fill:rgb(143, 143, 143)!important;stroke-width:0;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-_r_20o_ .arrowheadPath{fill:rgb(143, 143, 143);}#chatgpt-mermaid-_r_20o_ .edgePath .path{stroke:rgb(143, 143, 143);stroke-width:1px;}#chatgpt-mermaid-_r_20o_ .flowchart-link{stroke:rgb(143, 143, 143);fill:none;}#chatgpt-mermaid-_r_20o_ .edgeLabel{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-_r_20o_ .edgeLabel p{background-color:rgb(252, 252, 252);}#chatgpt-mermaid-_r_20o_ .edgeLabel rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-_r_20o_ .labelBkg{background-color:rgba(252, 252, 252, 0.5);}#chatgpt-mermaid-_r_20o_ .cluster rect{fill:rgb(243, 243, 243);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-_r_20o_ .cluster text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-_r_20o_ .cluster span{color:rgb(13, 13, 13);}#chatgpt-mermaid-_r_20o_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:12px;background:rgb(243, 243, 243);border:1px solid rgba(0, 0, 0, 0.1);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-_r_20o_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(13, 13, 13);}#chatgpt-mermaid-_r_20o_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-_r_20o_ .icon-shape,#chatgpt-mermaid-_r_20o_ .image-shape{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-_r_20o_ .icon-shape p,#chatgpt-mermaid-_r_20o_ .image-shape p{background-color:rgb(252, 252, 252);padding:2px;}#chatgpt-mermaid-_r_20o_ .icon-shape .label rect,#chatgpt-mermaid-_r_20o_ .image-shape .label rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-_r_20o_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-_r_20o_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-_r_20o_ .node .neo-node{stroke:rgb(83, 154, 248);}#chatgpt-mermaid-_r_20o_ [data-look="neo"].node rect,#chatgpt-mermaid-_r_20o_ [data-look="neo"].cluster rect,#chatgpt-mermaid-_r_20o_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-_r_20o_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_20o_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-_r_20o_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-_r_20o_-gradient);stroke-width:1px;}#chatgpt-mermaid-_r_20o_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_20o_ [data-look="neo"].node .neo-line path{stroke:rgb(83, 154, 248);filter:none;}#chatgpt-mermaid-_r_20o_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-_r_20o_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_20o_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-_r_20o_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-_r_20o_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_20o_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-_r_20o_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_20o_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(0, 79, 153);}#chatgpt-mermaid-_r_20o_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(0, 79, 153);}#chatgpt-mermaid-_r_20o_ .node tspan[font-weight="normal"],#chatgpt-mermaid-_r_20o_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-_r_20o_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(245, 250, 255);stroke:rgb(206, 219, 229);stroke-width:1px;}#chatgpt-mermaid-_r_20o_ .node rect,#chatgpt-mermaid-_r_20o_ .node circle,#chatgpt-mermaid-_r_20o_ .node ellipse,#chatgpt-mermaid-_r_20o_ .node polygon,#chatgpt-mermaid-_r_20o_ .node path{fill:rgb(229, 243, 255);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-_r_20o_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-_r_20o_ .mermaid-decision .label-container{fill:rgb(245, 250, 255);stroke:rgb(206, 219, 229);stroke-dasharray:2,2;}#chatgpt-mermaid-_r_20o_ .edgePaths .flowchart-link{stroke:rgb(143, 143, 143);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-_r_20o_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-_r_20o_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";}/v1/schema/compileBearer token ellenőrzéseSchema compile workflow/set – publikusArtifact signing
+[generált Mermaid-megjelenítő CSS kihagyva: 8759 karakter, nem beszélgetési tartalom]
 
 
 
@@ -3431,4 +3382,3121 @@ A thread-napló a #65-öt már nem tartalmazza, mert a #63 a #62-merge és a #58
 
 ~~~~~
 frissítsd a thread-naplót
+~~~~~
+
+### 2026-11-15 14:25 — Claude
+
+~~~~~
+A thread-napló újra frissítve, de a push még hátravan: `d752e7a`, a `log/relay-issue-queue-01-session-r4` ágon, a `main@d79d6d5` tetején. Ezt futtasd:
+
+```
+! cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push -u origin log/relay-issue-queue-01-session-r4
+```
+
+- **Mi változott:** a napló a #63 óta eltelt szakaszt is tartalmazza: a job-close skillt, a #65-öt és a mergelését. Maga a diff 185 sort ad hozzá. A régi tartalomból csak a fejléc három sora változott: a PR-lista, a naplózási megjegyzés és a korábbi változatokra utaló mondat.
+- **Ellenőrzés:** a #155 technikai részletei nincsenek benne, a 35 kihagyás-jelölés ugyanaz a szám, mint korábban. Titok és személyes adat nincs. A `/home/` csak a normalizálást leíró sorokban szerepel.
+- **A válaszom nincs benne:** erre a kérésre adott válaszom nincs a naplóban, ezt a fejléc is jelzi.
+
+Push után megnyitom a PR-t, és jelentem a CI-t. A merge a tiéd.
+~~~~~
+
+### 2026-11-15 14:26 — Felhasználó
+
+~~~~~
+$ cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push -u origin log/relay-issue-queue-01-session-r4
+~~~~~
+
+### 2026-11-15 14:29 — Claude
+
+~~~~~
+A thread-napló frissítése a cic-factory #66: https://github.com/CentralInfraCore/cic-factory/pull/66
+
+- **HEAD:** `d752e7a902f604f5b507030bfaef71bde0dd602b`, a base a `main`.
+- **CI:** a `gate` check `COMPLETED/SUCCESS`. A zöld CI nem jóváhagyás.
+
+A merge a tiéd. A parancs, ha kéred:
+
+```
+! gh pr merge 66 --repo CentralInfraCore/cic-factory --merge --match-head-commit d752e7a902f604f5b507030bfaef71bde0dd602b
+```
+
+A job lezárása már mergelve van (#65), ez a PR csak a naplót viszi tovább. A produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 14:30 — Felhasználó
+
+~~~~~
+$ gh pr merge 66 --repo CentralInfraCore/cic-factory --merge --match-head-commit d752e7a902f604f5b507030bfaef71bde0dd602b
+~~~~~
+
+### 2026-11-15 14:30 — Claude
+
+~~~~~
+A cic-factory #66 mergelve: `867b9e47a5f6dcea65df21cd5f5a93314332982e`. A thread-napló a `main`-en a job lezárásáig (#65) tart.
+
+A `relay-issue-queue-01` job `done`. A produkciós jóváhagyás HOLD. Külön munkacsomagban maradnak a #155, a #162, a #185–#189 és a work-runtime patch alkalmazása.
+~~~~~
+
+### 2026-11-15 14:33 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**A&#x20;**`relay-issue-queue-01`**&#x20;munkacsomag lezárva.**
+
+- 8 mergelt Relay PR.
+- 8 lezárt issue.
+- 13/13 sikeres mutációs ellenpróba.
+- F1–F6 review-leletek rendezve.
+- Factory output, bizonyítékok és beszélgetésnapló a main-en.
+- Job státusz: DONE.
+
+A teljes fejlesztési ciklus visszakövethető.
+
+**Külön munkacsomagban marad:** #155, #162, #185–#189 és a work-runtime patch alkalmazása.
+
+Produkciós jóváhagyás: **HOLD**.
+
+Ezt a review-szálat lezártnak tekintem.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 14:33 — Claude
+
+~~~~~
+A `relay-issue-queue-01` lezárva, nincs további teendő ebben a szálban.
+
+A külön munkacsomagban maradó tételek:
+- **#155:** privát advisory, a beküldés a tiéd.
+- **#162:** a signing oldali boríték.
+- **#185–#189:** a követő issue-k.
+- **work-runtime patch:** az alkalmazása.
+- **Produkciós jóváhagyás:** HOLD.
+~~~~~
+
+### 2026-11-15 14:38 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Elfogadva. `relay-issue-queue-01`**: DONE.**
+
+A fejlesztési és review-ciklus lezárva. A bizonyítékok, döntések és fennmaradó kockázatok dokumentálva.
+
+A produkciós jóváhagyás változatlanul **HOLD**.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 14:38 — Claude
+
+~~~~~
+Rendben, a `relay-issue-queue-01` DONE, és nincs több teendőm benne. A produkciós jóváhagyás HOLD marad.
+~~~~~
+
+### 2026-11-15 14:43 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+### 2026-11-15 14:43 — Claude
+
+~~~~~
+A `relay-issue-queue-01` job le van zárva, a fejlesztési ciklusnak vége.
+
+**Kész:**
+- **CIC_Relay:** 8 PR mergelve (#173, #176, #182, #180, #177, #179, #181, #190), `main@e43f2a8`. 8 issue lezárva: #157, #159, #160, #161, #163, #164, #165, #166.
+- **Mérés:** az integrációs regressziós teszt alapja zöld, és mind a 13 mutációs ellenpróba megbuktatja. A nyers kimenetek commit- és tree-azonosítóhoz kötve vannak a `PROVENANCE.txt`-ben.
+- **cic-factory:**
+  - #62 (output és bizonyítékok), #63, #65 (job-lezárás) és #66 (thread-napló) mergelve.
+  - A #58 felváltottként lezárva.
+  - A `meta.yaml` a `main`-en `status: done`.
+- **Review-leletek:** az F1–F6 mind lezárva.
+
+**Nyitott, külön munkacsomagban:**
+- **#155:** privát biztonsági lelet. A GitHub Security Advisory vázlata a work-runtime könyvtárban van, nincs repóban. A beküldés a tiéd.
+- **#162:** a signing oldalon nincs rögzített boríték.
+- **#185–#189:** a lezáráskor dokumentált, de nem lefedett követelmények követő issue-i.
+- **work-runtime patch:** elő van készítve, de nincs alkalmazva.
+
+**Produkciós jóváhagyás:** HOLD, amíg a #155 és a #162 nincs rendezve. A job lezárása nem a Relay biztonsági minősítése.
+
+Következő lépésnek a #155 privát kezelése a legsürgősebb, mert ez P0 prioritású. Szólj, melyiket vegyem.
+~~~~~
+
+### 2026-11-15 14:44 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+A következő munkacsomag a #155 legyen. Utána a #162 rendezését javaslom.
+Sorrend    Feladat    Prioritás
+1.    #155 – privát biztonsági javítás    P0
+2.    #162 – signing envelope szerződés    Produkciós blokkoló
+3.    #185–#189 – fennmaradó követelmények    Hardening
+4.    Work-runtime patch alkalmazása    Külön karbantartás
+
+A #155 kezelését elkülönített, privát folyamatban kell végigvinni, negatív regressziós tesztekkel és független review-val.
+
+A #162 esetében a már kialakított CIC Primitives Release Envelope v3 szerződésből indulnék ki, megvizsgálva, hogy annak szemantikája alkalmazható-e a Relay modulbetöltési határán.
+
+A #155 és #162 lezárása után teljes produkciós readiness review szükséges, nem automatikus GO.
+
+A relay-issue-queue-01 maradjon DONE.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 14:44 — Claude
+
+~~~~~
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 14:48 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**Nyitott, ezek nem részei ennek a commitnak:**
+1. **Modulonkénti jogosultság** a `git.*`-hoz (a #155 2. pontja): külön tervezést igényel.
+2. **Privát koordináció:** advisory és privát fork. A beküldés a tiéd, a vázlat a work-runtime-ban van.
+3. **Független review** a diffre, a kért módon.
+4. **A cic-flow host modul** hasonló átnézése.
+
+Szólj, melyik legyen a következő: a modulonkénti jogosultság terve, vagy előbb a diffet adjam át review-ra. A #162 utána jön.
+~~~~~
+
+### 2026-11-15 14:49 — Felhasználó
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+A következő lépésben három különálló biztonsági követelményt kell vizsgálni:
+
+- **Validáció:** mit lehet átadni a végrehajtónak?
+- **Autorizáció:** melyik modul milyen műveletet végezhet?
+- **Izoláció:** milyen erőforrásokat érhet el a végrehajtó?
+
+A modulonkénti autorizációt a CIC már kialakított deklaratív capability modelljéhez kell illeszteni. Nem építenék mellé új, párhuzamos jogosultsági rendszert.
+
+A `cic-flow` host modul átvizsgálása indokolt, de külön leletként kezelendő.
+
+A privát commit tényleges diffjének ellenőrzéséig a végleges jóváhagyás **HOLD**.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 14:50 — Claude
+
+~~~~~
+A három követelményt a kód alapján külön vettem végig. Csak olvastam, kódot nem írtam, a privát jegyzetekbe rögzítettem.
+
+**1. Validáció (`0ac0098`):** kész, a független review a diffre vár. A diffet kérésre odaadom, hogy bekerüljön a review-ba.
+
+**2. Autorizáció: ma fail-open.**
+- **Jelenlegi állapot:** a `git.*` host modul egyetlen közös példány, és bármelyik betöltött modul hívhatja, repo-, művelet- vagy remote-korlát nélkül. A `cic-flow` ezzel szemben már per-modul és fail-closed.
+- **Meglévő modell (implemented):** a modul aláírt `project.yaml`-jának `capability_manifest` blokkja (jelenleg `egress` és `secrets` mezőkkel). A `cicFlowRegistry` a hívó `mod.Name()` neve alapján keresi ki a modul jogosultságait. Az importokat a betöltéskor ellenőrzi a `checkImportsWithinManifest`. A jogosultság nélküli modul hívása tiltott.
+- **Javaslat:** ezt bővíteném egy `git` blokkal, párhuzamos rendszer nélkül:
+  - repo, művelet, remote-nevek és ref-minták lennének benne;
+  - betöltéskor ellenőrizném, hogy a modul importja belefér a manifestbe;
+  - hívásnál, a végrehajtó előtt a `mod.Name()` alapján tiltanék. Ez ugyanaz a minta, mint a `perModule`.
+- **Bridge-eltérés, amit el kell döntened:** a `ai/ROADMAP.md` M39 és M40.5 tétele (concept) egy `capabilities.git.allow[op, mode]` alakot ír le, ami eltér a megvalósított `capability_manifest` alakjától. A megvalósítottat tartanám kanonikusnak, de ezt neked kell jóváhagynod.
+- **Viselkedésváltozás:** a manifest nélküli modul `git.*` importját a betöltés elutasítja. A repóban nem találtam guest-oldali `git` importot, de a külön tárolt modulokat nem néztem.
+
+**3. Izoláció, két lelet:**
+- **Környezet:** a git gyerekfolyamat örökli a relay teljes környezetét (`os.Environ()`), benne például a `CIC_API_TOKEN`-t. Az 1. szakasz validációja után ez nem közvetlenül kihasználható, de allowlist kellene.
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**Külön lelet, nem része ennek:** a `cic-flow` host modul átvizsgálása. Az `actuate`/`sign` oldalt a #163 és #166 már érintette, ezért itt új, külön leletként kezelem.
+
+**Javaslat a sorrendre:**
+1. A `0ac0098` független review-ja.
+2. A `git` blokk a `capability_manifest`-ben, negatív tesztekkel: nincs manifest, rossz op, rossz repo, rossz remote.
+3. A környezet-allowlist.
+4. Az advisory koordinációja, ez a tiéd.
+
+Szólj, hogy a bridge-eltérésben a megvalósított `capability_manifest` a kanonikus-e, és hogy a 2. lépéssel kezdjek-e. A produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 14:50 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**Döntés: a megvalósított&#x20;**`capability_manifest`**&#x20;legyen a kanonikus szerződés. GO a 2. lépésre.**
+
+Nem hozunk létre párhuzamos jogosultsági modellt. Az M39 és M40.5 koncepcionális leírását kell a kanonikus szerződéshez igazítani.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+| Feladat                                  | Döntés                            |
+| ---------------------------------------- | --------------------------------- |
+| `0ac0098` független review               | Szükséges                         |
+| Git capability manifest                  | GO                                |
+| Környezeti változók allowlistje          | GO, külön commit                  |
+| Fájlrendszeri és folyamatszintű izoláció | Külön architekturális munkacsomag |
+| Cic-flow átvizsgálása                    | Külön review                      |
+| Publikus push                            | HOLD                              |
+
+A #162-vel való kapcsolatot különösen fontos megőrizni: **a capability deklaráció csak akkor tekinthető megbízhatónak, ha kriptográfiailag hozzá van kötve a ténylegesen végrehajtott modulhoz.**
+
+Enélkül az autorizáció implementálható és tesztelhető, de produkciós szinten még nem tekinthető bizonyítottnak.
+
+Minden maradjon privát. Produkciós jóváhagyás: **HOLD**.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 14:53 — Claude
+
+~~~~~
+Az `invoke` segéd az output-puffert 4096-os offsetre teszi, a 4096 bájtos teszt-modulba nem fér. A tesztmodul méretét növelem.
+~~~~~
+
+### 2026-11-15 14:54 — Claude
+
+~~~~~
+You've hit your 5-hour limit · resets 5:50pm (Europe/Budapest)
+~~~~~
+
+### 2026-11-15 16:58 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**Gate-ek:** a gofmt, a vet, a teljes `go test ./...` és a `-race` tiszta, hálózat nélkül. A `MANIFEST.sha256` nem változik.
+
+**Viselkedésváltozás:** a manifest nélküli modul `git` importját a betöltés elutasítja. Ellenőrzött modul híján, például a trust nélküli dev módban, senki nem kap git jogosultságot. A repóban nem találtam guest-oldali `git` importot, de a külön tárolt modulokat nem néztem.
+
+**A #162-kapcsolat (nyitott, kimondva):** a capability deklaráció még nincs kriptográfiailag kötve a végrehajtott modulhoz. A `.pem` egy tanúsítvány, nem aláírás a manifesten vagy a wasmon. A grant a loadModule által ellenőrzött wasm-digestre épül. Ez az autorizációt implementálhatóvá és tesztelhetővé teszi, produkciós szinten viszont nem bizonyított.
+
+**További nyitott tételek:**
+- futásidejű ellenőrzés, hogy a futó példány digestje egyezik a grantéval (ma csak load-time visszavonás van);
+- a `git` blokk dokumentálása (en/hu);
+- a független review a három commitra;
+- a cic-flow átvizsgálás és a fájlrendszeri izoláció külön munkacsomag.
+
+Szólj, ha a review-hoz összeállítsam a három commit diffjét, vagy a docs-szal folytassam. A nyilvános push HOLD, a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 17:04 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**Architekturális review: feltételes GO a további fejlesztésre. A #155 lezárására még HOLD.**
+
+A három commit a megfelelő irányba viszi a Relay-t. Különösen helyes, hogy nem jött létre párhuzamos jogosultsági rendszer.
+
+| Terület                        | Döntés                        |
+| ------------------------------ | ----------------------------- |
+| Argumentumvalidáció            | Független review szükséges    |
+| Deklaratív Git capability      | GO                            |
+| Fail-closed autorizáció        | GO                            |
+| Környezeti allowlist           | GO, tartalmi review szükséges |
+| Futó modul és grant azonossága | Kötelező javítás              |
+| Kriptográfiai kötés (#162)     | HOLD                          |
+| Publikálás                     | HOLD                          |
+| Produkciós használat           | HOLD                          |
+
+Három követelményt még mindenképpen érvényesítenék:
+
+1. **Runtime identity:** a modul neve önmagában nem elegendő. A ténylegesen futó példány identitását kell a granthez kötni, beleértve az újratöltés közben még futó példányokat is.
+2. **Git konfiguráció:** a `HOME` megőrzése miatt a globális konfiguráció továbbra is bizalmi felület. A `safe.directory` működésének megtartása indokolt, de a konfigurációs határokat külön ellenőrizni kell.
+3. **Capability integrity:** az ellenőrzött manifest és a végrehajtott WASM kriptográfiai összerendelése a #162 kötelező elfogadási feltétele legyen.
+
+### **Következő lépések**
+
+- Runtime identity binding megvalósítása, külön commitban.
+- Negatív és konkurens újratöltési tesztek.
+- Az ekvivalens mutáns indoklásának rögzítése.
+- A három meglévő és az új commit együttes, független review-ja.
+- HU/EN dokumentáció elkészítése.
+
+Minden továbbra is kizárólag privát környezetben történjen.
+
+A CIC alapelvéből következik: **a jogosultság nem a modul nevéhez, hanem az ellenőrzött modulállapothoz tartozik.** Ennek futásidőben is érvényesülnie kell.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 17:05 — Claude
+
+~~~~~
+Most a `compile` többi return-jeit igazítom a három értékű szignatúrához, és bekötöm a hívást a `NewHostInstance`-ba.
+~~~~~
+
+### 2026-11-15 17:08 — Claude
+
+~~~~~
+A runtime identity binding elkészült, külön commitban (`f0e037e`). Ez a `private/155-git-args` ág negyedik commitja, mind helyi, semmit nem pusholtam.
+
+**Mi változott:**
+- **Futó példány azonossága:** a WasmManager a példány létrehozásakor, még a guest kódja előtt jelenti, hogy a példány melyik artifactból készült. Az új `OnInstance` hook az instance-nevet a lefordított artifact checksumjához köti. A név a futó példányok között egyedi, ezért a hívó neve a hívó tényleges artifactját azonosítja. Az újratöltés közben még futó példány is a saját, régi artifactját jelenti.
+- **A grant artifacthoz kötése:** a grant csak akkor használható, ha a cabinet eltárolta a modult, és a checksum egyezik. Hívásnál a hívó futó artifactjának kell egyeznie a grantéval.
+- **Újratöltés:** a modul minden újratöltése visszavonja az előző grantot. A korábban futó példány nem használhatja az új grantot. A nem ellenőrzött új artifact nem kapja meg a régit.
+
+**Tesztek és mutációk:**
+- **Cabinet-teszt:** az élő példány a csere után is a régi artifactot jelenti.
+- **Relay-tesztek:** a grant követi az artifactot és a példányt. A konkurens újratöltésnél 300 újratöltés mellett 4 párhuzamos olvasó, `-race` alatt, és egyszer sem engedélyezett elavult példányt. A kötetlen vagy ismeretlen példány tilt.
+- **Mutációk:** a négy új mutáció (G–J) mind megbuktatja a teszteket. Az `M-J` (a visszavonás kihagyása) eleinte átment, mert a tesztem nem fedte le. A tesztet megerősítettem, utána bukik. A tanulság az, hogy a visszavonás nélkül a bind a nem ellenőrzött új artifactra is rákötné a régi grantot. Az `M-E` ekvivalens mutáns marad. Hiányzó grant mellett a szabálylista üres, ezért a második réteg akkor is tilt.
+- **Gate-ek:** a gofmt, a vet, a teljes `go test ./...` és a `-race` tiszta. A `SYMBOLS.md` és a `MANIFEST.sha256` nem változott.
+
+**Nyitott, ezekhez nem nyúltam:**
+1. **Git konfigurációs határ:** a `HOME` megőrzése miatt a globális konfiguráció bizalmi felület. Ezt külön át kell vizsgálni. A `safe.directory` működését megtartottam.
+2. **cic-flow grantok:** ugyanezt az artifact-kötést nem kapták meg. Ez külön lelet és külön review.
+3. **Kriptográfiai kötés (#162):** a manifest és a wasm aláírása egymáshoz továbbra sincs megvalósítva. Ez a #162 kötelező elfogadási feltétele, amit rögzítettem. A grant a loadModule által ellenőrzött digestre épül, produkciós szinten ez nem bizonyított.
+4. **HU/EN dokumentáció** a `git` blokkról.
+5. **Független review** a négy commitra együtt. A diffet kérésre összeállítom.
+
+Szólj, melyikkel folytassam: a dokumentáció, a git-konfigurációs határ átvizsgálása, vagy a review-csomag összeállítása. A nyilvános push HOLD, a produkciós használat HOLD.
+~~~~~
+
+### 2026-11-15 17:13 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+A #155 argumentumvalidációs javításának (`0ac0098`) független kódreview-jához kérem a tényleges diffet.
+
+A Claude által készített összefoglaló alapján az architekturális irány megfelelő, de tartalmi jóváhagyást még nem adnék.
+
+A privát worktree-ben futtasd:
+
+```
+git show --format=fuller --no-ext-diff 0ac0098
+```
+
+A kimenetet itt add át, lehetőleg fájlként.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+A privát kezelési szabályok változatlanul érvényesek.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 17:14 — Claude
+
+~~~~~
+A `0ac0098` diffje elkészült fájlként, privát könyvtárban (`700` jogosultságú könyvtár, `600` jogosultságú fájlok). Sehová nem töltöttem fel, mert nem publikus. A tartalmat te adod át a reviewernek:
+
+`~/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/`
+
+| Fájl | Tartalom |
+|---|---|
+| `0ac0098.diff` | `git show --format=fuller --no-ext-diff 0ac0098`, 553 sor, sha256 `a9dd87cf6417046cbb16c487dca61b9ee097af26fd843be9c43b8ef7bc9227d1` |
+| `evidence-155-before-fix.txt` | a javítás nélküli futás: a marker létrejön, a teszt megbukik |
+| `evidence-155-mutations.txt` | az összes mutációs futás (M-A…M-J) a hozzájuk tartozó megjegyzésekkel |
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 17:16 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+CIC Relay – #155 argumentumvalidációs review
+Vizsgált commit: 0ac009881fd3c459bf4b97c390401dae097066a5
+
+Döntés: CHANGES REQUESTED – HOLD.
+
+A javítás érdemi biztonsági előrelépés, de a tényleges diff alapján néhány deklarált biztonsági garancia és annak implementációja még nincs teljes összhangban.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+A deklarált szerződés:
+Csak konfigurált remote név fogadható el.
+
+Az implementált szerződés:
+Csak megfelelő karakterekből álló remote név fogadható el.
+
+Ez két különböző állítás. A Git egy nem létező remote nevet repository-útvonalként is értelmezhet. A szigorú transportkorlátozás csökkenti ennek kockázatát, de nem helyettesíti a remote azonosságának ellenőrzését.
+
+Elvárt javítás: a remote létezésének és engedélyezett feloldásának ellenőrzése a végrehajtás előtt, negatív teszttel.
+F2 – A lokális clone-forrás validációja
+P1 – BLOCKING
+Érintett: args.go, validateCloneURL().
+
+Az URL-feldolgozás hibája az allowLocalSources ágban elfogadási feltétel.
+
+Biztonsági validációban egy feldolgozási hiba nem jelentheti automatikusan azt, hogy a bemenet megengedett lokális útvonal.
+
+Jelenleg az éles konfigurációban ez az ág nincs bekötve, ezért közvetlen produkciós kihasználhatóságot nem állapítottam meg.
+
+Elvárt javítás:
+- A lokális útvonalak explicit validációja.
+- Az URL-feldolgozási hibák elutasítása.
+- A lokális források elkülönített bizalmi szabálya.
+- Negatív tesztek az engedélyezett lokális módra is.
+F3 – Git-konfigurációs bizalmi határ
+P1 – BLOCKING
+Érintett: runGitOutputDir().
+
+Pozitívumok:
+- Git hookok kikapcsolása.
+- Transportok explicit korlátozása.
+- A parancssori argumentumok elválasztása.
+- Literal pathspec mód beállítása.
+Ezek azonban önmagukban nem garantálják, hogy minden Git-művelet kizárólag az engedélyezett viselkedést valósítja meg. A repository-, rendszer- és felhasználói konfiguráció továbbra is része a bizalmi felületnek.
+
+Az acd3472 környezeti allowlist javítását itt még nem tudom értékelni.
+
+Elvárt javítás: a már elindított konfigurációs hardening vizsgálat befejezése, majd a végleges implementáció együttes review-ja.
+F4 – Érzékeny adatok a hibaüzenetekben
+P1
+A clone URL teljes vagy 64 karakterre korlátozott értéke bekerülhet a visszaadott hibaüzenetbe.
+
+A clip() hosszkorlátozás, nem adatmaszkolás. Mivel az implementáció userinfót is elfogad, nem garantálható, hogy egy hibás URL-ből nem kerül érzékeny adat a naplóba vagy egy válaszba.
+
+Elvárt javítás: URL-ek biztonságos maszkolása, valamint negatív teszt arra, hogy a hibaüzenet nem tartalmaz credentialt.
+F5 – Ref-validáció szemantikai hiányosságai
+P2
+A regex és a külön tiltófeltételek jó alapot adnak, de a Git ref-szabályainak nem teljes implementációi.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+A lényeg: az argumentuminjektálási felület csökkentése és a teljes Git-végrehajtási bizalmi határ lezárása két különböző követelmény. Az elsőben jelentős előrelépés történt, a másodikat még bizonyítani kell.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 17:24 — Claude
+
+~~~~~
+Az F1–F7 review-leletek mind javítva vannak, négy új commitban. A teljes privát ág készen áll a független review-ra. Minden helyi, nem pusholtam, PR-t sem nyitottam.
+
+**Az ág (`private/155-git-args`, HEAD `44ed7f0`):**
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**Viselkedésváltozások, amiket a reviewernek látnia kell:**
+- Az allowlisten kívüli repo-konfigurációs kulcs (például `http.*`, `gc.*`, `lfs`) miatt a művelet elutasított. Ez fail-closed, de meglévő infra-repóknál regressziót okozhat.
+- Globális git-konfiguráció nincs. Aki hitelesítő helpert használ, annak a `CIC_GIT_GLOBAL_CONFIG` kell.
+- Push-cél csak branch vagy tag lehet. A jelszót tartalmazó clone-URL tilos.
+
+**Review-csomag** (privát, `700` jogosultságú könyvtár, `600` fájlok): `~/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/`
+- `combined-e43f2a8..HEAD.diff`: a teljes ág együtt (95 KB), ahogy kérték;
+- commitonkénti diffek (8 db);
+- `PROVENANCE-155.txt`: commit-, tree- és blob-azonosítók, környezet, gate-ek;
+- `evidence-155-before-fix.txt` és `evidence-155-mutations.txt`.
+
+**Még nyitott:** a cic-flow grantok artifact-kötése (külön lelet), a #162 kriptográfiai kötés (HOLD), a HU/EN dokumentáció és a független review a teljes ágra. A nyilvános push HOLD, a #155 lezárása HOLD, a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 17:26 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Az F1 – Remote validáció (896b357) független review-jához csatold a 896b357.diff fájlt.
+
+Az ellenőrzés során külön vizsgálom:
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+A javítás leírása ígéretes, de a tényleges diff alapján döntök az F1 lezárásáról.
+
+Státusz: REVIEW PENDING – diffre vár.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 17:28 — Claude
+
+~~~~~
+A F1 review-csomagja kész, és közben találtam egy hiányosságot a saját javításomban, amit javítottam.
+
+**A diff** (privát könyvtár, a fájlt te adod át a reviewernek):
+`~/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/896b357.diff`
+sha256: `dedad794b82f5e99b8df88dbaf6d5bb8b17628dbc0981dcf7ca5edf74d79e1a5`
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 17:30 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+F1 – Remote validáció: független review
+Vizsgált commit: 896b357fc41135bbc77f01296190ca8331df3935
+
+Döntés: CHANGES REQUESTED – F1 részlegesen javítva.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+A Git azonban külön fetch és push URL-eket kezel.
+
+Ezt függetlenül, lokális Git 2.52.0 környezetben is ellenőriztem, hálózati művelet nélkül.
+Ellenőrzés    Eredmény
+remote get-url    Fetch URL
+remote get-url --push    Első push URL
+remote get-url --push --all    Valamennyi push URL
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+Ezt a konfigurációs hardening commit (14a3654) és a teljes ág review-ja során kell ellenőrizni. Jelenleg nem állapítok meg bizonyított megkerülhetőséget.
+Pozitív megállapítások
+- A remote tényleges konfiguráltságát már ellenőrzi.
+- A szintaktikailag megfelelő, de ismeretlen remote neveket elutasítja.
+- Az ErrInvalidArgument megkülönbözteti a validációs hibát a Git végrehajtási hibájától.
+- A negatív tesztek már az elutasítás okát is vizsgálják.
+- Az URL-feloldás a Git saját mechanizmusára épül.
+Review-döntés
+Követelmény    Eredmény
+Konfigurált remote ellenőrzése    PASS
+Fetch URL validációja    PASS
+Push URL validációja    FAIL
+Többszörös push URL kezelése    FAIL
+Atomikusság    REVIEW PENDING
+F1 lezárása    HOLD
+
+Nem szükséges architekturális változtatás. Egy célzott javító commit és a hozzá tartozó negatív tesztek szükségesek.
+
+A privát kezelési szabályok és a produkciós HOLD változatlanok.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 17:31 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**Tesztek:**
+- Eltérő fetch és push URL: a rossz push URL nem blokkolja a fetchet, és fordítva.
+- Több push URL, ahol a harmadik rossz.
+- URL-nélküli remote.
+- Ismeretlen művelet.
+- A hibaüzenet a konkrét okot adja, például hogy "push URL that is not allowed".
+
+**Mutációk:**
+- **M-Z1 (push a fetch URL-eket vizsgálja), M-Z2 (csak az első push URL), M-Z3 (fetch a push URL-eket vizsgálja):** mind megbuktatják a teszteket.
+- **M-Z4 (az üres URL-lista elfogadása):** ekvivalens mutáns, mert a git sosem ad üres listát, és ezt a bizonyítékfájl indokolja.
+
+A gate-ek tiszták: gofmt, vet, teljes `go test ./...`, `-race`.
+
+**Frissített review-csomag** (`.../private/review/`):
+- `5e7f5a5.diff`, sha256 `dd54fd99fd977269f97f2536f78766377efbb38e847c536abed89a9d43b488b6`;
+- `combined-e43f2a8..HEAD.diff`, sha256 `e6d8d7544df60fc516b089622921c0404572818e58e087c55024689196ae7dce`;
+- frissített `PROVENANCE-155.txt` és mutációs bizonyíték.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 17:33 — Felhasználó
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+Ezt lokális Git 2.52.0 alatt, hálózat nélkül ellenőriztem. A Git ilyen konfigurációs értéket több sorban jelenít meg, így a kimenetből nem állapítható meg egyértelműen az eredeti URL-rekord határa.
+
+A TrimSpace() ráadásul módosítja az ellenőrizendő értéket.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 17:35 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 17:36 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+## **Review –&#x20;**`b14ffe1`
+
+**Döntés:&#x20;**
+
+REQUEST CHANGES
+
+
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+```
+if r <= 0x20 || r == 0x7f {
+```
+
+Ez az ASCII whitespace és vezérlőkarakterek ellen megfelelő, de nem tiltja az összes Unicode whitespace és control karaktert, miközben a komment általános tiltást deklarál.
+
+A szerződést vagy szűkíteni kell ASCII-ra, vagy a validációt kiterjeszteni.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+Kétlépcsős validáció szükséges:
+
+[generált Mermaid-megjelenítő CSS kihagyva: 8047 karakter, nem beszélgetési tartalom]
+
+Mindkét validációnak az operáció tényleges konfigurációs környezetét kell figyelembe vennie.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 17:39 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 17:40 — Felhasználó
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+A jelenlegi implementáció ezt helyesen, fail-closed módon elutasítja.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 17:41 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**Csomag** (`.../private/review/`):
+- `6579d6f.diff`: sha256 `3de0f9563f4f864165aa41843f3c386a782bd741568feef6724f85233e6c6aae`;
+- `combined-e43f2a8..HEAD.diff`: sha256 `44dd659ded26fb7a0496a7ff81ff7b0d502e5ab2f6635ace88d0f1e7ce34303e`;
+- frissített `PROVENANCE-155.txt` és mutációs bizonyíték.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 17:43 — Felhasználó
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+A commit tartalmilag elfogadva. A tesztek tényleges lefutását és az aláírás kriptográfiai érvényességét a diffből nem igazoltam függetlenül.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 17:44 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**Az ág állapota:** `private/155-git-args`, 14 commit az `e43f2a8` fölött, HEAD `2cb7b6b`. A teljes ág egyesített diffje frissítve, sha256: `0c899855044bdc7301d80c83afae5630b550b6d44cb443a5667f6742d0073883`.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 18:07 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**A következő lépés a teljes ág független review-ja legyen.** A dokumentációval és a privát advisory beküldésével még várnék.
+
+A `2cb7b6b` állapotában a korábban vizsgált URL-validációs javításokat nem nyitnám újra.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+Ha ezt a CIC működési és jogosultsági modellje kizárja, nem feltétlenül szükséges újabb implementációs változtatás. Ha nem zárja ki, akkor a validáció és a végrehajtás közötti kötés még nem teljes.
+
+Kérem a teljes, egyesített diffet:
+
+- Base: `e43f2a8`
+- HEAD: `2cb7b6b`
+- Commitok száma: 14
+
+A teljes diff alapján már nem az egyes javításokat, hanem azok együttes működését és a teljes Git-biztonsági határt vizsgálnám.
+
+**A #155 lezárása és a nyilvános push továbbra is HOLD.**
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 18:09 — Claude
+
+~~~~~
+A teljes ág egyesített diffje elkészült, és megvan a válasz az atomicitás kérdésére is.
+
+**A kért diff** (privát könyvtár: `~/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/`):
+- `combined-e43f2a8..2cb7b6b.diff`: pontosan a kért tartomány, 14 commit, 18 fájl, +2219/−51 sor, sha256 `0c899855044bdc7301d80c83afae5630b550b6d44cb443a5667f6742d0073883`.
+- Közben egy 15. commitot adtam hozzá (`186e52b`, csak teszt, lásd lent), ezért van `combined-e43f2a8..HEAD.diff` is, sha256 `290372beb7136977efabb49f3520f47c6099d3ca04c24f18e0edd55a01569a3c`.
+- Mellé a commitonkénti diffek, a `PROVENANCE-155.txt` és a mutációs bizonyíték.
+
+**Ki módosíthatja a repó konfigurációját a validáció és a végrehajtás között?** A CIC modellje ezt nem zárja ki teljesen. A válasz főszereplők szerint:
+
+| Szereplő | Módosíthat? | Bizonyíték |
+|---|---|---|
+| WASM guest | **Nem** | A modul fájlrendszer nélkül jön létre (`core/cabinet/cicwasm.go:193`, nincs `WithFS`). A git-műveletei sem írnak konfigurációt: új teszt igazolja, hogy a fetch, checkout, commit, push és status után a lokális konfiguráció bájtra azonos. |
+| Hitelesített principal védett natív modulokkal | **Igen, de ez nem eszkaláció** | A `ci.build` tetszőleges könyvtárban futtat `make <target>`-et (`core/modules/cibuild/cibuild.go:52-55`). A védett lista: `cmd/relay/api_auth.go:133-141`, a `#181` határa hitelesítést kér. Aki ezt hívhatja, már most tetszőleges parancsot futtat a relay felhasználójaként. |
+| Operátor, root, a relay OS-felhasználójának más folyamatai | **Igen** | Ez a megbízott üzemeltetési tartomány. |
+| A relay saját git-hívásai | Operátori konfigból jönnek | `core/nexus/iac/source_git.go:80`, `core/nexus/sync/syncer.go:102`, `core/nexus/recorder/recorder.go`. A guest nem tud rájuk hatni. |
+
+**Következtetés.** A validáció és a végrehajtás között a **guest-eredetű módosítást** a modell kizárja. A hitelesített principal és az operátor módosíthat, de azok már teljes hoszt-jogosultsággal rendelkeznek, ezért az ablak nem ad nekik új képességet. Ezért ebből nem következik kötelező új implementációs változtatás. A feltétel az üzemeltetési előírás: **a regisztrált repók könyvtárai ne legyenek írhatóak a hitelesített principaloknál és az operátoroknál alacsonyabb bizalmi szintű szereplőnek.** Ezt a dokumentációba kellene venni, ha rábólintasz.
+
+**Amit hozzáadtam (`186e52b`, csak teszt):** `TestGuestReachableOperationsDoNotWriteTheConfiguration`. A gate-ek tiszták (gofmt, vet, teljes `go test ./...`, `-race`).
+
+**Két dolog, amit a diff áttekintésekor tudnod kell:**
+1. **Visszamenőleges viselkedésváltozás, amit az ág első commitja okozott, és eddig nem jeleztem:** a `git checkout <ref> --` miatt a távoli-csak ágnévből nem jön létre helyi követő ág (a git DWIM-je a `--` mellett nem működik). A helyi ágak, tagek és commitok változatlanul működnek. A teszt ezt rögzíti. Szólj, ha a régi viselkedés kell, akkor ezt külön kell megoldani.
+2. **Új, külön lelet (nem a #155 része):** a `source_git.go`, a `syncer.go` és a `recorder.go` git-hívásai nem kapták meg ezt a hardeninget (transportkorlát, környezeti allowlist, konfiguráció-audit). Az argumentumaik operátori konfigurációból jönnek, a guest nem éri el őket, de ugyanaz a bizalmi határ rájuk is vonatkozna.
+
+A #155 lezárása, a nyilvános push, a dokumentáció, az advisory és a produkciós jóváhagyás HOLD, ahogy kérted. A független review-t a teljes ágra te adod át.
+~~~~~
+
+### 2026-11-15 18:11 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+# **Teljes ág független security review – #155**
+
+**Döntés:&#x20;**
+
+REQUEST CHANGES
+
+
+
+Az argumentumvalidáció és a Git-konfiguráció védelme jelentősen javult. A teljes ág együttes vizsgálata azonban olyan problémákat is feltárt, amelyek az egyedi javító commitok review-jában nem voltak láthatók. Ezek elsősorban a capability és az artifact közötti kötést érintik.
+
+### **Vizsgált állapot**
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+### **F8 – A capability és az artifact összekötése nem atomi**
+
+
+
+HIGH
+
+`cmd/relay/cic_flow_registry.go`, `bootstrap.go`
+
+
+
+A capability regisztrálása és a cabinetben tárolt artifact hozzárendelése külön művelet.
+
+```
+registerVerified(moduleID, projectYAML)
+bindArtifact(moduleID, artifactChecksum)
+```
+
+A `bindArtifact()` az adott modulazonosítóhoz **pillanatnyilag tartozó grantet** módosítja. Nem ellenőrzi, hogy az ugyanabból a betöltési műveletből származik-e.
+
+Párhuzamos betöltés esetén a következő sorrend lehetséges:
+
+| Lépés | Művelet                           | Registry állapota    |
+| ----- | --------------------------------- | -------------------- |
+| 1     | A modul capability-regisztrációja | Grant A              |
+| 2     | B modul capability-regisztrációja | Grant B              |
+| 3     | A modul artifact-kötése           | Grant B + Artifact A |
+
+A mutex az egyes műveleteket védi, de a teljes tranzakciót nem.
+
+A meglévő concurrent reload teszt több olvasót és egyetlen újrabetöltési folyamatot futtat. Két párhuzamos betöltést nem modellez.
+
+**Elvárt javítás:** a grant és az artifact egyetlen atomi publikációja, vagy modulbetöltési generációhoz kötött tranzakció, amely elutasítja az elavult kötést.
+
+### **F9 – Az instance artifact-azonosítása túl későn történik**
+
+
+
+HIGH
+
+`core/cabinet/cicwasm.go`
+
+
+
+Az új callback az instance létrehozása után fut:
+
+```
+if m.config.OnInstance != nil {
+    m.config.OnInstance(moduleID, artifact)
+}
+```
+
+A WebAssembly start section azonban már az instantiation során futtathat guest kódot és hívhat importált host funkciókat.
+
+Emellett a `running` mapből nem történik látható törlés az instance bezárásakor.
+
+Ez együttesen azt jelenti, hogy a névhez rendelt korábbi artifact-azonosító átmenetileg felhasználható lehet az új instance indulása során.
+
+A jelenlegi callback-sorrend tehát önmagában nem bizonyítja az alábbi kommentben szereplő állítást:
+
+> before any guest code runs
+
+**Elvárt javítás:**
+
+- Az induló instance ne örökölhessen korábbi instance-azonosítót.
+- A host funkciók start section alatti hívása legyen bizonyíthatóan tiltott vagy megfelelő artifacthoz kötött.
+- A jogosultságot lehetőleg az instance egyedi identitásához, ne pusztán a modul nevéhez kössük.
+- Valódi WASM start sectiont használó negatív regressziós teszt készüljön.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+A meglévő capability-ellenőrzés korlátozza, hogy mely modulok kérhetnek ilyen refeket, de a manifest validátora önmagában nem tiltja ezek deklarálását.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+A `186e52b` commitban bevezetett teszt hasznos. Igazolja, hogy a vizsgált műveletsor normál konfigurációban nem módosítja a repository lokális konfigurációját.
+
+Ez azonban nem azonos az atomicitás bizonyításával.
+
+A teszt:
+
+- Nem futtat párhuzamos konfigurációmódosítást.
+- Nem vizsgálja a clone műveletet, amely konfigurációt hoz létre.
+- Nem zárja ki a más folyamatokból származó módosítást.
+- Egy meghatározott konfiguráció és műveletsor esetében ellenőrzi a konfiguráció változatlanságát.
+
+**Nem ragaszkodnék feltétlenül az atomi Git-konfigurációs snapshot implementálásához**, ha a deployment jogosultsági modellje bizonyíthatóan garantálja a konfiguráció integritását a művelet teljes időtartama alatt.
+
+A helyes megoldás itt elsőként a threat model pontosítása.
+
+## **3. Ami megfelelő**
+
+| Terület                                             | Értékelés                  |
+| --------------------------------------------------- | -------------------------- |
+| Git argumentum-injection elleni védelem             | PASS                       |
+| Opciók és operandusok elkülönítése                  | PASS                       |
+| Tárolt URL-ek NUL-alapú feldolgozása                | PASS                       |
+| Effektív remote URL validáció                       | PASS                       |
+| Tiltott transportok kizárása                        | PASS                       |
+| Konfigurációs allowlist                             | PASS a vizsgált hatókörben |
+| Git környezeti változók szűrése                     | PASS                       |
+| Pathspec injection elleni védelem                   | PASS                       |
+| Commit explicit pathokra korlátozása                | PASS                       |
+| Guest által deklarált hamis modulidentitás kizárása | PASS                       |
+| Capability–artifact életciklus                      | Javítandó                  |
+| Push namespace teljes korlátozása                   | Javítandó                  |
+
+## **4. Végső döntés**
+
+Review eredménye
+
+REQUEST CHANGES
+
+# **3**
+
+Blokkoló lelet
+
+# **1**
+
+Nyitott threat model
+
+# **10**
+
+Elfogadott terület
+
+\#155 lezárása
+
+HOLD
+
+Nyilvános push
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+A teljes CI-t és a Vault-aláírások kriptográfiai ellenőrzését függetlenül nem futtattam; a review a két összesített diff, a külön tesztcommit és a lokálisan reprodukált Git-viselkedés alapján készült.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 18:12 — Felhasználó
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+Ezt lokális Git 2.52.0 alatt, hálózat nélkül ellenőriztem. A Git ilyen konfigurációs értéket több sorban jelenít meg, így a kimenetből nem állapítható meg egyértelműen az eredeti URL-rekord határa.
+
+A TrimSpace() ráadásul módosítja az ellenőrizendő értéket.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 18:12 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 18:13 — Felhasználó
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+Az F8 és F9 javítása után közös integrációs tesztet is kérek, mert ugyanazon jogosultsági életciklus két különböző határát érintik.
+
+Ezután a teljes ág újrareview-ja következik.
+
+**A #155 lezárása, a nyilvános push és a produkciós jóváhagyás továbbra is HOLD.**
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 18:22 — Claude
+
+~~~~~
+Az F10, az F9 és az F8 javítva van, külön commitban, és a közös integrációs teszt is megvan. Minden helyi, push nélkül.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**F8 (`c7e6e3e`): atomi grant-publikálás.**
+- **Publikálás:** a grant és az artifact egyetlen lépésben, a registry zárja alatt publikálódik (`publishVerified`), a külön `bindArtifact` megszűnt.
+- **Sorosítás:** az azonos moduleID betöltései a visszavonástól a tárolásig sorosítva futnak. A modulleíró még a grant publikálása előtt elkészül, ha nem építhető, nincs grant, és a korábbi is elvész.
+- **Tesztek:** az első két mutációs próba túlélt, mert a teszteim valószínűségiek voltak, a másodiknál a saját tesztem `sync.Once`-a rejtette el az átfedést. Ezeket átírtam folyamatos megfigyelőre és determinisztikus, tartott-betöltéses tesztre. A végső újrafuttatások mindegyike megbukik, a teljes történet a bizonyítékfájlban van.
+
+**Közös F8+F9 integrációs teszt:** a valódi `loadModule` publikál, a valódi `WasmManager` példányosít, a start section git-et hív. Lefedi az ellenőrzött betöltést, az új artifactos újratöltést, a nem ellenőrzött újratöltést, az újra ellenőrzött betöltést és a versenyt a betöltések és példányosítások között.
+
+**Gate-ek:** gofmt, vet, a teljes `go test ./...` és `-race` tiszta. A `SYMBOLS.md` és a `MANIFEST.sha256` az új `InstanceIdentity` miatt frissült.
+
+**Amit tudnod kell:**
+- **cic-flow:** a cic-flow grantok ugyanúgy a modul nevével vannak keresve, nincsenek az artifacthoz vagy a példányhoz kötve. Ugyanaz a gyengeség, a git-capabilityn kívül. Külön lelet.
+- **Viselkedés:** egy sikertelen betöltés a korábbi grantot is elveszi, ami fail-closed. A checkout `--` miatti DWIM-korlát (nincs automatikus követő ág) változatlan.
+
+**Csomag** (`.../private/review/`):
+- `combined-e43f2a8..HEAD.diff`: sha256 `a9d7d885af2edde7baf8329e6bf929d1838bdc122e5bdf8e4992d22e90982af9`;
+- `delta-186e52b..HEAD.diff` (csak a három új commit, 17 fájl): sha256 `c799c73f877be9b7357a153f485b7fdab6467b22e87385ca2d5cc2a43421872c`;
+- a három commit külön diffje, a frissített `PROVENANCE-155.txt` és mutációs bizonyíték.
+
+A teljes ág újrareview-ja jöhet. A #155 lezárása, a nyilvános push és a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 18:29 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+# **#155 – teljes privát ág újrareview**
+
+**Review HEAD:** `c7e6e3efd119d408759348190d4160b2dbec697f`
+
+**Döntés: CHANGES REQUESTED.**
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+P1 – VERIFY
+
+A grant tárolja:
+
+- A WASM digestjét.
+- A manifest digestjét.
+- Az artifact checksumját.
+
+A futásidejű autorizáció azonban csak az artifact checksumját hasonlítja össze. Az instance identity egyedi sorszáma nem vesz részt a granthez történő hozzárendelésben.
+
+Ellenőrizni kell, hogy azonos WASM-tartalom, de megváltozott capability manifest esetén hogyan viselkedik egy korábban létrehozott példány.
+
+Kérek erre célzott regressziós tesztet. A teljes `ModuleDescriptor.Checksum()` implementáció nélkül nem tekintem bizonyított hibának.
+
+## **F8.2 – Publikálás és tárolás határa**
+
+P2 – VERIFY
+
+A grant és a hozzá tartozó checksum egyetlen registry-műveletben publikálódik. Ez rendben van.
+
+A cabinetbe történő tárolás viszont külön művelet, amely a publikálás után történik.
+
+A sikertelen tárolás utáni visszavonás megfelelő védelmi mechanizmus, de vizsgálni kell a még folyamatban lévő műveletek viselkedését, különösen az F8.1 esettel együtt.
+
+## **F9 – Runtime instance identity**
+
+APPROVE
+
+A kért módosítások megvalósultak:
+
+- Az identitás a példányosítás előtt létrejön.
+- A start section megfelelő kontextust kap.
+- A `callGuest()` felülírja a hívótól származó identitást.
+- Megszűnt a korábbi névhez kötött running map.
+- Az öt célzott mutáció a mellékelt bizonyíték szerint megbukik.
+
+A vizsgált F9 javítást elfogadom, az F8.1 életciklus-kérdését fenntartva.
+
+## **Tesztbizonyítékok**
+
+Kifejezetten pozitívum, hogy az eredetileg túlélő F8 mutációk történetét nem törölték ki a jelentésből, hanem dokumentálták a tesztek megerősítését és az újrafuttatás eredményét.
+
+A három új lelethez tartozó 12 különböző célzott mutáció végső eredménye a mellékelt napló szerint 12/12 detektált.
+
+Ez azonban nem teljes repository-szintű mutation score, és a teljes tesztcsomagot nem futtattam újra függetlenül.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 18:38 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**Egy korábbi hiba, amit megtaláltam és javítottam (`e9afa1b`).**
+- **Mi történt:** az F8.1-es commitot egy `-race -count=2` futás közben piros eredménnyel véglegesítettem, mert a parancssorom nem állt meg. Az ok nem az ág volt, hanem a már mergelt `main`: a `TestLoadConfig_Defaults` meghívja az `os.Clearenv()`-et, és nem állítja vissza. Ettől a `PATH` és a `HOME` eltűnik minden későbbi tesztnél, így a git-et indító tesztek (köztük a mergelt #190-es hardening teszt is) a második futásnál elbuknak. Ezt a `main` `e43f2a8` állapotán, külön worktree-ben is megerősítettem: ott is bukik.
+- **Javítás:** a teszt a környezetet elmenti és visszaállítja. A `-count=3`, a `-shuffle=on` és a `-race -count=2 -shuffle=on` is tiszta a három érintett csomagra.
+- **Következmény:** ez a hiba a CIC_Relay `main` ágán van, ezért külön javítás vagy issue is indokolt lehet.
+
+**Gate-ek:** gofmt, vet, teljes `go test ./...` tiszta.
+
+**Csomag** (`.../private/review/`):
+- `combined-e43f2a8..HEAD.diff`: sha256 `03ef84e81631d2cc75576dcb5b51abc15e1bf1059b0d999e73833f886ddb2d08`;
+- `delta-c7e6e3e..HEAD.diff` (a három új commit, 10 fájl): sha256 `1c8c7a60c0429a2b3ab425742c0dee2ef50bef380495f22de6ce89965c3db9e1`;
+- a commitonkénti diffek, a frissített `PROVENANCE-155.txt` és mutációs bizonyíték.
+
+**Még nyitott:** a cic-flow grantok név szerint kereshetők, nincsenek artifacthoz és példányhoz kötve. A #162 kriptográfiai kötés és a HU/EN dokumentáció is nyitott. A #155 lezárása, a nyilvános push és a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 19:12 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Független review – CIC Relay #155
+Vizsgált HEAD: e9afa1b
+Bázis: e43f2a8
+Commitok: 21
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 19:14 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**Mellékhatás:** a puszta commit-azonosító forrás ágnévként értelmeződik, ezért a git nem talál ilyen ágat. A commit-hash push így nem működik, ez fail-closed.
+
+**Amit rögzítettem a review nem blokkoló észrevételeiből:**
+- Az A→B→A manifestváltásnál az eredeti A alatt létrejött példány visszanyerheti a jogát. Ez a tartalomalapú identitás következménye, nem a végleges példány-visszavonás.
+- A `main`-beli `os.Clearenv()` hiba javítása a privát változtatásoktól függetlenül, önálló PR-ban javasolt.
+
+**Csomag** (`.../private/review/`):
+- `combined-e43f2a8..HEAD.diff`: sha256 `7b7dacaa09252a02b55a91efc0e588c1f9d855923a1d500c4204892e7fc9d327`;
+- `delta-e9afa1b..HEAD.diff`: sha256 `f827f83c2f46a624e07cba5d1ac16366c400bbdbcb939a2ffedebdc1b7fdd31a`, 4 fájl;
+- az új commit diffje, a frissített provenance és mutációs bizonyíték.
+
+HEAD `0936a0e`, 22 commit az `e43f2a8` fölött. A cic-flow grantok artifact-kötése, a #162 kriptográfiai kötés és a dokumentáció nyitott. A #155 lezárása, a nyilvános push és a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 19:40 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Független review – CIC Relay #155
+Vizsgált HEAD: 0936a0e
+Bázis: e43f2a8
+Commitok száma: 22
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 19:43 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+HEAD `0b65de0`, 23 commit az `e43f2a8` fölött. A cic-flow artifact-kötés, a #162 kriptográfiai kötés és a dokumentáció nyitott. A #155 lezárása, a nyilvános push és a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 19:44 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Független review – CIC Relay #155
+HEAD: 0b65de0
+Bázis: e43f2a8
+Commitok száma: 23
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+Eredmény:
+Objektum    Azonosító
+Engedélyezett forrás    c40f17e…
+Azonos nevű tag tartalma    a78add9…
+Ténylegesen pusholt commit    a78add9…
+
+A Git push a tag tartalmát továbbította az ellenőrzött objektum helyett.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 19:48 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+HEAD `ec61207`, 24 commit az `e43f2a8` fölött. A cic-flow artifact-kötés és a #162 kriptográfiai kötés nyitott. A #155 lezárása, a nyilvános push és a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 19:51 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Független review – CIC Relay #155
+HEAD: ec61207
+Bázis: e43f2a8
+Commitok száma: 24
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 19:52 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**Rögzítettem a privát fenyegetési modellben** az R8 és R9 kockázatot, és hogy a kliensoldali védelem itt nem garancia. A korábbi fejlesztési csomag változatlan: HEAD `ec61207`, 24 commit.
+
+Szólj, melyik irányt választod. A #155 lezárása, a nyilvános push és a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 19:53 — Felhasználó
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+Ez a CIC alapelvéből következik: ha a végrehajtás azonossága nem bizonyítható, akkor a végrehajtás nem engedélyezhető.
+
+A C opció végrehajtását javaslom. Nem a teljes Git-hardening feladatot kell tovább növelni, hanem a push-t külön, szigorúan definiált végrehajtási primitívként kezelni.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 19:56 — Claude
+
+~~~~~
+A C opciót végrehajtottam: a `git.push` a guest számára nem érhető el. A változás egy commit (`60924a2`). Helyi, push nélkül.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+HEAD `60924a2`, 25 commit az `e43f2a8` fölött. A cic-flow artifact-kötés, a #162 kriptográfiai kötés és a HU/EN dokumentáció nyitott. A #155 lezárása a következő review-ig, a nyilvános push és a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 19:59 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Független review – CIC Relay #155
+HEAD: 60924a2
+Bázis: e43f2a8
+Commitok száma: 25
+
+Review-döntés: APPROVE – a C opció szerinti biztonsági hatókörben.
+
+Új blokkoló leletet a vizsgált változtatásban nem találtam.
+1. A push capability visszavonása
+Védelmi réteg    Ellenőrzés    Döntés
+Manifest    Push grant elutasítása    PASS
+Import    Deklarált push import elutasítása    PASS
+Registry    Mesterséges grant mellett is tilt    PASS
+WASM host    Feltétel nélküli tiltó csonk    PASS
+GitOps    Guest felől a közvetlen push elérhetetlen    PASS
+ABI    Export kompatibilitása megmaradt    PASS
+
+A legfontosabb változtatás:
+func pushDisabledFn(
+    _ context.Context,
+    mod api.Module,
+    _, _, outPtr, outLen uint32,
+) int32 {
+    return gitWriteError(
+        mod, outPtr, outLen,
+        "git: "+gitPushDisabled,
+    )
+}
+
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+Kifejezetten jó a mindent engedélyező authorizerrel végzett valódi WASM-integrációs teszt. A teszt azt bizonyítja, hogy az autorizációs réteg meghibásodása önmagában sem teszi elérhetővé a push műveletet.
+4. ADR és dokumentáció
+Az ADR irányát elfogadom. Két nem blokkoló pontosítást kérek:
+- Az importtilalom megfogalmazása különböztesse meg a manifestben deklarált importot a WASM bináris tényleges importjától. A tiltó host csonk mindkét esetben véd.
+- A PoC konformanciatesztjei ne minden esetben elutasítást várjanak, hanem azt, hogy kizárólag az autorizált objektum és célreferencia módosulhasson. A biztonságosan végrehajtható művelet sikeres is lehet.
+Az új issue tervezete megfelelő, nyilvánosan feladható megfogalmazású, de nem adtam fel.
+5. Végső döntés
+Terület    Státusz
+#155 kódreview    APPROVE
+C architekturális döntés    IMPLEMENTED
+#155 szakmai lezárhatósága    GO – szűkített hatókörben
+Push visszavezetése    Külön issue
+HU/EN dokumentáció    Nyitott
+cic-flow artifact-kötés    Nyitott
+#162 kriptográfiai kötés    HOLD
+Nyilvános push    HOLD – tulajdonosi döntésig
+Produkciós jóváhagyás    HOLD
+
+A 25 commitból álló fejlesztési csomag a vizsgált biztonsági hatókörben elfogadható.
+
+A korábbi review-k során feltárt problémák miatt nem gyengítettük a biztonsági követelményt, hanem visszavontuk azt a képességet, amelynek biztonságos végrehajtását még nem tudjuk garantálni. Ez architekturálisan is helyes döntés.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 19:59 — Claude
+
+~~~~~
+A review APPROVE-ot adott a `60924a2`-re, a C opció szerinti hatókörben. Új kódot nem írtam, a két nem blokkoló kérést az ADR-vázlatban vezettem át. Az ADR új sha256-ja `bd6b104e162ac24b07ac6c6fc53b25e714e6487dfe44a8bd7c592dfb055c0ed2`.
+
+**Az ADR két pontosítása.**
+- **Importtilalom:** külön kezeli a manifestben vagy az `abi.imports`-ban deklarált importot (ezt a betöltés elutasítja) és a WASM bináris tényleges importját (ezt a betöltés nem vizsgálja). A második esetet a futásidejű tiltó csonk fedi. A bináris tényleges import-listájának ellenőrzése külön tétel lett.
+- **Konformanciatesztek:** az elfogadási kritérium az, hogy kizárólag az autorizált objektum és célref módosulhat. A művelet maga sikeres is lehet. A tesztek a távoli repó teljes ref-állapotát hasonlítják a várthoz, nem a visszatérési értéket.
+
+**Hol tart a #155.**
+- **Kód és biztonság:** a 25 commit a vizsgált hatókörben elfogadott. A #155 szakmai lezárhatósága GO, szűkített hatókörben. Mindez privát, helyi ágon van, nem a nyilvános repóban.
+- **Nyitott:** HU/EN dokumentáció, cic-flow artifact-kötés, #162 kriptográfiai kötés, push visszavezetése (külön issue).
+- **Nincs feladva:** az advisory és a push-visszavezetési issue, ezeket te adod fel.
+
+**Tulajdonosi döntés, ami rád vár, mielőtt bármi nyilvánosságra kerül.**
+1. **A javítás útja a nyilvános repóba:** a privát GitHub Security Advisory fork és privát PR a megfelelő út, nem sima push. A 25 commit egyben menjen, vagy részekre bontva. Én ezt nem indítom el.
+2. **Advisory:** a vázlat a work-runtime-ban van, a beküldés a tiéd.
+3. **A `main`-beli `os.Clearenv()` teszthiba** önálló PR-t érdemel a biztonsági változtatásoktól függetlenül. Ez publikus lehet, ahol a privát kezelés szerinti külön döntés kell.
+4. **Push-visszavezetési issue:** a vázlat általános, nyilvánosan feladható megfogalmazású.
+
+Szólj, melyik lépést készítsem elő. A nyilvános push és a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 20:00 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**Döntés: a #155 javítása privát Security Advisory forkban, egyetlen integrációs PR-ként történjen.**
+
+A 25 commitot nem bontanám különálló PR-ekre. A teljes csomagot együtt review-ztuk, a biztonsági garanciák egymásra épülnek. A commitstruktúrát és a bizonyítékokat meg kell őrizni.
+
+A következő sorrendet kérem:
+
+1. **HU/EN dokumentáció elkészítése.** A szűkített capability-szerződés véglegesítése.
+2. **Release előtti evidence-csomag összeállítása.** Commitazonosítók, diff-hash-ek, review-döntések, regressziós és mutációs eredmények.
+3. **Privát Security Advisory PR előkészítése.** Beküldés nélkül.
+4. Az `os.Clearenv()` javításának előkészítése önálló PR-ként.
+5. A push visszavezetésének külön munkacsomagként történő előkészítése.
+
+| Terület                          | Döntés  |
+| -------------------------------- | ------- |
+| #155 elfogadott kód              | APPROVE |
+| HU/EN dokumentáció               | GO      |
+| Privát integráció előkészítése   | GO      |
+| Önálló tesztjavítás előkészítése | GO      |
+| Advisory beküldése               | HOLD    |
+| Nyilvános issue létrehozása      | HOLD    |
+| Nyilvános push                   | HOLD    |
+| Produkciós jóváhagyás            | HOLD    |
+
+A következő review tárgya már ne a jóváhagyott kód ismételt felülvizsgálata legyen, hanem **a teljes integrációs csomag konzisztenciája és publikálhatósága**.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 20:05 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**3. Privát Security Advisory PR előkészítése.**
+- **Integrációs ág:** `security/git-host-functions` @ `47ecf29`, 26 commit, a commitstruktúra és az aláírások megőrizve.
+- **Bundle:** `155-integration-e43f2a8..47ecf29.bundle`. Az `e43f2a8` kell hozzá előfeltételként, a `git bundle verify` rendben, sha256 `e8a1956b75ea55ac21333cc58817cc3627b6e55969e01e6e36530c1f6e55f118`.
+- **PR-leírás:** `PR-BODY-155-integration.md` (angol, az advisory-fork PR-hoz). Merge-commitot kér, rebase vagy squash nélkül. A `GHSA-TBD` helyére az advisory azonosítója kell.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+A következő review tárgyaként a csomag konzisztenciáját és publikálhatóságát javaslom. Az advisory beküldése, a nyilvános issue, a nyilvános push és a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 20:06 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**A #155 integrációs review-ja indulhat.** A jelentés alapján mind az öt előkészítő lépés teljesült.
+
+Review célpont: `47ecf29`, 26 commit.
+
+Most már nem a korábban elfogadott implementációt kell újrareview-zni, hanem a teljes integrációs csomag konzisztenciáját.
+
+Az ellenőrzéshez kérem:
+
+- `INDEX.md`
+- `RELEASE-EVIDENCE-155.md`
+- `delta-60924a2..47ecf29.diff`
+- `PR-BODY-155-integration.md`
+- az advisory aktuális vázlatát
+- `PR-clearenv-BODY.md` és a `37210a1` diffjét
+- `WORKPACKAGE-push-reintroduction.md`
+- a frissített ADR-t.
+
+Külön ellenőrizni fogom a dokumentációban vállalt garanciák és a jóváhagyott implementáció egyezését, a publikálható és privát információk elválasztását, valamint a bizonyítéklánc teljességét.
+
+| Terület                      | Státusz        |
+| ---------------------------- | -------------- |
+| Korábbi 25 commit            | APPROVE        |
+| Dokumentációs commit         | REVIEW PENDING |
+| Integrációs csomag           | REVIEW PENDING |
+| Független aláírás-ellenőrzés | PENDING        |
+| Advisory beküldése           | HOLD           |
+| Nyilvános push               | HOLD           |
+| Produkciós jóváhagyás        | HOLD           |
+
+**A teljes csomag jóváhagyása lesz az utolsó szakmai kapu a privát integráció megindítása előtt.**
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 20:07 — Claude
+
+~~~~~
+A review-csomag összeállítva, egy mappában: `…/task-relay-issue-queue-01/private/review/handoff-47ecf29/`. Az `SHA256SUMS` fájl a mappában van, a lenyomatok alább.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 20:08 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+A csomag összeállítása megfelelőnek tűnik, de az új fájlok még nem érkeztek meg hozzám. A korábbi `60924a2` review-csomag továbbra is elérhető.
+
+Kérlek, töltsd fel a teljes `handoff-47ecf29` könyvtárat egyetlen ZIP-ben, az `SHA256SUMS` fájllal együtt.
+
+Az integrációs review során öt kaput ellenőrzök:
+
+| Kapu | Ellenőrzés                                      |
+| ---- | ----------------------------------------------- |
+| G1   | Csomagintegritás és commitlánc                  |
+| G2   | HU/EN dokumentáció és implementáció egyezése    |
+| G3   | Evidence konzisztenciája és mutációs eredmények |
+| G4   | Advisory és publikációs határ                   |
+| G5   | Integrációs PR és különálló tesztjavítás        |
+
+A korábbi 25 commit APPROVE státusza változatlan.
+
+**Integrációs review: PENDING – csomagátadásra vár.**
+
+Minden publikációs HOLD érvényben marad.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 20:09 — Claude
+
+~~~~~
+A ZIP elkészült és ellenőrzött, de feltölteni nem tudom. Nincs feltöltési csatornám a reviewerhez, és a csomag privát anyagot tartalmaz (az advisory-vázlatot, a fenyegetési modellt, a provenance-t), ezért nem is küldök külső szolgáltatásra. A fájlt te adod át.
+
+**ZIP:** `~/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/handoff-47ecf29.zip`
+- **sha256:** `5d7f87c119d5f7c62cbe4d7dd27dc63a099c45edc10061985929232a45015ea2`
+- **Méret:** 145 929 bájt, jogosultság `600`.
+- **Tartalom:** 14 fájl a `handoff-47ecf29/` könyvtárban: a 13 átadott fájl és a `SHA256SUMS`. Az archívum tesztje hibátlan.
+- **Ellenőrzés:** a ZIP-et külön könyvtárba kicsomagoltam, és az `SHA256SUMS` szerint mind a 13 fájl `OK`. A bundle sha256-ja `e8a1956b75ea55ac…`, a korábban közölttel egyező.
+
+A reviewer ellenőrzése: kicsomagolás után `cd handoff-47ecf29 && sha256sum -c SHA256SUMS`. A `SHA256SUMS` önmagát nem listázza, ezért az ellenőrzésnél egy „no such file" sor nem hiba.
+
+**Kapukhoz a fájlok:**
+
+| Kapu | Fájlok a csomagban |
+|---|---|
+| G1 csomagintegritás és commitlánc | `SHA256SUMS`, a bundle (`e43f2a8..47ecf29`, 26 commit, az `e43f2a8` kell hozzá), `PROVENANCE-155.txt`, `INDEX.md` |
+| G2 dokumentáció és implementáció | `47ecf29.diff` és `delta-60924a2..47ecf29.diff` (a dokumentációs commit), a kód a bundle-ben |
+| G3 evidence és mutációk | `RELEASE-EVIDENCE-155.md`. A nyers mutációs napló a `review/` mappában van (`evidence-155-mutations.txt`), nem a ZIP-ben. Ha kéri, hozzáadom. |
+| G4 advisory és publikációs határ | `ADVISORY-DRAFT-git-host-functions.md`, `PR-BODY-155-integration.md`, `THREAT-MODEL-155.md` |
+| G5 integrációs PR és teszt-PR | `PR-BODY-155-integration.md`, `PR-clearenv-BODY.md`, `37210a1.diff` |
+
+A ZIP-ből szándékosan hiányzik a nyers mutációs napló és a commitonkénti diffek (ezek a `review/` mappában vannak). Ha a reviewernek a G3-hoz kell, hozzáadok egy `evidence/` almappát egy új ZIP-be, és új sha256-ot adok.
+
+A korábbi 25 commit APPROVE státusza változatlan. Minden publikációs HOLD érvényben marad: advisory beküldése, nyilvános issue, nyilvános push, produkciós jóváhagyás.
+~~~~~
+
+### 2026-11-15 20:11 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+CIC Relay #155 – Integrációs és publikálhatósági review
+Vizsgált HEAD: 47ecf29760041f2dfbf8c007e427007665b3d30e
+Bázis: e43f2a8
+Commitok száma: 26
+
+Review-döntés: REQUEST CHANGES – dokumentációs és evidence-pontosítások.
+
+A korábban elfogadott 25 commit APPROVE státuszát fenntartom. A jelenlegi leletek nem igényelnek termékkód-módosítást.
+1. Integrációs kapuk
+Kapu    Terület    Eredmény
+G1    Csomagintegritás és commitlánc    PARTIAL PASS
+G2    HU/EN dokumentáció és implementáció    CHANGES
+G3    Evidence és mutációk    CHANGES
+G4    Advisory és publikációs határ    CHANGES
+G5    Integrációs PR és tesztjavítás    PASS
+
+2. G1 – Csomagintegritás
+Függetlenül ellenőriztem:
+- ZIP SHA-256: egyezik.
+- Archívum integritása: PASS.
+- A 14 fájlból mind a 13 manifestben szereplő fájl SHA-256 értéke egyezik.
+- A bundle által hirdetett branch és HEAD megfelelő.
+- A bundle előfeltétele a megadott e43f2a8.
+A teljes commitláncot és az aláírásokat a bázisrepository hiányában nem ellenőriztem függetlenül.
+3. G2 – Dokumentációs leletek
+D1 – Importellenőrzés túlállítása
+Javítandó
+A korábbi ADR-ben már megfelelően elkülönítettük a deklarált és a tényleges bináris importokat. Ez a pontosítás azonban nem került át a HU/EN dokumentációba.
+
+A következő állítás túl erős:
+A modul nem importálhatja (mindkettő betöltési hiba).
+
+A gitImports() az ABI.Imports mezőt olvassa, nem a WASM bináris importlistáját.
+
+Mindkét nyelven egyértelműsíteni kell:
+- A deklarált import betöltéskor elutasított.
+- A tényleges bináris import futásidőben a tiltó csonkhoz jut.
+- A bináris importlista betöltéskori validációja külön nyitott feladat.
+D2 – Repository-konfiguráció ellenőrzése
+Pontosítandó
+A dokumentáció minden Git-műveletre repository-konfigurációs ellenőrzést ígér.
+
+A Clone() nem futtat auditRepoConfig() ellenőrzést. Ez egy új repository létrehozásakor érthető, de a dokumentáció különböztesse meg a klónozást a már létező repositoryn végzett műveletektől.
+D3 – URL-hitelesítő adatok
+Pontosítandó
+A validateCloneURL() a jelszót tartalmazó userinfót tiltja, önmagában a felhasználónevet nem.
+
+Például az SSH URL-ben szereplő git@ engedélyezett lehet. A dokumentáció ezt pontosan tükrözze.
+4. G3 – Evidence számszaki eltérés
+Javítandó
+Az evidence-dokumentumban szerepel:
+90 bejegyzés; 77 killed; a többi 10.
+
+Függetlenül megszámoltam a táblázat sorait, valamint a rendelkezésemre álló legutóbbi nyers mutációs napló bejegyzéseit.
+Mutató    Ellenőrzött érték
+Összes bejegyzés    90
+Killed jelölésű    77
+Egyéb    13
+Dokumentálatlan túlélő    Nem azonosítottam
+
+A helyes összesítés tehát 90 = 77 + 13.
+
+További pontosítás: ez történeti mutációs bizonyíték, nem az integrációs HEAD-en egyetlen futtatással mért mutation score. A korábban eltávolított push-autorizációs kód mutációi is szerepelnek benne.
+
+A nyers mutációs naplót a végleges, önállóan ellenőrizhető privát csomagba is beletenném.
+5. G4 – Advisory
+Az advisory szerkezete megfelelő. Három állítást azonban pontosítani kell:
+- A deklarált és tényleges WASM-import különbségét itt is át kell vezetni.
+- A manifest és a futtatott WASM kriptográfiai összerendelése nem tekinthető bizonyítottnak, amíg a #162 nyitott.
+- A kerülő megoldás ne pusztán a manifestben deklarált Git-importok ellenőrzésére épüljön. A nem megbízható modulok betöltésének megakadályozása legyen egyértelmű.
+A dokumentációs anyagokban nem találtam konkrét támadási reprodukciót. A privát threat model és a részletes evidence megfelelően elkülönült a nyilvános dokumentációtól.
+6. G5 – Integrációs PR és külön tesztjavítás
+APPROVE.
+
+A 37210a1 diffje kizárólag a tesztkódot érinti. Az os.Clearenv() problémát az eredeti környezet t.Cleanup() segítségével történő visszaállításával kezeli.
+
+Az integrációs PR merge-commit követelménye megfelelő. A standalone teszt-PR esetleges korábbi mergelése után az integráció végső bázisát és a CI eredményeit újra ellenőrizni kell.
+7. Végső döntés
+Terület    Státusz
+Korábbi 25 commit    APPROVE
+Önálló tesztjavítás    APPROVE
+Dokumentációs commit    REQUEST CHANGES
+Release evidence    REQUEST CHANGES
+Privát integrációs csomag    HOLD – pontosításig
+Advisory beküldése    HOLD
+Nyilvános push    HOLD
+Produkciós jóváhagyás    HOLD
+
+A javítási kör kizárólag dokumentációs és bizonyítékkezelési feladat. Új implementációs vagy architekturális változtatást jelen review eredményeként nem kérek.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 20:14 — Claude
+
+~~~~~
+Az integrációs review dokumentációs és evidence-pontosításait elvégeztem, és új csomagot építettem. A termékkód nem változott, a `60924a2` óta csak a dokumentáció módosult.
+
+**Új ZIP:** `…/private/review/handoff-5bd43d3.zip` (jogosultság `600`)
+- **sha256:** `e1a4325ca6c18ae720a74888804bb753c84b4dbc69b7132eeea2337e5a4ca285`
+- **Méret és tartalom:** 365 589 bájt, 45 bejegyzés. Kicsomagolás után a 44 fájl mindegyike megfelel az `SHA256SUMS`-nak.
+- **Bundle:** `155-integration-e43f2a8..5bd43d3.bundle`, ellenőrzött. Az `e43f2a8` kell hozzá előfeltételként.
+
+**Új HEAD:** `5bd43d3d74022323aa18b083b2a0a2c8abc73853` (tree `c8cc0301…`), 27 commit az `e43f2a8` fölött. A gate-ek az új HEAD-en is zöldek: 26/26 csomag és a `-race -count=2 -shuffle=on`.
+
+**Pontosítások, leletenként:**
+- **D1 (import):** mindkét nyelven kimondja, hogy a betöltéskori ellenőrzés a **deklarált** importokat olvassa (`abi.imports`), a WASM bináris import-szekcióját nem. A deklarálatlan bináris-import futásidőben ütközik a védelembe: grant nélkül elutasított, a `git.push` mindig elutasító csonk. A bináris tényleges importjainak betöltéskori ellenőrzése nyitott feladatként szerepel. A push-pontnál is kijavítottam a "nem importálhatja" megfogalmazást.
+- **D2 (repo-audit):** a dokumentáció megkülönbözteti a meglévő repón végzett műveleteket (`status`, `fetch`, `checkout`, `commit`, ezek előtt audit fut) a klónozástól. A `clone` új repót hoz létre üres célba, előtte nincs mit auditálni, minden későbbi művelet audit alá esik.
+- **D3 (URL):** a jelszó tiltott, a puszta felhasználónév megengedett (például `ssh://git@host/…`). A kimenetekben a userinfo maszkolt.
+- **G3 (evidence-számolás):** **90 = 77 killed + 13 egyéb.**
+  - A 13 egyéb: 2 magyarázó jegyzetsor a naplóban (nem futás), 5 ekvivalens mutáns és 6 túlélt-majd-megerősített. A futások száma így 88.
+  - Az evidence kimondja, hogy ez történeti bizonyíték, nem egyetlen futtatással mért mutation score, és tartalmazza a később eltávolított push-autorizációs kód mutációit is.
+  - A nyers mutációs napló és a commitonkénti diffek bekerültek az `evidence/` almappába.
+- **G4 (advisory):** a deklarált és a tényleges import különbsége szerepel. A #162 kifejezetten "nem bizonyított" a nyitott állapota alatt. A kerülő megoldás most azzal kezdődik, hogy nem megbízható WASM modult nem szabad betölteni, és kimondja, hogy nem épülhet a deklarált importok vizsgálatára.
+- **G5:** a PR-body is javítva a számolással és a bináris-import nyitott tétellel. Az `INDEX.md` és a `PROVENANCE-155.txt` frissítve.
+
+**Amit nem tudok pótolni:** a commitlánc és az aláírások független ellenőrzése a te oldalad (a bázisrepóval), ahogy a reviewer is jelezte. A ZIP-et továbbra is neked kell átadnod, nem töltöm fel sehová.
+
+Minden publikációs HOLD érvényben marad: advisory beküldése, nyilvános issue, nyilvános push, produkciós jóváhagyás. A korábbi `handoff-47ecf29` mappa és ZIP változatlanul megvan, de elavult, a mérvadó az új csomag.
+~~~~~
+
+### 2026-11-15 20:15 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+CIC Relay #155 – Végső integrációs review
+Vizsgált HEAD: 5bd43d3d74022323aa18b083b2a0a2c8abc73853
+Bázis: e43f2a8
+Commitok száma: 27
+
+Review-döntés: APPROVE – feltételes integrációs GO.
+
+Új termékkódot érintő blokkoló lelet nincs. A korábbi 25 commit jóváhagyása változatlan.
+1. Integrációs kapuk
+Kapu    Terület    Eredmény
+G1    Csomagintegritás    PASS
+G1    Commitlánc és aláírások    CI PENDING
+G2    HU/EN dokumentáció    PASS
+G3    Evidence és mutációk    PASS
+G4    Advisory és publikációs határ    PASS
+G5    Integrációs PR és tesztjavítás    PASS
+
+2. Csomagintegritás
+Függetlenül ellenőriztem:
+- ZIP SHA-256: egyezik.
+- Archívum integritása: hibátlan.
+- Az SHA256SUMS mind a 44 bejegyzése ellenőrizhető.
+- A bundle a megfelelő integrációs HEAD-et hirdeti.
+- Az utolsó commit diffje kizárólag a két nyelvi dokumentációt érinti.
+A commitlánc teljes ellenőrzése és a kriptográfiai aláírások validálása továbbra is az integrációs környezet feladata.
+3. Korábbi dokumentációs leletek
+Lelet    Eredmény
+D1 – Deklarált és tényleges import    CLOSED
+D2 – Repository-audit hatóköre    CLOSED
+D3 – URL-felhasználónév és jelszó    CLOSED
+G3 – Mutációs számszaki eltérés    CLOSED
+G3 – Nyers evidence hiánya    CLOSED
+G4 – Advisory pontosításai    CLOSED
+
+Egy nem blokkoló szerkesztési észrevétel maradt: a dokumentáció 7. szakaszában és a privát PR-body néhány mondatában még az általános importálás szerepel a deklarált importálás helyett. Ezeket a végleges szövegben egységesíteni kell.
+4. Evidence végállapota
+Mutációs táblázat90
+Dokumentált bejegyzés
+Killed jelölésű77
+Történeti bizonyíték
+
+
+Kategória    Darab
+Killed jelölésű    77
+Ekvivalens mutáns    5
+Első futásban túlélő, később megfogott    6
+Magyarázó jegyzetsor    2
+Összesen    90
+
+
+A számszaki összesítés egyezik a táblázattal. A nyers napló és a commitonkénti diffek rendelkezésre állnak.
+
+Helyesen történeti bizonyítékként kezelitek az eredményeket, nem a végleges HEAD mutation score-jaként.
+5. Végső rendelkezés
+Terület    Döntés
+27 commitból álló integrációs csomag    APPROVE
+Privát integráció szakmai előkészítése    GO
+Önálló os.Clearenv() PR    APPROVE
+Aláírás-ellenőrzés és független CI    PENDING
+Advisory beküldése    HOLD
+Nyilvános issue és push    HOLD
+Produkciós jóváhagyás    HOLD
+#162    OPEN
+
+A független tartalmi review lezárható.
+
+További fejlesztési ciklust nem kérek. A következő lépés a tulajdonosi engedélyezés, majd a privát integrációs környezetben végrehajtott commitlánc-, aláírás- és CI-ellenőrzés.
+
+A #155 technikai javítási csomagja elérte az integrációra alkalmas állapotot.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 20:15 — Claude
+
+~~~~~
+A review a `5bd43d3`-at feltételesen elfogadta (APPROVE), több fejlesztési kört nem kér. A csomag állapota ezzel zárt, a HEAD-et és a ZIP-et szándékosan nem módosítom.
+
+**A nem blokkoló szerkesztési észrevétel** (az "importálás" helyett "deklarált importálás") három helyen érinti a szöveget:
+- `docs/en/security/git-host-functions.md`, 83. sor: "A module that imports a `git.*` function without a matching manifest rule is rejected at load." Helyesen: "that **declares** an import of…".
+- `docs/hu/security/git-host-functions.md`, a 7. szakasz azonos mondata.
+- `PR-BODY-155-integration.md`, 22. sor: "importing it is a load error". Helyesen: "declaring it as an import is a load error".
+
+Ezt nem javítottam: ha most commitolok, új HEAD és új bundle lenne, és érvénytelenítené a most jóváhagyott lenyomatokat. A végleges integrációs PR-be a commitok közé egy kis dokumentációs commitként érdemes betenni, de ez a te döntésed, mert megváltoztatja a jóváhagyott HEAD-et.
+
+**Rögzítve** a memóriában: az integrációs review eredménye, a csomag helye és sha256-ja (`e1a4325c…`), az önálló `os.Clearenv()` PR jóváhagyása, a szerkesztési teendő és a következő lépés.
+
+**Következő lépés a tiéd**, tőlem semmi nem indul el magától:
+1. **Tulajdonosi engedély** a privát integrációra: temporary private fork a Security Advisoryból, a bundle vagy az ág feltöltése oda, majd a PR megnyitása a `PR-BODY-155-integration.md` alapján. A `GHSA-TBD` az advisory azonosítójával pótolandó.
+2. **Ellenőrzések ott, a bázisrepóval:** a commitlánc, az aláírások (signing gate) és a független CI, ahogy a reviewer is jelezte.
+3. **Önálló `os.Clearenv()` PR:** a feladás külön döntés, a `fix/testloadconfig-restore-env` ág készen áll. Ha ez előbb mergelődik, az integráció végső bázisát és a CI-t újra kell nézni.
+
+Az advisory beküldése, a nyilvános issue és push, valamint a produkciós jóváhagyás HOLD. A #162 nyitott.
+~~~~~
+
+### 2026-11-15 20:17 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+A 5bd43d3 HEAD-et befagyasztjuk. A jóváhagyott csomagot és annak lenyomatait változatlanul megőrizzük.
+
+A három szerkesztési pontosítás nem indokol újabb review-ciklust. Az integráció során külön dokumentációs commitban kezelhető, célzott deltaellenőrzéssel.
+Végleges döntési állapot
+Terület    Státusz
+#155 fejlesztése    COMPLETED
+Független tartalmi review    APPROVE
+Integrációs csomag    FROZEN
+Privát integráció előkészítése    GO
+Önálló tesztjavítás    APPROVE
+Commitlánc, aláírások, CI    PENDING
+Advisory beküldése    HOLD
+Nyilvános push    HOLD
+Produkciós jóváhagyás    HOLD
+#162    OPEN
+
+A fejlesztési szakaszt lezártnak tekintem. A továbbiak már az integrációs és koordinált sérülékenységkezelési folyamat részét képezik.
+
+Új fejlesztési feladatot a #155 keretében nem indítunk.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 20:17 — Claude
+
+~~~~~
+Rendben: a `5bd43d3` HEAD és a jóváhagyott csomag változatlan marad, a #155 fejlesztési szakasza lezárva. Új fejlesztési munkát nem indítok.
+
+**Befagyasztott:**
+- **HEAD és csomag:** a HEAD `5bd43d3d74022323aa18b083b2a0a2c8abc73853`, 27 commit az `e43f2a8` fölött. A csomag a `handoff-5bd43d3.zip`, sha256 `e1a4325ca6c18ae720a74888804bb753c84b4dbc69b7132eeea2337e5a4ca285`.
+- **Bundle:** `155-integration-e43f2a8..5bd43d3.bundle`.
+
+**A későbbi lépésekhez rögzítve:**
+- **Három szerkesztési pontosítás:** a docs 7. szakasza (EN és HU), valamint a PR-body 22. sora. A javítás külön dokumentációs commit az integrációnál, célzott delta-ellenőrzéssel. Az `INDEX.md` és az evidence-dokumentum szerint ez nem érinti a jóváhagyott lenyomatokat.
+- **Önálló teszt-PR:** a `fix/testloadconfig-restore-env` ágon, APPROVE státuszban, a feladása tulajdonosi döntés. Ha előbb mergelődik, az integráció bázisát és a CI-t újra kell nézni.
+
+**Függőben, a privát integrációs környezetre vár:** a commitlánc, az aláírások és a CI ellenőrzése a bázisrepóval.
+
+**HOLD:** advisory beküldése, nyilvános push és issue, produkciós jóváhagyás. A #162 nyitott.
+
+A privát anyagok a `…/private/review/` mappában vannak, a worktree a `private/relay-155`. Semmi nem lett pusholva, beküldve vagy feladva.
+~~~~~
+
+### 2026-11-15 20:18 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Rendben. A #155 fejlesztési és független review-szakaszát lezártnak tekintem.
+
+**Végleges státusz: APPROVED · FROZEN · INTEGRATION PENDING**
+
+- Jóváhagyott HEAD: `5bd43d3`
+- 27 commit, megőrzött bizonyítéklánc.
+- Új fejlesztés nem indul.
+- Következő kapu: privát integráció, aláírás-ellenőrzés és független CI.
+- Minden publikációs és produkciós HOLD változatlan.
+
+A következő lépés kizárólag tulajdonosi engedéllyel történhet.
+</pasted_content id="1732">
+
+ következő lépéseket engedélyezem
+~~~~~
+
+### 2026-11-15 20:21 — Claude
+
+~~~~~
+Az aláírás-ellenőrzés hibát talált a befagyasztott `5bd43d3` láncban, ezért megálltam, mielőtt a privát integrációt elindítanám.
+
+**Mit futtattam.** A cic-factory `verify-signatures.sh` eszközét az `e43f2a8..5bd43d3` tartományon, offline és külön worktree-ben. A lánc **NO-GO**: 26 rendben, **1 hibás** commit (`58ed794`). A helyi kapukat (26/26 csomag, `-race -count=2 -shuffle=on`) az új HEAD-en már korábban zöldre futtattam.
+
+**A hiba oka.** A `58ed794` üzenetében **két** `[signing-metadata]` blokk van. A `git commit --amend` közben a Relay commit-msg hookja a régi blokk mellé fűzte az újat, nem cserélte. Az első blokk digestje az amend előtti fáé, a második a végső fáé, és az a helyes. A verifier az elsőt olvassa, ezért bukik. A fa és a tartalom maga rendesen aláírt. Csak a `58ed794` érintett, a többi 26 commitnak pontosan egy blokkja van.
+
+**Ezt a review-k nem találhatták meg.** Ez csak az aláírás-ellenőrzéskor látszik, és a G1 "aláírások CI PENDING" pont éppen ezért volt nyitva. A tanulságot memóriába mentettem: aláírt Relay-commitot ne amendelj, és lánc átadása előtt futtasd a verifiert.
+
+**Javítási jelölt, nem rontja el a befagyasztott állapotot.** A `candidate/resign-58ed794` ágon csak a `58ed794` üzenetéből törlöm az elavult első blokkot. A befagyasztott `5bd43d3` hivatkozás érintetlen. Eredmény:
+- **Fák:** minden commit fája azonos (27/27), a végső fa `c8cc0301…`.
+- **Diff:** a teljes `e43f2a8..HEAD` diff bájtra azonos, sha256 `386e95b7…`.
+- **Azonosítók:** az első 8 commit azonosítója változatlan, 19 azonosító változik (a `58ed794`-től).
+- **Aláírás:** `verify-signatures`: **GO, 27 rendben**.
+- **Új HEAD:** `3abe81312a951b865cba0ca44b5edeb45e5d95c3`.
+
+A bizonyíték a `…/private/review/candidate-resign/` mappában van: `README.md`, `MAPPING.txt` (régi→új azonosítók fa-egyezéssel), `VERIFY.txt` (a verifier kimenete mindkét láncra), a jelölt bundle-je és `SHA256SUMS` (sha256 `9152c2b9…`). A `handoff-5bd43d3` és a ZIP érintetlen.
+
+**Döntés kell tőled**, mert a befagyasztott HEAD-et érinti:
+1. **A jelölt lánc váltsa le a `5bd43d3`-at (ajánlott).** Az integráció végső lánca aláírás-ellenőrzés szempontjából tiszta. A jóváhagyott tartalom változatlan, az újrareviewhoz célzott ellenőrzés elég: fa-egyezés a mapping alapján, verifier GO, új bundle. A három szerkesztési pontosítás külön dokumentációs commitként ráérkezhet.
+2. **A befagyasztott lánc marad.** Ekkor a `58ed794` az integrációs ellenőrzésen NO-GO-t ad, és a hibát el kell fogadni vagy másképp kezelni.
+
+**Nem indítottam el:** a privát fork vagy az advisory-draft létrehozását, a feltöltést, az önálló teszt-PR feladását. Ezek GitHub-oldali lépések, és szerintem a lánc végleges alakja után érdemes őket futtatni. Szólj, melyik láncot használjuk, és hogy az advisory-draft és a privát fork létrehozása indulhat-e. A nyilvános push, a nyilvános issue és a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 20:22 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**Döntés: az 1. opciót választom. A javított aláírási lánc legyen az integrációs jelölt.**
+
+A hibás aláírás elfogadása vagy a signing gate megkerülése nem megengedett. Pontosan ezért tartottuk nyitva a G1 kaput.
+
+A `5bd43d3` maradjon változatlanul megőrzött történeti referenciaként.
+
+## **Célzott újrareview**
+
+Kérem a `candidate-resign` csomagot ZIP-ben, a következő ellenőrzésekhez:
+
+- 27/27 commitfa azonossága.
+- Régi és új commitazonosítók egyértelmű megfeleltetése.
+- A teljes diff bájtszintű azonossága.
+- A javított aláírási metaadat ellenőrzése.
+- A teljes új lánc verifier-eredménye.
+- Az új bundle integritása.
+
+Ha ezek megfelelnek, a korábbi tartalmi APPROVE átvezethető az új láncra. Teljes kódreview nem szükséges.
+
+## **Döntési állapot**
+
+| Terület                             | Döntés                        |
+| ----------------------------------- | ----------------------------- |
+| `5bd43d3`                           | FROZEN – történeti referencia |
+| `3abe813`                           | Integrációs jelölt            |
+| Tartalmi jóváhagyás                 | Változatlan                   |
+| Aláírási lánc cseréje               | GO                            |
+| Célzott független ellenőrzés        | PENDING                       |
+| Advisory és privát fork létrehozása | HOLD – célzott review-ig      |
+| Nyilvános push                      | HOLD                          |
+| Produkciós jóváhagyás               | HOLD                          |
+
+A commit-msg hook hibáját külön fejlesztési tételként kell kezelni, a #155 hatókörén kívül.
+
+**A minőségi kapu pontosan azt tette, amiért létrehoztuk: megállított egy tartalmilag jóváhagyott, de formálisan hibás szállítási láncot.** Nem gyengítjük a kaput, hanem kijavítjuk a láncot.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 20:23 — Claude
+
+~~~~~
+A célzott újrareview csomagja kész, ZIP-ben. Feltölteni most sem tudom, és nem is küldöm külső szolgáltatásra, mert privát anyag. Az átadás a te dolgod.
+
+**ZIP:** `~/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/candidate-resign.zip` (jogosultság `600`)
+- **sha256:** `9a6e4b422ec817cfbaf43185c1c3aef342de4a095bdd9a3ff4486cb309166f0e`
+- **Méret és tartalom:** 336 559 bájt, 16 bejegyzés. Az archívum hibátlan, kicsomagolva mind a 15 fájl megfelel az `SHA256SUMS`-nak.
+
+**Mit ellenőrizhet a reviewer, a hat kért ponthoz:**
+
+| Ellenőrzés | Fájl a csomagban |
+|---|---|
+| 27/27 commitfa azonos | `MAPPING.txt`: 27 sor `tree-equal`, 0 eltérés. A végső fa mindkét láncon `c8cc0301f6bad6f034a28ef0dc99c2c98592506d`. |
+| Régi és új azonosítók | `MAPPING.txt`: pozíció, régi, új, fa-egyezés, azonosító változott-e. A 8 első commit azonosítója változatlan, 19 változik a `58ed794`-től (9. pozíció). |
+| Teljes diff bájtazonos | `combined-frozen-…diff` és `combined-candidate-…diff`, mindkettő sha256-ja `386e95b70f085aec…2204` |
+| Javított aláírási metaadat | `message-58ed794-FROZEN.txt` (2 blokk), `message-efe6185-CANDIDATE.txt` (1 blokk), `message-58ed794-change.diff` (csak törlés: az elavult első blokk, 22 sor, hozzáadott sor nincs), `SIGNING-BLOCKS.txt` (a jelölt minden commitján pontosan 1 blokk) |
+| A teljes új lánc verifierje | `VERIFY.txt`: frozen **NO-GO (1 hibás, 26 rendben)**, jelölt **GO (27 rendben)**. A `tools/` mappában a verifier változatlan másolata és a javítást előállító szűrő (`dropstale.py`). |
+| Új bundle integritása | `155-integration-e43f2a8..candidate.bundle`: ellenőrzött, a hirdetett HEAD `3abe81312a951b865cba0ca44b5edeb45e5d95c3`. A bundle az `e43f2a8`-ra épül. |
+
+A `README.md` ellenőrzési útmutatója lépésről lépésre leírja a klónozást, a bundle-ök betöltését, a fa-egyezés ciklusát, a diff-hash számítást és a verifier futtatását. A befagyasztott bundle (`…5bd43d3.FROZEN.bundle`) is benne van, hogy a csomag önállóan ellenőrizhető legyen.
+
+**Állapot a döntésed szerint:**
+- `5bd43d3`: FROZEN, változatlan történeti referencia.
+- `3abe813`: az integrációs jelölt.
+- A tartalmi APPROVE átvezetése a célzott review eredményétől függ.
+- Az advisory és a privát fork létrehozása HOLD a célzott review-ig. Nem indítottam el.
+- A nyilvános push és a produkciós jóváhagyás HOLD.
+
+**Rögzítve:** a hook amend-hibája külön fejlesztési tétel, a #155 hatókörén kívül. A tanulság a memóriában is megvan. A három szerkesztési pontosítás (docs 7. szakasz és a PR-body 22. sora) továbbra is külön dokumentációs commit az integrációnál, a jelölt láncra építve.
+~~~~~
+
+### 2026-11-15 20:25 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+CIC Relay #155 – célzott integrációs újrareview
+Review decision: APPROVE – a korábbi tartalmi jóváhagyás átvezethető az új commitláncra.
+
+Vizsgált HEAD: 3abe81312a951b865cba0ca44b5edeb45e5d95c3
+
+A vizsgálat során nemcsak a mellékelt bizonyítékokat olvastam el, hanem mindkét Git bundle-ből közvetlenül kiolvastam a commitobjektumokat, és összehasonlítottam őket.
+1. Ellenőrzési eredmények
+Ellenőrzés    Eredmény    Státusz
+ZIP SHA256    Egyezik    PASS
+Csomagon belüli integritás    15/15 fájl    PASS
+Befagyasztott bundle azonossága    Egyezik a korábban jóváhagyott csomagéval    PASS
+Commitfák azonossága    27/27, közvetlenül ellenőrizve    PASS
+Szülői commitlánc    Mindkét láncon helyes    PASS
+Commitazonosítók    8 változatlan, 19 módosult    PASS
+Szerzői és committer-metaadatok    27/27 egyezés    PASS
+Commitüzenetek    26 változatlan, 1 célzott javítás    PASS
+Mellékelt teljes diffek    Bájtra azonosak    PASS
+Aláírási blokkok    A jelölt láncon 27/27 szabályos    PASS
+Verifier mellékelt eredménye    27/27 GO    PASS
+Független teljes verifier-futtatás    Bázisrepo szükséges    PENDING
+
+2. A történet átírásának elfogadhatósága
+A tényleges commitobjektumok ellenőrzése igazolta, hogy kizárólag a kilencedik commit üzenete változott. A további commitok azonosítóinak változása a szülőazonosítók megváltozásának következménye.
+
+Mindkét lánc végső fája:
+
+c8cc0301f6bad6f034a28ef0dc99c2c98592506d
+
+A korábbi tartalmi review megismétlését ezért nem tartom szükségesnek.
+
+Az új lánc nem új termékkódot jelent, hanem a már jóváhagyott tartalom aláírási metaadatának helyreállítását.
+3. Döntés és további lépések
+Tétel    Döntés
+5bd43d3 történeti referencia    FROZEN
+3abe813 integrációs jelölt    APPROVE
+Korábbi tartalmi jóváhagyás átvezetése    GO
+Privát advisory-draft és security fork előkészítése    GO
+Független signing gate    REQUIRED
+Független integrációs CI    REQUIRED
+Nyilvános advisory publikálása    HOLD
+Nyilvános push és issue    HOLD
+Produkciós jóváhagyás    HOLD
+
+A privát integráció megkezdése szakmailag támogatható, tulajdonosi engedéllyel.
+
+A három korábban azonosított dokumentációs pontosítás külön commitban érkezhet, célzott delta-review-val. A commit-msg hook amend-hibája külön fejlesztési tételként kezelendő, nem blokkolja a #155 integrációját.
+
+Új blokkoló lelet: 0.
+
+A #155 fejlesztési szakaszát nem kell újranyitni. A következő szakasz már az ellenőrzött privát integráció és a biztonsági kiadás előkészítése.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 20:27 — Claude
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**Utána a PR-t megnyithatom én.** A `gh pr create --repo CentralInfraCore/CIC_Relay-ghsa-5489-jhgc-m947 --base main --head security/git-host-functions` a fork `main` ágára célzik, a leírás a kész `PR-BODY-155-integration.GHSA-5489.md` (a `GHSA-TBD` már lecserélve). Szólj, ha felkerült az ág.
+
+**Ellenőrzések a forkban, amiket a review előírt:**
+- **Signing gate:** a fork PR-jén fut. A lokális verifier már GO 27/27 volt.
+- **Független CI:** a fork Actions futásai. Én csak a lokális kapukat futtattam (26/26 csomag, `-race`).
+- **Merge:** merge-commit, nem rebase vagy squash, hogy az aláírások megmaradjanak.
+
+**Továbbra is HOLD:** az advisory publikálása vagy beküldése, a nyilvános push és issue, a produkciós jóváhagyás. A három szerkesztési pontosítás külön dokumentációs commitként érkezhet a fork PR-jébe, célzott delta-review-val. Az önálló `os.Clearenv()` teszt-PR feladása is külön tulajdonosi döntés.
+
+A draft állapotát és a fork azonosítóját a memóriában is rögzítettem.
+~~~~~
+
+### 2026-11-15 20:28 — Felhasználó
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 20:32 — Claude
+
+~~~~~
+A privát fork PR megnyílt, de a független CI-t ott nem lehet futtatni, ezért a repo CI-jének lépéseit helyben reprodukáltam. Ez egy hibát talált, amit a korábbi kapuk nem.
+
+**A fork PR:** https://github.com/CentralInfraCore/CIC_Relay-ghsa-5489-jhgc-m947/pull/1
+- **Állapot:** a head `3abe813` pontosan a jóváhagyott jelölt, a base a fork `main` (`e43f2a8`), a PR egyesíthető.
+- **Check:** nulla darab. A GitHub Actions ideiglenes privát forkban nem fut. Ez kapuhatás, nem hiba: a "független CI" itt nem kapható meg, csak helyi vagy külön privát repós futtatással.
+
+**A helyi CI-egyenértékű futás a `.github/workflows/verify.yml` lépéseit követte, ugyanazokkal az eszközverziókkal.** Eredménye az új HEAD-en:
+- **Tiszta:** `gofmt -s` (a CI formája), `go vet`, `govulncheck` (nincs sebezhetőség), golden verify, symbol- és manifest-eltérés nincs, 26/26 csomag, `-race -count=2 -shuffle=on` és az aláírás-ellenőrzés (GO, 29 commit).
+- **Coverage:** `cmd/relay` 91,3% (küszöb 90), `core/cabinet` 94,2% (93), `core/nexus/git` 94,3% (92).
+- **Deadcode:** a kimenete tájékoztató (exit 0). Új, tesztből is csak mellékesen elért függvényeket jelez: `registerVerified`, `publishVerified`.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+Az advisory publikálása, a nyilvános push és issue, valamint a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 20:32 — Felhasználó
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 20:33 — Claude
+
+~~~~~
+A push megérkezett, a fork PR frissítve. A PR a `c381379` fejjel nyitott, 29 commit és 31 érintett fájl látszik rajta. A PR leírása a javított, deklarált importra vonatkozó szöveget tartalmazza. A `mergeable` jelenleg `UNKNOWN`, mert a GitHub még számolja, és a check továbbra is nulla (az Actions itt nem fut).
+
+**Hátra van, és egyik sem az enyém:**
+- **Célzott delta-review:** a `3abe813..c381379` két commitja (teszt-escape és docs-szóhasználat). Csomag: `…/private/review/delta-3abe813..c381379/`.
+- **Valódi, független CI:** erre döntened kell. A lehetőségek:
+  - külön privát repó bekapcsolt Actions-szel,
+  - a lokális CI-egyenértékű futás elfogadása,
+  - vagy merge után a `main`-en futó CI.
+- **Merge:** csak a review és a CI-döntés után, merge-commit, rebase és squash nélkül.
+
+Az advisory publikálása, a nyilvános push és issue, valamint a produkciós jóváhagyás HOLD. Az önálló `os.Clearenv()` teszt-PR feladása külön tulajdonosi döntés.
+~~~~~
+
+### 2026-11-15 20:35 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Döntés: független CI külön privát repóban, bekapcsolt Actions-szel.
+
+A merge utáni CI-t nem fogadnám el első integrációs kapuként egy security fix esetében. A lokális futások értékes bizonyítékok, de nem helyettesítik a független CI-t.
+Következő lépések
+1. A 3abe813..c381379 delta-review csomagot add át ZIP-ben.
+2. Különálló, privát, ideiglenes CI-repozitórium előkészítése.
+3. Az eredeti commitlánc változatlan átvitele, azonos HEAD-del.
+4. A teljes Relay CI és signing gate futtatása, az eredeti minőségpolitikai követelmények szerint.
+5. Sikeres delta-review és CI után merge-commit az advisory forkból.
+6. Post-merge CI az új main állapoton.
+Tétel    Döntés
+Korábbi 27 commit    APPROVE
+Két új commit    REVIEW PENDING
+Privát CI előkészítése    GO
+Minőségi kapuk gyengítése    NO-GO
+Merge    HOLD
+Advisory publikálása    HOLD
+Produkciós jóváhagyás    HOLD
+
+A privát CI-repozitórium ne kapjon produkciós jogosultságokat vagy szükségtelen secreteket.
+
+Az önálló os.Clearenv() PR egyelőre maradjon külön, hogy az integráció bázisa ne változzon meg.
+
+A bizonyítási láncot az utolsó lépésnél sem rövidítjük le.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 20:37 — Claude
+
+~~~~~
+1. lépés kész: a delta-review csomag ZIP-ben. A 2. lépés is kész: a privát CI-repó létrejött és konfigurált. A 3. és 4. lépést a push-ok indítják, azokat neked kell futtatnod.
+
+**1. A delta-review ZIP**
+- **ZIP:** `…/private/review/delta-3abe813..c381379.zip`
+- **sha256:** `c312610659edd2d867ca131d0ca0daf593ff3fbf6214ab355454b8e0b37c6826`
+- **Méret és tartalom:** 14 161 bájt, 7 bejegyzés. Kicsomagolva a 6 fájl mind megfelel az `SHA256SUMS`-nak.
+- **Benne van:**
+  - a két commit diffje,
+  - a delta bundle (előfeltétele a `3abe813`),
+  - a CI-egyenértékű helyi futás kimenete,
+  - egy README, amely leírja, mit változtat a két commit (a teszt escape-elése és a docs szóhasználata, termékkód nincs).
+
+**2. A privát CI-repó**
+- **Repó:** `CentralInfraCore/CIC_Relay-ci-ghsa-5489-jhgc-m947`, privát, nem fork. Az Actions be van kapcsolva, az alapértelmezett token csak olvasási jogú, és a repó nem szavaz PR jóváhagyásról.
+- **Secret:** nincs. Ellenőriztem: nulla repo-secret, nulla szervezeti secret, nulla szervezeti változó. A szervezetnek nincs minden repóra látható secretje, tehát nem szivárog be.
+- **Signing gate:** a Relay CI-ban nincs ilyen, ezért külön, kis ág (`ci/signing-gate`, lokálisan a `…/private/gate-repo.8jvv` repóban) viszi. A workflow kiveszi a `security/git-host-functions` ágat teljes történettel, és ellenőrzi, hogy pontosan a jóváhagyott lánc: HEAD `c381379…`, fa `ee933570…`, 29 commit az `e43f2a8` fölött. Utána az offline verifier fut minden commiton, a cic-factory változatlan másolatával. Helyben lefuttattam ugyanezt a lépéssort, az eredménye GO (29).
+- **Aláírás hiánya:** ez a kapuág maga nincs aláírva (nincs hook az új repóban), mert nem része az ellenőrzött láncnak, és csak a verifier meg a workflow van rajta.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**Utána, tőlem:**
+1. A `nightly`, `renovate` és `mutation` ütemezett workflow-k kikapcsolása a CI-repóban, hogy ne fussanak véletlenül.
+2. A PR megnyitása a CI-repóban (`security/git-host-functions` a `main`-re), ami a teljes PR-kaput elindítja: `verify`, `manifest-check`, `mutation-pr`, `object-evidence`.
+3. A futások végének megvárása, a naplók és az eredmények gyűjtése bizonyítékként, az eredeti minőségpolitikai követelmények szerint. Gyengítés nincs.
+4. A signing gate eredményének és az azonos HEAD ellenőrzésének rögzítése.
+
+Az `os.Clearenv()` teszt-PR külön marad, az integráció bázisa nem változik. A merge, az advisory publikálása és a produkciós jóváhagyás HOLD, a delta-review és a CI után.
+~~~~~
+
+### 2026-11-15 20:37 — Felhasználó
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 20:37 — Claude
+
+~~~~~
+A `main` (`e43f2a8`) felkerült a CI-repóba, és a CI el is indult rajta. A `manifest-check` sikeres, a `verify` még fut. Ez a bázis kontrollfutása.
+
+**Elvégezve:** az ütemezett és titkot igénylő workflow-kat kikapcsoltam: `nightly`, `renovate`, `mutation` (`disabled_manually`). A `verify`, `manifest-check`, `mutation-pr` és `object-evidence` aktív.
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 20:37 — Felhasználó
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 20:38 — Claude
+
+~~~~~
+A CI-repó ága azonos az engedélyezett lánccal, a PR megnyílt. A teljes PR-kapu most fut rajta.
+
+| Ellenőrzés | CI-repó | Elfogadott |
+|---|---|---|
+| `security/git-host-functions` HEAD | `c381379f833e5595210127ebdb57f2b65a868eb8` | azonos |
+| fa | `ee933570db2f92c7db5dec7796caa6651098f070` | azonos |
+| `main` | `e43f2a826ca2adee717a0a7ae18ca220016fb7c1` | azonos a bázissal |
+
+**PR:** https://github.com/CentralInfraCore/CIC_Relay-ci-ghsa-5489-jhgc-m947/pull/1 (CI-futtatásra, nem merge-re szánt).
+
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 20:38 — Felhasználó
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+~~~~~
+
+### 2026-11-15 20:46 — Claude
+
+~~~~~
+A független CI lefutott, és minden kapu sikeres. A repóban lévő ág pontosan a jóváhagyott lánc.
+
+**A bizonyítékok azonossága**
+- **HEAD és fa:** a CI-repó `security/git-host-functions` ága `c381379f833e5595210127ebdb57f2b65a868eb8`, a fa `ee933570db2f92c7db5dec7796caa6651098f070`. Ez megegyezik a jóváhagyottal.
+- **Bázis:** a CI-repó `main`-je az `e43f2a8`, változatlan.
+
+**Eredmények a PR-fejen (`c381379`)**
+
+| Kapu | Eredmény |
+|---|---|
+| `verify` (verify, rust, ffi, coverage, python) | mind success |
+| `manifest-check` | success |
+| `mutation-pr` | success |
+| `object-evidence` | success |
+| **signing gate** (külön ág) | **success**, `verify-signatures: GO (29 rendben)` |
+| Kontroll: `verify` és `manifest-check` az `e43f2a8` `main`-en | success |
+
+**A mutációs kapu csomagonként** (a változott csomagok):
+- **`cmd/relay`:** 420 killed, efficacy 100% (küszöb 90), coverage 94,8%.
+- **`core/cabinet`:** 181 killed, 7 lived, efficacy 96,3% (küszöb 90), coverage 98,4%.
+- **`core/nexus/git`:** 117 killed, 11 lived, efficacy 91,4% (a baseline-politika szerint 60), coverage 99,2%.
+- **Coverage job:** a változott csomagok a küszöbök fölött: `cmd/relay` 91,3%, `core/cabinet` 94,2%, `core/nexus/git` 94,3%.
+
+**Amit kihagyott, és ez rendben van**
+- **Rust shard:** a mutációs kapu a Rust shard-ot kihagyta, mert a változás kizárólag Go, és a tervező 0 Rust mutánst tervezett.
+- **Ütemezett workflow-k:** a `nightly`, `renovate` és `mutation` szándékosan ki van kapcsolva, mert titkot vagy issue-írást igényelnek. A repó nem tartalmaz secretet, a token read-only.
+
+**A bizonyíték** a `…/private/review/ci-independent/` mappában van: a `CI-RESULTS.md` (job-szintű eredmények, mutációs táblázat, összegzés, sha256 `6b833f99dd40acf8…`) és a nyers GitHub Actions naplók ZIP-ben, futásonként. Ezt a lánc rövidítése nélkül mellé lehet tenni a delta-review csomaghoz.
+
+**A következő lépések a te listád szerint**
+- **A delta-review a hátralévő blokkoló:** a `3abe813..c381379` két commitja. A csomag a `delta-3abe813..c381379.zip` (sha256 `c312610659edd2d8…`). A CI már mindkét commit mellett zöld.
+- **Merge:** csak a delta-review után, merge-commit az advisory forkból (a fork PR #1 a `c381379`-en).
+- **Post-merge CI:** az új `main` állapoton a merge után.
+- **Takarítás:** a privát CI-repót a kiadás után törölni kell.
+
+**HOLD marad:** a merge, az advisory publikálása, a nyilvános push és issue, a produkciós jóváhagyás. Az önálló `os.Clearenv()` PR külön marad, így az integráció bázisa nem változik.
+~~~~~
+
+### 2026-11-15 20:49 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+A független CI-kapu a jelentett eredmények alapján teljesült. A signing gate is zöld: 29/29 commit.
+Integrációs kapu    Állapot
+Korábbi 27 commit tartalmi review-ja    APPROVE
+Commitlánc és aláírások    PASS
+Független CI    PASS
+Coverage gate    PASS
+Mutation gate    PASS
+Utolsó két commit delta-review-ja    PENDING
+Merge    HOLD
+Produkciós jóváhagyás    HOLD
+
+Különösen erős eredmény a három módosított Go-csomagban összesen 718 megölt mutáns, 18 túlélő mellett. Ez együttesen 97,55%-os mutációs hatékonyság, a jelentett mérések alapján.
+
+A Rust mutációs shard kihagyását indokoltnak tartom.
+
+A következő review-hoz kérem feltölteni:
+- delta-3abe813..c381379.zip
+- CI-RESULTS.md
+- A független CI nyers naplóit tartalmazó ZIP-et.
+Az első 27 commit review-ját nem nyitjuk újra. Kizárólag a két új commitot, a CI-bizonyítékokat és azok HEAD-hez kötését ellenőrizzük.
+
+Sikeres ellenőrzés esetén a privát integráció merge-engedélye kiadható.
+</pasted_content id="1732">
+
+ ha jól értem akkor megadom az engedélyt a merge-re
+~~~~~
+
+### 2026-11-15 20:49 — Claude
+
+~~~~~
+Még ne add ki a merge-engedélyt. A review szövege szerint az engedély sikeres ellenőrzés után adható ki, az a delta-review viszont még nem történt meg: státusza `PENDING`, a merge `HOLD`. Most a reviewer ellenőrzi a két új commitot és a CI-bizonyítékokat. Ha az rendben van, az engedély kiadható.
+
+Ha így akarod, adhatsz feltételes engedélyt is: "merge, ha a delta-review APPROVE". Ezt a feltételt kimondva kell rögzíteni, nehogy a merge a review előtt fusson le.
+
+**Mi a merge a valóságban.** A GitHub szerint egy advisory ideiglenes privát forkjából a merge a repo alapágára viszi a javítást, a publikus `main`-re. A merge ezért gyakorlatilag a javítás nyilvánosságra kerülése. Az advisory publikálása utána vagy vele együtt jön, nem előtte. Ezért érdemes a merge-et és az advisory publikálását egy lépésben, összehangoltan tervezni. Nem futtatok merge-et, és a push-aim egyébként is tiltottak. A merge az advisory oldalon történik, merge-commit, rebase és squash nélkül.
+
+**A review-hoz kért három fájl, elkészítve** (`…/private/review/`):
+
+| Fájl | sha256 (eleje) | Megjegyzés |
+|---|---|---|
+| `delta-3abe813..c381379.zip` | `c312610659edd2d8` | a két új commit, 6 ellenőrzött fájl |
+| `CI-RESULTS.md` | `6b833f99dd40acf8` | job-szintű eredmények, mutációs táblázat, összegzés |
+| `ci-independent.zip` | `27f1c927d64c8bc3…7dda` | `CI-RESULTS.md` és a nyers Actions-naplók, futásonként (557 152 bájt, 10 bejegyzés), kicsomagolva 9/9 fájl az `SHA256SUMS`-szal egyezik |
+
+A reviewer ezekből ellenőrizheti a CI-bizonyíték HEAD-hez kötését: az `SHA256SUMS` és a naplókban a futások `head_sha` mezője a `c381379`, a signing gate naplójában a `subject: c381379… tree ee933570…, 29 commit` sor.
+
+**A 718 megölt mutáns és a 97,55%:** ezt a reviewer a három csomag mérésének összegéből számolta (420 + 181 + 117 = 718 killed, 0 + 7 + 11 = 18 lived). A CI-RESULTS.md csomagonkénti táblázata megvan, az összesítő százalék tőle származik, nem a kapu számolja.
+
+Teendő tőled most: a három fájl átadása a reviewernek. A merge, az advisory publikálása és a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 20:51 — Felhasználó
+
+~~~~~
+akkor ezt nézd meg :D 
+
+<pasted_content id="1732">
+CIC Relay #155 – végső integrációs review
+Review decision: APPROVE – Merge GO, változatlan bázis és HEAD mellett.
+
+Vizsgált HEAD: c381379f833e5595210127ebdb57f2b65a868eb8
+
+A delta-review és a független CI bizonyítékainak ellenőrzése befejeződött.
+1. Delta-review
+Commit    Változtatás    Döntés
+c8c0ea0    Unicode tesztesetek escape-szekvenciái, változatlan tesztszemantikával    APPROVE
+c381379    EN/HU dokumentáció pontosítása a deklarált WASM-importokról    APPROVE
+
+A mellékelt diff alapján három fájl módosult, termékkód-változtatás nélkül. A két commit szülői láncát közvetlenül a bundle commitobjektumaiból is ellenőriztem.
+
+A teljes diff független újragenerálásához a bázisrepo szükséges; a csomagban kapott diffet vizsgáltam.
+2. Független CI és bizonyítéklánc
+Mindkét ZIP belső SHA256-ellenőrzése sikeres. A CI-összefoglaló adatait a nyers Actions-naplókkal is összevetettem.
+Kapu    Eredmény
+Verify    PASS
+Rust / FFI / Python    PASS
+Coverage    PASS
+Manifest check    PASS
+Mutation PR    PASS
+Mutation completeness    PASS
+Object evidence    PASS
+Signing gate – 29/29 commit    PASS
+Bázis kontrollfutása    PASS
+
+A signing gate naplója az elvárt HEAD-et, a faazonosítót, a bázist és a 29 commit sikeres ellenőrzését egyaránt igazolja.
+
+A verify és manifest workflow a megfelelő bázisból és PR-fejből képzett integrációs commiton futott. A mutációs és object-evidence ellenőrzések közvetlenül a jóváhagyott PR-fejen.
+3. Mutációs eredmények
+Csomag    Hatékonyság    Küszöb    Státusz
+cmd/relay    100,00%    90%    PASS
+core/cabinet    96,28%    90%    PASS
+core/nexus/git    91,41%    60%    PASS
+
+Megölt mutáns718
+
+
+Túlélő mutáns18
+
+
+Hatékonyság97,55%
+
+
+
+4. Végső döntés
+Művelet    Engedély
+Advisory fork PR #1 merge    GO
+Merge-commit, a 29 commit megőrzésével    GO
+Squash vagy rebase    NO-GO
+Post-merge CI    REQUIRED
+Advisory publikálása    HOLD
+Produkciós jóváhagyás    HOLD
+Privát CI-repo törlése    Kiadás után
+
+Új blokkoló leletek száma: 0.
+
+Merge előtt még ellenőrizendő, hogy a célág továbbra is e43f2a8, a PR-fej pedig c381379, és a PR konfliktusmentes.
+
+A #155 szakmai review-ja lezárható. A teljes, 29 commitból álló integrációs lánc jóváhagyott, a következő lépés a tulajdonosi merge és a post-merge CI.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 20:52 — Claude
+
+~~~~~
+A review APPROVE-ot adott, a merge-et változatlan bázis és HEAD mellett engedélyezte. A merge előtti ellenőrzések mindhárom feltétele teljesül. A merge-et nem futtattam, mert a következmény miatt a te döntésed.
+
+**Merge előtti ellenőrzés (csak olvasás):**
+
+| Feltétel | Eredmény |
+|---|---|
+| A célág még az `e43f2a8` | **igen**, mind az upstream `main`, mind a fork `main` |
+| A PR-fej `c381379` | **igen**, `c381379f833e5595210127ebdb57f2b65a868eb8` |
+| Konfliktusmentes | **igen**, `MERGEABLE`, a fork `main` mögött 0, előtte 29 commit, a merge-base az `e43f2a8` |
+| Merge-commit engedélyezett | **igen** az upstreamen, ott a squash és a rebase tiltott |
+| Advisory állapota | `draft`, nem publikált |
+
+A `mergeStateStatus: UNSTABLE` a fork PR-jén azért van, mert ott nincs check, a CI a külön privát repóban futott. A fork PR-jén a push után egy ellenőrző szűrő sem blokkol.
+
+**A merge nyilvánosságra hozza a javítást.** A merge az advisory oldaláról a publikus `main`-re viszi a 29 commitot, vagyis a javítás ettől a ponttól látható. Az advisory publikálása viszont a te listádon még HOLD. A két lépést összehangoltan érdemes időzíteni: a merge és az advisory publikálása legyen egymás után, rövid időn belül, hogy a javítás ne legyen hosszan nyilvános egy olyan advisory nélkül, ami megmagyarázza. Az upstream `main` nincs védve, tehát a merge technikailag nem akad el semmin. Ezt neked kell megítélned.
+
+**Hogyan lehet elvégezni.** A GitHub szerint a merge az advisory oldalán történik, a "Merge pull request" gombbal, merge-commit módban (a fork-PR-en nem kell). Ha ez az opció nem jelenik meg, a fork PR #1-ét kell mergelni, de akkor a javítás a forkba megy, nem az upstreamre. A squash és a rebase tilos. Én a merge-et nem tudom az advisory oldalán megnyomni, és külön "mergeld te" nélkül nem is futtatom a `gh pr merge`-t.
+
+**Utána:**
+1. **Post-merge CI** az új upstream `main`-en (REQUIRED). Ezt én végig tudom követni, és a bizonyítékot ugyanígy mentem.
+2. **Advisory publikálása:** HOLD, a te döntésed, érdemes a merge-dzsel együtt tervezni.
+3. **Privát CI-repó törlése:** a kiadás után.
+4. **Az önálló `os.Clearenv()` PR:** külön marad, a merge után a bázisa az új `main` lesz, érdemes rebase nélkül, a `fix/testloadconfig-restore-env` ágat újra a friss `main`-ről építeni.
+
+Szólj, ha lépést kell tennem: a post-merge CI figyelése, vagy ha explicit "mergeld te" a fork PR-re.
+~~~~~
+
+### 2026-11-15 20:52 — Felhasználó
+
+~~~~~
+engedélyezem a merget
+~~~~~
+
+### 2026-11-15 20:52 — Claude
+
+~~~~~
+A feltételek közvetlenül a merge előtt is teljesülnek, de a merge-et te tudod elvégezni, én nem.
+
+**Miért nem én.** Az advisory ideiglenes forkjából az upstream `main`-re vezető merge a GitHub-felület "Merge pull request" gombja az advisory oldalon. Ehhez nincs REST-végpont. Ha én a fork PR #1-ét mergelném, a javítás a fork saját `main`-jébe kerülne, az upstream `main` nem változna.
+
+**Ellenőrzés most:**
+- **Upstream `main`:** `e43f2a826ca2adee717a0a7ae18ca220016fb7c1`, változatlan.
+- **PR-fej:** `c381379f833e5595210127ebdb57f2b65a868eb8`.
+- **Fork PR #1:** nyitott, konfliktusmentes.
+- **Advisory:** `draft`, a privát fork a `CIC_Relay-ghsa-5489-jhgc-m947`.
+
+**Hogyan:**
+1. Nyisd meg: https://github.com/CentralInfraCore/CIC_Relay/security/advisories/GHSA-5489-jhgc-m947
+2. Az advisory oldalon a privát fork PR-jénél a **Merge pull request** gombbal **merge-commit** módban merge-eld. A squash és a rebase tilos, a 29 commit megőrzésével.
+3. Szólj, ha megtörtént.
+
+**Utána, tőlem:**
+- **Azonnali ellenőrzés:** az upstream `main` új HEAD-je, hogy a 29 commit és az eredeti `c381379` fa bekerült-e (`main` fája: a merge-commité, a második szülő fája az `ee933570…`).
+- **Post-merge CI:** az új `main` állapoton futó kapuk követése és a bizonyíték mentése, a lánc rövidítése nélkül.
+- **Az `os.Clearenv()` teszt-PR bázisa:** az új `main`.
+
+**Nyilvánosság.** A merge a javítást nyilvánossá teszi. Az advisory publikálása a te döntésed, érdemes rövid időn belül követnie a merge-t, hogy a javítás ne maradjon sokáig magyarázat nélkül. A privát CI-repót a kiadás után kell törölni.
+~~~~~
+
+### 2026-11-15 20:56 — Felhasználó
+
+~~~~~
+[részlet kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+every guest-supplied git value is validated; git runs with fixed transports, no hooks, no global configuration, an allowlisted environment and a repository-configuration allowlist;
+the git capability is declared per module in the signed capability manifest, checked at load, and authorised on every call from the instance identity attached by the runtime (module, artifact, manifest, per-instance serial);
+git.push is withdrawn for guests until it can be executed against an exact, authorised target;
+documentation: docs/{en,hu}/security/git-host-functions.md.
+Workarounds
+Do not load untrusted WASM modules. This must not rely on inspecting the git imports a module declares: the import section of the binary is not validated at load time. Not registering any repository (CIC_INFRA_REPO_PATH, CIC_GIT_SOURCE_LOCAL_PATH unset) makes git operations fail.
+
+Not covered by this advisory
+Cryptographic binding of a module's manifest to its executed WASM (tracked separately), binding of the cic-flow grants to the artifact, and other git callers in the repository.
+
+Comments can only be seen by collaborators and will remain private when the advisory is published.
+@sinkog sinkog created the temporary private fork CentralInfraCore/CIC_Relay-ghsa-5489-jhgc-m947 28 minutes ago
+Collaborate on a patch
+https://github.com/CentralInfraCore/CIC_Relay-ghsa-5489-jhgc-m947.git
+Use the temporary private fork to collaborate on a patch for this advisory.
+
+Git host functions: validate, authorize per module, withdraw git.push
+#1 opened 27 minutes ago by sinkog
+CentralInfraCore/CIC_Relay:main ← CentralInfraCore/CIC_Relay-ghsa-5489-jhgc-m947:security/git-host-functions
+This advisory may be blocked by repository rules
+3 repository rules found
+Show rules
+ These changes may only be merged by someone that can bypass branch protections.
+Required advisory information has been provided
+You’re ready to publish, but first you must merge or close outstanding pull requests.
+Suggested advisory information
+Provide additional information to help your users prioritize and remediate this advisory appropriately.
+Patched version
+ 
+— Notify your users of safe update options.
+Once requested, GitHub will review this advisory in order to assign a CVE.
+
+GitHub reviews published security advisories. Upon review, we may use this advisory to send Dependabot alerts to affected repositories and redistribute the advisory through our API and Atom feed.
+
+We may contact you for more information. Learn more about repository security advisories.
+
+@sinkog
+Write
+Preview
+Add your comment here...
+
+
+Confidential. Only maintainers will see this comment.
+Severity
+High
+CVE ID
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 20:58 — Claude
+
+~~~~~
+You've hit your 5-hour limit · resets 10:50pm (Europe/Budapest)
+~~~~~
+
+### 2026-11-15 21:05 — Claude
+
+~~~~~
+You've hit your 5-hour limit · resets 10:50pm (Europe/Budapest)
+~~~~~
+
+### 2026-11-15 21:52 — Claude
+
+~~~~~
+A merge lefutott, a javítás az upstream `main`-ben van, az advisory pedig publikálva lett. A merge-et te nyomtad meg az advisory oldalon, én csak a feltételeket készítettem elő.
+
+**A merge-commit:** `38987c886b6bfee80ffaa726dfb585e6bc85a37b`
+- **Szülők:** `e43f2a8` és `c381379`, vagyis a 29 commit megőrizve, merge-commit módban, squash és rebase nélkül.
+- **Fa:** `ee933570db2f92c7db5dec7796caa6651098f070`, azonos a jóváhagyottal. A GitHub `verified: true`.
+- **Eltérés a bázistól:** a `main` az `e43f2a8` fölött 30 commit (29 plusz a merge-commit), 31 fájl.
+
+**A ruleset-akadály és a visszaállítás.** A merge az upstream `main-re egy aktív ruleseten akadt el (`main: required checks`, hét kötelező check, üres bypass-lista). Korábban tévesen írtam, hogy a `main` nincs védve: a klasszikus branch protection nincs, a ruleset van. A választásod szerint ideiglenes bypassot adtam az admin szerepnek, `pull_request` módban, 20:58:17Z-tól. A merge után a figyelőm 21:05:44Z-kor eltávolította. Az ellenőrzés szerint a ruleset **azonos az eredetivel** (`equals_original=True`), a bypass-lista üres, az enforcement aktív. A bizonyíték: `…/private/review/ruleset-bypass/` (eredeti, visszaállított állapot, napló).
+
+**Post-merge CI az új `main`-en (`38987c8`), kötelező volt:**
+- `verify`: success. Minden job: verify, rust, ffi, coverage, python.
+- `manifest-check`: success.
+- Az eredmény a `ci-independent/POST-MERGE.md`-ben van.
+
+**Advisory:** `GHSA-5489-jhgc-m947`, **publikálva** 2026-11-15T21:09:28Z. Ezt a lépést te végezted el. Az ideiglenes privát fork a publikálással törlődött (404).
+
+**Hátra van:**
+1. **A privát CI-repó törlése** (`CIC_Relay-ci-ghsa-5489-jhgc-m947`): a bizonyíték helyben, a ZIP-ekben megvan. A törlés visszafordíthatatlan, ezért tőled kérem a kimondott engedélyt.
+2. **CVE-igény** az advisory oldalán, ha kell.
+3. **Az önálló `os.Clearenv()` teszt-PR:** a bázisa most a friss `main` (`38987c8`). Az ágat újra kell építeni róla, rebase nélkül, majd a feladás a te döntésed.
+4. **#155 lezárása** a nyilvános oldalon, a tulajdonosi döntés szerint.
+5. **Külön munkacsomagok:** a cic-flow artifact-kötés, a #162, a push visszavezetése (issue, ADR, PoC), a commit-msg hook amend-hibája.
+6. **A produkciós jóváhagyás** továbbra is HOLD.
+
+A teljes állapotot és a ruleset-tanulságot a memóriába mentettem.
+~~~~~
+
+### 2026-11-15 22:00 — Felhasználó
+
+~~~~~
+kicsit kocogtam előre nézd meg az állapotot
+~~~~~
+
+### 2026-11-15 22:01 — Claude
+
+~~~~~
+Átnéztem az állapotot, a kocogásod óta minden rendben látszik, és két dolgot érdemes tudnod.
+
+**Ami megtörtént, nagyrészt a te lépéseid:**
+- **Merge:** az upstream `main`-ben a `38987c8` merge-commit (a fa azonos a jóváhagyottal).
+- **Advisory:** `GHSA-5489-jhgc-m947` publikálva (2026-11-15T21:09:28Z). A patched version mező: "main at 38987c8 and later". CVE még nincs kérve.
+- **README:** a #196 PR, amit te mergeltél (`3fae124`), frissítette a README-t. Ellenőriztem a tartalmát a megvalósítással, egyezik: a nem ellenőrzött modul betöltődik, de képességet nem kap, a git-hozzáférést az aláírt manifest modulonként szűkíti, a `git.push` visszavonva, a betöltéskor csak a deklarált importok ellenőrzöttek, hivatkozás a docsra és az advisoryra. Privát részlet nincs benne.
+- **CI:** az új `main` fején (`3fae124`) a `verify` és a `manifest-check` sikeres, ahogy a `38987c8`-on is.
+- **Ruleset:** a `main: required checks` visszaállítva, bypass-lista üres, enforcement aktív.
+- **#155-ön** van egy komment tőled a javítás állapotáról.
+
+**Egy dolog, amit érdemes látnod a #155 lezárása előtt.** A nyilvános #155 két pontot kért, és a fix csak a másodikat fedi:
+1. **`CIC_TRUST_MODE=prod`-ban a modulbetöltés fail-closed legyen** (aláíratlan modul, hibás PEM elutasított): **nincs megvalósítva.** A kódban az aláíratlan modul figyelmeztetéssel betöltődik, a README is ezt írja.
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+Ezért a #155 lezárása még nem indokolt. Javaslom egy lezáró-kommentet a covered/not-covered szétválasztással, és az 1. pontnak külön issue-t, vagy a #155 nyitva hagyását.
+
+**Nyitott, rád vár:**
+- **A privát CI-repó** (`CIC_Relay-ci-ghsa-5489-jhgc-m947`) még létezik, utolsó push 20:38Z. A törlés visszafordíthatatlan, a bizonyítékot helyben mentettem. Szólj, ha törölhetem.
+- **CVE-igény**, ha kell.
+- **Az önálló `os.Clearenv()` PR:** a `fix/testloadconfig-restore-env` ág még az `e43f2a8`-on áll, a `main` azóta két commitot lépett. Újra kell építeni a `3fae124`-ről. Most nem nyúltam hozzá.
+- **Nem az enyém, de látod:** a #191 PR és a három `DO NOT MERGE` CI-bizonyító PR (#192–194), valamint a #195 issue másik szál munkája.
+
+**Külön munkacsomagok, változatlanul:** #162, #185–#189, a cic-flow artifact-kötés, a push visszavezetése, a commit-msg hook hibája. A produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 22:01 — Felhasználó
+
+~~~~~
+töröld a privát CI-repót
+~~~~~
+
+### 2026-11-15 22:02 — Claude
+
+~~~~~
+A privát CI-repó **nem lett törölve**: a GitHub 403-mal visszautasította, és még létezik.
+
+**Az ok:** a `gh` token scope-jai `admin:org`, `admin:public_key`, `gist`, `repo`, `workflow`. A repó törléséhez kell egy `delete_repo` scope, ami hiányzik. Ez nem jogosultsági hiba a repón, hanem a token korlátja. A repó törlése előtt ellenőriztem, hogy a bizonyíték helyben megvan: a `ci-independent.zip` (sha256 `27f1c927…`) és a `CI-RESULTS.md`, `POST-MERGE.md`, és az `SHA256SUMS` szerint minden fájl hibátlan. Nem próbáltam kerülőutat.
+
+**Két mód, válassz:**
+1. **Token-scope bővítése, majd én törlöm.** Futtasd a promptban:
+   ```
+   ! gh auth refresh -h github.com -s delete_repo
+   ```
+   A parancs böngészős hitelesítést kér. Utána szólj, és megismétlem a törlést, majd ellenőrzöm, hogy a repó 404-et ad.
+2. **Kézi törlés a weben:** https://github.com/CentralInfraCore/CIC_Relay-ci-ghsa-5489-jhgc-m947/settings → Danger Zone → Delete this repository.
+
+A `delete_repo` scope érzékeny, ezért törlés után érdemes visszavonni: `gh auth refresh -h github.com -r delete_repo`.
+
+A privát CI-repóban nincs secret, és csak olvasási jogú token van benne. Amíg létezik, nem kockázat, csak rendetlenség.
+~~~~~
+
+### 2026-11-15 22:07 — Felhasználó
+
+~~~~~
+törölve
+~~~~~
+
+### 2026-11-15 22:08 — Claude
+
+~~~~~
+A privát CI-repó törölve: a `CIC_Relay-ci-ghsa-5489-jhgc-m947` 404-et ad, és a szervezetben nincs `ghsa` nevű repó. Az ideiglenes advisory-fork a publikálással korábban szintén megszűnt.
+
+A `delete_repo` scope már nincs a tokenen (`admin:org`, `admin:public_key`, `gist`, `repo`, `workflow` maradt), tehát nem kell visszavonnod.
+
+**A #155 ügyében lezárva:**
+- javítás: merge-commit `38987c8`
+- advisory: `GHSA-5489-jhgc-m947` publikálva
+- CI: post-merge zöld
+- ruleset: visszaállítva
+- privát CI-repó és fork: törölve
+
+**Nyitott, rád vár:**
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+- **CVE-igény.**
+- **Az önálló `os.Clearenv()` PR:** az ágat újra kell építeni a friss `main`-ről (`3fae124`).
+- **Külön munkacsomagok:** #162, #185–#189, a cic-flow artifact-kötés, a push visszavezetése, a commit-msg hook hibája.
+- **Produkciós jóváhagyás:** HOLD.
+
+A bizonyítékok a `…/private/review/` mappában maradtak: a `ci-independent.zip`, a `ruleset-bypass/`, a `handoff-5bd43d3.zip`, a `candidate-resign.zip` és a `delta-3abe813..c381379.zip`.
+~~~~~
+
+### 2026-11-15 22:11 — Felhasználó
+
+~~~~~
+építsd újra a clearenv ágat a friss mainről #155 höz mennyi meló kell még?
+~~~~~
+
+### 2026-11-15 22:12 — Claude
+
+~~~~~
+A két kérdésre a válasz: a clearenv-ág újraépítése fölösleges, mert a javítás már a `main`-ben van, és a #155 hátralévő munkája kicsi, ha a prod-szigorításra szorítkozunk.
+
+**1. A clearenv-ág**
+
+Újraépítettem a `main`-ről (`3fae124`), de a cherry-pick üres lett. A javítás már benne van: `eb575e0`, "test: restore the process environment that TestLoadConfig_Defaults clears", aláírt, egy aláírás-blokkal.
+
+- **Ok:** ez ugyanaz a commit, mint a korábbi `e9afa1b` a 29 commitos integrációs láncban. A lánc mergelésével bekerült az upstreamre, a `+/-` sorai azonosak a `37210a1`-ével. Az önálló teszt-PR ezért megszűnt, mint külön teendő.
+- **Ellenőrzés:** a `go test -count=2 ./cmd/relay/` a `main`-en zöld.
+- **Tisztítás:** a helyi `fix/testloadconfig-restore-env` ág most a `main`-nel azonos. A régit megtartottam `backup/fix-testloadconfig-restore-env-37210a1` néven. Semmit nem kell pusholni vagy feladni.
+
+**2. Mennyi munka a #155-ből hátra**
+
+A nyilvános #155 két pontjából csak az első hiányzik, plusz egy teszt a másodikból.
+
+**a) Prod fail-closed modulbetöltés (1. pont).**
+- **Az eset:** a `loadModule` aláíratlan modult, hibás PEM-et és tanúsítvány-parse hibát figyelmeztetéssel betölt.
+- **A trust store:** hiányzó trust store-t a prod indulás már elutasítja (`requireTrustStore`), ez kész.
+- **A kód:** a `PKIAssets` struktúrán át a trust mód elérhető a `loadModule`-ban. Egy új, prod módban beállított jelző kell, és három ág (hiányzó `.pem`, olvasási hiba, hibás PEM, parse hiba) hibát ad vissza prodban. A kódváltozás kb. 30 sor.
+- **Nincs beágyazott modul:** a bináris csak PKI-t ágyaz be, tehát a prod szigorítás nem töri el a mellékelt komponenseket. Az operátor telepítette modulokra hat.
+- **Tesztek:** 6–8 negatív teszt (aláíratlan, hibás PEM, parse hiba, olvasási hiba prodban, dev változatlan, mindkét betöltési út) plusz mutáció.
+- **Docs és kapuk:** EN és HU docs, README-sor, symbol- és manifest-ellenőrzés.
+- **Becslés:** kb. 3–5 óra, a teljes CI-egyenértékű futással együtt.
+
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+**c) Folyamat.** Ez már nyilvános, normál PR: feature-ág, a repo szabályai szerinti CI, merge a `main`-re. Nincs advisory, nincs privát fork.
+
+**Egy döntés kell tőled az a) ponthoz.** A #155 szövege szerint dev módban a mostani viselkedés "csak explicit opt-in" mögött maradhat:
+
+| Opció | Mit jelent | Hatás |
+|---|---|---|
+| **A. Csak prod szigorú (ajánlott)** | prodban fail-closed, dev változatlan | kicsi, kb. 3–5 + 1–2 óra |
+| **B. Dev is szigorú, opt-in változóval** | dev alapból szigorú, `CIC_ALLOW_UNSIGNED_MODULES=1`-gyel enged | +fél–1 nap: a compose (alapból `dev`), a tesztfixture-ök és a docs mind érintett |
+
+Az A opciót ajánlom, a B-t külön issue-ban. A produkciós jóváhagyás HOLD marad, és ez a munka nélküle nem oldódik fel. Szólj, melyik legyen, és a PR-t elkezdem.
+~~~~~
+
+### 2026-11-15 22:13 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**B opció. A dev környezetben is fail-closed legyen az alapértelmezés.**
+
+Nem bontanám külön issue-ra, mert a #155 eredeti elfogadási feltétele explicit opt-in-t ír elő. Az A opció ezt nem teljesíti maradéktalanul.
+
+Az elvárt működés:
+
+| Környezet             | Aláíratlan modul | Hibás aláírás vagy tanúsítvány |
+| --------------------- | ---------------- | ------------------------------ |
+| PROD                  | DENY             | DENY                           |
+| PROD + opt-in         | DENY             | DENY                           |
+| DEV alapértelmezett   | DENY             | DENY                           |
+| DEV + explicit opt-in | ALLOW            | DENY                           |
+
+### **Kötelező feltételek**
+
+- A `CIC_ALLOW_UNSIGNED_MODULES=1` kizárólag dev módban engedélyezhet valóban aláíratlan modult.
+- Hibás vagy érvénytelen aláírást semmilyen opt-in ne legitimáljon.
+- Mindkét modulbetöltési út ugyanazt a biztonsági szabályt alkalmazza.
+- Negatív tesztek és célzott mutációk igazolják a korlátozások működését.
+- Az összes host modulra készüljön el a felsorolási teszt.
+- EN/HU dokumentáció és teljes CI.
+
+A clearenv külön PR elhagyása rendben van.
+
+**Fejlesztés: GO. Merge: review után. Produkciós jóváhagyás: HOLD.**
+
+A plusz fél–egy napot érdemes ráfordítani. A Relay bizalmi határánál ne a környezet neve, hanem egy explicit operátori döntés engedélyezze a biztonsági kivételt.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 22:14 — Claude
+
+~~~~~
+Igazad van, a merge-commitok nem Vault-aláírtak, ezt a `main`-en meg is néztem. A `verify-signatures` az `e43f2a8..origin/main` tartományra **GO (32 rendben)**. A két GitHub-merge (`38987c8` és `3fae124`) a verifier szerint "nem hoz tartalmat": a fájuk egyezik a második szülőjével (`c381379`, illetve `74e92ac`). Ezért igaz marad, hogy minden bájtot aláírt commit fed.
+
+**Szabály a most induló munkára, a memóriába is mentve:**
+- A PR-ág a merge pillanatában a `main` közvetlen leszármazottja legyen, hogy a merge-commit semmit ne hozzon.
+- Ha a `main` közben mozdul, **nem** a GitHub "update branch"-et használom, mert az tartalmat hozó, aláíratlan merge-et készítene. Helyben igazítom aláírt commitként.
+- A merge után lefuttatom a verifiert a tartományra, és megnézem, hogy a merge-commit fája egyezik-e egy szülőjével.
+
+**Előkészületek a B opcióhoz** (a fejlesztés még nem indult, a kódot nem módosítottam):
+- A `feature/relay-155-fail-closed-modules` ág az `origin/main`-ről (`3fae124`) áll.
+- A trust mód a `bootstrapTrust`-on keresztül a `PKIAssets`-be kerülhet, ezzel a `loadModule` mindkét betöltési úton ugyanazt a szabályt látja.
+- A host modulok (`git`, `cic-flow`) felsorolására a `combineHostSetups` hívás a `main.go` 725–728. sorában adja a központi pontot.
+- A shipped konfigurációk között (compose, `relay-ci.sh`, Makefile) nincs olyan, amely telepített modulokat töltene be, ezért a szigorúbb dev alapértelmezés a tesztfixture-öket és a docs-ot érinti, nem a szállított beállításokat.
+
+**A terv a táblázatod szerint:**
+- **Aláíratlan modul:** prodban mindig DENY. A `CIC_ALLOW_UNSIGNED_MODULES=1` prodban figyelmeztetéssel figyelmen kívül marad. Devben alapból DENY, az opt-in engedi.
+- **Hibás vagy érvénytelen aláírás:** olvasási hiba, hibás PEM, parse hiba, a lánc nem ellenőrizhető: mindig DENY, opt-in nélkül és vele is.
+- **Az opt-in értéke:** pontosan `1`. A `0` vagy az üres kikapcsolt, bármi más indulási hiba, hogy egy elírás ne nyisson kivételt.
+- **Host modulok felsorolása:** a felsoroló teszt a gyártási bekötést használja, rögzíti a modulneveket, és buktat egy besorolatlan modult vagy függvényt.
+- **Befejezéshez:** negatív tesztek és mutációk, EN/HU docs, README, a teljes CI-egyenértékű futás.
+
+Folytatom a fejlesztést, a merge a review után jön, a produkciós jóváhagyás HOLD.
+~~~~~
+
+### 2026-11-15 22:19 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+A tervet jóváhagyom. **Fejlesztés: GO.**
+
+Az aláírási szabályt egy fontos pontosítással rögzítsük:
+
+- Az aláíratlan merge-commit csak akkor elfogadható, ha nem hoz új tartalmat, és az integrált commitlánc aláírásai ellenőrzöttek.
+- Ennél a PR-nél a merge-commit fája pontosan egyezzen a jóváhagyott PR-fej fájával.
+- Tartalmi eltérés esetén automatikus NO-GO.
+
+A B opció implementációs terve megfelel az elvárt biztonsági szerződésnek.
+
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+A review során külön vizsgálni fogom, hogy az unsigned opt-in semmilyen úton nem kerülheti meg az érvénytelen aláírás elutasítását.
+
+**Merge: HOLD a review-ig. Produkciós jóváhagyás: HOLD.**
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 22:24 — Claude
+
+~~~~~
+Decision table passes. Next are the targeted mutations.
+~~~~~
+
+### 2026-11-15 22:24 — Claude
+
+~~~~~
+Now a mutation runner: each mutant is applied with an exact-string replace, the targeted tests run, and the file is restored.
+~~~~~
+
+### 2026-11-15 22:25 — Claude
+
+~~~~~
+All 12 mutants were killed and the sources are restored. Next is the host-function enumeration. I'll start with the production wiring.
+~~~~~
+
+### 2026-11-15 22:26 — Claude
+
+~~~~~
+Refactor main.go to a shared production setup function, then write the enumeration test against `NewWasmManager`.
+~~~~~
+
+### 2026-11-15 22:26 — Claude
+
+~~~~~
+Small config issue: `NewWasmManager` needs a positive cache size. I'll find the field name and set it.
+~~~~~
+
+### 2026-11-15 22:26 — Claude
+
+~~~~~
+The enumeration works. Now I'll dump the exact WASI list so the table can be filled in from the real surface.
+~~~~~
+
+### 2026-11-15 22:27 — Claude
+
+~~~~~
+Table passes. Now mutations on the production wiring to prove the test can fail.
+~~~~~
+
+### 2026-11-15 22:27 — Claude
+
+~~~~~
+All six wiring mutants are killed. Now the docs: I'll find the existing structure and the README lines to update.
+~~~~~
+
+### 2026-11-15 22:28 — Claude
+
+~~~~~
+Docs are in. Next is the full CI-equivalent run. I'll check how I ran it earlier.
+~~~~~
+
+### 2026-11-15 22:30 — Claude
+
+~~~~~
+All gates are green and the 110-line deadcode baseline is unchanged. Now I'll commit with explicit paths and no attribution trailer, as the user's rule requires.
+~~~~~
+
+### 2026-11-15 22:30 — Claude
+
+~~~~~
+Committed and signed. Now I'll verify the signature chain and check for a single signing block (the amend bug).
+~~~~~
+
+### 2026-11-15 22:30 — Claude
+
+~~~~~
+The signature verifies (GO, 1 OK). Now I'll write the PR body and the mutation evidence into the private review directory. I'm not pushing, since you run the push.
+~~~~~
+
+### 2026-11-15 22:31 — Claude
+
+~~~~~
+Option B is implemented, committed and signed, and I have not pushed it. The local checks are green. The CI gates that only run on the PR (mutation-pr, rust/ffi/python, object-evidence) have not run yet.
+
+**What changed** (one signed commit, `191e145`, directly on `main` `3fae124`, branch `feature/relay-155-fail-closed-modules`)
+- **Loader:** a module with no signature file is refused in prod and, by default, in dev. A signature that is present must verify. A malformed PEM, an unparsable certificate, a failing chain, a missing trust store and an unreadable file are all refused. No opt-in changes any of those.
+- **Opt-in:** `CIC_ALLOW_UNSIGNED_MODULES=1` admits only a module with no signature file, only in dev, and that module gets no capability. In prod it is ignored with a warning. Any value other than unset, `0` or `1` is a start-up error.
+- **Both loaders:** the embedded and installed paths go through the same `loadModule`, so the same rule applies to both.
+- **Host surface:** I moved the production host setup into `productionHostSetup`, which `main` now uses. A new test builds the production `NewWasmManager` with it and checks `git`, `cic-flow` and all 46 WASI functions against a reviewed table. It fails on an unclassified function, on a classified function that disappeared, and on a registration path it can't see.
+- **Docs:** new EN/HU `security/module-loading` pages, an env-table row and the README line, plus a pointer from `git-host-functions`.
+- **Behaviour change:** an unsigned module, a module whose `.pem` isn't a certificate, and a signed module loaded without a trust store used to load without a capability. They are now refused. The PR body says so.
+
+**Checks run locally**
+- **Decision table:** 8 module cases × 4 environments (prod, prod+opt-in, dev, dev+opt-in) × 2 loaders, all passing.
+- **Mutations:** 12 on the loader and opt-in code and 6 on the host wiring, all killed. I applied each to the source and restored it afterwards.
+- **CI equivalent:**
+  - gofmt, vet, staticcheck v0.6.1, govulncheck and the golden verify are clean.
+  - deadcode gives the same 110 lines as the base, and there is no symbol drift.
+  - `go test -race -count=2 -shuffle=on` passes.
+  - Coverage is 91.4 / 94.2 / 94.3 for cmd/relay, core/cabinet and core/nexus/git, above the 90 / 93 / 92 thresholds.
+- **Signature:** `verify-signatures.sh` gives GO with one signing block. It only resolves the range from `wt-verify` with full SHAs. With short SHAs or `HEAD` it reported the range as empty.
+
+The PR will run those remaining gates upstream.
+
+**Files** (all in `private/review/`, not in any repo)
+- PR body: `PR-BODY-155-fail-closed-modules.md`
+- Evidence: `evidence-155-fail-closed-modules.txt`
+
+**Your step:** run the push, then open the PR against `main`. A GitHub merge commit is then unsigned but has the same tree as the PR head.
+
+```
+! cd ~/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-clearenv && git push -u origin feature/relay-155-fail-closed-modules
+```
+
+Merge is on hold until the review, and production approval stays on hold.
+~~~~~
+
+### 2026-11-15 22:34 — Felhasználó
+
+~~~~~
+$ cd ~/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-clearenv && git push -u origin feature/relay-155-fail-closed-modules
+~~~~~
+
+### 2026-11-15 22:34 — Claude
+
+~~~~~
+The push went through. Now I'll open the PR against `main` with the prepared body.
+~~~~~
+
+### 2026-11-15 22:34 — Claude
+
+~~~~~
+I opened PR #197 against `main`: https://github.com/CentralInfraCore/CIC_Relay/pull/197. It has the prepared English body and "Refs #155". The branch is one signed commit, `191e145`, directly on `main` `3fae124`.
+
+Its CI is starting. I haven't read the results yet, so the mutation-pr, rust/ffi/python and object-evidence gates are still unverified.
+
+I won't merge. Before merging, check that the PR head is still `191e145` and that the GitHub merge commit's tree equals the PR-head tree (`cdc11ff8988507cef61a6edf380dfbfb0e6f1f79`). A different tree is an automatic NO-GO. Merge waits for your review, and production approval stays on hold.
+
+I can also check the CI results on #197 once they land.
+~~~~~
+
+### 2026-11-15 22:37 — Felhasználó
+
+~~~~~
+magyarul
+~~~~~
+
+### 2026-11-15 22:37 — Claude
+
+~~~~~
+A #197-es PR megnyitva a `main` ellen: https://github.com/CentralInfraCore/CIC_Relay/pull/197. A törzse az előkészített angol szöveg, "Refs #155"-tel. Az ág egyetlen aláírt commit (`191e145`), közvetlenül a `main` `3fae124`-en.
+
+A CI most indul. Az eredményeket még nem olvastam, ezért a mutation-pr, a rust/ffi/python és az object-evidence kapu még nem igazolt.
+
+Nem mergelek. Merge előtt ellenőrizni kell, hogy a PR feje még `191e145`, és hogy a GitHub merge-commit fája megegyezik a PR-fej fájával (`cdc11ff8988507cef61a6edf380dfbfb0e6f1f79`). Eltérő fa automatikus NO-GO. A merge a review-ra vár, a produkciós jóváhagyás továbbra is HOLD.
+
+Ha kéred, megnézem a #197 CI-eredményeit, amint lefutnak.
+~~~~~
+
+### 2026-11-15 22:38 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+CIC Relay PR #197 – Security review
+Review decision: REQUEST CHANGES – egy dokumentációs és biztonsági szerződésbeli pontosítás szükséges.
+
+Vizsgált HEAD: 191e14523ed53cc0cadf4478e8de3ccfa1721583
+
+A B opció implementációja megfelelő. A fennmaradó problémát nem az opt-in működésében, hanem a dokumentált kriptográfiai garanciában találtam.
+1. Biztonsági döntési mátrix
+Eset    PROD    PROD + opt-in    DEV    DEV + opt-in
+Hiányzó PEM    DENY    DENY    DENY    ALLOW
+Hibás PEM    DENY    DENY    DENY    DENY
+Parse hiba    DENY    DENY    DENY    DENY
+Érvénytelen tanúsítványlánc    DENY    DENY    DENY    DENY
+Hiányzó trust store, jelen lévő PEM    DENY    DENY    DENY    DENY
+
+
+PASS
+ Az opt-in nem kerüli meg a tanúsítvány-ellenőrzést. Mindkét betöltési út közös szabályt alkalmaz.
+2. F1 – A dokumentáció túl erős biztonsági állítása
+Súlyosság: Medium – blokkoló.
+
+A loadModule ellenőrzi:
+- A WASM digestjét a YAML-leíróhoz képest.
+- A PEM-ben található tanúsítvány érvényességét és bizalmi láncát.
+Azonban továbbra sem ellenőrzi a WASM és a manifest feletti kriptográfiai aláírást.
+
+Ez a már ismert #162 hatóköre. Nem kérem annak implementálását ebben a PR-ben.
+
+Viszont a README és az új EN/HU dokumentáció azt állítja, hogy csak érvényesen aláírt modul töltődhet be. Ez jelenleg erősebb állítás, mint amit az implementáció garantál.
+
+Kért javítás:
+- A tanúsítványlánc ellenőrzését különítsük el az artifact kriptográfiai hitelesítésétől.
+- Hivatkozzunk a nyitott #162-re.
+- Egyértelműen dokumentáljuk, hogy a modul és a manifest kriptográfiai kötése még nem teljesített garancia.
+Termékkód-módosítást ehhez nem kérek.
+3. Host surface
+PASS
+A közös produkciós bekötésből történő felsorolás és a kétirányú összehasonlítás megfelelő.
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+
+A teszt a meglévő függvény eltűnését és az új, besorolatlan függvény megjelenését is ellenőrzi.
+4. CI aktuális állapota
+Közvetlenül a GitHubról ellenőrizve:
+Kapu    Státusz
+Mutation PR    PASS
+Manifest check    PASS
+Object evidence    PASS
+Go verify    PASS
+Coverage    PASS
+FFI    PASS
+Python    PASS
+Rust    RUNNING
+
+A Rust tesztek már sikeresek, a coverage és a cargo-deny ellenőrzések még nem zárultak le a lekérdezés pillanatában.
+5. Merge-integritás
+- Bázis: 3fae124 – egyezik.
+- PR-fej: 191e145 – egyezik.
+- GitHub ideiglenes merge-commit: a760141.
+- A PR-fej és az ideiglenes merge-commit között a GitHub összehasonlítása 0 módosított fájlt mutat.
+Ez tartalmi egyezést igazol. Az egzakt tree SHA ellenőrzését a végleges merge előtt külön el kell végezni.
+Végső döntés
+Terület    Döntés
+Fail-closed betöltési szabály    APPROVE
+DEV explicit opt-in    APPROVE
+Host surface inventory    APPROVE
+Dokumentált kriptográfiai garancia    REQUEST CHANGES
+Merge    HOLD
+Produkciós jóváhagyás    HOLD
+
+A #155 lezárásához már csak a dokumentáció pontosítása, a végleges zöld CI és az aláírt integrációs lánc ellenőrzése szükséges. A #162 külön marad.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-15 22:38 — Claude
+
+~~~~~
+Először a kódban ellenőrzöm, hogy a review állítása igaz-e: van-e bármilyen aláírás-ellenőrzés a WASM és a leíró felett.
+~~~~~
+
+### 2026-11-15 22:39 — Claude
+
+~~~~~
+A review F1 pontját elfogadtam: a doksi erősebb garanciát állított, mint amit a betöltő ad. A javítás egy új, aláírt, csak dokumentációt érintő commit (`0716f81`) az `191e145` tetején, termékkód nélkül. Nem amendeltem. Az aláírás-ellenőrző GO-t ad rá. Még nincs pusholva.
+
+**Ellenőriztem a kódban:** a `loadModule` a `.pem` tanúsítványláncát ellenőrzi (EKU CodeSigning, CRL, frissesség), és a WASM digestjét a leíróval szemben. A WASM és a manifest feletti aláírást nem ellenőrzi. A #162 is nyitott, és ugyanezt írja le.
+
+**Mi változott:**
+- **`module-loading` (EN/HU):** új 1. szakasz arról, mit ellenőriz a betöltő és mit nem. Három sora van: tanúsítványlánc (igen), WASM digest a leíróval szemben (igen), kriptográfiai aláírás a modul és a manifest felett (nem, #162). Kimondja, hogy a tanúsítványt még nem köti az artifacthoz semmi, és hogy ez nem garancia, amit ez a PR ad. Ahol „aláírt" áll, ott „olyan tanúsítványt hordoz, amelynek lánca ellenőrizhető" értendő.
+- **Operátori megjegyzés:** a „prodban betöltődött" állapot nem jelenti, hogy a tanúsítvány birtokosa pontosan ezt az artifactot és manifestet jóváhagyta.
+- **README és `git-host-functions` (EN/HU):** a „csak aláírt modul tölthető be" állítás helyére a tanúsítványos megfogalmazás és a #162-es hivatkozás került. A „signed manifest" jelentését is tisztáztam.
+- **Szakaszszámok, táblázat, YAML-leírások:** a szakaszok újraszámozva, a táblázatsor „certificate chain valid"-ra pontosítva, a két YAML `description` ennek megfelelően frissítve.
+
+A kód nem változott, ezért a tesztek és a mutációs bizonyíték érvényesek maradnak. A doksi-commit után a teljes Go CI-t nem futtattam újra helyben. A feje most a `0716f81` lesz, így a review-ban szereplő `191e145` már nem az, a merge előtti fa-egyezést arra kell újra ellenőrizni.
+
+A push a te lépésed:
+
+```
+! cd ~/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-clearenv && git push origin feature/relay-155-fail-closed-modules
+```
+
+A merge és a produkciós jóváhagyás továbbra is HOLD.
+~~~~~
+
+### 2026-11-15 22:40 — Felhasználó
+
+~~~~~
+$ cd ~/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-clearenv && git push origin feature/relay-155-fail-closed-modules
+~~~~~
+
+### 2026-11-15 22:40 — Claude
+
+~~~~~
+A push megtörtént: a #197 feje most `0716f81`. A CI most fut rá. Megnézem az állapotát.
+~~~~~
+
+### 2026-11-15 22:40 — Claude
+
+~~~~~
+A #197 feje `0716f81`, a PR mergelhető. A CI-kapuk listája még üres, mert a futások még nem indultak el a push után. Nem hagyok futó figyelőt. Szólj, ha megnézzem az eredményeket, vagy küldd el a végleges review-t.
+
+A merge és a produkciós jóváhagyás HOLD. A review szerint merge előtt még kell:
+- zöld CI a `0716f81`-en,
+- a merge-commit fájának egyezése a PR-fej fájával,
+- az aláírt lánc ellenőrzése.
+~~~~~
+
+### 2026-11-15 23:19 — Felhasználó
+
+~~~~~
+mehet a merge
+~~~~~
+
+### 2026-11-15 23:19 — Claude
+
+~~~~~
+Kiadtad a merge-et. Előbb ellenőrzöm a feltételeket: a PR-fej, a CI és a ruleset.
+~~~~~
+
+### 2026-11-15 23:19 — Claude
+
+~~~~~
+Minden kapu zöld a `0716f81`-en, az állapot CLEAN, a `main` változatlanul `3fae124`. A merge a fejhez kötött, merge-commit módban megy.
+~~~~~
+
+### 2026-11-15 23:19 — Claude
+
+~~~~~
+A #197 be van mergelve, a merge-commit `e58344a`.
+
+- **Fa-egyezés:** a merge-commit fája `85a5574f…`, azonos a PR-fej (`0716f81`) fájával. A szülei `3fae124` és `0716f81`, tartalmi eltérés nincs.
+- **CI:** a `0716f81`-en minden kapu zöld (verify, coverage, ffi, python, rust, manifest, mutation-pr, object-evidence).
+- **Merge:** `--merge --match-head-commit` a `0716f81`-re kötve.
+- **Aláírás:** a merge-commit GitHub-merge, ezért aláíratlan. A fája egyezik a jóváhagyott PR-fejével, ez a szabály szerint elfogadható.
+
+Nem csináltam és nem is kérted:
+- A #155 nyilvános lezáró kommentjét és a lezárását.
+- A CVE-kérést.
+- A produkciós jóváhagyást, ami HOLD.
+
+Ha kéred, megírom a #155 lezáró kommentjét (angolul, a #197-re és a GHSA-ra hivatkozva), és frissítem a thread-naplót és a memóriát.
+~~~~~
+
+### 2026-11-16 17:06 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+PR #197 – végső delta-review
+Review decision: APPROVE – F1 lezárható.
+
+Az új 0716f81 commitot és a CI-eredményeket közvetlenül ellenőriztem a GitHubon.
+Dokumentáció
+A korábban kért pontosítás megfelelően elkészült:
+- A tanúsítványlánc ellenőrzése elkülönül az artifact kriptográfiai hitelesítésétől.
+- Az EN/HU dokumentáció világosan megnevezi a még nem teljesített garanciát.
+- A #162 hivatkozás bekerült.
+- Termékkód nem változott.
+CI
+Kapu    Státusz    Run ID
+Verify    PASS    43770585950
+Manifest check    PASS    43770585991
+Mutation PR    PASS    43770585911
+Object evidence    PASS    43770585999
+
+4/4 workflow sikeres, az új HEAD-en.
+Integráció
+Objektum    Azonosító
+Bázis    3fae124
+Jóváhagyott HEAD    0716f81
+GitHub merge-jelölt    9fb9604
+Tartalmi eltérés a HEAD és a merge-jelölt között    0 fájl
+
+Döntés
+- Tartalmi review: APPROVE
+- CI: PASS
+- Merge: feltételes GO, az egzakt tree-egyezés és az aláírt commitlánc sikeres ellenőrzése után.
+- #155 lezárása: sikeres post-merge CI után.
+- #162: nyitva marad.
+- Produkciós jóváhagyás: HOLD.
+Új blokkoló lelet: 0.
+</pasted_content id="1732">
+~~~~~
+
+### 2026-11-16 17:07 — Claude
+
+~~~~~
+A review feltételeit most ellenőrzöm: az aláírt lánc ellenőrzése és a merge utáni CI. A fa-egyezést már mértem.
+~~~~~
+
+### 2026-11-16 17:07 — Claude
+
+~~~~~
+A review mindhárom feltétele teljesült. Itt végeztem, a #155 lezárása a te döntésed.
+
+- **Tree-egyezés:** a merge-commit `e58344a` fája `85a5574f…`, azonos a jóváhagyott `0716f81` fájával. A review által látott `9fb9604` GitHub-jelölt volt, a tényleges merge-commit más SHA, de a fája egyezik.
+- **Aláírt lánc:** `verify-signatures` a `3fae124..e58344a` tartományra GO, 3 commit rendben. A merge-commit "nem hoz tartalmat", a két tartalmi commit Vault-aláírt.
+- **Post-merge CI a `main`-en (`e58344a`):** a push-ra futó `verify` és `manifest-check` sikeres. A nightly és a renovate is sikeres ezen a SHA-n.
+
+Ezzel teljesült a review feltétele a #155 lezárásához. Az input.md szerint csak akkor zárhatok issue-t, ha kifejezetten kéred, ezért nem zártam le.
+
+Nyitva maradtak: a #162 (külön tétel, a doksi hivatkozik rá), a CVE-kérés és a produkciós jóváhagyás (HOLD).
+
+Szólj, ha megírom a #155 lezáró kommentjét (angolul, a #197-re és a GHSA-ra hivatkozva, a #162 nyitva maradásának megjegyzésével), és lezárjam az issue-t. Ha igen, a thread-naplót és a memóriát is frissítem.
+~~~~~
+
+### 2026-11-16 17:26 — Felhasználó
+
+~~~~~
+írd meg a lezáró kommentet
+~~~~~
+
+### 2026-11-16 17:26 — Claude
+
+~~~~~
+A lezáró komment kész. Nem posztoltam ki és az issue-t sem zártam le. A fájl a `private/review/ISSUE-155-CLOSING-COMMENT.md`, a szövege:
+
+---
+
+Closing: the fix for this issue is on `main`.
+
+**What changed, in merge order**
+
+[sor kihagyva: a #155 privát biztonsági kezelés alatt áll]
+2. `eb575e0`: the git subprocess environment is cleared.
+3. #197 (`e58344a`): module loading is fail-closed.
+   - A module with no signature file is refused in `prod` and, by default, in `dev`.
+   - A present certificate must verify. A malformed, unparsable, unverifiable or unreadable one is refused whatever the operator opted into.
+   - `CIC_ALLOW_UNSIGNED_MODULES=1` admits only a module with **no** signature file, only in `dev`, and that module gets no capability. In `prod` it is ignored with a warning. Any value other than unset, `0` or `1` is a start-up error.
+   - A test enumerates every host module and function (`git`, `cic-flow` and all 46 WASI functions) from the production wiring against a reviewed table. It fails on an unclassified function, on a classified one that disappeared, and on a registration path it cannot see.
+
+Docs: `docs/{en,hu}/security/git-host-functions` and `docs/{en,hu}/security/module-loading`.
+
+**Evidence**: #197 head `0716f81`, all CI gates green. 12 targeted mutations of the loader and 6 of the host wiring were all killed. The merge-commit tree equals the approved PR-head tree, the commit signatures verify offline, and post-merge CI on `main` (`e58344a`) is green.
+
+**What this does not guarantee**
+
+- The loader verifies the certificate chain of the module's `.pem` and the WASM digest against the descriptor. It does **not** verify a cryptographic signature over the module and its manifest, so a valid certificate does not yet authenticate the artifact or its capability manifest. That is tracked in #162 and stays open, and the docs say so explicitly.
+- The load-time import check reads the declared imports, not the import section of the WASM binary. Calls from a module without a matching grant are refused at run time.
+- Production approval is a separate, owner-held decision and is not part of this closure.
+
+Closing as fixed. Follow-ups: #162 (artifact authentication).
+
+---
+
+A hivatkozott SHA-kat ellenőriztem: az `eb575e0` létezik és a `main` őse. A `38987c8` és a #197 adatai a korábbi mérésekből valók.
+
+Ha mehet a posztolás és a lezárás, mondd ki kifejezetten. Utána frissítem a thread-naplót és a memóriát.
+~~~~~
+
+### 2026-11-16 17:26 — Felhasználó
+
+~~~~~
+posztold ki és zárd le a #155-öt
+~~~~~
+
+### 2026-11-16 17:26 — Claude
+
+~~~~~
+A lezáró komment kikerült, a #155 lezárva (`completed`): https://github.com/CentralInfraCore/CIC_Relay/issues/155#issuecomment-6923848515
+
+Az issue lezárását a REST API-n keresztül végeztem, mert a `gh issue close` a Projects-classic hiba miatt elbukik.
+
+Nyitva maradt a #162, a CVE-kérés és a produkciós jóváhagyás (HOLD). Ha kéred, frissítem a thread-naplót és a memóriát a #155 és a #197 állapotával.
+~~~~~
+
+### 2026-11-16 17:27 — Felhasználó
+
+~~~~~
+frissítsd a thread-naplót és a memóriát
+~~~~~
+
+### 2026-11-16 17:28 — Claude
+
+~~~~~
+A thread-naplót a session `.jsonl`-jéből generálom újra (a #155 lezárásáig). A #155-ös redakciót megtartom. Előbb a generátor fejlécét igazítom.
+~~~~~
+
+### 2026-11-16 17:28 — Claude
+
+~~~~~
+A generált napló 399 szakaszból áll, a redakció (71 bekezdés) megmaradt, és titok-mintát nem találtam benne. A fájlt beteszem a repóba, és helyben commitolom, nem pusholom.
+~~~~~
+
+### 2026-11-16 17:28 — Claude
+
+~~~~~
+Most a memória. A #155 állapotfájlt lezártra állítom, és a #197-et külön emlékezet-bejegyzésbe teszem.
+~~~~~
+
+### 2026-11-16 17:28 — Claude
+
+~~~~~
+A két emlékezetfájl megíródott. Csak az index-csere bukott el egy escape-hiba miatt, ezt javítom.
+~~~~~
+
+### 2026-11-16 17:29 — Claude
+
+~~~~~
+A thread-napló és a memória is frissítve. A naplót helyben commitoltam, nem pusholtam.
+
+**Thread-napló** (`theads/2026-11-14_session-relay-issue-queue-01.md`, cic-factory klón, ág `log/relay-issue-queue-01-session-r4`)
+- Újragenerálva a session `.jsonl`-jéből, 399 szakasz a #155 lezárásáig. A fejléc kimondja, hogy utólag készült.
+- A commit `6b21de7`, Vault-aláírt, a `d752e7a` fölött egy commit előrébb áll. A fájlon kívül semmi nem került bele.
+- A #155 redakciója szándékosan megmaradt, annak ellenére, hogy az advisory publikus. A fejléc ezt is kimondja. A redakció feloldása a te döntésed.
+- Titok-mintára (tokenek, privát kulcs) átnéztem, nem találtam.
+
+**Memória**
+- `project_155_private_fix_state.md`: lezártra állítva. Benne a #197 merge-commit (`e58344a`) és a lezárás módja (REST). A nyitott tételek: #162, CVE-kérés, hook amend-hiba, produkciós jóváhagyás HOLD.
+- Új `project_module_loading_fail_closed.md`: a szabály, az opt-in korlátai és a host-felület teszt. Rögzíti a review tanulságát is: a tanúsítványlánc nem artifact-aláírás (#162). Megjegyzi, hogy a `verify-signatures.sh`-t a saját worktree-jéből, teljes SHA-kkal kell futtatni.
+- `MEMORY.md`: a #155-ös sor cseréje és az új sor.
+
+A naplócommit pusholása a te lépésed (a theads-szabály szerint kifejezett szóra megy):
+
+```
+! cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push origin log/relay-issue-queue-01-session-r4
+```
+
+Ezután PR-t is nyitni kell belőle, mint a korábbi naplókkal.
+~~~~~
+
+### 2026-11-16 17:34 — Felhasználó
+
+~~~~~
+$ cd ~/sync/claude_factory/CIC/workdir/jobs/relay-issue-queue-01/workspace/cic-factory && git push origin log/relay-issue-queue-01-session-r4
+~~~~~
+
+### 2026-11-16 17:34 — Claude
+
+~~~~~
+Az ág egyetlen commitot tesz a `main` fölé, csak a napló fájlját érintve. Megnyitom a PR-t.
+~~~~~
+
+### 2026-11-16 17:34 — Claude
+
+~~~~~
+A naplóváltozat PR-ja megnyílt a `main` ellen: https://github.com/CentralInfraCore/cic-factory/pull/68
+
+Egyetlen fájlt érint, a napló fájlját, egy Vault-aláírt committal (`6b21de7`). A leírás szerint ez átiratolt napló, a #155 redakciója szándékosan megmaradt, és titkot nem találtam benne.
+
+A `gh` "13 uncommitted changes" figyelmeztetést adott. Ezek a klón nem követett fájljai (például `fixtures/vcn-v1/generate.yaml`), nem kerültek bele a commitba.
+
+A merge a tiéd, a korábbi naplókhoz hasonlóan.
+~~~~~
+
+### 2026-11-16 17:38 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+cic-factory PR #68 – Review
+Review decision: REQUEST CHANGES
+
+Vizsgált HEAD: 6b21de775777b6dfffba34c354d36dc9f6768995
+
+A napló kibővítése önmagában rendben van, de a deklarált redakciós szabály és a tényleges tartalom között eltérést találtam.
+F1 – Hiányos biztonsági redakció
+Súlyosság: HIGH – blokkoló.
+
+A fejléc szerint a #155 privát technikai részletei szándékosan ki vannak hagyva. Ennek ellenére több konkrét reprodukciós és támadási részlet megmaradt.
+
+Érintett sorok például:
+- 4732–4733.
+- 4989.
+- 5479–5502.
+- 5541–5542.
+A publikált advisory nem jelent automatikus engedélyt a teljes privát vizsgálati anyag közzétételére.
+
+Javítás: teljes kontextusalapú redakció, a tulajdonos által meghatározott publikációs határ szerint.
+F2 – Megjelenítési artefaktumok
+Súlyosság: LOW – nem blokkoló.
+
+Négy helyen a ChatGPT Mermaid-megjelenítőjének generált CSS-kódja is bekerült a naplóba.
+Sor    Karakterszám
+1222    8 759
+4350    8 047
+5376    8 746
+5494    8 293
+Összesen    33 845
+
+Ezek nem érdemi beszélgetési tartalmak. A napló olvashatósága miatt érdemes eltávolítani őket, a diagramok tartalmi információjának megőrzésével.
+F3 – Redakciós darabszám
+Súlyosság: LOW – nem blokkoló.
+
+A fejléc 71 redakciós helyet említ, a tényleges dokumentumban 64 explicit kihagyási jelölést találtam.
+
+A végleges generálás után ezt a számot egyeztetni kell.
+Ellenőrzési összesítő
+Kapu    Státusz
+Egyetlen dokumentációs fájl módosult    PASS
+Nyilvánvaló tokenek, privát kulcsok mintakeresése    PASS
+Biztonsági redakció    FAIL
+Aláírási és CI gate – 43919825483    RUNNING
+Merge    HOLD
+
+Egy blokkoló és két nem blokkoló lelet.
+
+A fejlesztési napló értékes dokumentáció, megőrzését támogatom. A #155 lezárását ez a review nem érinti.
+</pasted_content id="1732">
 ~~~~~
