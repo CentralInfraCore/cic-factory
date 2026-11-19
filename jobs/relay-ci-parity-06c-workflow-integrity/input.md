@@ -6,9 +6,11 @@ A `CentralInfraCore/CIC_Relay` **#212** issue (másolat: `ref/issue-212-body.md`
 
 **A feladat lényege (tulajdonosi kiemelés, `ref/owner-decisions-212-2026-11-17.md`): nem elég az ellenőrzési *szabályokat* védeni, az ellenőrzés *végrehajtásának kötelezettségét* is ki kell kényszeríteni**, olyan mechanizmussal, amelyet a vizsgált pull request nem módosíthat.
 
-A trust-határ oka (mért, `ref/measured-repo-state-2026-11-17.md`): `pull_request` eseménynél a workflow-fájlok, a composite action és minden script **a PR-ből jön**; a kötelező státusz-checkek **név szerint** vannak a rulesetben, és a nevet bármely PR-beli job előállíthatja tartalom nélkül is. A jelenlegi ruleset: `required_status_checks` (`verify`, `coverage`, `python`, `rust`, `ffi`, `manifest`, `mutation-pr`), **nincs `workflows` szabály, nincs kötelező review**; az organizáció **free** csomagon van (org-szintű ruleset nem elérhető).
+A trust-határ oka (mért, `ref/measured-repo-state-2026-11-17.md`): `pull_request` eseménynél a workflow-fájlok, a composite action és minden script **a PR-ből jön**; a kötelező státusz-checkek **név szerint, a GitHub Actions integration ID-jával (15368)** vannak a rulesetben, a `strict_required_status_checks_policy` **false**, és a nevet **bármely, a PR-ből futó Actions-job** előállíthatja tartalom nélkül is (az integration ID csak azt köti, hogy az Actions adja a státuszt, azt nem, hogy melyik workflow-definícióból). A jelenlegi ruleset: `required_status_checks` (`verify`, `coverage`, `python`, `rust`, `ffi`, `manifest`, `mutation-pr`), **nincs `workflows` szabály, nincs kötelező review**; az organizáció **free** csomagon van (org-szintű ruleset nem elérhető).
 
-**Ez a spec külön felülvizsgálatra készül; a job indítása a spec review-ja és mergelése után történik.** A job implementációt ad (CIC_Relay workflow/script/teszt; PR a CIC_Relay felé) **csak az alábbi hatókörben**. **Új küszöb, toolchain-csere, tesztkihagyás és termékkód-módosítás nincs, és a repository-beállításokat (ruleset, branch protection, Actions-beállítások) a job nem módosítja**: azokra javaslatot ad, a tulajdonos hajtja végre.
+**Ez a spec külön felülvizsgálatra készül; a job indítása a spec review-ja és mergelése után történik.**
+
+**A job hatóköre (egyértelműen): felmérés, kísérlet és tervezés. A job NEM implementálja a kikényszerítést.** A CIC_Relay felé csak **szándékosan hibás, draft, `[DO NOT MERGE]` proof PR-ek** készülnek a mérésekhez; a javítás (workflow/script/teszt) **külön, jóváhagyott jobban** valósul meg, az ebben a jobban készült terv (F) és a tulajdonos döntése alapján. **A #212 issue lezárása csak a tényleges kikényszerítés bizonyítása után történhet** (valós Actions futás, a #207 elutasítva), tehát nem ennek a jobnak és nem a spec mergelésének a következménye. **Új küszöb, toolchain-csere, tesztkihagyás és termékkód-módosítás nincs, és a repository-beállításokat (ruleset, branch protection, Actions-beállítások) a job nem módosítja**: azokra javaslatot ad, a tulajdonos hajtja végre.
 
 ## Boot sequence
 
@@ -33,6 +35,8 @@ A trust-határ oka (mért, `ref/measured-repo-state-2026-11-17.md`): `pull_reque
 
 **B. A kötelezettség modellje.** Mondd ki, mi a „kötelező ellenőrzés végrehajtása”: (1) az ellenőrzés definíciója nem a PR-ből jön, (2) tényleg lefut **ugyanarra a PR-fejre**, (3) az eredménye a merge-feltételhez kötött, és (4) **nem helyettesíthető** azonos nevű, üres tartalmú jobbal. Az (1)–(4) mindegyikére külön bizonyíték kell.
 
+**Három dolgot külön kell választani és külön bizonyítani:** (i) **a jogosultság** a védett halmaz módosítására (tulajdonosi, HEAD- és digest-kötött jóváhagyás), (ii) **a módosított workflow megfelelőségének igazolása** (a módosított változat is megfelel-e a kötelezettség-modellnek: (1)–(4)), (iii) **a kötelező ellenőrzések tényleges végrehajtása** és eredménye ugyanarra a fejre. **A tulajdonosi jóváhagyás csak az (i)-et adja; nem helyettesíti a (ii)-t és a (iii)-at, és nem helyettesíti a CI-eredményt:** jóváhagyott workflow-módosítás mellett a kötelező ellenőrzéseknek ettől még le kell futniuk és zöldnek kell lenniük.
+
 **C. Megoldási lehetőségek kiértékelése (mérés, nem vélemény).** Legalább ezeket értékeld, **mindegyiknél a megvalósíthatóságot mérd**, és mondd ki, mi marad nyitva:
 - (a) **repository-szintű `workflows` (required workflow) ruleset-szabály**: elérhető-e ezen a csomagon (az org-szintű nem, `ref/measured-repo-state-2026-11-17.md`); a próba **kísérleti repón, a tulajdonos engedélyével** történjen, nem az éles `main` rulesetjén;
 - (b) **`pull_request_target` workflow a base-ből**, amely a PR-t **adatként** kezeli (a GitHub API-n át olvassa a PR fájljait és workflow-it, **a PR kódját nem checkouttolja és nem futtatja**), és a PR védett fájljainak módosítását (a **védett halmazon**, lásd D) csak HEAD- és digest-kötött jóváhagyással engedi (az #195 mintája), kötelező checkként;
@@ -45,6 +49,8 @@ Minden lehetőségnél: mit véd, mit **nem** (maradék rés), mit igényel a tu
 **D. A védett halmaz (kötelező).** A kötelező ellenőrzések **tranzitív zárlata**: mely fájlok határozzák meg, hogy a kötelező ellenőrzés lefut és mit ítél (workflow-fájlok, a composite action, a hívott scriptek, a pin-fájl, `go.mod`/`rust-toolchain.toml` mint a mért eszköz verziójának forrása, a tesztek, amelyek a kötelező checket adják, a ruleset kötelező check-nevei). Mérd a zárlatot **a kód alapján** (mit hív a job), ne feltételezd; a halmaz minden elemére: védett-e, hogyan, és mi a maradék rés. Az **action**, a **`GATE`/`MR_GATE` kiválasztás**, a **`BOOTSTRAP` mód**, az **`object_model.py`** és a **`baseline-guard`** integritását **külön-külön** vizsgáld, mindegyikhez saját negatív bizonyítással vagy dokumentált réssel.
 
 **E. A javaslat.** A C és D alapján **egy ajánlott kombináció** (nem a legtöbb lehetőség, hanem amelyik a kötelezettséget kikényszeríti és a maradék rés kimondott), a **tulajdonostól kért pontos beállításokkal** (ruleset-JSON vagy lépéslista), és a **jogos workflow-módosítás útjával** (látható, tulajdonosi, HEAD-hez kötött jóváhagyás: az #195 mintája). A repository-beállításokat **ne módosítsd**.
+
+**E2. A jogosultsági felület keményítési javaslata (nem blokkoló, de kötelező része a jelentésnek).** A mért értékekre (`default_workflow_permissions: write`, `can_approve_pull_request_reviews: true`, `sha_pinning_required: false`, a ruleset `strict` false) **konkrét keményítési javaslat és kompatibilitási elemzés**, külön a **Renovate** (`renovate.yml`, a PR-nyitás és a token-jogosultságok), a `GITHUB_TOKEN`-t használó workflow-k és a #195 jóváhagyási útja szempontjából: mi törik, mi marad, milyen workflow-szintű `permissions:` kell. A beállítások tényleges módosítása **tulajdonosi döntés**; a job nem módosítja.
 
 **F. Az implementáció terve (a következő, külön job spec bemenete).** Nem implementálsz: a jelentésed végén leírod, milyen fájlok, milyen tesztek, milyen negatív proof PR-ek kellenek, és ezek **hogyan futnak mérhetően**. A **#207 a kötelező negatív bizonyíték**: ugyanaz a változás, amely ma zöld, a javítás után **elutasított**, a naplóban az okkal, és ellenpróbával (a védelem nélküli állapoton zöld).
 
@@ -63,7 +69,14 @@ Minden lehetőségnél: mit véd, mit **nem** (maradék rés), mit igényel a tu
 | a composite action módosítása (másik ref/SHA, lépés-kihagyás) | **DENY** |
 | új, kötelezőnek nevezett workflow a védett halmazon kívül | dokumentált viselkedés |
 | jogos workflow-módosítás jóváhagyással | **átmegy és látható** |
+| jogos, jóváhagyott workflow-módosítás, amely közben egy kötelező ellenőrzést elhagy | **DENY** (a jóváhagyás nem igazolja a megfelelőséget és nem helyettesíti a CI-eredményt) |
+| jóváhagyott módosítás mellett a kötelező ellenőrzések nem futnak le vagy pirosak | **DENY** (a jóváhagyás nem CI-eredmény) |
 | jóváhagyás utáni új push | **új jóváhagyás szükséges** |
+| az integritás-ellenőrző workflow-nak magának a törlése vagy átnevezése | **DENY** |
+| az integritás-ellenőrző check nevének hamisítása (azonos nevű, üres job a PR-ből) | **DENY** |
+| egy korábbi sikeres integritás-ellenőrzés felhasználása új HEAD-en (régi eredmény, `strict: false` mellett is) | **DENY** (az eredmény a vizsgált HEAD-hez kötött) |
+| a base megváltozik az ellenőrzés után, merge előtt | **újraértékelés szükséges** vagy dokumentált, reprodukált rés (a `strict: false` hatásával együtt) |
+| az ellenőrző által használt bizalmi konfiguráció (jóváhagyók listája, védett halmaz definíciója, a referencia) módosítása | **DENY** vagy külön, látható jóváhagyási út |
 | a kötelező ellenőrzések eltávolítása a **védett halmazon kívüli** úton (pl. teszt, amely a checket adja) | **DENY** vagy dokumentált, reprodukált rés |
 
 A „dokumentált rés” **valós futással reprodukált**, nem következtetés.
@@ -100,7 +113,7 @@ Minden esethez: **származtatás**, **elvárt eredmény**, **kapott**, **pozití
 
 1. **A fenyegetési modell (A)** és **a kötelezettség modellje (B)** kész, a leltár (boot 4.) és a védett halmaz (D) **mérésre** alapozott, file:line hivatkozásokkal.
 2. **A lehetőségek (C)** mindegyike **mérve** (megvalósíthatóság, mit véd, mit nem, költség, új felület); ahol a mérés tulajdonosi engedélyt igényel (kísérleti repó), az **kérésként** szerepel, nem megkerülve.
-3. **Az ajánlás (E)** egyetlen, indokolt kombináció, a tulajdonostól kért pontos beállításokkal és a jogos módosítás útjával.
+3. **Az ajánlás (E)** egyetlen, indokolt kombináció, a tulajdonostól kért pontos beállításokkal és a jogos módosítás útjával; az **E2** keményítési javaslat a Renovate-kompatibilitási elemzéssel (nem blokkoló, a döntés tulajdonosi).
 4. **A kötelező negatív esetek táblázata** mindegyik sorra elvárt eredményt ad, a **#207** negatív bizonyíték terve valós futásra szól, ellenpróbával.
 5. **Az action, a `GATE`/`MR_GATE`, a `BOOTSTRAP`, az `object_model.py` és a `baseline-guard`** mindegyike külön elbírálva.
 6. **Az implementáció terve (F)** konkrét: fájlok, tesztek, proof PR-ek, mérési módszer.
