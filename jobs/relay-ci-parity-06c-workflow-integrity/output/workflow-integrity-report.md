@@ -123,7 +123,7 @@ A zárlat a kódból (a `verify.yml` a következőket hívja: `go vet`, `go test
 | `scripts/quality_gate.py`, `baseline_guard.py`, `gremlins_gate.py`, `mutation_plan.py`, `gen_manifest.sh`, `object_model.py` | igen (`scripts/`) | az `object_model.py` verifiere nem kötelező check része |
 | `.measurement-tools.json`, `.measurement-scope.json`, `.mutation-baseline.json`, `go.mod`, `rust-toolchain.toml`, `Cargo.lock`, `renovate.json` | **fel kell venni a policyba** (nem `.github/`/`scripts/` alatt vannak) | |
 | a ruleset kötelező check-nevei | a ruleset (tulajdonosi); a PR nem módosíthatja | |
-| **a tesztek és a termékkód** (a `go test`/`pytest`/`cargo test` tartalma) | **nem védhető ezzel a mechanizmussal** | a PR jogosan módosítja; egy teszt törlése/gyengítése zöld marad. Ezt csak a ratchet-baseline (mutation, coverage) és az **emberi review** fogja meg; a (d) a mért beállításokkal megkerülhető. **Kimondott maradék rés (#15), nem reprodukált.** |
+| **a tesztek és a termékkód** (a `go test`/`pytest`/`cargo test` tartalma) | **részben védhető: a gate-et őrző tesztek (A osztály) védettek lehetnek, a termék-tesztek (B osztály) nem** — lásd 8b | a PR jogosan módosítja; egy teszt törlése/gyengítése zöld marad. Ezt csak a ratchet-baseline (mutation, coverage) és az **emberi review** fogja meg; a (d) a mért beállításokkal megkerülhető. **Kimondott maradék rés (#15), nem reprodukált.** |
 
 Külön elbírálás (kért):
 
@@ -134,6 +134,26 @@ Külön elbírálás (kért):
 | `BOOTSTRAP` | a választás a PR action-jében; védett halmaz; a #201 egyszeri bootstrap-tilalma csak ha az action a base-ből jön | mai állapotban rés, javaslattal védett |
 | `object_model.py` | `object-evidence` **nem kötelező**; a verifier a PR-ből fut | scaffold; a kötelezővé tétele külön döntés |
 | `baseline-guard` | a script a base-ből, a **hívás és a `needs` a PR-ből** (`mutation-pr.yml:361`) | mai állapotban rés; javaslattal védett |
+
+## 8b. A védett halmaz határa (pontosítás a review kérésére)
+
+**Alapelv:** a *termékkód természetes változtatása* és az *ellenőrzési mechanizmus gyengítése* két külön osztály. Az első szabadon változik (review + CI), a második csak a jóváhagyási úton.
+
+A halmaz a Relay kódjából (`git grep` a `5c56e1a`-n; `raw/protected-set-measurement.txt`) így határolható el:
+
+| Osztály | Mi tartozik bele (mért listából) | Kezelés |
+|---|---|---|
+| **A. A gate szemantikáját meghatározó** | `.github/**`; `scripts/*.py` és `scripts/*.sh` (`quality_gate.py`, `baseline_guard.py`, `gremlins_gate.py`, `mutation_plan.py`, `object_model.py`, `gate_selftest.py`, `seeded_defects.py`, `gen_manifest.sh`); a gate-et ellenőrző tesztek: `tests/test_tools/**` (köztük `test_quality_gate*.py`, `test_pin_reference.py`, `test_baseline_guard.py`, `test_mutation_plan*.py`, `test_mutation_policy.py`, `test_mutation_workflow_enumeration.py`, `test_gate_selftest.py`, `test_seeded_defects.py`, `test_object_*`, a `fixtures/` és a `seeded_bundle.py`); a konfigurációk: `.measurement-tools.json`, `.measurement-scope.json`, `.mutation-baseline.json`, `go.mod`, `rust-toolchain.toml`, `pytest.ini`, `pyproject.toml`, `.yamllint`, `Makefile`, `Cargo.lock`, `renovate.json` | **védett**: módosítás csak head+digest kötött tulajdonosi jóváhagyással, megfelelőségi vizsgálattal |
+| **B. Termékkód és termék-tesztek** | Go/Rust forrás és `*_test.go`, Rust tesztek, `tests/` alatt a `test_tools/`-on kívüli tesztek | **nem védett** (természetes változás); a gyengítést a ratchet-baseline-ok (A osztály, védett) és az emberi review fogja meg |
+| **C. Egyéb** | dokumentáció, `MANIFEST.sha256` (a `manifest` check ellenőrzi) | nem védett |
+
+**Miért tartoznak a `tests/test_tools/**` tesztek az A osztályba:** a `python` kötelező job a `pytest`-et futtatja (`.github/workflows/verify.yml:257`, `pytest.ini` `testpaths = tests`), és ezek a tesztek őrzik a workflow-bekötést (pl. hogy minden mérő job a referencia-lépés és a `check-tools` után mér: `tests/test_tools/test_quality_gate.py`, `test_pin_reference.py`). Egy PR, amely ezeket a teszteket törli vagy gyengíti, a #207-hez hasonlóan zöld marad. Az #195 proofjai is a saját teszt-táblájukat szerkesztették, hogy átmenjenek (ez mért).
+
+**Mit mértem és mit nem (kimondva):**
+- **Mért (scratch):** az útvonal-előtag alapú védelem működik, és új policy-vel azonnal érvényes: `docs/` felvétele a védett előtagok közé után a `docs/y.txt`-t módosító PR (PR11) a branch-frissítés után `integrity=failure` és blokkolt lett. Nem-védett útvonal (VERSION, `notes/`) módosítása `UNCHANGED` (PR1, PR15, PR16; a PR14 a `.github/` alatti fájl miatt DENY volt, de a review-only ruleset idején nem volt kötelező az `integrity`).
+- **NEM mért:** az A osztály fenti **listája** a Relay-ben nem lett kikényszerítve; a lista a kód olvasásából származik. A zárlat **teljességét** (hogy nincs-e olyan fájl, amelyet egy kötelező job olvas, de a policy nem fed) a bevezetéskor **gépi önellenőrzésnek** kell bizonyítania (minden, a kötelező jobok lépéseiben hivatkozott útvonal illeszkedjen a policy-re, vagy legyen kimondva, miért nem); ez az ellenőrzés még nincs megírva, **nem futott**.
+- **Kikényszerített védelem nem állítható** a B osztály gyengítése ellen: ott a védelem a baseline + review, és a (d) review a mért beállításokkal megkerülhető (PR14/PR15). A B osztály gyengítése **nyitott kockázat**, nem lezárt rés.
+- A „természetes változás" és a „gyengítés" közötti határ **nem gépi**: a ratchet-baseline megfogja a mért mutáció/coverage csökkenést, de a tesztek *lecserélése* azonos számú, gyengébb ellenőrzésre nem biztosan. Ezt nem mértem.
 
 ## 9. Az ajánlás (E)
 
@@ -163,6 +183,26 @@ repo Actions:     default_workflow_permissions: read  (lásd E2)
 | `default_workflow_permissions` | `read` | A `verify.yml` és a `manifest-check.yml` **nem deklarál `permissions:`-t** (a default-ra támaszkodnak); olvasott kódjuk csak checkout/teszt/build (nincs `gh`, `git push`). A `renovate.yml` job-szintű `contents: write`/`pull-requests: write`-ot deklarál, a `report` `issues: write`-ot — **nem érinti**. **Futással nem mért**: a bevezetés előtt egy proof PR kell a `permissions: contents: read` workflow-szintű beírásával. **A scratch-ben a repo-szintű `read` kérés `write`-ra maradt (az org-szint `write` korlátozhat) — nem diagnosztizált** |
 | `sha_pinning_required` | `true` a bevezetés után, külön elemzéssel | a mai workflow-k mutable tag-ekre hivatkoznak (`actions/checkout@v4`, `renovatebot/github-action@v46.1.15`, `taiki-e/install-action@v2`, `actions/setup-go@v5`): bekapcsolás előtt minden hivatkozást SHA-ra kell pinelni; **nem mért** |
 
+## 9b. Bootstrap trust (pontosítás a review kérésére)
+
+**Probléma:** a még nem működő integritásvédelem nem igazolhatja a saját telepítését, és a későbbi módosítása ugyanilyen bizalmi esemény. Két külön esemény: **(I) az első telepítés**, **(II) a mechanizmus későbbi módosítása**.
+
+**Mért alapok:** (1) a `pull_request_target` a **default ág** workflow-ját használja (PR18) → a mechanizmus a `main`-re kerüléssel lép életbe, a bevezető PR-t még nem védi; (2) a hiányzó kötelező check blokkol (PR7) → ha az `integrity` a workflow előtt kerül a kötelezők közé, **minden PR blokkolt lesz**; (3) a scratch-ben a sorrend (workflow a mainen, utána a kötelezővé tétel) működött (PR1 `clean`); (4) a policy önjóváhagyása elutasított (PR6), az ellenőr törlése/lecserélése elutasított (PR3, PR5) — **azaz a telepítés utáni módosítások védettek**.
+
+**Javasolt, nem mért folyamat** (a Relay-ben még **nem futott**):
+
+| Lépés | Tartalom | Bizonyíték |
+|---|---|---|
+| 1. Rögzített HEAD | az implementációs PR HEAD-je rögzítve (commit-azonosító a PR-ben és a jóváhagyásban) | a PR leírása; `--match-head-commit` a merge-nél |
+| 2. Tulajdonosi jóváhagyás | a tulajdonos a diffet átnézi, és **HEAD- és digest-kötött kommentet** ad az #195 formátumában; a mechanizmus nem igazolja önmagát | valódi komment (nem Claude írja) |
+| 3. Merge a `main`-re | az `integrity` workflow még **nem kötelező check** | merge-commit, post-merge futás |
+| 4. Merge utáni negatív bizonyítás | a már élő mechanizmussal a 20 sor Relay-beli proof PR-jei (draft, DO NOT MERGE), köztük a **#207**, run id-vel és headSha-val | a jelentés run-táblája |
+| 5. Aktiválás | **csak a 4. sikere után** a tulajdonos felveszi az `integrity`-t a kötelező checkek közé és `strict: true`-t állít | a ruleset-JSON előtte/utána |
+| 6. Aktiválás utáni negatív bizonyítás | az ellenőr törlése és a név hamisítása a **kötelezővé tett** állapotban is blokkolt; stale evidence a tényleges Relay-konfigurációban | run id-k |
+| 7. Későbbi módosítás | a mechanizmus (workflow, script, policy) módosítása ugyanazon az úton (jóváhagyás + megfelelőség), és a **regressziós proof-készlet újrafuttatása** a módosított változaton | run id-k |
+
+**Állítás-fegyelem:** amíg az 1–7 lépés a Relay-ben nem futott, **kikényszerített bootstrap-védelmet nem állítok**. A scratch (3) és (4) pont csak a mechanizmus-szintű viselkedést igazolja.
+
 ## 10. Az implementáció terve (F) — a következő, külön job bemenete
 
 **Fájlok (CIC_Relay):** `.github/workflows/integrity.yml` (`pull_request_target`, base-checkout, minimális token), `scripts/integrity.py` (a `raw/scratch/integrity.py.txt` Relay-re igazítva: védett halmaz a 8. szerint, megfelelőségi vizsgálat a kötelező jobokra: létezik, nem feltételes, a `check-tools`/referencia-lépés jelen van, trigger nem szűrt, `needs` a `mutation-pr` `gate`-ben), `integrity-policy.json` (védett halmaz, jóváhagyók), `tests/test_tools/test_integrity.py`, a `quality_gate.py` jóváhagyás-formátumának összehangolása, MANIFEST/SYMBOLS frissítés.
@@ -174,6 +214,7 @@ repo Actions:     default_workflow_permissions: read  (lásd E2)
 
 ## 11. Nem mért / nyitott
 
+- **Bootstrap (9b):** az 1–7 lépés a Relay-ben nem futott; a védett halmaz teljességét bizonyító gépi önellenőrzés (8b) nincs megírva.
 - (a) workflows rule: a hiba oka nem diagnosztizált; a Relay csomagján nem tudható, hogy a funkció később elérhető-e.
 - **Fork-PR** viselkedés (`members_can_fork: true`): nem mért (második fiók kell).
 - Code-owner szabály viselkedése: az ok nem diagnosztizált (a szerző = a code owner); második identitással mérendő.
@@ -199,7 +240,9 @@ repo Actions:     default_workflow_permissions: read  (lásd E2)
 | `can_approve_pull_request_reviews: false` megállítja az önjóváhagyást | mért | PR16: `approve=failure`, nem mergelhető | valós futás | – |
 | (c) önmagában nem véd | mért | PR17: megengedő reusable zöld | valós futás | – |
 | A Relay-beli proof PR-ek nem használhatnak befagyasztott bázist | mért következmény | PR18 | marker-változat | – |
-| A tesztek gyengítése a (b)-vel nem fogható meg | **következtetés, nem mért** | 8. táblázat | – | kimondott maradék rés |
+| A termék-tesztek (B osztály) gyengítése a (b)-vel nem fogható meg | **következtetés, nem mért** | 8b | – | nyitott kockázat |
+| A gate-et őrző tesztek és konfigurációk (A osztály) útvonal-alapon védhetők | **mechanizmus mért (scratch PR11), a Relay-listát nem kényszeríti semmi** | 8b, `raw/protected-set-measurement.txt` | git grep a Relay-n; scratch futás | a lista teljessége nem bizonyított |
+| A bootstrap sorrendje (workflow előbb, kötelezővé tétel később) | **mechanizmus-szinten mért (scratch), a Relay-ben nem futott** | 9b; PR1, PR7 | scratch | az 1–7 lépés nem bizonyított |
 | E2 kompatibilitás (permissions read, Renovate) | **olvasott kód, futással nem mért** | `renovate.yml`, `verify.yml`, `manifest-check.yml` | – | bevezetés előtt proof PR kell |
 
 ## 13. Nyitott tulajdonosi döntések és kérések

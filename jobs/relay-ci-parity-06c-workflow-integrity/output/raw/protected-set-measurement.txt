@@ -1,0 +1,38 @@
+# protected-set measurement at 5c56e1a
+## tests/scripts that reference workflow/action/gate files (git grep -l)
+scripts/baseline_guard.py
+scripts/gate_selftest.py
+scripts/gremlins_gate.py
+scripts/mutation_plan.py
+scripts/object_model.py
+scripts/quality_gate.py
+scripts/seeded_defects.py
+tests/test_tools/fixtures/object_model/README.md
+tests/test_tools/fixtures/quality_gate/README.md
+tests/test_tools/seeded_bundle.py
+tests/test_tools/test_baseline_guard.py
+tests/test_tools/test_baseline_guard.yaml
+tests/test_tools/test_gate_selftest.py
+tests/test_tools/test_mutation_plan_probes.py
+tests/test_tools/test_mutation_plan.py
+tests/test_tools/test_mutation_plan.yaml
+tests/test_tools/test_mutation_policy.py
+tests/test_tools/test_mutation_workflow_enumeration.py
+tests/test_tools/test_object_evidence_workflow.py
+tests/test_tools/test_object_model.py
+tests/test_tools/test_pin_reference.py
+tests/test_tools/test_quality_gate.py
+tests/test_tools/test_quality_gate_workflows.py
+tests/test_tools/test_seeded_defects.py
+## config files present
+.measurement-scope.json
+.measurement-tools.json
+.mutation-baseline.json
+.yamllint
+Makefile
+go.mod
+pyproject.toml
+pytest.ini
+rust-toolchain.toml
+## pytest testpaths
+6:testpaths = tests
