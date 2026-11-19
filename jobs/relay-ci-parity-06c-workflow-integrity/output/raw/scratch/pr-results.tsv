@@ -1,0 +1,19 @@
+pr	title	state	merged	mergeable_state	head_sha	checks(name=conclusion)
+1	p0 control: unprotected change	open	false	behind	430ba117cb4e4967da6f048c5d65b19b460ca41f	integrity=success,verify=success
+2	n1 (#207 analog): delete the check step	open	false	behind	f2b5507d1606567809d172f6015f6731b983f5c4	integrity=failure,verify=success
+3	n2: delete the integrity workflow	open	false	behind	2bedb365384f9924cb8cb345752e06064a232852	integrity=failure,verify=success
+4	n3: same-named fake integrity job	open	false	behind	c0d47c0024bbf5cb42b1e3c71e831ed752accaaf	integrity=failure,integrity=success,verify=success
+5	n4: replace the integrity script	open	false	behind	368002dbb78d8a907913545c99fc8f728b1a4099	integrity=failure,verify=success
+6	n5: policy self-approver	open	false	dirty	f400f0249e2196fc864ead1a2f91cbcc75bc9121	integrity=failure,verify=success
+7	n6: narrow the trigger with paths	open	false	behind	e657bc3b6ea56e1f7c13ede3aa09d01f0587d65a	integrity=failure
+8	e5-gap: unprotected at creation, protected after base change	closed	true	unknown	3b5ac2db809a950e32059905a02be2d4ea457f20	integrity=success,verify=success
+9	e5-strict: same, with strict policy	open	false	behind	39b2d5c92b227de5f0015dbddb84f22327b1b129	integrity=success,verify=success
+10	e6-gap: unprotected at creation	closed	true	unknown	6ba7228b1bb087b280af25971b0e3568c75b2583	integrity=success,verify=success
+11	e6-strict: same, strict policy	open	false	behind	a36cceed71c959795a520b3e31b6236522218a8e	verify=success,integrity=failure
+12	a1: legitimate workflow change (needs owner approval)	open	false	behind	43474da50378cca2cc2a0c8eb381d80c2a3fb9df	verify=success,integrity=failure
+13	a2: approved but non-conforming (must still be DENY)	open	false	behind	9bf8ff7f9dac2e79decd90a3e2d2aa9ad34ef39c	integrity=failure,verify=success
+14	d1: review rule vs the PR's own workflow token	closed	true	unknown	add385ad53c89f4f6c3e89eb77767a6925a4ae71	integrity=failure,approve=success,verify=success
+15	d2: code owner review required, bot self-approval	closed	true	unknown	52429213541540c4a5087c8cefd41f45a8806322	integrity=success,approve=success,verify=success
+16	d3: can_approve_pull_request_reviews=false	open	false	unstable	540d5296d5bf2c0581b84ef34f2d7388134e8793	approve=failure,verify=success,integrity=success
+17	c1: PR picks the reusable workflow ref	open	false	blocked	4e133735e1c55ca1a920ac4def4f8d2c014c2aca	reusable-call / reusable-check=success,integrity=failure,verify=success,approve=success
+18	f1: PR onto a non-default base branch	open	false	clean	cab880c58117df84068ac70c6386b69209cdbf96	integrity=success,approve=success,verify=success

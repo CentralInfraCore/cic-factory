@@ -1,0 +1,7 @@
+# workflows-rule probes (scratch repos only). Recorded outputs.
+private repo, rule type 'workflows':
+  HTTP 403 {"message":"Upgrade to GitHub Pro or make this repository public to enable this feature."}
+public repo, rule 'workflows', 5 variants (same repo / with sha / workflow in a separate public repo / nonexistent path / bad repository_id / short ref / empty list):
+  HTTP 422 {"errors":["Invalid rule 'workflows': Invalid parameter workflows: Workflow error at index 0: "]}   (empty list: "Invalid rule 'workflows': ")
+public repo, control: rule 'required_status_checks' (disabled enforcement): created (id 27649739; deleted afterwards)
+org level: "Upgrade to GitHub Team" (measured earlier, ref/measured-repo-state-2026-11-17.md)

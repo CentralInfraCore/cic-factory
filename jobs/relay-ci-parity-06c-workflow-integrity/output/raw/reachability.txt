@@ -1,0 +1,13 @@
+# Reachability (call paths, file:line) in CIC_Relay main 5c56e1a. Production = workflow files; test files excluded.
+verify (required)      .github/workflows/verify.yml:18   -> make verify (verify.yml:72), go vet (:40)
+coverage (required)    .github/workflows/verify.yml:74   -> action measurement-reference (:92) -> check-tools via $MR_GATE (:96)
+python (required)      .github/workflows/verify.yml:207  -> pytest (:257)
+rust (required)        .github/workflows/verify.yml:273  -> action (:304) -> check-tools (:308)
+ffi (required)         .github/workflows/verify.yml:322
+manifest (required)    .github/workflows/manifest-check.yml:12 -> scripts/gen_manifest.sh (:21)
+mutation-pr (required) .github/workflows/mutation-pr.yml:359-360 (gate), needs [plan, go, rust, completeness, baseline-guard] (:361)
+baseline-guard         .github/workflows/mutation-pr.yml:335, script from BASE_SHA (:349-351), call+needs from the PR
+object_model.py        .github/workflows/object-evidence.yml:60,85,98 (object-evidence is NOT a required check)
+action MODE/GATE pick  .github/actions/measurement-reference/action.yml (pin-reference presence check -> MODE=bootstrap, GATE=scripts/quality_gate.py)
+Renovate token         .github/workflows/renovate.yml:35 (RENOVATE_TOKEN secret, not GITHUB_TOKEN)
+# Scratch mechanism (raw/scratch): integrity.yml (pull_request_target) -> scripts/integrity.py:main; required via ruleset 27649973 (integration_id 15368)

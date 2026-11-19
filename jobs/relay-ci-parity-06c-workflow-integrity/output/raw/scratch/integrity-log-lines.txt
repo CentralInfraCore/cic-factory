@@ -1,0 +1,44 @@
+## run 44556567050 cab880c58117df84068ac70c6386b69209cdbf96 f1-onto-frozen success
+UNCHANGED: no protected path touched
+## run 44555987236 4e133735e1c55ca1a920ac4def4f8d2c014c2aca c1-reusable-ref failure
+DENY: protected paths changed without a head- and digest-bound approval (head=4e133735e1c55ca1a920ac4def4f8d2c014c2aca digest=sha256:3b9d07d1a0e904afaf2a39cbbc14357163a4daff66f90ec009f92d66b7f2e073)
+## run 44555835891 5db873acb0df44a8809e6541293fff716b31713f c1-reusable-ref failure
+DENY: protected paths changed without a head- and digest-bound approval (head=5db873acb0df44a8809e6541293fff716b31713f digest=sha256:430203f56df50680960f0eed33e74e844a9fc3e1e4e9d7ef200d327f759c7d5a)
+## run 44555633778 540d5296d5bf2c0581b84ef34f2d7388134e8793 d3-no-actions-approve success
+UNCHANGED: no protected path touched
+## run 44555586557 00350dde9da8161e0f7177ff384b93b4d7e03fe9 d3-no-actions-approve success
+UNCHANGED: no protected path touched
+## run 44555422430 52429213541540c4a5087c8cefd41f45a8806322 d2-codeowner success
+UNCHANGED: no protected path touched
+## run 44555276897 add385ad53c89f4f6c3e89eb77767a6925a4ae71 d1-review failure
+DENY: protected paths changed without a head- and digest-bound approval (head=add385ad53c89f4f6c3e89eb77767a6925a4ae71 digest=sha256:16bf32f8b5fddc45bc6639d617423f1abe1f98fce127271c5589f39b7bfe2452)
+## run 44555182902 43474da50378cca2cc2a0c8eb381d80c2a3fb9df a1-legit-change failure
+DENY: protected paths changed without a head- and digest-bound approval (head=43474da50378cca2cc2a0c8eb381d80c2a3fb9df digest=sha256:0601e7b65a088dcd2865d77d6534042760dc03729c20af6dce42c7fcda32b70c)
+## run 44554713104 9bf8ff7f9dac2e79decd90a3e2d2aa9ad34ef39c a2-nonconforming failure
+DENY: conformance: job 'verify' does not run scripts/check.sh
+## run 44554697230 8805499c04ea806f4b859557645c5e4c3bf842dd a1-legit-change success
+APPROVED_UPDATE: approval valid and head ci.yml conforms
+## run 44554643826 a36cceed71c959795a520b3e31b6236522218a8e e6-strict failure
+DENY: protected paths changed without a head- and digest-bound approval (head=a36cceed71c959795a520b3e31b6236522218a8e digest=sha256:5a2bcab487bbe8c620520bc922dcc5cb697af2afc58c13e35b727196b72c573e)
+## run 44554508206 8ecc271051316600342abc34141ed4436235f228 e6-strict success
+UNCHANGED: no protected path touched
+## run 44554493498 6ba7228b1bb087b280af25971b0e3568c75b2583 e6-gap success
+UNCHANGED: no protected path touched
+## run 44554312661 39b2d5c92b227de5f0015dbddb84f22327b1b129 e5-strict success
+UNCHANGED: no protected path touched
+## run 44554300204 3b5ac2db809a950e32059905a02be2d4ea457f20 e5-gap success
+UNCHANGED: no protected path touched
+## run 44554043631 e657bc3b6ea56e1f7c13ede3aa09d01f0587d65a n6-trigger-filter failure
+DENY: protected paths changed without a head- and digest-bound approval (head=e657bc3b6ea56e1f7c13ede3aa09d01f0587d65a digest=sha256:5869448198fe8d7258d0a38a0a7362b1bcdd91fa3c6912af8ce992f8dadd61a8)
+## run 44554020714 f400f0249e2196fc864ead1a2f91cbcc75bc9121 n5-policy-approver failure
+DENY: protected paths changed without a head- and digest-bound approval (head=f400f0249e2196fc864ead1a2f91cbcc75bc9121 digest=sha256:62dd75c2574110e05a923e32026a401aa9426c0fa32ea032a202e039b77bdfa8)
+## run 44554010578 368002dbb78d8a907913545c99fc8f728b1a4099 n4-permissive-script failure
+DENY: protected paths changed without a head- and digest-bound approval (head=368002dbb78d8a907913545c99fc8f728b1a4099 digest=sha256:bd337ff826b97d26855c26e1d849339f64e6ba87a6517b7c0fd6da30168d2efb)
+## run 44553987483 c0d47c0024bbf5cb42b1e3c71e831ed752accaaf n3-fake-name failure
+DENY: protected paths changed without a head- and digest-bound approval (head=c0d47c0024bbf5cb42b1e3c71e831ed752accaaf digest=sha256:91888e534296e761a2503246cbf0b98217fd61e3e1cdd3478ce8aa70593683b5)
+## run 44553970901 2bedb365384f9924cb8cb345752e06064a232852 n2-delete-integrity failure
+DENY: protected paths changed without a head- and digest-bound approval (head=2bedb365384f9924cb8cb345752e06064a232852 digest=sha256:1a97b1ae44b773aaa102ad4d08f5a352feb0c256e2146aff1beb5dffed1d0db1)
+## run 44553953813 f2b5507d1606567809d172f6015f6731b983f5c4 n1-delete-check-step failure
+DENY: protected paths changed without a head- and digest-bound approval (head=f2b5507d1606567809d172f6015f6731b983f5c4 digest=sha256:ed5b7247b9d28af30c93c116369fef863d9acff2df25a71f6611f71a68ebdf08)
+## run 44553746758 430ba117cb4e4967da6f048c5d65b19b460ca41f p0-control success
+UNCHANGED: no protected path touched

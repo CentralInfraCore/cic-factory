@@ -1,0 +1,1 @@
+{"protected": [".github/", "scripts/", "policy.json"], "approvers": ["sinkog"]}

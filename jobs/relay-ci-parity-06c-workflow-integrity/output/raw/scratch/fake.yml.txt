@@ -1,0 +1,10 @@
+name: fake
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "fake integrity, always green"
