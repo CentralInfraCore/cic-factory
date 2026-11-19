@@ -1,3 +1,7 @@
+## run 44560294600 a43d556e24d456c223f95df4838d1e8b555ce922 r2-rename-out success
+UNCHANGED: no protected path touched
+## run 44560185591 b9fbecc76eb2f735dd6c9a77e56b1961b81f57a4 r1-rename-out failure
+DENY: protected paths changed without a head- and digest-bound approval (head=b9fbecc76eb2f735dd6c9a77e56b1961b81f57a4 digest=sha256:ebb0543d8f836568916663782222b5e2570f601e0d322e301914b2afbadf0787)
 ## run 44556567050 cab880c58117df84068ac70c6386b69209cdbf96 f1-onto-frozen success
 UNCHANGED: no protected path touched
 ## run 44555987236 4e133735e1c55ca1a920ac4def4f8d2c014c2aca c1-reusable-ref failure

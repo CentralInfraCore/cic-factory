@@ -75,7 +75,7 @@ A jóváhagyás **csak az (i)-et adja**; nem CI-eredmény.
 
 | | Megvalósítható? | Mit véd | Mit nem | Költség / új felület |
 |---|---|---|---|---|
-| **(a) repository `workflows` ruleset** | **NEM járható** ezen a csomagon (mért). Privát repó: HTTP 403 „Upgrade to GitHub Pro or make this repository public". Publikus repó: HTTP 422 `Invalid parameter workflows: Workflow error at index 0:` — **ugyanaz az üzenet** a helyes, a nem létező útvonalú, a rossz repo-id-jú, a rövid ref-es és az üres listás próbára is (5 variáns, a workflow a saját és egy külön publikus repóban); az **ok nem diagnosztizált** | – | – | `raw/scratch/rulesets-probe.txt`. A (a) **nem mért** értelemben marad nyitva: ha a csomag változik, újramérendő |
+| **(a) repository `workflows` ruleset** | **a vizsgált konfigurációban nem sikerült aktiválni** (mért); **nem bizonyított, hogy nem támogatott**. Privát repó: HTTP 403 „Upgrade to GitHub Pro or make this repository public". Publikus repó: HTTP 422 `Invalid parameter workflows: Workflow error at index 0:` — **ugyanaz az üzenet** a helyes, a nem létező útvonalú, a rossz repo-id-jú, a rövid ref-es és az üres listás próbára is (5 variáns, a workflow a saját és egy külön publikus repóban); az **ok nem diagnosztizált** | – | – | `raw/scratch/rulesets-probe.txt`. A (a) **nem mért** értelemben marad nyitva: ha a csomag változik, újramérendő |
 | **(b) base-ből futó `pull_request_target` integritás-ellenőr** | **igen, mérve** | a védett halmaz minden módosítását jóváhagyáshoz köti (head+digest); a PR-t adatként kezeli (nincs checkout, nincs PR-kód futtatás); a jóváhagyott módosítást is megfelelőségi vizsgálatnak veti alá | a védett halmazon **kívüli** út (tesztek gyengítése); base-változás `strict: false` mellett; fork-PR nem mért | egy `pull_request_target` workflow (token: `contents: read`, `pull-requests: read`); karbantartás: a policy; új támadási felület: a `pull_request_target` token (a scratch-ben nincs secret) |
 | **(c) base-beli reusable workflow** | **önmagában NEM véd (mérve)** | a lépések definíciója a hívott fájlból jön | a **hívó** a PR-ből jön: PR17-en a PR a `uses:` ref-et a `permissive` ágra állította, a megengedő reusable **lefutott és zöld** (`reusable-call / reusable-check=success`); a PR-t csak az (b) `integrity` check blokkolta | csak (b)-vel együtt értelmes |
 | **(d) kötelező review / code owner** | **a mért beállításokkal megkerülhető** | emberi felülvizsgálat | a PR saját workflow-ja `github-actions[bot]`-ként approve-ol (PR14: `required_approving_review_count: 1` → merged; PR15: `require_code_owner_review: true` + `CODEOWNERS * @sinkog` mellett is merged — az ok **nem diagnosztizált**: a PR szerzője egyben a code owner, második identitás nincs). Az egyedüli fejlesztő a saját PR-ját nem approve-olhatja (422 „Can not approve your own pull request"). **`can_approve_pull_request_reviews: false` megállítja** (PR16: `approve=failure`, a PR nem mergelhető review nélkül) | a tulajdonos számára blokkoló: a saját PR-ját nem approve-olhatja → bypass vagy második identitás kellene; nem mért |
@@ -112,6 +112,8 @@ PR18 (scratch) egy **nem-default** ágra (`frozen-base`) irányult, amelyen az `
 | 18 | korábbi eredmény felhasználása új HEAD-en | DENY | az eredmény fej-kötött (a `pull_request_target` futás `head_sha` = PR-fej; az új fejen új futás kell); PR12 új fején a régi jóváhagyás nem érvényes | – | – |
 | 19 | base változása az ellenőrzés után | újraértékelés / rés | **rés reprodukálva `strict: false` mellett**: policy-szigorítás után a korábban zöld PR10 (`docs/x.txt`, ma már védett, jóváhagyás nélkül) **mergelt**, az ellenőrzés nem futott újra. **`strict: true` mellett**: PR11 merge 405 „2 of 2 required status checks are expected", az update-branch után az ellenőrzés újrafutott és `failure` | – | `strict: false` = a rés |
 | 20 | a bizalmi konfiguráció módosítása | DENY / külön út | PR6: `policy.json` önjóváhagyó hozzáadása → DENY (a base-policy dönt) | – | – |
+| 21 (új, review) | védett útvonalról védetlen útvonalra átnevezés | DENY | **a scratch ellenőr hibája, mért**: PR20 (`scripts/check.sh` → `notes/check-moved.sh`) `UNCHANGED` / `integrity=success` (run 44560294600); a PR csak a `verify` bukása miatt blokkolt. A PR19 (cél: a már védett `docs/`) érvénytelen próba volt (DENY a cél miatt), nem bizonyíték | – | – |
+| 22 (új, review) | hiányzó valódi ellenőrzés + hamis zöld azonos nevű check | DENY | **nem mért** (R3) | – | – |
 
 ## 8. A védett halmaz és a maradék rés (D)
 
@@ -171,7 +173,7 @@ repo Actions:     default_workflow_permissions: read  (lásd E2)
 ```
 **Sorrend:** előbb az `integrity` workflow kerül a `main`-re (a bevezető PR-t a mechanizmus még nem védi; egyszeri bootstrap), és **csak ezután** kerül a `integrity` a kötelező checkek közé (különben minden PR blokkolt lenne).
 
-**Nem választott:** (a) nem járható; (c) önmagában nem véd; (d) nem bízható rá a védelem a mért beállításokkal.
+**Nem választott:** (a) a vizsgált konfigurációban nem aktiválható (az ok nem diagnosztizált, a nem-támogatás nem bizonyított); (c) önmagában nem véd; (d) nem bízható rá a védelem a mért beállításokkal.
 
 **Maradék rés (kimondva):** (1) a tesztek/termékkód gyengítése (8. táblázat); (2) fork-PR **nem mért**; (3) az `integrity` workflow `actions/checkout@v4` mutable tag-je (a `sha_pinning_required: false`); (4) a repository-admin (tulajdonos) a rulesetet kikapcsolhatja; (5) `strict: true` költsége: minden PR-t naprakészen kell tartani.
 
@@ -203,6 +205,31 @@ repo Actions:     default_workflow_permissions: read  (lásd E2)
 
 **Állítás-fegyelem:** amíg az 1–7 lépés a Relay-ben nem futott, **kikényszerített bootstrap-védelmet nem állítok**. A scratch (3) és (4) pont csak a mechanizmus-szintű viselkedést igazolja.
 
+## 10a. Implementációs követelmények és elfogadási feltételek (a #72 review F1–F5 alapján)
+
+A scratch `integrity.py` **kísérleti**; az alábbiak az éles implementáció kötelező követelményei és **elfogadási feltételei**. A `strict: true` szükséges, de **egyik pontot sem bizonyítja önmagában**.
+
+**R1 (F1) — az ellenőr eredménye és a vizsgált állapot azonossága.** A kísérleti ellenőr a HEAD-et az eseményből veszi, de a módosított fájlok listáját a PR *futás közbeni* API-állapotából olvassa (`raw/scratch/integrity.py.txt`: `api(f"repos/{REPO}/pulls/{PR}/files")`). A kettő nem feltétlenül azonos állapot. Követelmény:
+- a változáshalmaz az **egzakt HEAD és BASE** commitokból számolt (pl. `compare/BASE...HEAD` API vagy git-diff két rögzített commit között), nem a PR aktuális állapotából;
+- az ellenőr a döntés **publikálása előtt** újraolvassa a PR HEAD-jét és BASE-ét, és ha eltér a futás elején rögzítettől, **fail-closed** (a check pirossal végződik, újrafuttatás kell);
+- a **policy és az ellenőr verzióazonossága** a rekordban: a futás kiírja a BASE commit, a policy sha256 és az ellenőr script sha256 értékét, és a döntés ezekhez kötött (a scratch a base- és policy-digestet kiírja; az ellenőr-script digestje **nincs** kiírva, a követelmény új);
+- **hiányos fájllista**: a GitHub a PR-fájllistát korlátozza (a `pulls/{n}/files` legfeljebb 3000 fájlt ad); ha a lista lehetséges csonkolása jelezhető vagy a mennyiség a határhoz ér, fail-closed;
+- **átnevezés (mért hiba a scratch ellenőrben, PR20):** a scratch ellenőr csak a `filename`-et vizsgálja, a `previous_filename`-et **nem**. A `scripts/check.sh` → `notes/check-moved.sh` átnevezés `UNCHANGED: no protected path touched` verdiktet kapott (run 44560294600), `integrity=success`; a PR csak véletlenül maradt blokkolt, mert a `verify` a hiányzó script miatt bukott. Követelmény: **mind az új, mind a régi útvonalat** (`filename` és `previous_filename`) vizsgálni, és a védett halmazból kivitt fájl **védett módosításnak** számít. Ez a scratch ellenőr **ismert hiányossága**, az éles implementációban külön negatív teszt kell rá.
+
+**R2 (F2) — a megfelelőségi ellenőrzés szemantikája.** A scratch megfelelőségi vizsgálat szöveges jelenlétet néz (`"scripts/check.sh" in run`, nincs `if`/`continue-on-error`/`needs` kulcs, a trigger nem szűrt). Ez a kísérlethez megfelelő, az éles implementációhoz **nem elegendő**. Az éles ellenőrnek **a hívás jelenlétén túl** vizsgálnia kell:
+- a tényleges végrehajtást (a lépés valóban lefut: `if` a job-on, a lépésen és az őket szülő szinten, `continue-on-error` minden szinten, `timeout`, `shell`-felülírás, a lépés `run`-ja nem egy kimenet- vagy `|| true`-szerű elnyelő parancs);
+- a hibakezelést (`set -e`/`pipefail`, a kilépési kód nem nyelődik el, a `gate` jobnál a `needs` eredmény-ellenőrzés, `if: always()` esetén a tényleges `success` vizsgálat, ahogy a `mutation-pr.yml:359-380` is csinálja);
+- a függőségeket (`needs`, matrix, a `check-tools`/referencia-lépés a mérés *előtt* fut, ahogy a `tests/test_tools/test_quality_gate.py` őrzi);
+- a használt bemenetek eredetét (a script, a pin-fájl és a referencia a BASE-ből jön; `MR_GATE`/`MODE` nem a PR-ből választott; env-felülírás, pl. `GOTOOLCHAIN`, nem módosítja a mért eszközt);
+- a **YAML tényleges szemantikáját** (strukturált elemzés, nem szöveg-keresés; anchor/alias, többsoros `run`, reusable workflow `uses:` ref és annak a BASE-ben rögzített volta).
+A jelentés elfogadási feltétele: minden itt felsorolt irányra **negatív teszt**, amelynek a szöveges jelenlétvizsgálat **átmenne**, a strukturált nem.
+
+**R3 (F3) — hiányzó valódi ellenőrzés mellett megjelenő hamis check (kötelező negatív eset).** A PR4 a *valódi piros + hamis zöld = blokkolt* esetet igazolta. A **fordított** (*hiányzó valódi + hamis zöld*) **még nem mért**; ez **külön kötelező negatív eset és elfogadási feltétel**: a valódi `integrity` nem fut le (pl. a base-beli workflow nem indul el, vagy a futás nem jön létre) és a PR egy azonos nevű, zöld jobot szállít; elvárt: a merge blokkolt. A tervezett mérés: scratch-ben a base `integrity.yml` ideiglenes eltávolítása (tulajdonosi karbantartással) vagy a trigger kikapcsolása mellett a hamis job zöldje nem elég; a kapott eredmény ebben a szakaszban **nem szerepel**.
+
+**R4 (F4) — az aktiválási időszak.** A workflow mergelése (9b/3. lépés) és a kötelezővé tétele (9b/5. lépés) között **átmenetileg nincs kikényszerített védelem**, ebben az időszakban más PR sem mergelhető kontrollálatlanul. Követelmények: (i) az időszak **a lehető legrövidebb és tulajdonosi**: a 3–5. lépés egy megfigyelt, soros folyamat, amely alatt **más PR nem mergelhető** (a tulajdonos a merge-eket befagyasztja); (ii) az időszak kezdete és vége **rögzítve** (commit-azonosító, ruleset előtte/utána); (iii) az **aktiválás utáni negatív bizonyítás** (9b/6. lépés) **kötelező lezárási feltétel**: enélkül a #212 nem zárható.
+
+**R5 (F5) — a workflows ruleset megítélése.** A pontos állítás: **a vizsgált konfigurációban nem sikerült aktiválni**, a HTTP 422 oka nem diagnosztizált; ez **nem azonos** azzal, hogy bizonyítottan nem támogatott. Az ajánlás emiatt nem az (a)-ra épül, de a döntés **újramérhető** (pl. csomag-váltás után, vagy ha a GitHub a hibaüzenetet pontosítja).
+
 ## 10. Az implementáció terve (F) — a következő, külön job bemenete
 
 **Fájlok (CIC_Relay):** `.github/workflows/integrity.yml` (`pull_request_target`, base-checkout, minimális token), `scripts/integrity.py` (a `raw/scratch/integrity.py.txt` Relay-re igazítva: védett halmaz a 8. szerint, megfelelőségi vizsgálat a kötelező jobokra: létezik, nem feltételes, a `check-tools`/referencia-lépés jelen van, trigger nem szűrt, `needs` a `mutation-pr` `gate`-ben), `integrity-policy.json` (védett halmaz, jóváhagyók), `tests/test_tools/test_integrity.py`, a `quality_gate.py` jóváhagyás-formátumának összehangolása, MANIFEST/SYMBOLS frissítés.
@@ -219,6 +246,7 @@ repo Actions:     default_workflow_permissions: read  (lásd E2)
 - **Fork-PR** viselkedés (`members_can_fork: true`): nem mért (második fiók kell).
 - Code-owner szabály viselkedése: az ok nem diagnosztizált (a szerző = a code owner); második identitással mérendő.
 - A Relay saját `GATE`/`MR_GATE`, `BOOTSTRAP`, `object_model.py`, action manipulációi: Relay-ben **nem futtatva**.
+- **Hiányzó valódi + hamis zöld azonos nevű check** (R3), a policy+ellenőr verzióazonosság, az egzakt HEAD/BASE változáshalmaz és a fájllista-csonkolás kezelése: nem mért (R1).
 - Külön job-törlő (#2), `if`/`continue-on-error`/`needs` (#4), jóváhagyott-piros (#13) PR nem készült.
 - A `default_workflow_permissions: read` Relay-beli hatása nem futtatva.
 - Ütemezett workflow-k (`mutation.yml`, `nightly.yml`): nem része a jobnak (PR-07 feltétele).
@@ -229,9 +257,10 @@ repo Actions:     default_workflow_permissions: read  (lásd E2)
 | Állítás | Státus | Bizonyíték | Verifikációs módszer | Kockázat |
 |---|---|---|---|---|
 | A #207 hézag ma nyitott (a lépéstörlés zöld marad) | mért (#195 jelentés) | `ref/pin-protection-report.md` §4, §7 | valós Actions futás | – |
-| (a) a mért csomagon nem járható | mért | `raw/scratch/rulesets-probe.txt` (403 / 422 ×5) | API-hívások | ok nem diagnosztizált |
+| (a) a vizsgált konfigurációban nem sikerült aktiválni (nem bizonyított, hogy nem támogatott) | mért | `raw/scratch/rulesets-probe.txt` (403 / 422 ×5) | API-hívások | ok nem diagnosztizált |
 | (b) a PR-t DENY-olja, ha a védett halmazt módosítja | mért (scratch) | PR2–PR7; `pr-results.tsv`, `integrity-log-lines.txt`; merge 405 | valós Actions + merge-kísérlet | scratch ≠ Relay |
 | (b) a jóváhagyás head- és digest-kötött, a megfelelőség külön ítélet | mért (scratch) | PR12 APPROVED_UPDATE, PR13 DENY, PR12 új fej DENY | valódi tulajdonosi komment | – |
+| A scratch ellenőr az átnevezést (`previous_filename`) nem látja | mért (hiba) | PR20, run 44560294600: `UNCHANGED` | valós futás | az éles ellenőrnek mindkét útvonalat vizsgálnia kell (R1) |
 | Azonos nevű hamis job nem fedi el a valódi hibát | mért | PR4: `integrity` failure+success → blocked, 405 | check-runs + merge | fordított eset (hiányzó valódi, jelen lévő hamis) nem mért |
 | `pull_request_target` a default ág definícióját használja | mért | PR18, run 44556567050 | marker-változat | – |
 | `strict: false` mellett a stale zöld PR mergelhető | mért (rés) | PR10 merged, policy-szigorítás után | valós merge | – |
