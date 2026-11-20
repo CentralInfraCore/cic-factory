@@ -66,7 +66,7 @@ A javaslat: **első körben (i)** a scratch-ben (nincs új infrastruktúra), a (
 1. **GitHub App létrehozása** a `CentralInfraCore` szervezetben (Settings → Developer settings → GitHub Apps → New), név pl. `cic-integrity-scratch`, **webhook kikapcsolva** ((i) kivitelezés), jogosultságok: `Checks: Read & write`, `Pull requests: Read`, `Contents: Read`, `Metadata: Read`, semmi más; „Where can this App be installed": csak ez a szervezet.
 2. **Telepítés** kizárólag a `CentralInfraCore/cic-scratch-212-public` repóra.
 3. A **privát kulcs** (PEM) generálása; **a kulcsot nem küldöd ide és nem commitolod**. A scratch-ben egy `Environment` secretjeként állítod be (a tulajdonos futtatja):
-   - `gh api -X PUT repos/CentralInfraCore/cic-scratch-212-public/environments/integrity-app` (az environment létrehozása; a *deployment branch* szabályt a `main`-re korlátozva a felületen vagy API-n, lásd mérés 4/e1–e41–e4)
+   - `gh api -X PUT repos/CentralInfraCore/cic-scratch-212-public/environments/integrity-app` (az environment létrehozása; a *deployment branch* szabályt a `main`-re korlátozva a felületen vagy API-n, lásd mérés 4/e1–e4)
    - `gh secret set APP_PRIVATE_KEY --env integrity-app --repo CentralInfraCore/cic-scratch-212-public < kulcs.pem`
    - a `APP_ID` változó: `gh variable set APP_ID --env integrity-app --repo CentralInfraCore/cic-scratch-212-public --body <id>`
 4. Az **App azonosítójának** megadása nekem (az `integration_id` a scratch rulesetbe és a méréshez).
@@ -108,7 +108,7 @@ A jelentés §7 táblázata 22 sort tartalmaz (13 spec-sor + 2 jóváhagyás-hat
 | 18 | korábbi eredmény új HEAD-en | DENY | mért (fej-kötött) | **App: 4/d, 4/c2** |
 | 19 | base változása az ellenőrzés után | újraértékelés | mért (PR10 rés `strict: false`; PR11 `strict: true`) | terv; **App: 4/c2** |
 | 20 | a bizalmi konfiguráció módosítása | DENY / külön út | mért (PR6) | terv |
-| 21 | védett útvonalról védetlenre átnevezés | DENY | **mért hiba** (PR20, `UNCHANGED`): javítandó (R1) | terv |
+| 21 | védett útvonalról védetlenre átnevezés | DENY | **scratch környezetben javítva és regresszióval igazolva**: a hiba mért volt (PR20, `UNCHANGED`); a javított checker (`filename` és `previous_filename` is vizsgálva) a PR22-n DENY-t adott valós Actions-futással (run 44777884857, head `3bf1a408088f83844914ac06e05bbbd23001cd89`); lokális regresszió 7/7, a régi logikán 2 bukik. Relay-ben még nem mért | terv (R1 megvalósítandó) |
 | 22 | hiányzó valódi ellenőrzés + azonos nevű zöld check | DENY | **mért: ELFOGADHATATLAN az Actions-only (b)-nél** (PR21, `clean`) | **App: 4/b, 4/c; kötelező, ez dönti el az irányt** |
 
 Az implementációs jobnak mind a 22 eset elvárt eredményét **Relay-beli valós futással** kell igazolnia; a 22. eset az App irányban csak akkor teljesül, ha a 4/b és 4/c mérések az App-pal sikerülnek. Ha **nem** sikerülnek, az új architekturális döntés újra szükséges.
@@ -120,4 +120,23 @@ Az implementációs jobnak mind a 22 eset elvárt eredményét **Relay-beli val�
 | GitHub App bizalmi és jogosultsági modell | ez az addendum (3.) |
 | R3 mérés előkészítése | ez az addendum (4., 5.); **a mérés az App létrehozására vár** |
 | A 22 eset egységesítése | ez az addendum (7.) |
+| 21. eset (átnevezés) scratch-regresszió | **PASS**, lásd 9. |
 | Relay implementáció, éles repository-beállítások, #212 lezárása, scratch repók törlése | **HOLD** |
+
+## 9. A 21. eset (átnevezés) scratch-regressziója
+
+**Mért (scratch, `cic-scratch-212-public`):**
+
+- A checker a `filename` mellett a `previous_filename`-et is a védettségvizsgálatba veszi; a jóváhagyási digest a teljes átmozgatást (régi és új név) köti.
+- Lokális regressziós teszt: 7/7 sikeres. A régi egyező-logikán két teszt bukik (a védettből védetlenre átnevezés, és hogy a digest mindkét nevet köti).
+- Telepítés a scratch main-re: a ruleset mentése, átmeneti kikapcsolása, a checker (c399c07) és a tesztek (a249a6d) feltöltése, a ruleset visszaállítása; a mentett és a visszaállított konfiguráció az `updated_at` kivételével azonos. Csak a scratch repót érintette.
+- PR22 (`scripts/check.sh` → `notes/check.sh`, head `3bf1a408088f83844914ac06e05bbbd23001cd89`, base `a249a6d7f8224100fbae495ecd86eddb2897a77a`): a `integrity` futás (44777884857) `DENY: protected paths changed without a head- and digest-bound approval`; a `ci` futás (44777884772) és a `verify` check bukott; a `self-approve` futás (44777884832) sikeres, és `github-actions[bot]` APPROVED reviewt adott.
+- A három futás lezárulása után a PR `mergeable_state` értéke `blocked` (`mergeable: true`), a head változatlan.
+
+**Nem mért / korlát:**
+
+- Hogy a `blocked` állapotot melyik szabály okozza külön-külön, izoláltan nem bizonyított; a bot-review a merge-et nem oldotta fel, miközben a required check-ek (`integrity`, `verify`) buktak.
+- A `ci` bukásának oka (a `scripts/check.sh` a PR-ban átkerült) következtetés, a logja nem lett vizsgálva.
+- A javítás Relay-beli megfelelője és a Relay-beli futás nem készült el: az implementáció HOLD.
+
+Evidence: `raw/scratch/rename-regression/` (ruleset előtte/utána, telepítési commitok, PR22 adatai, integrity log-sorok, végső mergeable-állapot, a javított `integrity.py.txt` és a regressziós teszt `.txt` formában).
