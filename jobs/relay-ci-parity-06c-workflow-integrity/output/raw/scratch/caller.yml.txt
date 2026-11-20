@@ -1,0 +1,9 @@
+name: caller
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  reusable-call:
+    uses: CentralInfraCore/cic-scratch-212-workflows/.github/workflows/check.yml@permissive
+# rerun

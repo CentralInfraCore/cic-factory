@@ -1,0 +1,20 @@
+name: integrity
+on:
+  pull_request_target:
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      # default ref for pull_request_target = the BASE branch tip. The PR code is never checked out.
+      - uses: actions/checkout@v4
+      - name: integrity check (base script, PR as data)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.sha }}
+        run: python3 scripts/integrity.py
