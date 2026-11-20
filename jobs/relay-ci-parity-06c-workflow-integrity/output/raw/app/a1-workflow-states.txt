@@ -1,0 +1,2 @@
+integrity-app disabled_manually
+integrity disabled_manually

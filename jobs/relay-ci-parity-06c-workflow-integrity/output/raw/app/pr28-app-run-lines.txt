@@ -1,0 +1,4 @@
+hint: 'development'. The just-created branch can be renamed via this command:
+protected paths changed:
+  renamed scripts/check.sh -> notes/check.sh 565bcd3633ec60c25f3f7c694c3c9479ec254c20
+DENY: protected paths changed without a head- and digest-bound approval (head=2738649fe16af988979762c2e

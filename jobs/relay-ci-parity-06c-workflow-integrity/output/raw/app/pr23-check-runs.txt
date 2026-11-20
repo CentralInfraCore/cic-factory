@@ -1,0 +1,5 @@
+integrity completed/failure app=cic-integrity-scratch app_id=5852604 output=base=7c8f2473c1cec2b2bdbabfb189c29e5266d63d21 head=8a3c2bec9e8b01d280b3e13ac0e66605b58b24e1
+integrity completed/failure app=github-actions app_id=15368 output=-
+app-integrity completed/success app=github-actions app_id=15368 output=-
+approve completed/success app=github-actions app_id=15368 output=-
+verify completed/success app=github-actions app_id=15368 output=-

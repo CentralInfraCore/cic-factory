@@ -1,0 +1,12 @@
+== PR27
+integrity completed/failure app=cic-integrity-scratch
+app-integrity completed/success app=github-actions
+approve completed/success app=github-actions
+verify completed/success app=github-actions
+{"head":"b5c0be85009e251a09bcf8f92528b9ce6b949509","mergeable_state":"blocked"}
+== PR28
+integrity completed/failure app=cic-integrity-scratch
+app-integrity completed/success app=github-actions
+approve completed/success app=github-actions
+verify completed/failure app=github-actions
+{"head":"2738649fe16af988979762c2e673dbe9e4a1e3d6","mergeable_state":"blocked"}

@@ -1,0 +1,10 @@
+== PR29 head 982590f871b4b609eb0e77b4d122c26dd3f00bcd
+136511769726 2026-11-20T19:17:12Z completed/success
+{"mergeable_state":"clean"}
+APPROVED_UPDATE: approval valid and head ci.yml conforms
+== PR30 head 9ac8ce1b2c9bc2959469a28e4bc8f17df9377f0f
+136511796760 2026-11-20T19:17:15Z completed/failure
+{"mergeable_state":"blocked"}
+DENY: conformance: job 'verify' is conditional
+136511769726 2026-11-20T19:17:12Z success
+136510906921 2026-11-20T19:15:35Z failure
