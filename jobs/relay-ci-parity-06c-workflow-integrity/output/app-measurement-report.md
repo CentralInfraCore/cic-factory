@@ -14,7 +14,7 @@ A mérések három, egymást **nem helyettesítő** követelményt támasztottak
 | Követelmény | Mért ellenpélda | Szükséges védelem |
 |---|---|---|
 | **Kibocsátó hitelessége** (ki állítja, hogy az ellenőrzés lefutott) | A1, E3s (és a korábbi R3, PR21: az Actions-only kötésnél hamis zöld `clean`) | A required check az App identitásához (`integration_id` 5852604) kötve |
-| **Döntés érvényessége** (a döntés érvényes-e a mostani környezetben) | C2b, C2c (`strict: false` mellett a régi zöld elfogadott BASE- és policy-változás után) | `strict_required_status_checks_policy: true` + állapotkötés (HEAD, BASE, policy digest a döntésben) |
+| **Döntés érvényessége** (a döntés érvényes-e a mostani környezetben) | C2b, C2c (`strict: false` mellett a régi zöld elfogadott BASE- és policy-változás után) | `strict_required_status_checks_policy: true` + állapotkötés (HEAD, BASE, policy digest a döntésben); **az állapotkötés még nyitott, lásd 3.6** |
 | **Bemenet teljessége** (a döntés alapjául szolgáló adat teljes-e) | E3 / PR37 (3002 fájlos PR, a védett fájl kimaradt a listából, hamis SUCCESS) | Teljességvizsgálat, hiányos bemenetnél fail-closed (`INCOMPLETE_CHANGESET`) |
 
 Elv: *egy hiteles bizonyíték nem feltétlenül érvényes bizonyíték; az érvényesség a bizonyíték és az aktuális döntési környezet viszonya.* A három követelmény külön-külön szükséges; egyik sem pótolja a másikat (például az App-identitás nem véd a hiányos bemenet ellen, a `strict` nem véd a hamis kibocsátó ellen).
@@ -83,11 +83,32 @@ Bizonyíték típusa: API (`mergeable_state`) és Actions. **Következtetés a m
 | Eset | PR (head) | Bizonyíték | Eredmény |
 |---|---|---|---|
 | **E0:** minimális jogosultság | — | API | A telepítés jogosultságai pontosan a négy kért. Túlnyújtási kísérletet **nem** végeztünk |
-| **E1/E2:** a PR nem éri el a kulcsot/tokent | PR35 (`5692db813b3fab2b3edcf2aa54ceb19e87739b69`), run 44805260679 | Actions | PASS: az environment-es job `Branch "refs/pull/35/merge" is not allowed to deploy to integrity-app`; az environment nélküli job `SECRET-ABSENT` |
+| **E1:** a PR nem éri el a privát kulcsot | PR35 (`5692db813b3fab2b3edcf2aa54ceb19e87739b69`), run 44805260679 | Actions | **Részlegesen igazolt PASS.** Mért: a PR `pull_request` workflow-jának environment-es jobja `Branch "refs/pull/35/merge" is not allowed to deploy to integrity-app` hibával megállt; az environment nélküli job `SECRET-ABSENT` értéket kapott. **Nem mért:** a kulcs többi lehetséges csatornája (más esemény- és workflow-típusok, fork-PR, naplók, artifactok) |
+| **E2:** a PR nem éri el az installation tokent | — (PR35 nem ezt vizsgálta) | átvizsgálás | **Részlegesen vizsgált, a teljesülés nem bizonyított.** A token a privilegizált jobban jön létre, és a PR35 a kulcs hiányát mutatta (ebből a token létrehozhatatlansága következik), de a token hozzáférési csatornáit (naplók, artifactok, a job környezete, egy ugyanazon futásban befolyásolt lépés) külön nem mértük |
 | **E3:** hostile fájlnevek + védett változás | PR38 (`b37ae5940fddbb33ac70b8148e302f34771d2610`) | Actions | PASS: DENY, `blocked` |
 | **E3:** policy-parser hibája | — | lokális | PASS: hibás vagy hiányzó `policy.json` esetén `exit=1` (Actions-futás nem készült) |
 | **E4:** a PR átírja a privilegizált workflow-t; hostile cím és ágnév | PR39 (`fb760e430a8d69bc5e6b03cc62068b173793c17f`) | Actions | PASS: a base workflow futott (DENY, `failure`); az injekció nem hajtódott végre (`INJECT`, `uid=` nincs a logban), `blocked` |
 | **E3: nagy PR** | PR37 (`2ef1bc10faa5b1b987e1574766ad980e4839118d`) | Actions | **FAIL (eredeti hiba), lásd 4. szakasz** |
+
+### 3.5 Esetazonosítók megfeleltetése (A4/A5)
+
+A `raw/app/negative-pr-set.md` (az előkészítéskor írt terv) az A4 és A5 eseteket **fordítva** definiálja ahhoz képest, ahogyan a végrehajtás és ez a jelentés használja. A nyers fájlt nem módosítottuk.
+
+| Azonosító | `negative-pr-set.md` (terv) | Ez a jelentés és a végrehajtás |
+|---|---|---|
+| A4 | jóváhagyott, **nem megfelelő** `ci.yml` → App-check `failure` | jóváhagyott, **megfelelő** `ci.yml` módosítás: PR29, `success` |
+| A5 | jóváhagyott, **megfelelő** `ci.yml` → App-check `success` | jóváhagyott, **nem megfelelő** módosítás (feltételes `verify`): PR30, `failure` |
+
+A bizonyító erejű azonosítás a PR száma és a head SHA (PR29 `982590f871b4b609eb0e77b4d122c26dd3f00bcd`, PR30 `9ac8ce1b2c9bc2959469a28e4bc8f17df9377f0f`), nem az A-sorszám. Az A1–A3 és az A6 azonosítói a terv és a végrehajtás között egyeznek.
+
+### 3.6 Állapotkötés (addendum 4/d): mit nem bizonyít a mérés
+
+**Státusz: PARTIAL / OPEN.** A C2 mérések azt mutatták meg, hogy a GitHub `strict` mellett mikor fogad el régi zöldet; azt **nem** bizonyították, hogy a ténylegesen végrehajtott checker és policy ugyanahhoz a BASE SHA-hoz tartozik, amelyet a check-run közöl. Az archivált workflow (`raw/app/integrity-app.yml.txt`):
+
+- a `main` ágat az eseményindulás után, a job futásakor aktuális állapotában checkoutolja (`ref: ${{ github.event.repository.default_branch }}`, 21. sor körül), a `BASE_SHA` viszont az eseményből jön (`github.event.pull_request.base.sha`). Ha a `main` a kettő között elmozdul, a checker és a `policy.json` a közölt BASE SHA-tól eltérő állapotból származhat. Ezt nem mértük;
+- az App-check kimenete (`output[summary]`, a workflow 43. sora) csak a `base` és a `head` SHA-t tartalmazza. A policy digest a futási logban szerepel (`policy-digest=sha256:…`), a check-run kimenetében **nem**, így a döntés a check-run alapján nem köti a policyhoz.
+
+A szükséges követelmény ennek megfelelően nyitott: a checkoutot a közölt BASE SHA-ra kell rögzíteni, és a policy digestet a check-run kimenetében is közölni kell. Ez a jelentésben követelmény-javaslat, nem mért védelem.
 
 ---
 
@@ -129,6 +150,17 @@ A diagnosztikai kód: `DENY: INCOMPLETE_CHANGESET: …` (`scripts/integrity.py:1
 
 Lokális regresszió: 20 teszt, mind sikeres (`raw/app/test_integrity-final.py.txt`: 7 az átnevezésre, 13 a teljességre). A régi viselkedésen a 13 teljességi tesztből 8 bukik és 1 hibát ad. Az eltérés-, lapozási és API-hiba esete **csak lokálisan mért**, Actions-ben természetes módon nem előidézhető.
 
+### 4.4 A regressziós teszt futtatása (belépési pont)
+
+Az archivált `raw/app/test_integrity-final.py.txt` fájlban a `unittest.main()` hívás (50. sor) a `LoadChangeset` osztály definíciója (53. sor) **előtt** áll, ezért közvetlen futtatáskor csak az első hét teszt fut. Az archivált kódot nem írtuk át. A tényleges futtatás és eredménye (az archivált `integrity-final.py.txt` és `test_integrity-final.py.txt` fájlokból újrajátszva a `scripts/integrity.py` és `tests/test_integrity.py` helyen):
+
+| Parancs | Eredmény |
+|---|---|
+| `python3 -I -m unittest discover -s tests` | **20 teszt, mind sikeres** (7 átnevezési + 13 teljességi) |
+| `python3 -I tests/test_integrity.py` | 7 teszt fut, mind sikeres (a teljességi tesztek nem) |
+
+A 20/20 eredmény a discovery-alapú futtatásra érvényes; ezt használtuk a regressziós méréshez.
+
 A PR37 újranyitása (zárás, majd nyitás) új eseményt indított a javított base-sel. A korábbi, hamis `success` check-run a `filter=all` lekérdezéssel látszik.
 
 ---
@@ -155,10 +187,11 @@ Egyik sem tekinthető igazoltnak:
 
 1. **Az App-kiesés teljes köre:** az installáció felfüggesztése (ehhez App-JWT, vagyis a privát kulcs kellene) külön eset a tokenhibától. Mért csak a tokenhiba.
 2. **Fork-PR és második identitás.**
+   (Az **E1** csak részben, az **E2** nem bizonyított: lásd 3.4. A kulcs és a token további csatornái nyitottak.)
 3. **E0 túlnyújtási kísérlet:** a tényleges token-hatókör nincs próbálva a nem engedélyezett műveletekre.
 4. **E3 további bemenetek:** újsor-tartalmú fájlnév és a digest-ütköztetés; szimbolikus link a védett útvonalon jóváhagyás mellett; a policy-parser hibája Actions-ben.
 5. **A teljességi hibák Actions-beli esete** (eltérés, lapozási hiba, API-hiba): csak lokális mock.
-6. **Time-of-check/time-of-use:** a head-elmozdulás ellenőrzése csak az ellenőrzés elején történik; az ellenőrzés és a merge közötti időablakra nem mértünk.
+6. **Time-of-check/time-of-use:** a head-elmozdulás ellenőrzése csak az ellenőrzés elején történik; az ellenőrzés és a merge közötti időablakra nem mértünk. Ide tartozik a 3.6 szerinti rés is: a checker/policy és a közölt BASE SHA azonossága nem bizonyított, és a policy digest nincs a check-run kimenetében (**4/d: PARTIAL / OPEN**).
 7. **A `strict: true` korlátja:** a változatlan HEAD és BASE mellett bekövetkező külső policy-változás kezelése.
 8. **Az újrafuttatás jogosultsága** (5. szakasz) mint döntési jogosultság.
 9. **A `blocked` állapot szabályonkénti izolálása** (A1–A3, A6: a PR több szabályon is bukhat; a kontraszt-érvelés erős, de nem izolált mérés).
