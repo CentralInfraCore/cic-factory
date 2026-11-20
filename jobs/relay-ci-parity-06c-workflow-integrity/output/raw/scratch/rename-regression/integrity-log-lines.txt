@@ -1,0 +1,5 @@
+hint: 'development'. The just-created branch can be renamed via this command:
+base=a249a6d7f8224100fbae495ecd86eddb2897a77a head=3bf1a408088f83844914ac06e05bbbd23001cd89 policy-digest=sha256:8e2c41a646d94a4b17be3a8533735453f2aeb4ad1f814457f7fd127e2ab4802a
+protected paths changed:
+  renamed scripts/check.sh -> notes/check.sh 565bcd3633ec60c25f3f7c694c3c9479ec254c20
+DENY: protected paths changed without a head- and digest-bound approval (head=3bf1a408088f83844914ac06e05bbbd23001cd89 digest=sha256:a79f5784fbf68202f4094d5885a0bd957855b5a6d1e5b9b9f0f16d7e68847031)
