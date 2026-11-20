@@ -1,0 +1,44 @@
+# DRAFT, not deployed: App-bound variant (i) for the scratch repo cic-scratch-212-public only.
+# Needs: GitHub App "cic-integrity-scratch" (Checks: write, Pull requests: read, Contents: read,
+# Metadata: read), environment "integrity-app" with deployment branches restricted to main,
+# secrets APP_PRIVATE_KEY (set by the owner) and variable APP_ID.
+# The required status check is then bound to the App's integration_id, so an Actions job named
+# "integrity" cannot satisfy it.
+name: integrity-app
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  app-integrity:
+    runs-on: ubuntu-latest
+    environment: integrity-app
+    steps:
+      # Checkout of the DEFAULT branch only; the PR is read as data through the API.
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5   # v4.3.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - id: token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547   # v1.12.0
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - name: Run integrity check and publish the result as the App
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set +e
+          python3 scripts/integrity.py | tee /tmp/integrity.out
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" = 0 ]; then concl=success; else concl=failure; fi
+          # Any parser/API failure is a failure, never a silent success (fail closed).
+          gh api -X POST "repos/$REPO/check-runs" \
+            -f name=integrity -f head_sha="$HEAD_SHA" -f status=completed -f conclusion="$concl" \
+            -f "output[title]=integrity $concl" -f "output[summary]=base=$BASE_SHA head=$HEAD_SHA" >/dev/null
+          exit 0

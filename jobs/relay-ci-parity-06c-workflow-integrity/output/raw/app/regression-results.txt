@@ -1,0 +1,5 @@
+PR40 (expect SUCCESS) latest App check: 2026-11-20T19:53:33Z completed/success | state=clean | run 44806259114 | UNCHANGED: no protected path touched|
+PR41 (expect DENY) latest App check: 2026-11-20T19:53:17Z completed/failure | state=blocked | run 44806274404 | DENY: INCOMPLETE_CHANGESET: changed_files=3000 reaches the API listing li|
+PR42 (expect DENY) latest App check: 2026-11-20T19:53:30Z completed/failure | state=blocked | run 44806287658 | DENY: INCOMPLETE_CHANGESET: changed_files=3001 reaches the API listing li|
+PR43 (expect SUCCESS) latest App check: 2026-11-20T19:53:28Z completed/success | state=clean | run 44806297463 | UNCHANGED: no protected path touched|
+PR37 (expect DENY) latest App check: 2026-11-20T19:53:34Z completed/failure | state=behind | run 44806310552 | DENY: INCOMPLETE_CHANGESET: changed_files=3002 reaches the API listing li|

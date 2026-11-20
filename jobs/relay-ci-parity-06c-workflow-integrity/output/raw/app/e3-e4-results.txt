@@ -1,0 +1,23 @@
+== PR37 head 2ef1bc10faa5b1b987e1574766ad980e4839118d
+integrity completed/success app=cic-integrity-scratch
+app-integrity completed/success app=github-actions
+verify completed/success app=github-actions
+approve completed/success app=github-actions
+state: clean
+UNCHANGED: no protected path touched
+== PR38 head b37ae5940fddbb33ac70b8148e302f34771d2610
+integrity completed/failure app=cic-integrity-scratch
+app-integrity completed/success app=github-actions
+approve completed/success app=github-actions
+verify completed/success app=github-actions
+state: blocked
+protected paths changed:
+DENY: protected paths changed without a head- and digest-bound approval (head=b37ae5940fddbb33ac70b8148
+== PR39 head fb760e430a8d69bc5e6b03cc62068b173793c17f
+integrity completed/failure app=cic-integrity-scratch
+app-integrity completed/success app=github-actions
+approve completed/success app=github-actions
+verify completed/success app=github-actions
+state: blocked
+protected paths changed:
+DENY: protected paths changed without a head- and digest-bound approval (head=fb760e430a8d69bc5e6b03cc6

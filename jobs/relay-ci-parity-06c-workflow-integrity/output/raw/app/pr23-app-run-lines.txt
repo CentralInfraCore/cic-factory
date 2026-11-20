@@ -1,0 +1,5 @@
+[36;1m  -f "output[title]=integrity $concl" -f "output[summary]=base=$BASE_SHA head=$HEAD_SHA" >/dev/null[0m
+base=7c8f2473c1cec2b2bdbabfb189c29e5266d63d21 head=8a3c2bec9e8b01d280b3e13ac0e66605b58b24e1 policy-digest=sha256:8e2c41a646d94a4b17be
+protected paths changed:
+  added - -> docs/app-probe.md 61373790591c63aac532e5683ba17e4ba4a2f3e2
+DENY: protected paths changed without a head- and digest-bound approval (head=8a3c2bec9e8b01d280b3e13ac0e66605b58b24e1 digest=sha256:

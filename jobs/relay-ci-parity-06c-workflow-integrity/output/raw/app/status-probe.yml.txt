@@ -1,0 +1,12 @@
+name: status-probe
+on: pull_request
+permissions:
+  contents: read
+  statuses: write
+jobs:
+  post-status:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }}" -f state=success -f context=integrity -f description="fake commit status named integrity"

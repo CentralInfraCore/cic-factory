@@ -1,0 +1,7 @@
+noenv-job	Run if [ -n "$K" ]; then echo SECRET-PRESENT; else echo SECRET-ABSENT; fi	﻿2026-11-20T19:46:33.5393652Z ##[group]Run if [ -n "$K" ]; then echo SECRET-PRESENT; else echo SECRET-ABSENT; fi
+noenv-job	Run if [ -n "$K" ]; then echo SECRET-PRESENT; else echo SECRET-ABSENT; fi	2026-11-20T19:46:33.5394719Z [36;1mif [ -n "$K" ]; then echo SECRET-PRESENT; else echo SECRET-ABSENT; fi[0m
+noenv-job	Run if [ -n "$K" ]; then echo SECRET-PRESENT; else echo SECRET-ABSENT; fi	2026-11-20T19:46:33.6176928Z shell: /usr/bin/bash -e {0}
+noenv-job	Run if [ -n "$K" ]; then echo SECRET-PRESENT; else echo SECRET-ABSENT; fi	2026-11-20T19:46:33.6177830Z env:
+noenv-job	Run if [ -n "$K" ]; then echo SECRET-PRESENT; else echo SECRET-ABSENT; fi	2026-11-20T19:46:33.6178270Z   K: 
+noenv-job	Run if [ -n "$K" ]; then echo SECRET-PRESENT; else echo SECRET-ABSENT; fi	2026-11-20T19:46:33.6178721Z ##[endgroup]
+noenv-job	Run if [ -n "$K" ]; then echo SECRET-PRESENT; else echo SECRET-ABSENT; fi	2026-11-20T19:46:33.6382958Z SECRET-ABSENT
