@@ -1,0 +1,9 @@
+# R3: real integrity workflow disabled (admin action on the scratch repo), PR ships a same-named green job
+pr=21 head=eb7db727edebd7397536fc227223e6b6dca323c2
+mergeable_state=clean
+check integrity success app=15368
+check verify success app=15368
+check approve success app=15368
+run 44694101240 fake pull_request success
+run 44694100963 self-approve pull_request success
+run 44694100989 ci pull_request success
