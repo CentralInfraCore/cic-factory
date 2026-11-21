@@ -115,14 +115,14 @@ Az **N3** (`policy-boundary-spec.md`) azt rögzítette, *mi* tartozik az állapo
 | Azonosító | Követelmény |
 |---|---|
 | R-D.17 | Az alábbi esetek **nem érvényes negatív döntést (`DENY`)** eredményeznek, hanem azt, hogy **az érvényes döntés előállítása sikertelen** (`NO-DECISION`), megkülönböztethető hibakategóriával (R-D.18), **digest képzése nélkül** (R-D.4): érvénytelen kódolás; ismétlődő kulcs vagy halmazelem; ismeretlen típus, címke, verzió vagy algoritmus; nem kanonizálható bemenet; hiányos jegyzék vagy lezárás (R-D.14); a futási azonosság vagy a deklarált csatornák megsértése (R-D.21–R-D.22); nem tartalom-azonosított függőség (R-D.13); elérhetetlen forrás (R-P.6); a policy értelmezhetetlen eleme (R-P.7). **Három kimenetet kell megkülönböztetni:** *érvényes pozitív döntés*; *érvényes negatív döntés* (`DENY`: az ellenőrző teljes, kanonizált állapotra ítélt); *az érvényes döntés előállításának sikertelensége* (`NO-DECISION`). A `NO-DECISION` az R-V.8 szerinti **hiányzó érvényes döntés**, nem elutasítás. Mindkét nem-pozitív kimenet blokkol, de szemantikailag különböznek: a `DENY` döntés, amelyhez érvényes `T_d` tartozik; a `NO-DECISION` nem döntés, ezért nem hordoz érvényes állapot-négyest, és nem használható fel a `DENY` helyett. |
-| R-D.18 | **Normatív hibakategóriák.** A `NO-DECISION` MUST az alábbi kategóriák egyikét hordozza (a kategóriahalmaz rögzített és verziózott): `NONCANONICAL` (nem kanonizálható bemenet, érvénytelen kódolás, nem támogatott típus); `DUPLICATE` (ismétlődő kulcs vagy elem); `UNKNOWN_VERSION`, `UNKNOWN_ALGORITHM`, `UNKNOWN_TAG`; `INCOMPLETE_CLOSURE` (hiányos jegyzék vagy lezárás); `UNBOUND_DEPENDENCY` (nem tartalom-azonosított függőség); `RUNTIME_IDENTITY_MISMATCH` (futási azonosság, R-D.21); `UNDECLARED_INPUT` (R-D.22); `UNREACHABLE_SOURCE` (elérhetetlen forrás); `UNINTERPRETABLE_POLICY` (R-P.7). A hibát nem szabad „nincs digest" vagy üres érték formájában kezelni, mert a fogyasztó azt pozitív döntésként értelmezhetné; és nem szabad `DENY`-ként rögzíteni (R-D.17). |
+| R-D.18 | **Normatív hibakategóriák.** Az elutasítás (az ellenőrzőnél `NO-DECISION`, a fogyasztónál egy kötés elutasítása) MUST az alábbi kategóriák **pontosan egyikét** hordozza (a halmaz rögzített és verziózott): `NONCANONICAL` (nem kanonizálható bemenet, érvénytelen kódolás, nem támogatott típus); `DUPLICATE` (ismétlődő kulcs vagy elem); `UNKNOWN_VERSION`, `UNKNOWN_ALGORITHM`, `UNKNOWN_TAG` (ismeretlen); `TAG_MISMATCH` (a címke vagy az elemtípus nem az elvárt, például más típusú digest a helyén); `MALFORMED_DIGEST` (csonkolt vagy rosszul formált digestérték); `INCOMPLETE_CLOSURE` (egy **statikusan feloldható** lezárásbeli elem hiányzik a jegyzékből); `UNBOUND_DEPENDENCY` (nem tartalom-azonosított függőség); `RUNTIME_IDENTITY_MISMATCH` (futási azonosság sérül: a betöltött vagy elindított elem azonossága eltér a jegyzéktől, vagy **dinamikusan**, a statikus lezáráson kívül betöltött elem, R-D.21); `UNDECLARED_INPUT` (R-D.22); `UNREACHABLE_SOURCE` (elérhetetlen forrás); `UNINTERPRETABLE_POLICY` (R-P.7). A hibát nem szabad „nincs digest" vagy üres érték formájában kezelni, mert a fogyasztó azt pozitív döntésként értelmezhetné; és nem szabad `DENY`-ként rögzíteni (R-D.17). |
 
 ### 6.3 Ellenőrzés a fogyasztónál
 
 | Azonosító | Követelmény |
 |---|---|
 | R-D.19 | A fogyasztó (vagy a verifier) a digestet **ugyanezen normatív szabályok szerint újraképzi** a hiteles forrásból (R-V.5), és a kibocsátó közölte értéket nem tekinti bizonyítéknak. |
-| R-D.20 | **Független implementációk egyezése.** A normatív szabályoknak legalább két, egymástól független implementációja MUST megegyezzen a teljes konformanciateszt-készleten: a **pozitív** vektorokon azonos digestet adjon; a **negatív** vektorokon **azonos elutasítási eredményt és azonos normatív hibakategóriát** (R-D.18) adjon (nem digestet, mert elutasításnál digest nem képződik). Az egy implementáció által definiált kanonikus alak, amelyet más nem tud megismételni, nem normatív szabály. |
+| R-D.20 | **Független implementációk egyezése, három vektorkategóriában.** A normatív szabályoknak legalább két, egymástól független implementációja MUST megegyezzen a teljes konformanciateszt-készleten, a vektorkategóriának megfelelően: **(1) pozitív vektorok:** azonos digest; **(2) érzékenységi vektorok** (a bemenetpárt mindkét implementáció *elfogadja*, de a két bemenet digestje *eltér*): minden implementáción belül a párhoz tartozó digestek eltérnek, **és** implementációk között a megfelelő digestek azonosak; **(3) elutasítási vektorok:** azonos elutasítási eredmény és azonos normatív hibakategória (R-D.18), nem digestegyezés, mert elutasításnál digest nem képződik. Egy elutasítási vektorhoz pontosan egy elvárt hibakategória tartozik. Az egy implementáció által definiált kanonikus alak, amelyet más nem tud megismételni, nem normatív szabály. |
 
 ---
 
@@ -139,11 +139,13 @@ Az **N3** (`policy-boundary-spec.md`) azt rögzítette, *mi* tartozik az állapo
 | T-P3 | Rendezetlen halmaz elemeinek permutálása | azonos digest | R-D.5, 3.2 |
 | T-P4 | A bejárási sorrend változtatása (a tárolórendszer felsorolási sorrendje) | azonos digest | R-D.5 |
 | T-P5 | Kézzel számított aranyvektorok minden elemtípusra (S, B, P, C, jegyzékelem, jóváhagyási hatókör, összetett kötés) | a vektor szerinti digest | R-D.8, R-D.11 |
-| T-P6 | Két független implementáció egyezése: a **pozitív** aranyvektorokon azonos digest; a **negatív** vektorokon (T-N8–T-N12, T-N16, T-N19, T-N20, T-N23–T-N26) azonos elutasítási eredmény és azonos normatív hibakategória (R-D.18), nem digestegyezés | azonos eredmény / azonos kategória | R-D.20 |
+| T-P6 | Két független implementáció egyezése a három vektorkategóriában (R-D.20): **(1)** a pozitív aranyvektorokon azonos digest; **(2)** az **érzékenységi vektorokon** (T-N1–T-N6, T-N13–T-N15, T-N18, T-N22, T-N27) az implementációk a bemenetpárokat elfogadják, a páron belüli digestek eltérnek, és az implementációk között a megfelelő digestek azonosak; **(3)** az **elutasítási vektorokon** (T-N7–T-N12, T-N16, T-N17, T-N19–T-N21, T-N23–T-N26) azonos elutasítási eredmény és a 7.2 táblázat szerinti, egyértelmű normatív hibakategória | azonos eredmény / azonos kategória | R-D.20 |
 | T-P7 | Újsor- és határoló-tartalmú név, hosszprefixes kódolással | érvényes, a vektor szerinti digest | R-D.6 |
 | T-P8 | Átnevezés: mindkét név az elemben | a két név a digestben | 5.1 |
 
 ### 7.2 Negatív és érzékenységi tesztek (eltérő bemenet → eltérő digest, vagy elutasítás)
+
+A T-N tesztek vektorkategóriái (R-D.20): **érzékenységi** (elfogadott bemenetpár, eltérő digest): T-N1–T-N6, T-N13–T-N15, T-N18, T-N22, T-N27; **elutasítási** (egyetlen elvárt hibakategóriával): T-N7–T-N12, T-N16, T-N17, T-N19–T-N21, T-N23–T-N26. A T-P1–T-P5, T-P7, T-P8 pozitív vektorok.
 
 | Azonosító | Teszt | Várt | Követelmény |
 |---|---|---|---|
@@ -153,21 +155,21 @@ Az **N3** (`policy-boundary-spec.md`) azt rögzítette, *mi* tartozik az állapo
 | T-N4 | Összefűzési kétértelműség: `("a\nb","c")` kontra `("a","b\nc")`; `("ab","c")` kontra `("a","bc")` | eltérő digest | R-D.6 |
 | T-N5 | Üres, hiányzó és `null` érték | három különböző digest | R-D.7 |
 | T-N6 | Azonos bájtok más típuscímkével (S kontra P kontra C) | eltérő digest | R-D.8 |
-| T-N7 | Típusok közti összetévesztés: egy P-digest S helyén a fogyasztónál | elutasítás | R-D.9 |
-| T-N8 | Ismeretlen séma-verzió; ismeretlen algoritmus | elutasítás | R-D.10, R-D.1 |
-| T-N9 | Csonkolt digest; előtag-összevetés | elutasítás | R-D.2, R-D.3 |
-| T-N10 | Ismétlődő kulcs a leképezésben; ismétlődő elem a halmazban | elutasítás, digest nélkül | R-D.17, 3.2 |
-| T-N11 | Érvénytelen kódolású szöveg | elutasítás, digest nélkül | 3.2, R-D.17 |
-| T-N12 | Ismeretlen vagy nem támogatott típus | elutasítás | 3.2 |
+| T-N7 | Típusok közti összetévesztés: egy P-digest S helyén a fogyasztónál | elutasítás, `TAG_MISMATCH` | R-D.9 |
+| T-N8 | Ismeretlen séma-verzió **(vektor a)**; ismeretlen algoritmus **(vektor b)** | elutasítás: (a) `UNKNOWN_VERSION`; (b) `UNKNOWN_ALGORITHM` | R-D.10, R-D.1 |
+| T-N9 | Csonkolt digest; előtag-összevetés | elutasítás, `MALFORMED_DIGEST` | R-D.2, R-D.3 |
+| T-N10 | Ismétlődő kulcs a leképezésben; ismétlődő elem a halmazban | elutasítás, digest nélkül, `DUPLICATE` | R-D.17, 3.2 |
+| T-N11 | Érvénytelen kódolású szöveg | elutasítás, digest nélkül, `NONCANONICAL` | 3.2, R-D.17 |
+| T-N12 | Ismeretlen vagy nem támogatott típus | elutasítás, `NONCANONICAL` | 3.2 |
 | T-N13 | Sorvég: azonos tartalom CRLF és LF sorvéggel | **eltérő** digest (nincs implicit átalakítás) | 3.2, R-D.16 |
 | T-N14 | Unicode: ugyanannak a karakternek két kódolási alakja a névben | **eltérő** digest (nincs implicit normalizálás) | 3.2, R-D.15 |
 | T-N15 | Szóköz vagy megjegyzés hozzáadása a policy **forrásszövegéhez**, a feloldott logikai érték változatlanul hagyásával (nincs definiált egyenértékűségi szabály) | **eltérő** kötés (a forrásszöveg nyers digestje eltér); érvénytelenítés | R-D.15 |
-| T-N16 | A jegyzékből hiányzó, de betöltött függőség | `NO-DECISION`, `INCOMPLETE_CLOSURE` vagy `RUNTIME_IDENTITY_MISMATCH` | R-D.14, R-D.21 |
-| T-N17 | Nem tartalom-azonosított (mozgó) függőség a lezárásban | kötetlen tényező, PARTIAL / OPEN | R-D.13 |
+| T-N16 | Egy **statikusan feloldható** lezárásbeli függőség hiányzik a jegyzékből (de az ellenőrző betölti) | `NO-DECISION`, `INCOMPLETE_CLOSURE` | R-D.14 |
+| T-N17 | Nem tartalom-azonosított (mozgó) függőség a lezárásban | `NO-DECISION`, `UNBOUND_DEPENDENCY` (az ilyen ellenőrző megfelelősége PARTIAL / OPEN, R-D.13) | R-D.13 |
 | T-N18 | A teljességvizsgálat logikájának gyengítése | eltérő C digest | R-C.6, R-D.12 |
-| T-N19 | A policy ismeretlen kulccsal | elutasítás | R-P.7, R-D.17 |
-| T-N20 | Elérhetetlen külső forrás | elutasítás, digest nélkül | R-P.6, R-D.17 |
-| T-N21 | A `NO-DECISION` megkülönböztetése a `DENY`-tól és a „nincs digest" értéktől: nem kanonizálható bemenetnél a kimenet `NO-DECISION` kategóriával, nem `DENY`, és nem üres érték | a kimenet `NO-DECISION`, a kategória rögzített | R-D.17, R-D.18 |
+| T-N19 | A policy ismeretlen kulccsal | elutasítás, `UNINTERPRETABLE_POLICY` | R-P.7, R-D.17 |
+| T-N20 | Elérhetetlen külső forrás | elutasítás, digest nélkül, `UNREACHABLE_SOURCE` | R-P.6, R-D.17 |
+| T-N21 | A `NO-DECISION` megkülönböztetése a `DENY`-tól és a „nincs digest" értéktől: nem kanonizálható bemenetnél a kimenet `NO-DECISION`, nem `DENY` és nem üres érték | `NO-DECISION`, `NONCANONICAL` | R-D.17, R-D.18 |
 | T-N22 | Az összetett kötésben egy elemdigest cseréje | eltérő összetett digest; az eltérés helye azonosítható | R-D.11 |
 | T-N23 | Az ellenőrző a futás **közben, dinamikusan** tölt be a jegyzékben nem szereplő elemet (az induláskori ellenőrzés után) | `NO-DECISION`, `RUNTIME_IDENTITY_MISMATCH` | R-D.21(a) |
 | T-N24 | Az ellenőrző **külső programot indít**, amely nem jegyzékelem, vagy a tartalma eltér a jegyzék digestjétől | `NO-DECISION`, `RUNTIME_IDENTITY_MISMATCH` | R-D.21(b) |
@@ -198,7 +200,7 @@ A tesztkészlet csak akkor bizonyít, ha tudjuk, hogy bukni képes. **Minden neg
 | T-N13 | implicit sorvég-átalakítás a beolvasásnál | T-N13 bukik (azonos digest) |
 | T-N14 | implicit Unicode-normalizálás | T-N14 bukik (azonos digest) |
 | T-N15 | csak a feloldott érték digestje kötött, a forrásszöveg nyers digestje nem | T-N15 bukik (azonos kötés) |
-| T-N16 | a statikus jegyzék teljes, de a betöltés-ellenőrzés hiányzik | T-N16 bukik (nincs hiba) |
+| T-N16 | a jegyzék elhagy egy statikusan feloldható függőséget, és sem a feloldás, sem az ellenőrzés nem észleli | T-N16 bukik (nincs hiba) |
 | T-N17 | a mozgó függőség elfogadott tartalom-azonosító nélkül | T-N17 bukik |
 | T-N18 | a teljességvizsgálat gyengítése nem változtatja a C digestet (a logika nincs a jegyzékben) | T-N18 bukik |
 | T-N19 | az ismeretlen kulcs figyelmen kívül hagyása | T-N19 bukik |
@@ -232,7 +234,7 @@ A hibamodellek lefedettsége a készlet teljes (T-N1–T-N27, T-P1–T-P8) — e
 
 | N3 elem vagy követelmény | A digest-képzés megfelelője |
 |---|---|
-| P: a hatályos (feloldott) policy (R-P.4) | A hatályos-policy jegyzék (5.1): a feloldott érték kanonikus digestje, nem a forrásszöveg |
+| P: a hatályos (feloldott) policy (R-P.4) | A hatályos-policy jegyzék (5.1): **mindkét digest kötött**: a forrásszöveg nyers bájtjainak digestje és a feloldott érték kanonikus digestje. A forrásszöveg változása érvénytelenít, amíg nincs igazolt egyenértékűségi szabály (R-D.15) |
 | Az öröklött forrás bizalmi és szemantikai attribútumai (R-P.15) | A jegyzékbejegyzés attribútum-mezői; bármelyik változása más digest (R-D.15 szerint nincs egyenértékűség) |
 | C: az ellenőrző és lezárása (R-P.5) | Az implementációs jegyzék és a teljességigazolás (R-D.12–R-D.14) |
 | Külső bemenet kötése: hely, ellenőrzés, érvénytelenítés (R-P.14) | A „hely" a digest elemtípusát adja (S, B vagy P); az „ellenőrzés" a fogyasztói újraképzés (R-D.19); az „érvénytelenítés" a digest eltérése |
