@@ -21,7 +21,7 @@ A dokumentum részei élesen elkülönülnek:
 
 | Azonosító | Követelmény |
 |---|---|
-| R-P.1 | Minden **döntést befolyásoló tényezőnek** (DBT) az állapotkötésen belül MUST lennie: vagy az állapot-négyes egyik elemében, vagy a használat pillanatában kötelezően értékelt (nem gyorsítótárazott) tényezőként (R-P.12). Olyan DBT, amely sem a kötésben, sem a használati értékelésben nincs, nem megengedett. |
+| R-P.1 | Minden **döntést befolyásoló tényezőnek** (DBT) az állapotkötésen belül MUST lennie: vagy az állapot-négyes egyik elemében, vagy a használat pillanatában kötelezően értékelt (nem gyorsítótárazott) tényezőként (R-P.12, R-P.16). Olyan DBT, amely sem a kötésben, sem a használati értékelésben nincs, nem megengedett. |
 | R-P.2 | **Osztályozási teszt.** Egy tényező DBT, ha a többi tényező változatlansága mellett az ő megváltozása a döntés kimenetét, az indokolását vagy a döntés felhasználhatóságát megváltoztathatja. A tesztet az ellenőrző *viselkedésére* kell alkalmazni, nem a szándékolt szerepére: ami az ellenőrző számára olvasott bemenet, az DBT, akkor is, ha dokumentációnak szánták. |
 | R-P.3 | **Kihagyás csak indoklással.** Egy tényező kizárása a kötésből MUST megnevezett és indokolt legyen (5. szakasz). A fel nem sorolt tényező alapértelmezésben **belül** van, nem kívül. |
 
@@ -197,7 +197,7 @@ Az N3 e javaslat elfogadásakor tekinthető lezártnak. A következők az N3 hat
 
 | # | Kérdés | Érintett |
 |---|---|---|
-| N3.1 | **A fogyasztói konfiguráció védelme.** Ki módosíthatja, és hogyan védett a tárgy szerzőjétől? A kikényszerítés konfigurációja megkerülhető, ha a szerző változtathat rajta. A védelem mechanizmusa nem mért. | R-P.12, R-I.4 |
+| N3.1 | **A fogyasztói konfiguráció védelme.** Ki módosíthatja, és hogyan védett a tárgy szerzőjétől? A kikényszerítés konfigurációja megkerülhető, ha a szerző változtathat rajta. A védelem és a megkerülhetetlenség (R-P.16 a–c) mechanizmusa nem mért; a privilegizált szereplő maradék kockázata nevesítendő. | R-P.12, R-P.16, R-I.4 |
 | N3.2 | **A jóváhagyók deklarált halmaza és az élő tagság időzítése.** Ha a jóváhagyó tagsága a jóváhagyási aktus után szűnik meg, a már rögzített jóváhagyás érvényes marad-e? Az aktus idején fennálló jogosultság rögzítése és a későbbi változás kezelése. | R-P.10, R-V.12, R-I.7 |
 | N3.3 | **A külső forrás hitelessége.** Mi teszi egy külső szabályforrást feljogosítottá és a tárgy szerzőjétől függetlenné; hogyan ellenőrizhető az R-I szerint adatforrásra. | R-P.6 |
 | N3.4 | **A C mélysége.** A függőségi zárlat és a futtatókörnyezet mely elemei viselkedést befolyásolók (R-P.2), és mi a határ. | R-P.5, N5, N1 |
@@ -226,7 +226,9 @@ Függőségek: az N3 előfeltétele az **N5** tervezési részének és az **N1/
 |---|---|---|---|---|
 | A policy határa a feloldott (effektív) policy, nem a policy fájl | Normatív állítás | 2.1, 2.3 | Tartalmi review | A „feloldott érték az egyetlen mérce" az N5-ben kanonizálandó |
 | A deklarált jogosultság P-ben, az élő állapot használati értékelésben van | Normatív állítás | 4. szakasz | Tartalmi review | A két réteg határa (N3.2) nincs lezárva |
-| A fogyasztói konfiguráció kizárható a kötésből, ha a használatkor értékelt | Normatív állítás | R-P.12, 5. szakasz | Tartalmi review | A konfiguráció védelme nem mért (N3.1) |
+| A fogyasztói konfiguráció kizárható a kötésből, ha a használatkor értékelt **és megkerülhetetlen** | Normatív állítás | R-P.12, R-P.16, 5. szakasz | Tartalmi review | A megkerülhetetlenség és a konfiguráció védelme nem mért (N3.1) |
+| A snapshot önmagában nem állapotkötés; a kötéshez hely, ellenőrzés és érvénytelenítési feltétel kell | Normatív állítás | R-P.14, 2.3.1 | Tartalmi review | A kötési hely nélküli bemenet (dinamikus állapot) kötetlen, PARTIAL / OPEN |
+| Az örökölt forrás attribútumainak változása érvénytelenít akkor is, ha a feloldott érték változatlan | Normatív állítás | R-P.15, 2.3.2 | Tartalmi review | A releváns feltételek köre megvalósításfüggő (N3.3, N5) |
 | A scratch checker P-je és C-je jelenleg nem kötött a check-run kimenetben | Mért (jelentés) | Jelentés 3.6, `raw/app/integrity-app.yml.txt` | A jelentés és a workflow olvasása | A besorolás (6. szakasz) elemzés |
 | A scratch policy forrása a közölt BASE-hez nem garantáltan tartozik | Mért/olvasott, PARTIAL / OPEN | Jelentés 3.6 | A workflow checkout-lépése | Az eltérés bekövetkezése nem mért |
 | A jóváhagyás HEAD- és digest-kötött | Mért (scratch) | A4/A5, PR29, PR30 | Jelentés 3.2 | Csak a mért eseteken |
