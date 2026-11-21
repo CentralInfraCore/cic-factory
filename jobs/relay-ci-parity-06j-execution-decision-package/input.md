@@ -21,6 +21,7 @@ A #81 lezárta a feltáró mérések tervét (26 mérési tétel, 1 dokumentált
 - NEM fogadható el: ajánlás indoklás nélkül ≠ döntési csomag; az ajánlás a tulajdonos döntése helyett nem tekinthető meghozottnak.
 - NEM fogadható el: a becsült erőforrásigény mértként való jelentése; a becslés ≠ mérés.
 - NEM fogadható el: hitelesítő adat, kulcs vagy token átadása nekem a csomag részeként; a csomag a kulcs nem hozzám kerülésére épül.
+- NEM fogadható el: a döntési csomag megléte ≠ működik; a jóváhagyott ajánlás ≠ sikeres mérés, és a tulajdonosi előkészítés ≠ elvégzett végrehajtás.
 - NEM fogadható el: bármilyen írási művelet a mérési környezeten (repó, App, beállítás) a döntés előtt.
 - NEM fogadható el: a dokumentált (de ebben a sessionben nem ellenőrzött) platformviselkedés mértként való jelölése.
 
