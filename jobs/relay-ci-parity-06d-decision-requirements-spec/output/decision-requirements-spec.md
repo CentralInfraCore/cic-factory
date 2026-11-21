@@ -199,7 +199,7 @@ Egyik sem tekinthető igazoltnak. A teljes, 11 tételes lista a mérési jelent�
 
 | Jelentés § | Nyitott eset | Érintett követelmény |
 |---|---|---|
-| 7/1 | App-kiesés teljes köre: az **installáció felfüggesztése** (csak a tokenhiba mért) | R-I.5 |
+| 7/1 | App-kiesés teljes köre: az **installáció felfüggesztése** (csak a tokenhiba mért) | R-I.5, R-I.7 |
 | 7/2 | Fork-PR és második identitás | R-I.1–R-I.3 |
 | 7/3 | E0: a tényleges token-hatókör túlnyújtási kísérlete | R-I.2, R-I.4 |
 | 7/2 (E1/E2) | A kulcs és a token további csatornái (E1 csak részben, E2 nem bizonyított) | R-I.2 |
@@ -241,6 +241,10 @@ Egyik sem tekinthető igazoltnak. A teljes, 11 tételes lista a mérési jelent�
 | A digest rögzítése nem bizonyítja az érvényességet | Normatív állítás (3.2) | Ez a specifikáció; a 3.6 jelentés-szakasz mutatja a hiányt | Tartalmi review | – |
 | A közölt BASE SHA és a ténylegesen használt checker/policy azonossága | **Nem igazolt (PARTIAL / OPEN)** | Jelentés 3.6, `raw/app/integrity-app.yml.txt` | Scratch mérés (J1–J3, külön lépés) | A rés a mért megvalósításban fennáll |
 | Az ellenőrző-digest bizalmi horgonya megoldható | **Nem igazolt** | – | N1 | Körkörösség, bootstrap |
+| Az állapotkötés a végrehajtás pillanatában is fennáll (R-V.11) | **Nem igazolt (PARTIAL / OPEN)**; dokumentált maradék ablak nem teljesítés | Jelentés 7/6 | Scratch mérés (külön lépés) | Döntés önmagában nem jogosít fel végrehajtásra, amíg OPEN |
+| Az elemkészlet teljessége darabszámon túl igazolható (R-C.1) | **Nem igazolt** (darabszám-részmechanizmus mért, hiányzó+duplikált eset nem) | N6 | Scratch mérés | Azonos darabszámú hiányos lista |
+| A jogosultság-visszavonás a felhasználáskor érvényesül (R-I.7) | **Nem igazolt** | N7, 7/1 | Scratch mérés (installáció-felfüggesztés) | Visszavont kibocsátó döntése felhasználható |
+| A három követelmény együtt sem bizonyítja az ellenőrző szemantikai helyességét (R-X.2) | Normatív állítás | 4.1 | Tartalmi review | Az ellenőrző helyessége külön bizonyítandó |
 | A GitHub App, a ruleset és az Actions megfelelő megvalósítási eszköz | Részben mért (R-I, R-V S/B, R-C), tájékoztató | 5.2 szakasz | – | R-V P/C kötése még nincs |
 
 ---
