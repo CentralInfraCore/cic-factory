@@ -44,12 +44,13 @@ Kulcsszavak: a MUST / MUST NOT a követelmény kötelező voltát jelzi, a SHOUL
 
 | Azonosító | Követelmény |
 |---|---|
-| R-I.1 | A fogyasztónak a döntés fogadásakor ellenőriznie MUST, hogy a döntést kibocsátó identitás a feljogosított kibocsátók halmazába tartozik. |
+| R-I.1 | A fogyasztónak MUST ellenőriznie, hogy a döntést kibocsátó identitás a feljogosított kibocsátók halmazába tartozik, **a döntés fogadásakor és a következményes művelet felhasználási pillanatában is** (R-I.7). |
 | R-I.2 | A feljogosítottság és a kibocsátó azonosítása MUST olyan tulajdonságon alapulni, amelyet a tárgy szerzője nem tud előállítani vagy módosítani. Az azonosító, amelyet a döntés vagy a tárgy maga állít (például egy név vagy felirat), önmagában nem elegendő. |
 | R-I.3 | Az identitás ellenőrzése MUST a fogyasztó oldalán, a kibocsátótól független ponton történjen. A kibocsátó önbevallása nem bizonyíték. |
 | R-I.4 | A feljogosított kibocsátók halmaza (és annak módosítása) MUST ugyanolyan védelem alatt álljon, mint a policy (R-V.2): a tárgy szerzője nem módosíthatja. |
 | R-I.5 | A feljogosított kibocsátó hiánya (nem elérhető, érvénytelen, nem azonosítható) MUST negatív kimenetet adjon: pozitív döntés nem létezhet. A hiány nem azonos a „nincs ellenkező döntés"-sel. |
 | R-I.6 | Azonos tartalmú vagy azonos nevű döntés, amelyet nem feljogosított identitás bocsátott ki, MUST NOT helyettesítheti a feljogosított kibocsátó döntését. |
+| R-I.7 | **Visszavonás és felfüggesztés.** A feljogosítottság **időben változó** tulajdonság. Ha a kibocsátó jogosultságát a döntés kibocsátása után, de a felhasználás előtt visszavonták vagy felfüggesztették, a döntés **történeti bizonyítékként megmarad** (nem törlendő, nem hamis), de a következményes művelet engedélyezésére MUST NOT használható; a művelethez új döntés kell feljogosított kibocsátótól. Ha a kibocsátó jogosultsági állapota a felhasználás pillanatában nem állapítható meg, a kimenet negatív (fail-closed). A jogosultság helyreállítása a visszavonás vagy felfüggesztés ideje alatt kibocsátott (vagy akkor jogosulatlan kibocsátótól származó) döntést MUST NOT visszamenőleg érvényesíti; a helyreállított kibocsátó döntését az aktuális felhasználáskor R-I.1 és R-V újra értékeli. |
 
 **Ami nem része ennek a követelménynek:** hogy a feljogosított kibocsátó döntése helyes-e (ezt R-V és R-C, valamint az ellenőrző helyessége fedi), és hogy a kibocsátó kulcsa vagy tokenje milyen csatornán sérülhet (nyitott kérdés, 7. szakasz).
 
@@ -76,7 +77,7 @@ A digest rögzítése önmagában **nem** bizonyítja az érvényességet. Az é
 | R-V.4 | **Ellenőrzési pont.** A fogyasztó a következményes művelet előtt, azzal egy ellenőrzésben MUST összevesse a döntés `T_d` négyesét az aktuális `T_now` négyessel. |
 | R-V.5 | **`T_now` forrása.** A `T_now` elemeit a fogyasztó MUST a hiteles forrásból, a kibocsátótól függetlenül számolja vagy olvassa (S és B a tárgy és az alap aktuális állapota; P a policy forrásának aktuális tartalma). A kibocsátó közölte érték nem szolgálhat `T_now`-ként. |
 | R-V.6 | **Az ellenőrző azonosságának kötése (C).** A `T_d.C` elemet a fogyasztó MUST egy **elvárt ellenőrző-digesttel** vesse össze, amelynek forrása független a kibocsátott döntéstől és a tárgy szerzőjétől. Az ellenőrző saját maga által közölt digestje önmagában körkörös, ezért nem elégséges (lásd 7.1). |
-| R-V.7 | **Egyezés:** a döntés akkor érvényes, ha `T_d.S = T_now.S`, `T_d.B = T_now.B`, `T_d.P = T_now.P` és `T_d.C = elvárt C`. |
+| R-V.7 | **Egyezés:** az állapotkötés akkor áll fenn, ha `T_d.S = T_now.S`, `T_d.B = T_now.B`, `T_d.P = T_now.P` és `T_d.C = elvárt C`. Az egyezés **szükséges, de nem elégséges**: az állapotkötés érvényességét igazolja, a döntés elfogadhatóságát nem (lásd 4.1). |
 
 ### 3.3 Eltérés következménye
 
@@ -85,7 +86,7 @@ A digest rögzítése önmagában **nem** bizonyítja az érvényességet. Az é
 | R-V.8 | Bármelyik elem eltérése esetén a döntés MUST érvénytelennek minősüljön, és a következményes művelet MUST NOT engedélyezett legyen a régi döntésre hivatkozva. Az érvénytelen döntés **nem negatív döntés** (nem „elutasítva"), hanem **hiányzó érvényes döntés**: a művelet blokkolt, amíg érvényes döntés nem készül. |
 | R-V.9 | Az érvénytelenítés után a művelet engedélyezéséhez MUST új döntés szülessen az aktuális `T_now`-ra. Korábbi döntés újrahasználata, vagy a változás kézi felülbírálata nem helyettesíti ezt. |
 | R-V.10 | Ha a `T_now` valamely eleme nem állapítható meg (hiteles forrás nem elérhető), a következmény ugyanaz, mint az eltérésnél (fail-closed): a művelet blokkolt. |
-| R-V.11 | Ha az ellenőrzés (R-V.4) és a következményes művelet közti időablakban az állapot változhat, a megvalósításnak MUST kimondania, hogy az ablakot hogyan zárja le, vagy MUST dokumentálnia a maradék ablakot. Az ablak elhallgatása nem megfelelő (lásd 7.2). |
+| R-V.11 | **Az állapotkötésnek a művelet végrehajtásakor is fenn MUST állnia.** Az R-V.4 ellenőrzés és a következményes művelet közti időablakot a megvalósításnak MUST lezárnia (a művelet atomikusan az ellenőrzött állapothoz kötött, vagy a művelet pillanatában ismételt, azzal egy lépésben végzett ellenőrzés). Ha ez nem garantálható, a megvalósítás megfelelősége az R-V.11-re **PARTIAL / OPEN**, és az ilyen döntés **önmagában nem jogosíthat fel végrehajtásra**: a maradék ablak dokumentálása nem teljesíti a követelményt, csak a hiányt rögzíti (lásd 7.2). |
 
 ### 3.4 Jóváhagyás és érvényesség
 
@@ -101,12 +102,19 @@ A digest rögzítése önmagában **nem** bizonyítja az érvényességet. Az é
 
 | Azonosító | Követelmény |
 |---|---|
-| R-C.1 | Az ellenőrzőnek MUST megállapítania, hogy a bemenet teljes-e, a bemenet forrásától független módon: a feldolgozott bemenet mennyiségét/elemkészletét össze kell vetni a forrás által közölt, a teljességet jelző adattal (például elvárt darabszám). |
+| R-C.1 | Az ellenőrzőnek MUST **bizonyíthatóan** megállapítania, hogy a feldolgozott bemenet az **elvárt bemeneti halmaz** teljes egésze, a bemenet forrásának önbevallásától függetlenül. A bizonyíték az elvárt halmaz tartalmára (nem csak a méretére) vonatkozik. A darabszám-egyezés **önmagában nem elegendő** (egy elem hiányozhat, miközben egy másik duplikálva szerepel, és a darabszám változatlan), csak egy lehetséges részmechanizmus; olyan mechanizmus is megfelel, amely az elemkészlet azonosságát igazolja (például az elemek és az elvárt halmaz egyezése, vagy a halmaz hiteles összegző digestje). |
 | R-C.2 | Ha a teljesség nem állapítható meg, vagy a bemenet hiányos, az ellenőrzőnek MUST negatív kimenetet adnia, külön azonosítható okkal (a mért megvalósításban `INCOMPLETE_CHANGESET`). Pozitív döntés nem születhet. |
 | R-C.3 | Az ellenőrző nem támaszkodhat arra, hogy a bemeneti forrás hibát jelez. Az olyan forrás, amely a korlátjánál csendben csonkít, megengedett, ha az ellenőrző a csonkolást a teljességvizsgálatból felismeri. |
-| R-C.4 | **Határ:** a forrás ismert korlátja (például maximálisan visszaadható elemszám) elérésekor vagy átlépésekor a teljesség nem igazolható, ezért a kimenet negatív (a korláton belüli, igazolható teljes bemenet még elfogadható). |
+| R-C.4 | **Forráskorlát:** ha a forrás ismert korlátja (például maximálisan visszaadható elemszám) elérésekor a forrás csonkíthat, a teljességet a korlát elérése nem igazolja; a kimenet negatív, **hacsak a teljesség más, hiteles mechanizmussal nem igazolható**. A korlát elérése önmagában nem általános elutasítási ok: a konkrét küszöb (például a scratch ellenőrző 3000-es határa) a megvalósítás tulajdonsága, nem a követelményé. |
 | R-C.5 | A bemenet beolvasása közben bekövetkező hiba (lapozási hiba, átmeneti hiba, a tárgy mozgása) MUST negatív kimenetet adjon; részeredményből pozitív döntés nem születhet. |
 | R-C.6 | A teljességvizsgálat maga is az ellenőrző része: a változása a `C` digestet változtatja (R-V), ezért a teljességvizsgálat gyengítése érvényességi eltérésként jelenik meg. |
+
+### 4.1 Együttes teljesülés (R-X)
+
+| Azonosító | Követelmény |
+|---|---|
+| R-X.1 | Egy döntés a következményes művelet engedélyezésére akkor fogadható el, ha **R-I, R-V és R-C együttesen** teljesül a felhasználás pillanatában. Egyik követelmény teljesülése sem pótolja a másikét (5.4). |
+| R-X.2 | A három követelmény teljesülése **nem bizonyítja az ellenőrző szemantikai helyességét**: az állapot-négyes egyezése azt mutatja, hogy *ugyanaz* az ellenőrző döntött, nem azt, hogy az *helyesen* döntött. Az ellenőrző helyességét külön bizonyíték (például megfelelőségi és hibabeültetéses tesztek) igazolja, ez e specifikáció hatókörén kívül esik. |
 
 ---
 
@@ -166,7 +174,7 @@ A ruleset, az Actions, az App és a `pull_request_target` nem követelmény. Ha 
 | Mért tulajdonság | Eset | Korlát |
 |---|---|---|
 | **Eredeti hiba:** 3002 fájlos PR-nél a files API 3000 fájlt adott, a védett fájl kimaradt, hamis SUCCESS | PR37 | ellenpélda (az eredeti bizonyíték megőrizve) |
-| Javított ellenőrző: 2999 fájl SUCCESS; 3000, 3001 DENY; 5 fájl SUCCESS; PR37 újranyitva DENY | PR40–PR43, PR37 | Valós Actions-futás; a hibaágak (eltérés, lapozás, API-hiba) csak **lokális mock** |
+| Javított ellenőrző: 2999 fájl SUCCESS; 3000, 3001 DENY; 5 fájl SUCCESS; PR37 újranyitva DENY | PR40–PR43, PR37 | Valós Actions-futás; a hibaágak (eltérés, lapozás, API-hiba) csak **lokális mock**. A 3000-es küszöb a scratch megvalósítás tulajdonsága; a listázott fájlok és a `changed_files` számláló egyezése darabszám-alapú részmechanizmus, **a hiányzó+duplikált elem esetet nem mértük** (N6) |
 | A védett útvonalról átnevezés a régi és az új nevet is vizsgálja | PR28 (A6), PR22 | A6-nál a `verify` is bukott, az App-check önálló hatása nem izolált |
 
 ---
@@ -184,6 +192,8 @@ Egyik sem tekinthető igazoltnak. A teljes, 11 tételes lista a mérési jelent�
 | N3 | **A policy (P) pontos határa.** Mi tartozik a policyhoz (a policy fájl, a védett halmaz, az `approvers` lista, a feljogosított kibocsátók halmaza); a digest mit fed le. | R-V.1, R-I.4 |
 | N4 | **Az érvénytelenítés megvalósítása.** R-V.8 szerint az érvénytelen döntés hiányzó döntés. Hogyan válik ez a platformon blokkoló állapottá anélkül, hogy az új döntés automatikusan újra kibocsátódna (és ezzel a felülbírálás útja nyílna meg). | R-V.8, R-V.9 |
 | N5 | **Digest-kanonizálás.** Mit jelent a tartalom-digest a policy és az ellenőrző esetében (kanonikus bájtsorrend, többfájlos implementáció, függőségek). Az ellenőrző digestje fedi-e a függőségeit és a futtatókörnyezetet. | R-V.1, R-V.6 |
+| N6 | **Darabszámon túli teljességigazolás (R-C.1).** A scratch ellenőrző a listázott fájlok és a `changed_files` számláló egyezését vizsgálja; hiányzó és duplikált elem azonos darabszám mellett nem mért. Milyen hiteles mechanizmus igazolja az elemkészlet azonosságát (R-C.1), és mikor teszi lehetővé a forráskorlát feletti elfogadást (R-C.4). | R-C.1, R-C.4 |
+| N7 | **Jogosultság-visszavonás időzítése (R-I.7).** Hogyan állapítható meg a kibocsátó aktuális jogosultsága a felhasználás pillanatában, és mi a következmény, ha ez a platformon nem lekérdezhető (az installáció felfüggesztése nem mért, 7/1). | R-I.1, R-I.7 |
 
 ### 7.2 A mérési jelentés 7. szakaszából, a követelményekkel összekötve
 
