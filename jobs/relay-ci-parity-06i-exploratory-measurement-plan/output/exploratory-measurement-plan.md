@@ -24,11 +24,22 @@ Forrás: a #76 követelmények (R-I, R-V, R-C, R-X), a #78 policy-határ (R-P), 
 | **FAIL** | A hipotézis legalább egy esetben **nem** teljesült: a mérés rést talált. A FAIL **érvényes, értékes eredmény**, nem a mérés hibája. Egyetlen, újrajátszható megfigyelés elég hozzá. |
 | **INCONCLUSIVE** | A mérés nem döntött: a pozitív kontroll nem működött; a környezet menet közben megváltozott; az eredmény nem reprodukálható; a platform viselkedése kívülről nem figyelhető meg; vagy a tétel előfeltétele (tulajdonosi lépés) nem teljesült. |
 
+**Három szint: észlelés ≠ érvénytelenítés ≠ kikényszerítés.** Az állapotváltozással, visszajátszással vagy visszavonással foglalkozó tételeknél (M-A1, M-A4, M-C2, M-C4) az ítélet **három külön megfigyelésből áll**, és mindhármat külön rögzíteni kell:
+
+| Szint | Kérdés |
+|---|---|
+| **Ész** (észlelés) | Az eltérés a kimenetből, a naplóból vagy a platform állapotából **észlelhető** |
+| **Érv** (érvénytelenítés) | A döntés az eltérés miatt **érvénytelenné válik** (a döntés nem használható felhatalmazásként) |
+| **Blk** (kikényszerítés) | A következményes műveletet a fogyasztó/a platform **ténylegesen blokkolja** (a merge-kísérlet elutasított) |
+
+**PASS csak akkor adható, ha a Blk teljesül.** Ha az Ész teljesül, de a Blk nem (például az eltérés naplózott, mégis sikeresen végrehajtható a merge), az eredmény **FAIL**, a vektor (Ész/Érv/Blk) rögzítésével: a naplózott eltérés mellett átengedett művelet nem teljesíti a kikényszerítési követelményt (R-V.8, R-V.11).
+
 **Szabályok:** az INCONCLUSIVE-ot nem szabad PASS-ként vagy FAIL-ként jelenteni. A PASS csak úgy állítható, ha a pozitív kontroll működött. A hiányzó kontroll önmagában INCONCLUSIVE. Az eredmény mindig a mért esetekre vonatkozik, nem általánosítható (R-P.13 szellemében: a kötetlen marad PARTIAL/OPEN).
 
 ### 2.2 Pozitív kontroll és negatív esetek
 
 - **Pozitív kontroll (PK):** minden tételnél előre megadott, ismert tulajdonságú eset, amelyen a mérési elrendezésnek a *várt* eredményt kell adnia: egy **ültetett hiba** (a mérés észleli), és egy **ismert jó** eset (a mérés nem jelez hamis riasztást). Ha a PK nem teljesül, a tétel INCONCLUSIVE (a „kapu vakfolt" elve: egy ellenőrzés, amelyről nem mértük, hogy tud-e bukni, nem bizonyít).
+- **A PK két külön, kötelező alpontból áll:** **(U)** ültetett hiba (a mérésnek észlelnie/blokkolnia kell), és **(J)** ismert jó eset (a mérés nem jelezhet hamis riasztást). Mindkettő minden tételnél külön szerepel; ha bármelyik hiányzik vagy nem teljesül, a tétel INCONCLUSIVE. **Egyetlen kivétel az M-A6**: az nem végrehajtható mérés, hanem **dokumentált megfigyelhetőségi korlát** (nincs PK, nincs saját ítélet).
 - **Negatív esetek osztályai** (minden tételnél megnevezve, melyek vonatkoznak rá):
   - **R — visszajátszás:** egy korábban hiteles (zöld, érvényes) bizonyíték vagy művelet újbóli felhasználása megváltozott állapotban.
   - **S — bizonyítékhelyettesítés:** egy másik forrásból, azonosságtól, futásból, committól vagy típusból származó bizonyíték elfogadtatása a kért helyett.
@@ -40,7 +51,7 @@ Forrás: a #76 követelmények (R-I, R-V, R-C, R-X), a #78 policy-határ (R-P), 
 
 - **Determinisztikus tétel:** legalább két, egymástól független futás azonos ítélettel. Eltérés esetén INCONCLUSIVE.
 - **Időzítésfüggő tétel:** az időzítést **ellenőrzött injektálási ponttal** kell rögzíteni (a futó job egy meghatározott ponton vár, a tulajdonos vagy a harness megváltoztatja az állapotot, majd a job folytat), nem véletlen időzítéssel. PASS csak úgy állítható, hogy a platform minden meghatározott injektálási ponton determinisztikusan viselkedett; a „N futásban nem észleltük" **önmagában INCONCLUSIVE**, mert véges mintával a hiány nem bizonyítható.
-- **Belső, kívülről nem injektálható ablak** (pl. a platform belső értékelése és a ref frissítése közti rés): a terv ezt **nem mérhetőnek** jelöli (A6), a várt ítélet INCONCLUSIVE, a maradék kockázat dokumentált.
+- **Belső, kívülről nem injektálható ablak** (pl. a platform belső értékelése és a ref frissítése közti rés): ez **nem mérési tétel**, hanem **dokumentált megfigyelhetőségi korlát** (M-A6). A jelentésben „INCONCLUSIVE (megfigyelhetőségi korlát)" jelöléssel szerepel, a maradék kockázat dokumentált.
 
 ### 2.4 Bizonyíték és rögzítés
 
@@ -65,9 +76,9 @@ Minden tétel mezői: **H** hipotézis (a védő tulajdonság, amelyet PASS eset
 - **H:** a döntés abból az S/B állapotból születik, amelyet a kibocsátó közöl; ha az alapág a job indulása és lefutása között elmozdul, az eltérés észlelhető, vagy a döntés nem használható.
 - **Köv.:** R-V.1, R-V.3 (használt = rögzített), R-V.7, R-V.11; R-P.12.
 - **Elrendezés:** a scratch workflow a közölt `BASE_SHA`-t az eseményből, a checker és a policy-t a job idején az alapág csúcsáról tölti (a korábbi jelentés 3.6 megfigyelése, olvasott). Ellenőrzött injektálási pont: a job a checkout előtt vár; az alapágon új commit jön, amely a policy-t módosítja; a job folytat. Rögzítendő: melyik SHA-ból töltött a checker és a policy; mit közöl a kimenet; a döntés mely állapotra vonatkozik.
-- **PK:** (ültetett) a módosított policy más döntést ad, mint az eredeti, így az eltérés a kimenetből kimutatható; (ismert jó) mozgatás nélküli futás: a checkout SHA = `BASE_SHA`.
+- **PK:** (U) ültetett: a módosított policy más döntést ad, mint az eredeti, így az eltérés a kimenetből kimutatható; (J) ismert jó: mozgatás nélküli futás: a checkout SHA = `BASE_SHA`, a harness nem jelez eltérést.
 - **Negatív:** P (ültetett policy-módosítás), R (az így kapott zöld újrafelhasználása a régi állapotra).
-- **Ítélet:** PASS = a kimenet vagy a platform mindkét esetben azonosítja, hogy a checker/policy SHA ≠ közölt `BASE_SHA`, vagy a döntés ilyenkor nem jön létre. FAIL = a döntés zöld, és a kimenet nem árulja el az eltérést. INCONCLUSIVE = az injektálás nem a megadott ponton történt, vagy a PK nem teljesült.
+- **Ítélet** (a 2.1 három szintje szerint, vektor: Ész/Érv/Blk): **PASS** = az eltérés (checker/policy SHA ≠ közölt `BASE_SHA`) **észlelt, a döntést érvényteleníti, és a merge-kísérlet blokkolt** (Blk). **FAIL** = a Blk nem teljesül; ez akkor is FAIL, ha az eltérés a kimenetből vagy a naplóból észlelhető (Ész), de a döntés mégis mergelhető. A vektor minden esetben rögzítendő. **INCONCLUSIVE** = az injektálás nem a megadott ponton történt, vagy a PK nem teljesült.
 - **Tul.:** nincs (a scratch alapág módosítását a harness végzi, a jogosultságot a tulajdonos előzetesen adja: O-4).
 - **Bemenete:** állapotkötés megoldási terve (J1–J3), N4.
 
@@ -75,7 +86,7 @@ Minden tétel mezői: **H** hipotézis (a védő tulajdonság, amelyet PASS eset
 - **H:** egy döntést befolyásoló külső bemenet (nem fájl a fán) megváltozása érvényteleníti a döntést, vagy a változás kimutatható a használatkor.
 - **Köv.:** R-P.14, R-P.15, R-P.12, R-P.16, R-V.5, R-V.7; R-V.11.
 - **Elrendezés:** a döntést befolyásoló, nem fán lévő bemenetek jegyzéke a scratch workflow-ból (pl. a repó változói, a környezet konfigurációja, az approver-készlet, a platform-oldali szabályok). Mindegyiket külön változtatjuk úgy, hogy a HEAD és a BASE változatlan marad; a zöld check állapotát és a merge-lehetőséget figyeljük.
-- **PK:** egy bemenet, amelynek a megváltoztatása a döntést **bizonyítottan** megváltoztatja (ültetett); egy bemenet, amelynek változása nem hat a döntésre (ismert jó).
+- **PK:** (U) egy bemenet, amelynek megváltoztatása a döntést **bizonyítottan** megváltoztatja; (J) egy bemenet, amelynek változása bizonyítottan nem hat a döntésre.
 - **Negatív:** P, R (a régi zöld a megváltozott bemenet után), D (a bemenet nem olvasható).
 - **Ítélet:** PASS = minden DBT-bemenet változása után a check újraértékelődik, vagy a régi zöld nem elég a merge-hez. FAIL = legalább egy DBT-bemenet változott, és a régi zöld továbbra is elég. INCONCLUSIVE = a bemenetek jegyzéke nem volt teljes (a jegyzék teljessége maga is bizonyítandó: a végrehajtáskor a workflow soronkénti átvizsgálása).
 - **Tul.:** egyes platform-szintű beállítások módosítása (O-4).
@@ -85,7 +96,7 @@ Minden tétel mezői: **H** hipotézis (a védő tulajdonság, amelyet PASS eset
 - **H:** minden meghatározott állapotváltozás, amely a döntést érvényteleníti, a merge-kapunál megállítja a műveletet.
 - **Köv.:** R-V.4, R-V.7, R-V.8, R-V.11.
 - **Elrendezés:** zöld check után egyenként, külön PR-on: (1) HEAD-változás, (2) BASE-változás, `strict` be- és kikapcsolva, (3) a policy fájl változása az alapágon, (4) az approver-készlet változása, (5) a jóváhagyás visszavonása, (6) a required-check készlet változása. Mindegyiknél a merge-állapot (`mergeStateStatus`, merge-kísérlet eredménye) rögzítve, közvetlenül a változás után és ellenőrzött késleltetésekkel.
-- **PK:** (1)–(2) `strict` mellett a korábbi mérés szerint elutasít (PR31, PR34; mért): ezek a mátrix ismert jó oszlopa. Ültetett: egy hamis „változatlan" állapot (nincs változás), ahol a merge-nek át kell mennie.
+- **PK:** (U) ültetett: HEAD-változás `strict` mellett, amelyet a korábbi mérés szerint a platform elutasít (PR31, PR34; mért); (J) ismert jó: változás nélküli PR, amelynek a merge-nek át kell mennie.
 - **Negatív:** R (a régi zöld változás után), D (az állapot nem lekérdezhető).
 - **Ítélet:** minden sorra külön PASS (megállítja) / FAIL (átengedi) / INCONCLUSIVE; a tétel eredménye a sorok vektora, nem egyetlen ítélet.
 - **Tul.:** a (4)–(6) sorokhoz repó-beállítás módosítás (O-4).
@@ -95,9 +106,9 @@ Minden tétel mezői: **H** hipotézis (a védő tulajdonság, amelyet PASS eset
 - **H:** egy korábbi, az akkori állapotra hiteles check újrafuttatása vagy újrafelhasználása a megváltozott állapotban nem ad érvényes döntést a régi `T_d`-vel.
 - **Köv.:** R-V.7, R-V.8, R-V.9, R-V.11; R-M.6 (a verdikt újrafelhasználhatatlansága, a mechanizmus nélkül csak a platform viselkedését mérjük).
 - **Elrendezés:** (a) a régi workflow-futás **újrafuttatása** a BASE/policy megváltozása után: melyik állapotot használja (a régi esemény-adatot vagy az aktuálisat), mit közöl; (b) egy ágon ugyanarra a commitra új PR; (c) a régi check-run és az újrafuttatás viszonya (a legutóbbi számít, A4 korábbi mérés).
-- **PK:** ültetett: a policy úgy módosul, hogy a régi zöld már hibás; a helyes viselkedés az, hogy az újrafuttatás **az aktuális** állapotra ad döntést, vagy elutasít.
+- **PK:** (U) ültetett: a policy úgy módosul, hogy a régi zöld már hibás; a helyes viselkedés az, hogy az újrafuttatás az aktuális állapotra ad döntést, vagy elutasít; (J) ismert jó: az újrafuttatás változatlan állapot mellett azonos állapotot használ és azonos döntést ad.
 - **Negatív:** **R** (fő), P.
-- **Ítélet:** PASS = az újrafuttatás vagy az aktuális állapotot használja és ezt közli, vagy a régi zöld nem fogadható el; FAIL = az újrafuttatás a régi állapotra ad zöldet, amely a merge-hez elég, és a kimenet nem jelzi; INCONCLUSIVE = a használt állapot nem állapítható meg.
+- **Ítélet** (vektor: Ész/Érv/Blk, 2.1): **PASS** = az újrafuttatás az **aktuális** állapotot használja és közli, **vagy** a régi zöld a megváltozott állapotban nem érvényes, **és a merge-kísérlet blokkolt** (Blk). **FAIL** = a Blk nem teljesül: az újrafuttatás a régi állapotra ad zöldet, amely a merge-hez elég (akkor is, ha a kimenet jelzi az eltérést: a jelzés ≠ kikényszerítés). **INCONCLUSIVE** = a használt állapot nem állapítható meg, vagy a PK nem teljesült.
 - **Tul.:** nincs.
 - **Bemenete:** N4 (az érvénytelenítés blokkoló állapota), R-V.9.
 
@@ -105,17 +116,17 @@ Minden tétel mezői: **H** hipotézis (a védő tulajdonság, amelyet PASS eset
 - **H:** egy futás által előállított bizonyíték (artifact, gyorsítótár, kimenet) nem fogadható el egy másik futás, commit vagy típus bizonyítékaként.
 - **Köv.:** R-V.3, R-D.9 (típusok összetévesztése), R-M.6, R-M.11; R-C.3.
 - **Elrendezés:** a verifier-szerű fogyasztó artifactot vagy gyorsítótárat olvas egy korábbi futásból; kérdés: a platform név- és hatókör-szabályai megakadályozzák-e, hogy egy PR-ből induló futás ugyanazon néven felülírjon vagy előre elhelyezzen egy későbbi, hitelesnek szánt bizonyítékot (artifact-névütközés, cache-mérgezés, check-run kimenet másolása).
-- **PK:** ültetett: két futás azonos nevű artifactot állít elő eltérő tartalommal; a fogyasztónak azonosítania kell, melyik honnan jön.
+- **PK:** (U) ültetett: két futás azonos nevű artifactot állít elő eltérő tartalommal; a fogyasztónak azonosítania kell, melyik honnan jön; (J) ismert jó: egy futás saját artifactját a fogyasztó helyesen a futásához rendeli.
 - **Negatív:** **S** (fő), R.
 - **Ítélet:** PASS = a fogyasztó a forrást (run id, commit, identitás) megkülönbözteti, a nem hiteles forrás bizonyítéka nem kerül elfogadásra. FAIL = a nem hiteles forrás bizonyítéka észrevétlenül elfogadódik. INCONCLUSIVE = a forrás nem állapítható meg.
 - **Tul.:** nincs.
 - **Bemenete:** az R-M.6 verdikt-kötés és a futási bizonyíték (N2.6) követelményeinek kiindulópontja.
 
-**M-A6 — A platform belső merge-ablaka (nem mérhető kívülről)**
+**M-A6 — A platform belső merge-ablaka (dokumentált megfigyelhetőségi korlát, nem mérési tétel)**
 - **H:** a merge-kapu értékelése és a ref frissítése közötti belső ablak nem használható ki.
 - **Köv.:** R-V.11.
 - **Elrendezés:** nincs; a rés kívülről nem injektálható és nem figyelhető meg (következtetés, nem mért).
-- **Ítélet:** **INCONCLUSIVE by design.** A tétel célja: a maradék kockázat kimondott rögzítése (a jelentésben a „platform belső ablak" sor), hogy a megoldási terv ne állítsa, hogy az R-V.11 e rétegben bizonyított.
+- **Ítélet:** **nincs saját ítélet; nem végrehajtható mérés.** A jelentésben „INCONCLUSIVE (megfigyelhetőségi korlát)" jelöléssel szerepel. A tétel célja: a maradék kockázat kimondott rögzítése (a jelentésben a „platform belső ablak" sor), hogy a megoldási terv ne állítsa, hogy az R-V.11 e rétegben bizonyított. **PK: nem értelmezett** (nincs mérés).
 - **Bemenete:** a megoldási terv „nem lefedett" listája.
 
 ### 3.B E1/E2 csatornák: a hitelesítő adat elérhetetlensége a vizsgált tárgyból
@@ -126,7 +137,7 @@ A tételek **kanári értékkel** futnak (2.5). A „hitelesítő adat" itt mind
 - **H:** a PR szerzője által kiváltott futások egyike sem éri el a kibocsátó hitelesítő adatának kanári-megfelelőjét.
 - **Köv.:** R-I.2, R-I.4; R-A.2; R-M.3 (a).
 - **Elrendezés:** a kanári a kibocsátó hitelesítő adatával azonos **tárolási helyen és védelemmel** (ugyanaz a hatókör, ugyanaz az environment-védelem) létrehozva. Eseménytípusok és ágak: a PR-ból induló `pull_request` (azonos repó ága), `pull_request` fork-ból, `pull_request_target`, `workflow_run`, `issue_comment`, a PR-szerző saját ágára `push`, `workflow_dispatch`. Mindegyiknél a PR a workflow-t módosítja úgy, hogy a kanárit kiolvassa. Rögzítendő: a kanári hozzáférhető volt-e.
-- **PK:** egy ismerten hozzáférő konfiguráció (a kanári a korlátozás nélküli helyen): a harness ezt kiolvassa (ültetett); egy ismerten védett: a kanári nem olvasható (ismert jó).
+- **PK:** (U) egy ismerten hozzáférő konfiguráció (a kanári a korlátozás nélküli helyen): a harness ezt kiolvassa; (J) egy ismerten védett konfiguráció: a kanári nem olvasható, és a harness nem jelez hozzáférést.
 - **Negatív:** **X** (kanári használata a hatókörén túl), S (a kanáriként megjelenő hamis érték).
 - **Ítélet:** PASS = eseménytípusonként a kanári nem olvasható, a PK teljesült. FAIL = legalább egy típusnál olvasható. INCONCLUSIVE = egy eseménytípus kiváltása nem volt lehetséges (pl. a repó nem fogad forkot), vagy a PK nem teljesült; ez külön rögzítendő (nem „PASS").
 - **Tul.:** a külső identitás és a kanári-beállítás (O-3, O-5).
@@ -136,7 +147,7 @@ A tételek **kanári értékkel** futnak (2.5). A „hitelesítő adat" itt mind
 - **H:** a kanári nem szivárog ki olyan csatornán, amelyet a PR szerzője olvashat.
 - **Köv.:** R-I.2, R-I.4; R-M.3 (a).
 - **Elrendezés:** olyan futás, amely a kanárit hozzáfér (a védett konfigurációban, a PR-szerző kódjával *nem*): kísérletek arra, hogy a platform maszkolása átalakított értékre (kódolás, darabolás, megfordítás) is érvényes-e; hogy a kanári az artifactba, a gyorsítótárba, a job-összegzésbe, a check-run kimenetébe, a naplóba kerülhet-e, és ezeket a PR szerzője olvashatja-e.
-- **PK:** a harness egy ismert, maszkolatlan kanárit (nem titokként regisztrált) kiír: a mérési elrendezésnek ezt a csatornán látnia kell (ültetett); egy titokként regisztrált értéknél a maszkolás észlelhető (ismert jó).
+- **PK:** (U) a harness egy ismert, maszkolatlan kanárit (nem titokként regisztrált) kiír: a mérési elrendezésnek ezt a csatornán látnia kell; (J) egy titokként regisztrált értéknél a maszkolás észlelhető, és az érték nem olvasható.
 - **Negatív:** **X**, P (átalakított érték).
 - **Ítélet:** PASS = egyik csatornán sem olvasható átalakítás nélküli vagy triviálisan átalakított kanári; FAIL = legalább egy csatornán olvasható; INCONCLUSIVE = valamely csatornát a harness nem tudott olvasni.
 - **Tul.:** O-5.
@@ -146,7 +157,7 @@ A tételek **kanári értékkel** futnak (2.5). A „hitelesítő adat" itt mind
 - **H:** a hitelesítő adatot birtokló futásba a PR szerzőjének kódja nem kerülhet.
 - **Köv.:** R-I.2; R-M.3 (b) (kódellátási út), (d) (futási példány); R-M.1.
 - **Elrendezés:** a hitelesítő adatot birtokló job-ban a PR-ból érkező elemek: a checkout a PR ágáról, a PR által módosított lokális/összetett action, a környezetet és az útvonalat módosító mechanizmusok (a futó job környezeti változóinak és `PATH`-jának módosítása korábbi lépésből), a PR által módosított workflow-fájl. Kérdés: melyik elem jut a kanárit birtokló lépés közelébe.
-- **PK:** ültetett: a kanári birtokló lépés előtti, a harness által befolyásolt lépés a kanárit kiolvassa; a mérésnek ezt észlelnie kell.
+- **PK:** (U) ültetett: a kanárit birtokló lépés előtti, a harness által befolyásolt lépés a kanárit kiolvassa; a mérésnek ezt észlelnie kell; (J) ismert jó: olyan konfiguráció, ahol a PR kódja nincs a kanárit birtokló jobban; a harness nem jelez hozzáférést.
 - **Negatív:** **X**, S (a lépés helyettesítése azonos nevűvel).
 - **Ítélet:** PASS = nincs olyan, a PR által befolyásolható elem, amely a kanárit birtokló lépés előtt vagy közben fut; FAIL = van; INCONCLUSIVE = a PK nem teljesült.
 - **Tul.:** nincs.
@@ -156,7 +167,7 @@ A tételek **kanári értékkel** futnak (2.5). A „hitelesítő adat" itt mind
 - **H:** az environment-hez kötött hitelesítő adatot csak a szándékolt, védett ágról induló futás éri el.
 - **Köv.:** R-I.2; R-A.2 (a) (a tárgy szerzője nem módosíthatja); R-M.3 (c).
 - **Elrendezés:** a korábban mért elutasítás (`refs/pull/35/merge` nem deployolhat, PR35, mért) a kiindulópont. Újak: az ág-szabály mintájának megfelelő ágat a PR-szerző létre tud-e hozni; a védett ágra írási jog nélkül; a szabály módosítása PR-ból; a jóváhagyó kör módosítása.
-- **PK:** ültetett: az environment-védelmet a tulajdonos ideiglenesen lazítja (egy ismert rés): a mérésnek ezt észlelnie kell.
+- **PK:** (U) ültetett: az environment-védelmet a tulajdonos ideiglenesen lazítja (egy ismert rés): a mérésnek ezt észlelnie kell; (J) ismert jó: a szándékolt védett ágról induló futás eléri a kanárit, a nem szándékolt nem.
 - **Negatív:** **X**, S.
 - **Ítélet:** PASS = a védelem minden próbánál megállít; FAIL = valamely próba hozzáfér; INCONCLUSIVE = a védelem beállítását a harness nem tudta ellenőrizni.
 - **Tul.:** O-4 (az ágszabály és a környezet beállításai).
@@ -166,7 +177,7 @@ A tételek **kanári értékkel** futnak (2.5). A „hitelesítő adat" itt mind
 - **H:** a hitelesítő adatot birtokló futás kódja nem változtatható meg a tárgy szerzője által elérhető módon, a futtató és az ellenőrző közti útvonalon.
 - **Köv.:** R-M.3 (b); R-D.13 (tartalom-azonosított függőségek); R-D.21.
 - **Elrendezés:** a workflow harmadik fél action-jét **a mérés saját, scratch action-repójából** hivatkozza (nem külső szolgáltatásból): (a) címke szerint, (b) commit SHA szerint. A címkét áthelyezzük (ellenőrzött injektálási pont), és megfigyeljük, melyik kód futott. Ugyanez az interpreter és az eszközök verziójára (a runner képfájl frissülése: kívülről nem injektálható, csak megfigyelés).
-- **PK:** a két hivatkozási mód viselkedése eltér (a címke elmozdulása hat, az SHA nem): ez az ismert eltérés.
+- **PK:** (U) ültetett: a címke áthelyezése után a címke szerinti hivatkozás az **új** kódot futtatja (a mérés ezt észleli); (J) ismert jó: áthelyezés nélkül ugyanaz a kód fut, és az SHA szerinti hivatkozás áthelyezés után is változatlan kódot futtat.
 - **Negatív:** **S** (a kód helyettesítése), P.
 - **Ítélet:** PASS = SHA szerinti hivatkozás esetén az elmozdított címke nem hat, és a címke szerinti hivatkozás veszélye dokumentált; FAIL = az SHA szerinti hivatkozás is megváltoztatható; INCONCLUSIVE = a futás nem azonosította, melyik kód futott.
 - **Tul.:** nincs.
@@ -178,7 +189,7 @@ A tételek **kanári értékkel** futnak (2.5). A „hitelesítő adat" itt mind
 - **H:** a felfüggesztett kibocsátó nem tud új, érvényes döntést kibocsátani, és a merge nem engedélyezett.
 - **Köv.:** R-I.1, R-I.5, R-I.7; R-V.10 (hiányzó forrás: negatív kimenet).
 - **Elrendezés:** a tulajdonos felfüggeszti az App installációját; új PR nyílik; megfigyeljük: létrejön-e check-run, mi a PR merge-állapota, mi a hibaüzenet (token kiadás, check-run létrehozás).
-- **PK:** a felfüggesztés **előtt** ugyanazon elrendezés zöld (ismert jó); a **bizonyítottan hibás** workflow (hiányzó `app-id`, A2 korábbi mérés) `blocked` állapotot ad (ültetett).
+- **PK:** (U) a **bizonyítottan hibás** workflow (hiányzó `app-id`, A2 korábbi mérés) `blocked` állapotot ad; (J) ismert jó: a felfüggesztés **előtt** ugyanazon elrendezés zöld.
 - **Negatív:** **D** (a kibocsátó nem elérhető), X.
 - **Ítélet:** PASS = nem jön létre új érvényes check, a PR nem mergelhető; FAIL = a PR mergelhető érvényes check nélkül, vagy hamis zöld; INCONCLUSIVE = a felfüggesztés nem hatott a megfigyelt időn belül (késleltetés), vagy a PK nem teljesült.
 - **Tul.:** **O-1** (felfüggesztés és visszaállítás; a kulcs nem kerül hozzám).
@@ -188,9 +199,9 @@ A tételek **kanári értékkel** futnak (2.5). A „hitelesítő adat" itt mind
 - **H:** a felfüggesztés után a korábban kibocsátott döntés nem engedélyezi a következményes műveletet.
 - **Köv.:** R-I.1 (használatkori ellenőrzés), R-I.7, R-M.9.
 - **Elrendezés:** egy PR, amelyen a kibocsátó zöld check-runt tett; a felfüggesztés után figyeljük: a merge-kapu továbbra is elfogadja-e; mi látható az API-ból ugyanarról a check-runról (azonos? megjelölt?). Időpontok: azonnal, +1, +5, +15 perc (a késleltetés mérése).
-- **PK:** ültetett: a check-run kézzel (a harness által) törölve/érvénytelenítve (ha a platform engedi): a merge-kapu viselkedése a „nincs check" referencia; ismert jó: a felfüggesztés előtt a merge engedélyezett.
+- **PK:** (U) ültetett: a check-run kézzel (a harness által) törölve/érvénytelenítve (ha a platform engedi): a merge-kapu viselkedése a „nincs check" referencia; (J) ismert jó: a felfüggesztés előtt a merge engedélyezett.
 - **Negatív:** **R** (a visszavont azonosság korábbi döntése).
-- **Ítélet:** PASS = a merge a felfüggesztés után nem engedélyezett, vagy a platform a használatkor újraértékeli a jogosultságot; FAIL = a merge engedélyezett (a már közzétett check elég); INCONCLUSIVE = a viselkedés időben változott és a harness nem rögzítette az átmenetet.
+- **Ítélet** (vektor: Ész/Érv/Blk, 2.1): **PASS** = a merge a felfüggesztés után **blokkolt**, vagy a platform a használatkor újraértékeli a jogosultságot és a merge blokkolt (Blk); **FAIL** = a merge engedélyezett (a már közzétett check elég), akkor is, ha az API a check-run mellett jelzi az állapotot (Ész); **INCONCLUSIVE** = a viselkedés időben változott és a harness nem rögzítette az átmenetet, vagy a PK nem teljesült.
 - **Tul.:** O-1.
 - **Bemenete:** N7/Jel-1, N8 háttere: a kompromittált időszakban kibocsátott döntések sorsa.
 
@@ -198,19 +209,19 @@ A tételek **kanári értékkel** futnak (2.5). A „hitelesítő adat" itt mind
 - **H:** a visszavonás után a korábban kiadott token vagy bejelentkezési adat nem használható új döntés kibocsátására.
 - **Köv.:** R-I.5, R-I.7; R-A.8 (forgatás, helyreállítás).
 - **Elrendezés:** a visszavonás módjai külön-külön: (a) installáció felfüggesztése, (b) jogosultság csökkentése (a `checks: write` megvonása), (c) a repó eltávolítása az installációból, (d) a kulcs forgatása. Mindegyiknél: egy a visszavonás **előtt** kiadott token használható-e a visszavonás után (check-run létrehozási kísérlet), és mennyi idő múlva válik használhatatlanná.
-- **PK:** a visszavonás előtt a token használható (ismert jó); a token lejáratának ismert ideje után használhatatlan (ültetett: referencia).
+- **PK:** (U) ültetett: a token lejáratának ismert ideje után használhatatlan (referencia); (J) ismert jó: a visszavonás előtt a token használható.
 - **Negatív:** **R** (régi token), X.
 - **Ítélet:** PASS = a visszavonás után a régi token nem hoz létre új érvényes check-runt (a lejárati időn belül sem); FAIL = igen, és a használhatóság ablaka mért; INCONCLUSIVE = a token kiadás ideje nem rögzíthető.
 - **Tul.:** **O-1** (a)–(c); **O-2** (d): a kulcsforgatás tulajdonosi művelet.
 - **Bemenete:** az R-A.8 forgatási eljárásának időkorlátai, N8.
 
 **M-C4 — A helyreállítás nem érvényesít visszamenőleg**
-- **H:** a visszaállított kibocsátó a felfüggesztés alatt (vagy előtte, jogosulatlanként) hozott állapotot nem érvényesíti visszamenőleg.
+- **H:** a visszaállított kibocsátó a felfüggesztés alatt (vagy előtte, jogosulatlanként) hozott döntést **változatlan HEAD, BASE és policy mellett is** visszamenőleg nem érvényesíti; a korábbi döntés a visszaállítás után nem „éled újra".
 - **Köv.:** R-I.7 (utolsó mondat), R-A.9, R-A.10.
-- **Elrendezés:** a felfüggesztés alatt a PR állapota; a visszaállítás után: a korábbi PR check-állapota változik-e magától; kell-e új döntés.
-- **PK:** ültetett: egy a felfüggesztés alatt módosított PR; a visszaállítás után a régi (a módosítás előtti) zöld nem lehet érvényes az új HEAD-re.
+- **Elrendezés:** a felfüggesztés előtt a kibocsátó döntést (zöld check) bocsát ki egy PR-on. A felfüggesztés és a visszaállítás után **két változat**: **V1 — semmi sem változik** (a HEAD, a BASE és a policy azonos); **V2 — a HEAD megváltozik** (új commit). **A V1 a mérvadó**, mert a V2-ben a HEAD-változás önmagában érvényteleníti a régi döntést, és **elfedheti, hogy a jogosultság-visszavonásnak nincs hatása**. Kérdések V1-ben: (a) a felfüggesztés előtti döntés a visszaállítás után új döntés nélkül újra elég-e a merge-hez; (b) ha a M-C3 szerint a felfüggesztés alatt még volt használható token, a felfüggesztés alatt kibocsátott döntés a visszaállítás után elfogadható-e. A V2 csak kontroll.
+- **PK:** (U) ültetett: a HEAD megváltoztatása (V2) a régi döntést bizonyítottan érvényteleníti, ez a kontroll, nem az ítélet alapja; (J) ismert jó: a visszaállítás után **új** döntés (új futás) az aktuális állapotra mergelhető.
 - **Negatív:** **R**.
-- **Ítélet:** PASS = a visszaállítás után új döntés kell az érintett PR-hoz; FAIL = az állapot visszamenőleg érvényessé válik; INCONCLUSIVE = a platform késleltetése miatt nem állapítható meg.
+- **Ítélet** (vektor: Ész/Érv/Blk, 2.1): **PASS** = **V1-ben** a régi döntés a visszaállítás után **nem elég** a merge-hez, új döntés kell (Blk), vagy a check a felfüggesztéskor megszűnt és a visszaállítás után nem éled újra; **FAIL** = V1-ben a régi (felfüggesztés előtti vagy alatti) döntés a visszaállítás után újra elég (újraéledés); a V2 eredménye **önmagában nem adhat PASS-t**; **INCONCLUSIVE** = a V1 nem volt megvalósítható, vagy a PK nem teljesült.
 - **Tul.:** O-1.
 - **Bemenete:** R-I.7 a megoldási tervben.
 
@@ -218,7 +229,7 @@ A tételek **kanári értékkel** futnak (2.5). A „hitelesítő adat" itt mind
 - **H:** egy független fogyasztó a felhasználás pillanatában, a kibocsátótól függetlenül le tudja kérdezni az aktuális hiteles állapotot: az ág csúcsát, a szabályokat, a kibocsátó jogosultsági állapotát, a nyilvántartás aktuális tartalmát.
 - **Köv.:** R-V.5, R-M.4, R-M.9, R-A.10; R-I.1.
 - **Elrendezés:** minden állapotelemre: milyen identitás és milyen jogosultság kell az olvasáshoz; a válasz tartalmaz-e időbélyeget vagy verziót; a gyorsítótárazás és a késleltetés; hozzáfér-e egy a tárgy szerzője által befolyásolt futás ugyanahhoz (és ha igen, ez megkérdőjelezi-e a függetlenséget).
-- **PK:** egy ismerten megváltoztatott állapotelem (ültetett): a lekérdezésnek az új értéket kell adnia az ismert késleltetésen belül.
+- **PK:** (U) egy ismerten megváltoztatott állapotelem: a lekérdezésnek az új értéket kell adnia az ismert késleltetésen belül; (J) ismert jó: egy változatlan állapotelem lekérdezése az ismert értéket adja.
 - **Negatív:** **D** (az olvasás nem lehetséges: az elvárt eredmény a negatív/fail-closed), S.
 - **Ítélet:** PASS = minden állapotelem lekérdezhető a használat pillanatában és az aktuális értéket adja; FAIL = valamelyik elem csak a döntés idejű, régebbi állapotból olvasható (pl. a régi BASE-ről), vagy nem olvasható; INCONCLUSIVE = a lekérdezés eredményét nem lehetett az igazi állapothoz hasonlítani.
 - **Tul.:** O-4 (egyes olvasási jogosultságok megadása).
@@ -232,7 +243,7 @@ A tételekhez egy **második, független kibocsátói azonosság** kell (másodi
 - **H:** a merge-kapu mindkét azonosság check-jét külön megköveteli; bármelyik hiánya megállítja a merge-t.
 - **Köv.:** R-I.1–R-I.3; R-M.2; R-A.1; R-X (együttes elfogadás).
 - **Elrendezés:** két check, két azonosság (a korábban mért azonosságkötés mintájára, A1/E3s), mindkettő megkövetelve; kombinációk: mindkettő zöld, az egyik hiányzik, az egyik piros, az egyik rossz azonosságtól.
-- **PK:** ismert jó: mindkettő zöld → mergelhető; ültetett: az egyik hiányzik → nem.
+- **PK:** (U) ültetett: az egyik azonosság check-je hiányzik, a merge nem engedélyezett; (J) ismert jó: mindkettő zöld, mergelhető.
 - **Negatív:** **S** (azonos nevű check másik azonosságtól), D, R.
 - **Ítélet:** a kombinációk mátrixa; PASS = a négy hibás kombináció mindegyike megállít; FAIL = bármelyik átenged; INCONCLUSIVE = a platform nem engedi két azonosság külön megkövetelését (ez maga is eredmény: a követelmény natívan nem teljesíthető).
 - **Tul.:** O-2, O-4.
@@ -242,7 +253,7 @@ A tételekhez egy **második, független kibocsátói azonosság** kell (másodi
 - **H:** a megkövetelt azonosság check-jét más azonosság azonos nevű check-je vagy állapotjelzése nem helyettesítheti.
 - **Köv.:** R-I.2, R-I.3 (azonosság kötése); R-M.6 (S, helyettesítés).
 - **Elrendezés:** azonos nevű check-run a repó saját munkafolyamat-azonosságától (korábban mért: az Actions-identitás külön check-et adott, A1: PASS), egy harmadik azonosságtól, és egy *commit-állapotként* (nem check-run) közölt azonos nevű jelzés.
-- **PK:** ismert jó: a megkövetelt azonosság saját check-je elfogadott.
+- **PK:** (U) ültetett: egy bizonyítottan nem megkövetelt azonosságtól és/vagy eltérő nevű check, amely a követelményt **nem** teljesíti (a mérés ezt a merge-állapotból észleli); (J) ismert jó: a megkövetelt azonosság saját check-je elfogadott.
 - **Negatív:** **S** (fő), P.
 - **Ítélet:** PASS = egyik helyettesítés sem teljesíti a követelményt; FAIL = bármelyik teljesíti; INCONCLUSIVE = valamelyik azonosság nem volt előállítható.
 - **Tul.:** O-2.
@@ -252,7 +263,7 @@ A tételekhez egy **második, független kibocsátói azonosság** kell (másodi
 - **H:** az egyik kibocsátó/verifier elérhetetlensége vagy felfüggesztése a merge megállítása, nem a követelmény elengedése.
 - **Köv.:** R-V.10, R-M.8 (fail-closed), R-I.7.
 - **Elrendezés:** a két azonosság közül egyet felfüggesztünk, majd a másikat; a PR állapota.
-- **PK:** a két azonosság mindegyike nélkül a PR nem mergelhető (ültetett); mindkettővel igen (ismert jó).
+- **PK:** (U) ültetett: bármelyik azonosság nélkül a PR nem mergelhető; (J) ismert jó: mindkét azonossággal igen.
 - **Negatív:** **D**.
 - **Ítélet:** PASS = bármelyik hiányában a merge nem engedélyezett; FAIL = bármelyik hiányában engedélyezett; INCONCLUSIVE = a felfüggesztés hatása nem figyelhető meg.
 - **Tul.:** O-1.
@@ -262,7 +273,7 @@ A tételekhez egy **második, független kibocsátói azonosság** kell (másodi
 - **H:** az egyik azonosság nem tudja a másik check-jét újrafuttatni, felülírni, törölni vagy a hatókörét módosítani.
 - **Köv.:** R-M.3 (a), (c); R-M.1; R-I.4.
 - **Elrendezés:** a kibocsátó azonosság jogosultságaival (a korábban mért négy jogosultság) próbálkozás a verifier azonosság check-jével: létrehozás ugyanazon néven, felülírás, a check-suite módosítása; a jogosultsági modell leírása (ki indíthat újrafuttatást: Jel-8 is).
-- **PK:** ismert jó: a saját check módosítható; ültetett: a másik azonosságé nem.
+- **PK:** (U) ültetett: a másik azonosság check-je a saját jogosultsággal nem módosítható; (J) ismert jó: a saját check módosítható.
 - **Negatív:** **X**, **S**, R.
 - **Ítélet:** PASS = a másik azonosság check-jéhez nem fér hozzá; FAIL = hozzáfér; INCONCLUSIVE = a jogosultsági modell nem állapítható meg.
 - **Tul.:** O-2.
@@ -272,7 +283,7 @@ A tételekhez egy **második, független kibocsátói azonosság** kell (másodi
 - **H:** egyetlen hostile PR sem szerzi meg mindkét azonosság hitelesítő adatát (kanáriját) ugyanazon a csatornán.
 - **Köv.:** R-M.3 (a)–(d), R-M.13 (három réteg); R-A.1.
 - **Elrendezés:** a két kanári az azonosságok valós tárolási helyén; a B terület eseménytípusai; **a közös tárolási hely, közös workflow, közös runner** feltárása konfiguráció-olvasással.
-- **PK:** a B terület PK-i; ültetett: közös tárolási hely esetén mindkét kanári elérhető (a mérés észleli).
+- **PK:** (U) ültetett: közös tárolási hely esetén mindkét kanári elérhető (a mérés ezt észleli); (J) ismert jó: a B terület PK-i, külön tárolási helyek mellett a kanárik külön védettek.
 - **Negatív:** **X**, S.
 - **Ítélet:** PASS = nincs közös útvonal a mért csatornákon; FAIL = van; INCONCLUSIVE = a B terület releváns tételei INCONCLUSIVE-ek. A talált közös útvonalat a jelentés R-M.13 szerint a **közös bizalmi alap** vagy a **fennmaradó kockázat** rétegbe sorolja.
 - **Tul.:** O-2, O-5.
@@ -282,7 +293,7 @@ A tételekhez egy **második, független kibocsátói azonosság** kell (másodi
 - **H:** a PR szerzője nem változtathatja meg, melyik azonosságot követeli meg a merge-kapu, és nem módosíthatja a verifier job definícióját úgy, hogy a verifier verdiktje megváltozzon.
 - **Köv.:** R-M.1, R-A.2 (a), R-V.2.
 - **Elrendezés:** a hostile PR (a) módosítja a workflow-t, amely a verifiert futtatja, (b) a megkövetelt check nevét vagy azonosságát megváltoztató szabályt próbál módosítani, (c) a verifier workflow-t ugyanazon néven más tartalommal futtatja.
-- **PK:** ültetett: a módosítás a verifier verdiktjét megváltoztatja, ha a PR-verziót használnák (a mérés ezt észleli); ismert jó: az alapág-verziót futtatva a verdikt nem változik.
+- **PK:** (U) ültetett: a módosítás a verifier verdiktjét megváltoztatja, ha a PR-verziót használnák (a mérés ezt észleli); (J) ismert jó: az alapág-verziót futtatva a verdikt nem változik.
 - **Negatív:** **P**, **S**.
 - **Ítélet:** PASS = a verifier a PR-től független (alapág-) definícióból fut, és a szabály a PR-ből nem módosítható; FAIL = a PR módosíthatja; INCONCLUSIVE = nem állapítható meg, melyik definíció futott.
 - **Tul.:** O-2, O-4.
@@ -294,7 +305,7 @@ A tételekhez egy **második, független kibocsátói azonosság** kell (másodi
 - **H:** a platform olyan bizonyítékot ad egy futásról, amely hitelesen köti a futást a workflow-definícióhoz (útvonal, commit) és az azonossághoz, a tárgy szerzője által nem befolyásolható módon, és a kibocsátótól függetlenül ellenőrizhető.
 - **Köv.:** R-M.11, R-M.12; R-D.21; R-V.6.
 - **Elrendezés:** leltár: a futás metaadatai, a futás által megszerezhető, platform által aláírt azonosító (tokenek és állítások), igazolások, ha a platform kínál; mindegyiknél: kicsoda hozza létre, a PR szerzője befolyásolhatja-e a tartalmát, a független fél a kibocsátó közreműködése nélkül ellenőrizheti-e, mit köt (workflow-útvonal, SHA, azonosság, futási kísérlet).
-- **PK:** ültetett: két különböző workflow/commit futásának bizonyítéka **eltérő** tartalmat kell hordozzon (ezt a mérés észleli); ismert jó: ugyanazon futás kétszeri lekérdezése azonos bizonyítékot ad.
+- **PK:** (U) ültetett: két különböző workflow/commit futásának bizonyítéka **eltérő** tartalmat kell hordozzon (a mérés ezt észleli); (J) ismert jó: ugyanazon futás kétszeri lekérdezése azonos bizonyítékot ad.
 - **Negatív:** **S** (más futás bizonyítéka), **R** (régi futás bizonyítéka), P.
 - **Ítélet:** PASS = van legalább egy bizonyíték-típus, amely (workflow, commit, azonosság, futás) négyesét hitelesen köti, a PR szerzője nem módosíthatja, és független fél ellenőrizheti; FAIL = csak a kibocsátó önbevallása elérhető (az R-M.11 nem teljesíthető, PARTIAL/OPEN marad); INCONCLUSIVE = a bizonyíték-típus ellenőrizhetősége nem döntött el.
 - **Tul.:** nincs (a platform-eszközök vizsgálata); egyes igazolások beállítása O-4.
@@ -304,7 +315,7 @@ A tételekhez egy **második, független kibocsátói azonosság** kell (másodi
 - **H:** (a *ellenőrzött* hipotézis) ha a forrás digestje egyezik, a végrehajtott implementáció is azonos. **A terv szerint ezt várhatóan megcáfoljuk**; a mérés célja, hogy a rés megfigyelt legyen, és hogy a M-E1 bizonyítéka észleli-e.
 - **Köv.:** R-M.4, R-M.11; R-D.12, R-D.21, R-D.22.
 - **Elrendezés:** ültetett eltérések, a forrás digestjének megváltoztatása nélkül: (a) a futás közbeni letöltés felülírja az ellenőrző logikáját, (b) mutábilis action-hivatkozás elmozdulása, (c) interpreter- vagy csomagverzió eltérés, (d) környezeti változó, amely a döntést megváltoztatja, (e) a `PATH` árnyékolása.
-- **PK:** minden ültetett eltérésnél a **viselkedés** a forrásétól tényleg eltér (a harness ezt a kimenetből kimutatja); ismert jó: eltérés nélkül a viselkedés azonos.
+- **PK:** (U) minden ültetett eltérésnél a **viselkedés** a forrásétól tényleg eltér (a harness ezt a kimenetből kimutatja); (J) ismert jó: eltérés nélkül a viselkedés azonos.
 - **Negatív:** **P** (fő), S.
 - **Ítélet:** két kérdés külön: (1) „a forrás-digest elég?" — **FAIL várt**, ha legalább egy eltérés a forrás-digest változatlansága mellett hat; (2) „a M-E1 bizonyítéka észleli?" — PASS = az eltérés a bizonyítékból kimutatható; FAIL = nem; INCONCLUSIVE = a PK nem teljesült.
 - **Tul.:** nincs.
@@ -314,7 +325,7 @@ A tételekhez egy **második, független kibocsátói azonosság** kell (másodi
 - **H:** a futási azonosság (az interpreter és a betöltött elemek azonossága) olyan módon rögzíthető, amely nem a futó kódtól (a vizsgált ellenőrzőtől) származó önbevallás.
 - **Köv.:** R-D.21, R-D.12, R-D.13; R-M.11; R-M.12.
 - **Elrendezés:** a futó ellenőrző maga rögzíti a saját futási azonosságát (önbevallás: referencia), és összevetjük azzal, amit a platform vagy egy független lépés rögzít; kérdés: eltérő (ültetett: megmérgezett) futásnál az önbevallás megbízhatatlan-e, és a független rögzítés észleli-e.
-- **PK:** ültetett: az ellenőrző hamis azonosságot ír önmagáról; a mérésnek az eltérést észlelnie kell, ha van független forrás.
+- **PK:** (U) ültetett: az ellenőrző hamis azonosságot ír önmagáról; a mérésnek az eltérést észlelnie kell, ha van független forrás; (J) ismert jó: a becsületes önbevallás megegyezik a független rögzítéssel.
 - **Negatív:** **P**, **S** (a futási azonosság hamisítása).
 - **Ítélet:** PASS = van független rögzítés, amely a hamis önbevallást észleli; FAIL = csak önbevallás van (R-M.11/12 e réteggel nem teljesíthető); INCONCLUSIVE = a független rögzítés nem értékelhető.
 - **Tul.:** nincs.
@@ -324,7 +335,7 @@ A tételekhez egy **második, független kibocsátói azonosság** kell (másodi
 - **H:** egy deklarálatlan bemenet döntésre gyakorolt hatása észlelhető vagy kizárható.
 - **Köv.:** R-D.22, R-D.23, R-P.14; R-C.3.
 - **Elrendezés:** ültetett nem deklarált bemenetek: környezeti változó, hálózati letöltés, a runner képfájl változása, a rendszeridő, a gyorsítótár tartalma; mindegyik megváltoztatja a döntést, miközben a deklarált jegyzék változatlan.
-- **PK:** minden ültetett bemenet hatása a harnessből kimutatható (ismert); ismert jó: a deklarált bemenet változása a jegyzék változásával jár.
+- **PK:** (U) minden ültetett bemenet hatása a harnessből kimutatható; (J) ismert jó: a deklarált bemenet változása a jegyzék változásával jár.
 - **Negatív:** **P**, X.
 - **Ítélet:** PASS = a nem deklarált bemenet hatása észlelhető/kizárható; FAIL = észrevétlenül befolyásolja a döntést; INCONCLUSIVE = a hatás a harnessből nem mutatható ki.
 - **Tul.:** nincs.
@@ -334,9 +345,9 @@ A tételekhez egy **második, független kibocsátói azonosság** kell (másodi
 - **H:** egy futás bizonyítéka nem fogadható el egy másik futás, commit, workflow vagy kísérlet döntéséhez.
 - **Köv.:** R-M.6, R-M.11 (a döntéshez kötés), R-D.9; R-V.3.
 - **Elrendezés:** a M-E1-ben azonosított bizonyíték(ok) **keresztfelhasználása**: A futás bizonyítékát B futás döntéséhez csatolva; régi futás bizonyítéka új commitra; azonos futás más kísérlete (újrafuttatás); más workflow bizonyítéka. A bizonyíték tartalmaz-e olyan mezőt, amely az ilyen felcserélést megkülönbözteti.
-- **PK:** ültetett: a két futás bizonyítéka különbözik; ismert jó: azonos futás azonos bizonyítéka.
+- **PK:** (U) ültetett: a két futás bizonyítéka különbözik; (J) ismert jó: azonos futás azonos bizonyítéka.
 - **Negatív:** **R**, **S** (mindkettő fő).
-- **Ítélet:** PASS = minden keresztfelhasználás eltérő mezőkkel megkülönböztethető, és (a fogyasztó szerepében) elutasítható; FAIL = valamelyik felcserélés az adatokból nem különböztethető meg; INCONCLUSIVE = a bizonyíték nem hordoz megkülönböztető mezőt, vagy az M-E1 INCONCLUSIVE.
+- **Ítélet:** **PASS** = a keresztfelhasználások mindegyike eltérő mezőkkel **megkülönböztethető, és az elutasítás is igazolt** (a fogyasztó szerepében a helytelen bizonyíték elutasítva). **FAIL** = **igazoltan** nem különböztethető meg két különböző futás bizonyítéka (azonos vagy felcserélhető mezők), akár mert a bizonyíték nem hordoz megkülönböztető mezőt, akár mert a mezők egyezése megfigyelt, **vagy** a megkülönböztethető bizonyítékot a fogyasztó szerepében mégis elfogadja. **INCONCLUSIVE** = a megkülönböztethetőség **nem állapítható meg** (nincs értékelhető bizonyíték-típus az M-E1-ből, vagy a PK nem teljesült); a megkülönböztető mező hiánya **csak akkor FAIL**, ha a bizonyíték megfigyelt és a hiány igazolt.
 - **Tul.:** nincs.
 - **Bemenete:** R-M.6 és R-M.11 mezőkészlete.
 
@@ -396,11 +407,22 @@ A tételekhez egy **második, független kibocsátói azonosság** kell (másodi
 |---|---|---|
 | **0 — Előkészítés és önellenőrzés** | a harness önellenőrzése (minden PK külön, a tételek előtt); a kanárik elhelyezése; a mérési környezet rögzítése | O-5 (kanárik), K-1 (környezet döntés) |
 | **1 — Tulajdonosi lépés nélkül** | M-A1, M-A2 (a platform-beállítás nélküliek), M-A3 (1)–(3), M-A4, M-A5, M-B3, M-B5, M-E1–M-E5 | 0. fázis |
-| **2 — Külső identitással és beállításokkal** | M-B1, M-B2, M-B4, M-A3 (4)–(6), M-A2 többi, M-D4 (egy azonossággal), M-C5 | O-3, O-4 |
-| **3 — Kulcsműveletet / felfüggesztést igénylő** | M-C1–M-C4, M-D1–M-D3, M-D5, M-D6 | O-1, O-2 (második azonosság), K-3 |
+| **2 — Külső identitással és beállításokkal** | M-B1, M-B2, M-B4, M-A3 (4)–(6), M-A2 többi, M-C5 | O-3, O-4 |
+| **3 — Kulcsműveletet, felfüggesztést vagy két azonosságot igénylő** | M-C1–M-C4, M-D1–M-D6 (az **M-D4 is itt**: két azonosságot igényel) | O-1, O-2 (második azonosság), K-3 |
 | **Mindig** | M-A6 (nem mérhető): a jelentésben rögzítendő | — |
 
-**Függőségek:** a M-D5 a B terület eredményeire épít; a M-C2 és M-C3 a M-C1 felfüggesztési környezetére; a M-E5 az M-E1 bizonyíték-leltárára; a M-D1–D4 a második azonosságra. **Egy tétel INCONCLUSIVE-sége nem szünteti meg a függő tételek értékelését, de azokat jelölni kell** (a függő tétel ítélete csak akkor PASS, ha az előfeltétel eredménye nem INCONCLUSIVE).
+**Függőségek.** A függő tétel **PASS** ítéletéhez az előfeltétel **tényleges teljesülése** szükséges (nem elég, hogy az előfeltétel nem INCONCLUSIVE). A **FAIL** az előfeltétel nélkül is megállapítható, ha a rés megfigyelt (a rés létezése nem függ az előfeltételtől). Ha az előfeltétel nem teljesült és a függő tételnél rés nem figyelhető meg, az ítélet **INCONCLUSIVE**.
+
+| Függő tétel | Előfeltétel (mi kell ténylegesen teljesüljön) | Ha az előfeltétel nem teljesül |
+|---|---|---|
+| M-E2 (2. kérdés: a bizonyíték észleli-e az eltérést) | M-E1 = **PASS** (van hiteles, független futási bizonyíték) | az M-E2 (2) **INCONCLUSIVE**; ha M-E1 = FAIL (csak önbevallás), az M-E2 (2) ítélete „nincs független bizonyíték", FAIL-ként rögzítve. Az M-E2 (1) (a forrás-digest elégtelensége) az M-E1-től független |
+| M-E3 | M-E1 = **PASS** (van független rögzítési lehetőség) | **INCONCLUSIVE**; FAIL, ha csak önbevallás van (az M-E1 FAIL-je ezt megfigyelte) |
+| M-E5 | M-E1 = **PASS** (van értékelhető bizonyíték-típus) | **INCONCLUSIVE**; a megfigyelt felcserélhetőség FAIL (F2 szerinti definícióval) |
+| M-D5 | M-B1–M-B4 mindegyike **PASS** (a csatornák ténylegesen mértek és kizártak) | PASS nem adható; talált közös útvonal esetén FAIL; egyébként **INCONCLUSIVE** |
+| M-C2, M-C3, M-C4 | a felfüggesztés/visszavonás **tényleges hatálybalépése megfigyelt** (az M-C1 elrendezés megvalósult és a PK teljesült); az M-C1 ítélete **nem** előfeltétel | **INCONCLUSIVE** |
+| M-D1–M-D4 | a második azonosság **ténylegesen létrejött és telepített** (O-2), és a PK teljesült; M-D3-hoz O-1 is | **INCONCLUSIVE** |
+
+A függő tétel jelentése tartalmazza az előfeltétel **tényleges állapotát** (teljesült / nem teljesült / nem mért), nem csak az ítéletét.
 
 **Az eredmények felhasználása (nem döntés):** a FAIL-ek a megoldási terv (5. lépés) követelményeit pontosítják; a PASS-ok a platform natívan megbízható elemeit rögzítik (S, B), **de csak a mért esetekre**; az INCONCLUSIVE-ok nyitott kérdésként maradnak. Az N8 fennállását egyik eredmény sem dönti el.
 
@@ -442,13 +464,13 @@ A scratch repók és az App **törlése HOLD**.
 | Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat |
 |---|---|---|---|---|
 | A terv nem mér, nem végez kulcsműveletet, nem módosít beállítást | Ellenőrizhető | A diff csak `jobs/relay-ci-parity-06i-.../` alatti fájlokat érint | `git diff --stat origin/main..HEAD` | — |
-| Minden mérési tételnek van pozitív kontrollja és PASS/FAIL/INCONCLUSIVE kritériuma | Ellenőrizhető | 3. szakasz: tételenként PK és Ítélet mező | A tételek szisztematikus átolvasása (27 tétel: A1–A6, B1–B5, C1–C5, D1–D6, E1–E5) | A kritérium helyessége a végrehajtásig nem igazolt |
+| Minden mérési tételnek van (U) ültetett és (J) ismert jó pozitív kontrollja, és PASS/FAIL/INCONCLUSIVE kritériuma; az észlelés/érvénytelenítés/kikényszerítés külön szintként kezelt | Ellenőrizhető | 3. szakasz: tételenként PK és Ítélet mező | A tételek szisztematikus átolvasása (26 mérési tétel: A1–A5, B1–B5, C1–C5, D1–D6, E1–E5; plusz az M-A6 dokumentált korlát) | A kritérium helyessége a végrehajtásig nem igazolt |
 | Minden tétel visszavezethető a normatív követelményekre | Ellenőrizhető | 4.1 mátrix, 4.2 családi lefedés | A hivatkozott R-azonosítók léte a #76–#80 specifikációkban | Az R-azonosítók szövege változhat egy későbbi specifikáció-módosítással |
 | A negatív esetek között van visszajátszás (R) és bizonyítékhelyettesítés (S) | Ellenőrizhető | 2.2 osztályok; M-A4, M-A5, M-C2, M-D1, M-D2, M-E5 | A „Negatív" mezők | — |
 | A platform a S és B elemet natívan kötő viselkedése mért | **Mért (scratch, korábban)** | PR31, PR34 (app-measurement-report 3.3) | A jelentés | Csak a mért esetekre; a terv újra nem méri, hanem a mátrixba (M-A3) építi |
 | Az R-V.5 a P és C elemekre platformon belül külön lépés nélkül nem teljesíthető | **Következtetés, nem mért** | open-case-triage 3.1; app-measurement-report 3.6 | M-A1, M-A2, M-E1 | A platform natívan köthet többet, mint feltételeztük |
 | A scratch repó publikus, ezért fork-PR ott kiváltható | **Következtetés, nem mért** | app-measurement-report 2. szakasz (publikus repó) | K-2: a végrehajtás első lépése | A szervezet-beállítások korlátozhatják a fork-PR-t |
-| A M-A6 belső ablak kívülről nem injektálható | **Következtetés, nem mért** | A platform belső értékelése kívülről nem megfigyelhető | Nincs; az INCONCLUSIVE by design ezt rögzíti | Ha lenne megfigyelhető jel, a tétel mérhetővé válna |
+| A M-A6 belső ablak kívülről nem injektálható | **Következtetés, nem mért** | A platform belső értékelése kívülről nem megfigyelhető | Nincs; a dokumentált megfigyelhetőségi korlát ezt rögzíti | Ha lenne megfigyelhető jel, a tétel mérhetővé válna |
 | A forrás-digest egyezése nem bizonyítja a végrehajtott implementáció azonosságát | **Következtetés, nem mért** | R-M.4 (a #80-ban kimondott követelmény) | M-E2 | A tétel célja épp ennek igazolása vagy cáfolata |
 | Az E1/E2 mérés kimenete nem dönti el az N8 fennállását | Rögzített elv | open-case-triage 3.3 | — | — |
 | A kanári az éles kulccsal azonos védelmű tárolási helyen reprezentálja a kulcs csatornáit | **Következtetés, nem mért** | A tárolási hely és védelem megegyezése a mérés kialakításától függ | O-5 és a 0. fázis (a kanári elhelyezésének dokumentálása) | Ha a védelem eltér, a mérés a kulcs csatornáira nem általánosítható |
