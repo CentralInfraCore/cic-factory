@@ -33,7 +33,7 @@ Az állapot-négyes `T = (S, B, P, C)` elemeinek határa az alábbi.
 
 | Elem | Mi tartozik bele |
 |---|---|
-| **S** (tárgy) | Az ítélet tárgya, azonosítva. A tárgyból az ellenőrző által levezetett reprezentációk (például a tárgy változáskészlete) a tárgy *képei*; a tárgy azonosítója köti őket, a levezetés módja C része, a levezetés forrásadata külső bemenet (R-P.5). |
+| **S** (tárgy) | Az ítélet tárgya, azonosítva. A tárgyból az ellenőrző által levezetett reprezentációk (például a tárgy változáskészlete) a tárgy *képei*; a tárgy azonosítója köti őket, a levezetés módja C része, a levezetés forrásadata külső bemenet (R-P.14). |
 | **B** (alap) | Az összehasonlítás alapja, azonosítva. |
 | **P** (hatályos policy) | Az **effektív, feloldott** policy: az ellenőrző által a döntés pillanatában ténylegesen alkalmazott deklaratív szabályok és paraméterek összessége, az öröklés, a külső forrás és az alapértelmezés feloldása *után* (2.1). |
 | **C** (ellenőrző) | Az ellenőrző implementációja és minden, ami a viselkedését meghatározza (2.2). |
@@ -50,6 +50,7 @@ A P a deklaratív, a döntést meghatározó adat. Ide MUST tartozzon:
 | a **jóváhagyók halmaza** (deklarált) | lásd 4. szakasz |
 | a bemeneti teljesség elvárása | az elvárt bemeneti halmaz definíciója (R-C.1) |
 | a policy sémájának és szemantikai verziójának azonosítója | a policy értelmezése verziófüggő |
+| a feloldás **forrásainak bizalmi és szemantikai attribútumai** | a forrás azonosítója, hitelessége és jogosultsága, szemantikai verziója és értelmezési szabálya (R-P.15) |
 | a policy **feloldásának eredménye** | az öröklött, külső és alapértelmezett értékek feloldott értéke (2.3) |
 
 ### 2.2 R-P.5: a C tartalma
@@ -62,7 +63,7 @@ A C az ellenőrző implementációja és minden, amely a viselkedését meghatá
 | a **teljességvizsgálat** logikája | R-C.6: a gyengítése C-változás |
 | a policy-feloldás és -összefésülés algoritmusa | a precedencia, az öröklési szabályok *feldolgozása* (a szabályok maguk P) |
 | azok a függőségek és futtatókörnyezet-elemek, amelyek a viselkedést befolyásolják | a mélység (a függőségi zárlat határa) az N5/N1 tárgya |
-| a tárgy képeit előállító levezetés (például a változáskészlet felsorolása) | a levezetés *módja*; a forrásadata külső bemenet |
+| a tárgy képeit előállító levezetés (például a változáskészlet felsorolása) | a levezetés *módja*; a forrásadata külső bemenet (R-P.14) |
 
 ### 2.3 R-P.6: külső, örökölt és dinamikus szabályok
 
@@ -70,9 +71,33 @@ A feloldott policy (P) három további forrást foglal magába. Mindháromra ér
 
 | Forrás | Követelmény |
 |---|---|
-| **Örökölt szabály** (szülő, alapértelmezett, szervezeti szint) | A feloldott érték a P része; az öröklési forrás azonosítója és verziója rögzített. A forrás megváltozása, amely a feloldott értéket változtatja, P-változás. Ha a forrás megváltozása a feloldott értéket nem változtatja, az nem érvényteleníti a döntést (a feloldott érték az egyetlen mérce). |
-| **Külső szabály** (a döntés pillanatában külső forrásból lekért adat) | A lekért érték snapshotként a P része. A forrás MUST feljogosított és a tárgy szerzőjétől független legyen (az R-I szerinti hitelesség adatforrásra is). A lekérés hibája vagy a forrás elérhetetlensége fail-closed (R-V.10). |
-| **Dinamikus szabály** (idő- vagy állapotfüggő) | A dinamikus függvény a C része; a bemenete (idő, állapot) külső bemenetként snapshot. Az időfüggő szabály az értékelés idejét és az érvényességi korlátot a döntésben rögzíti; a korláton túl a döntés érvénytelen. |
+| **Örökölt szabály** (szülő, alapértelmezett, szervezeti szint) | A feloldott érték a P része, és az öröklési forrás **azonosítója, bizalmi és szemantikai attribútumai** is rögzítettek (R-P.15). A forrás bármely releváns változása érvényteleníti a döntést akkor is, ha a feloldott érték változatlan maradt (R-P.15). |
+| **Külső szabály** (a döntés pillanatában külső forrásból lekért adat) | A lekért érték snapshotként a P része. A forrás MUST feljogosított és a tárgy szerzőjétől független legyen (az R-I szerinti hitelesség adatforrásra is). A lekérés hibája vagy a forrás elérhetetlensége fail-closed (R-V.10). A kötés helyét, ellenőrzését és érvénytelenítését az R-P.14 határozza meg. |
+| **Dinamikus szabály** (idő- vagy állapotfüggő) | A dinamikus függvény a C része; a bemenete (idő, állapot) külső bemenetként snapshot. Az időfüggő szabály az értékelés idejét és az érvényességi korlátot a döntésben rögzíti; a korláton túl a döntés érvénytelen. A kötés helyét, ellenőrzését és érvénytelenítését az R-P.14 határozza meg. |
+
+### 2.3.1 R-P.14: a külső bemenetek kötése
+
+A **snapshot elkészítése önmagában nem állapotkötés.** Egy külső bemenet akkor van az állapotkötésen belül, ha mindhárom feltétel teljesül:
+
+| Azonosító | Követelmény |
+|---|---|
+| R-P.14 | Minden döntést befolyásoló külső bemenethez MUST meg legyen határozva: **(a) a kötési hely**, vagyis az állapot-négyes melyik eleméhez tartozik, és mi a kötött érték (a snapshot értéke vagy annak rögzített azonosítója); **(b) az ellenőrzés**, vagyis a fogyasztó a kötött értéket a használatkor a hiteles forrásból, a kibocsátótól függetlenül ellenőrzi (R-V.5); **(c) az érvénytelenítés feltétele**, vagyis mely változás érvényteleníti a döntést. Ha bármelyik hiányzik, a bemenet kötetlen tényező (R-P.13). |
+
+| Külső bemenet | (a) Kötési hely | (b) Ellenőrzés | (c) Érvénytelenítés |
+|---|---|---|---|
+| A tárgyból levezetett kép forrásadata (például a változáskészlet felsorolása) | **S** (a kép a tárgy és a levezetés, C, függvénye); a kötött érték a kép azonosítója | A fogyasztó (vagy a verifier) a képet a tárgyból újra levezeti, vagy a teljességet R-C.1 szerint bizonyítja | S vagy C változása; a kép és az újra levezetett kép eltérése |
+| Külső szabályforrás értéke | **P** (a snapshot értéke és a forrás azonosítója, R-P.15) | A fogyasztó a forrást a hiteles, a szerzőtől független csatornán újra feloldja és összeveti | a feloldott érték vagy a forrás attribútumainak változása (R-P.15) |
+| Idő (az értékelés ideje, érvényességi ablak) | **P** (a döntésben rögzített értékelési idő és érvényességi korlát) | A fogyasztó a használat idejét a hiteles időforráshoz köti, és összeveti a korláttal | az ablak lejárata |
+| Dinamikus állapot (lekérdezett működési állapot) | Ha a tárgy állapota: **S**; ha az alap állapota: **B**; egyéb esetben nincs kötési hely | A fogyasztó az állapotot a hiteles forrásból újra olvassa | S vagy B változása |
+| Jóváhagyási aktus | A tárgy és a védett változás digestjéhez kötött bizonyíték (R-V.12), nem a négyes eleme | A fogyasztó az aktust a hiteles forrásból olvassa, a kötött digest egyezik | az állapotváltozás; a jóváhagyók deklarált halmazának változása (P) |
+
+Ahol a „Kötési hely" oszlopban *nincs kötési hely* áll (dinamikus állapot, amely se a tárgyé, se az alapé), a bemenet nem köthető: R-P.13 szerint kötetlen tényező, PARTIAL / OPEN, és a döntés önmagában nem jogosít fel végrehajtásra.
+
+### 2.3.2 R-P.15: az örökölt forrás bizalmi és szemantikai feltételei
+
+| Azonosító | Követelmény |
+|---|---|
+| R-P.15 | Az öröklött (vagy külső) policy-forrásból feloldott érték csak akkor tartja a döntést érvényesnek, ha a **feloldott érték mellett valamennyi releváns bizalmi és szemantikai feltétel azonossága is igazolt**: a forrás azonossága; a forrás hitelessége és jogosultsága (hogy a forrás továbbra is feljogosított és a tárgy szerzőjétől független); a forrás szemantikai verziója és az értelmezési szabálya. Bármelyik változása érvényteleníti a döntést akkor is, ha a feloldott érték változatlan: egy azonos érték más hitelességű vagy más értelmezésű forrásból nem ugyanaz a tény. |
 
 ### 2.4 R-P.7: hiányzó vagy értelmezhetetlen policy
 
@@ -94,10 +119,11 @@ Egy korábbi döntést érvénytelenít a kötött tényezők bármelyikének me
 | P bármely eleme (2.1), beleértve a feloldott értéket | igen | állapotkötés |
 | a jóváhagyók vagy a feljogosított kibocsátók **deklarált halmazának** módosítása | igen | P-változás |
 | C bármely eleme (2.2) | igen | állapotkötés (R-V.6) |
-| a külső forrás snapshotjának megváltozása | igen | P-változás |
+| a külső forrás snapshotjának megváltozása | igen | P-változás (R-P.14) |
+| az örökölt vagy külső forrás azonosságának, hitelességének, jogosultságának vagy szemantikai verziójának megváltozása, **akkor is, ha a feloldott érték változatlan** | igen | P-változás (R-P.15) |
 | az időfüggő döntés érvényességi korlátjának lejárata | igen | a döntésben rögzített korlát |
 | a kibocsátó **élő jogosultsági állapotának** megváltozása (visszavonás, felfüggesztés) | a felhasználhatóságot érinti | használati értékelés (R-I.7), nem kötés |
-| a fogyasztó **konfigurációjának** megváltozása | a felhasználást érinti | használati értékelés (R-P.12), nem kötés |
+| a fogyasztó **konfigurációjának** megváltozása | a felhasználást érinti | használati értékelés (R-P.12, R-P.16), nem kötés |
 | olyan tényező változása, amely az 5. szakasz kizárási listáján van | nem | indokolt kizárás |
 
 ### 3.2 R-P.9: konzervatív érvénytelenítés
@@ -133,13 +159,14 @@ Az alábbi tényezők **kívül** vannak a P-n (és a kötésen), indoklással (
 | A **döntés maga** és a naplói | Az ellenőrző kimenete, nem bemenete; levezetett adat | a bizonyíték-rekord |
 | A kibocsátó **hitelesítő adata** (kulcs, token) | Titok: kötése vagy közlése sértené a titkosságát. Az élő jogosultsága használati értékelés | R-I.7; a csatorna-védelem a G3 tárgya |
 | A **jóváhagyási aktus** | Esemény, nem szabály | R-V.12 szerinti, tárgyhoz kötött bizonyíték |
-| A **fogyasztó kikényszerítési konfigurációja** | A felhasználást szabályozza, nem a döntést hozza; a fogyasztó a használat pillanatában a *mostani* konfigurációt alkalmazza, nem a döntés idejét | R-P.12; védelme a tárgy szerzőjétől külön követelmény (7. szakasz, N3.1) |
+| A **fogyasztó kikényszerítési konfigurációja** | A felhasználást szabályozza, nem a döntést hozza; a fogyasztó a használat pillanatában a *mostani* konfigurációt alkalmazza, nem a döntés idejét | R-P.12; megkerülhetetlensége és védelme R-P.16 (7. szakasz, N3.1) |
 | A policyt **magyarázó dokumentáció**, megjegyzés | Csak akkor kizárt, ha az ellenőrző nem olvassa (R-P.2): amit az ellenőrző olvas, az DBT | tájékoztató; az ellenőrző olvasása esetén P |
 | A futtatógép **működési állapota** (terhelés, gyorsítótár, időzítés), ha nem befolyásolja a viselkedést | Nem DBT (R-P.2). Ha befolyásolja a viselkedést, C-be tartozik | C |
 
 | Azonosító | Követelmény |
 |---|---|
-| R-P.12 | A fogyasztó konfigurációját a **használat pillanatában, az aktuális értéken** MUST értékelni; a döntés idejének konfigurációja nem gyorsítótárazható. A konfiguráció védelme a tárgy szerzőjétől MUST fennálljon, mert ha a szerző megváltoztathatja, a kikényszerítés megkerülhető. |
+| R-P.12 | A fogyasztó konfigurációját a **használat pillanatában, az aktuális értéken** MUST értékelni; a döntés idejének konfigurációja nem gyorsítótárazható. |
+| R-P.16 | **A használatkori értékelés megkerülhetetlen.** A fogyasztó konfigurációja MUST NOT tudja észrevétlenül kikapcsolni vagy gyengíteni magát a kötelező ellenőrzést. Ez három követelményt jelent: **(a)** minden felhasználási úton a kötelező ellenőrzés lefut, nincs olyan alternatív út, amely döntés vagy ellenőrzés nélkül engedi a következményes műveletet; **(b)** a tárgy szerzője a konfigurációt nem módosíthatja; **(c)** a konfiguráció minden módosítása (az ellenőrzés elhagyása, a kibocsátó-kötés lazítása, az érvényesség-ellenőrzés kikapcsolása) feljogosított, a módosítás előtti konfiguráció szerint megítélt, rögzített és tulajdonítható változás (az R-P.11 elve a konfigurációra). Ha a megkerülhetetlenség valamelyik pontja nem garantálható, a megfelelőség az érintett pontra **PARTIAL / OPEN**, és az ilyen döntés önmagában nem jogosíthat fel végrehajtásra (R-V.11, R-X.1). A feljogosított, rögzített módosítás maradék kockázata (privilegizált szereplő) nevesítendő, nem elhallgatható. |
 | R-P.13 | **Kötetlen tényező.** Ha egy DBT sem a kötésbe, sem a használati értékelésbe nem helyezhető, a megfelelőség az adott tényezőre **PARTIAL / OPEN**, és az ilyen döntés önmagában nem jogosíthat fel végrehajtásra (R-V.11 és R-X.1 szerint). A kötetlen tényezőt nevesíteni MUST. |
 
 ---
@@ -154,7 +181,7 @@ A mért scratch megvalósítás (`raw/app/`, jelentés 3.6) tényezőinek besoro
 | az ellenőrző kódja | C | **Nem**: nincs checker-digest a kimenetben | jelentés 3.6, N1 |
 | a PR HEAD és a BASE | S, B | Igen (a check-run kimenete közli) | jelentés 3.6 |
 | az alapág, amelyből a policy és a checker jön | B-oldali forrás | A checkout az aktuális alapágat veszi, a közölt BASE SHA az eseményből jön (eltérhet) | jelentés 3.6, **PARTIAL / OPEN** |
-| a PR változáskészlete (a fájllista) | S képe; a forrásadata külső bemenet | Teljességvizsgálat mért (R-C); a lista snapshotja nem kötött: nem ellenőrzött | jelentés 4.2 |
+| a PR változáskészlete (a fájllista) | S képe; a forrásadata külső bemenet (R-P.14) | Teljességvizsgálat mért (R-C); a lista snapshotja nem kötött: nem ellenőrzött | jelentés 4.2 |
 | a jóváhagyó megjegyzések (jóváhagyási aktus) | R-V.12 szerinti bizonyíték | A megjegyzés formátuma HEAD és digest-kötött (mért: A4/A5) | jelentés 3.2 |
 | a jóváhagyók halmaza | P (deklarált) | A policy része, kötése mint a P-é | jelentés 3.2 |
 | a kötelező ellenőrzés konfigurációja (melyik ellenőrzés, milyen identitáshoz kötve, `strict`) | fogyasztói konfiguráció, használati értékelés | A fogyasztó aktuális értékét alkalmazza (mért: C2, A1) | jelentés 3.1, 3.3 |
