@@ -1,0 +1,14 @@
+name: lab-gate-bootstrap
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  lab-gate:
+    name: lab-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: bootstrap
+        run: echo "lab-gate bootstrap, the check exists"
