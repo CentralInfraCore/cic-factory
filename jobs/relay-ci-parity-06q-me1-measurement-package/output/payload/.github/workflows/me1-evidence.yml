@@ -1,0 +1,34 @@
+name: me1-evidence
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  me1-evidence:
+    name: me1-evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: me1 collect
+        env:
+          GH_REPOSITORY: ${{ github.repository }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GH_SHA: ${{ github.sha }}
+          GH_REF: ${{ github.ref }}
+          GH_WORKFLOW_REF: ${{ github.workflow_ref }}
+          GH_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          mkdir me1
+          jq -n --arg repository "$GH_REPOSITORY" --arg run_id "$GH_RUN_ID" --arg run_attempt "$GH_RUN_ATTEMPT" --arg sha "$GH_SHA" --arg ref "$GH_REF" --arg workflow_ref "$GH_WORKFLOW_REF" --arg event_name "$GH_EVENT_NAME" '{repository: $repository, run_id: $run_id, run_attempt: $run_attempt, sha: $sha, ref: $ref, workflow_ref: $workflow_ref, event_name: $event_name}' > me1/context.json
+          curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=me1-evidence" | jq -r .value > me1/oidc-token.jwt
+          test -s me1/oidc-token.jwt
+      - name: me1 artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: me1-evidence
+          path: me1
+          retention-days: 1
+          if-no-files-found: error
