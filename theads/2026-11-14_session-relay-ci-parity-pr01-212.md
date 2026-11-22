@@ -16393,3 +16393,941 @@ Az artifact-attestáció külön nyitott tétel. A H1/H2, az M-A…M-D, a valód
 ### 2026-11-22 19:44 — Claude
 
 Ez javaslat, nem kimondott GO, ezért a szállítást nem indítom. Két lokális, külső hatás nélküli dolgot viszont elvégzek: előkészítem a szállító szkriptet (nem futtatom), és pótolom a thread-naplót.
+
+### 2026-11-22 19:44 — Claude
+
+Egyetlen találat van, és ez az én korábbi mondatom a szűrésről (mintanevek), nem érték. Commitolok, majd elkészítem a szállító szkriptet.
+
+### 2026-11-22 19:44 — Claude
+
+Két lokális dolgot végeztem el, külső hatás nélkül.
+
+**Thread-napló:** lokálisan commitolva, `9c71861`, a live `workdir` jelenlegi ágán, aláírva, nincs push.
+- A commit az #89 előkészítésének teljes forgalmát tartalmazza, 43 új bejegyzéssel.
+- A titokszűrés tiszta: nincs privátkulcs-fejléc, `ghp_`/`ghs_`/`github_pat_`/`gho_`, 32 hexás `CANARY-212-` érték, JWT-alakú token és 64 hexás digest. Egyetlen találat az én korábbi mondatom a szűrésről, nem érték.
+- A push csak a te kifejezett szavadra történik.
+
+**Szállító szkript:** előkészítve, **nem futtattam**: `~/.cache/relay-ci-parity-04/deliver-me1.sh`.
+- **Mit csinál:** ellenőrzi, hogy a jóváhagyott factory merge commiton (`e69b01cc…`) a workflow blobja `9030b6f1…`. Klónozza az X repót, a fájlt a merge commitból írja ki, a kitömörítés után újra ellenőrzi a blobot, majd commitol egy helyi ágon (`phase1-me1-evidence`). Kiírja a commit SHA-t és az X `main`-hez képesti módosított fájlokat.
+- **Védelmek:** az `ORG` a `CIC-Security-Lab` kell legyen, **nem pushol**, és csak ezt az egy fájlt viszi át.
+- **Az olvasott blob** a merge commiton valóban `9030b6f1759297f344052ada7757ba22e80cd5af`, egyezik.
+
+A futtatáshoz és minden további lépéshez külön, kimondott GO kell. Ha kiadod, a lépések a tieid:
+1. `! bash ~/.cache/relay-ci-parity-04/deliver-me1.sh`, és a kimenetet küldd el.
+2. A commit átnézése után push, PR az X `main`-be, a `lab-gate` check zöldre várása, merge `--match-head-commit`-tal. A szállítás a `lab-gate-pr` és a post-merge `lab-gate-bootstrap` futást is fogyasztja (2 kísérlet).
+3. Én olvasva ellenőrzöm a PR fejét, a checket, a blobot a merge commiton és a post-merge futást.
+
+A futás és a bizonyíték-letöltés külön GO. A workflow kb. 12 percig fut, a gyanús-workflow jelölés valószínű. K-5: legfeljebb ≈11/300. Az artifact-attestáció külön nyitott tétel. A H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 5/300.
+
+### 2026-11-22 19:45 — Felhasználó
+
+~~~~~
+<pasted_content id="964d">
+**Szakmai GO a szállító szkript lokális futtatására.**
+
+A szállítási folyamat megfelelően elválasztja az előkészítést a távoli állapot módosításától.
+
+A push előtt ellenőrizendő:
+
+- A célrepository a megfelelő X laborrepó.
+- Pontosan egy fájl változott.
+- A workflow blobja `9030b6f1759297f344052ada7757ba22e80cd5af`.
+- A szállítási commit az aktuális X/main állapotra épül.
+
+| Művelet                            | Döntés     |
+| ---------------------------------- | ---------- |
+| Szállító szkript lokális futtatása | Szakmai GO |
+| Thread-napló push                  | HOLD       |
+| X repóra push, PR, merge           | HOLD       |
+| M-E1 mérés és bizonyítékletöltés   | HOLD       |
+| Relay-implementáció                | HOLD       |
+
+**K-5: 5/300.** A lokális szállítási előkészítés nem fogyasztja a mérési keretet.
+
+A végrehajtási GO továbbra is tulajdonosi döntés.
+</pasted_content id="964d">
+~~~~~
+
+### 2026-11-22 19:45 — Claude
+
+Ez szakmai GO, nem a te kimondott GO-d, ezért a szkriptet nem én futtatom. A futtatás a tiéd, és a szkript maga is csak helyben dolgozik (klónoz, commitol, nem pushol):
+
+```
+! bash ~/.cache/relay-ci-parity-04/deliver-me1.sh
+```
+
+A push előtti négy ellenőrzést a szkript kimenetéből tudom ellenőrizni, ha elküldöd:
+- **Célrepó:** a szkript az `ORG=CIC-Security-Lab` ellenőrzése után klónoz, a kimenet az X repót mutatja.
+- **Pontosan egy fájl:** a szkript kiírja az X `main`-hez képesti módosított fájlokat, ennek egy sornak kell lennie: `.github/workflows/me1-evidence.yml`.
+- **Blob:** a szkript kétszer ellenőrzi a `9030b6f1…` értéket, a kitömörítés előtt és után. A hiba leállítja.
+- **Az X/main állapota:** a klón a szállítás pillanatában az X `main`-jét kapja. A push előtt én is olvasva összevetem a commit szülőjét az X `main` fejével, hogy nem mozdult-e közben.
+
+A kimenet után átnézem a commitot, és megadom a push parancsot. A push, a PR és a merge külön döntés. A lokális futtatás nem fogyasztja a K-5 keretet (5/300). A thread-napló push, a futás és a bizonyíték-letöltés HOLD.
+
+### 2026-11-22 19:45 — Felhasználó
+
+~~~~~
+<bash-input> bash ~/.cache/relay-ci-parity-04/deliver-me1.sh</bash-input>
+~~~~~
+
+### 2026-11-22 19:45 — Felhasználó
+
+~~~~~
+<bash-stdout>Cloning into '/tmp/tmp.yaKVJp3g2I/repo'...
+Switched to a new branch 'phase1-me1-evidence'
+A  .github/workflows/me1-evidence.yml
+branch commit: 6b88c9c34837fb54e3068ea092fb8a475a2a1719
+changed files vs main: .github/workflows/me1-evidence.yml 
+review the commit above, then: git -C /tmp/tmp.yaKVJp3g2I/repo push origin phase1-me1-evidence</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 19:45 — Claude
+
+Átnéztem a szállítási commitot (`6b88c9c34837fb54e3068ea092fb8a475a2a1719`), és mind a négy előfeltétel teljesül.
+
+| Előfeltétel | Eredmény |
+|---|---|
+| Célrepó | `git@github.com:CIC-Security-Lab/ci-adversarial-lab.git`, a labor X repó |
+| Pontosan egy fájl | csak `A .github/workflows/me1-evidence.yml`, 44 sor, a munkafa tiszta |
+| Blob | `9030b6f1759297f344052ada7757ba22e80cd5af`, egyezik; a `check-me1-workflow.py` `OK` a kiírt fájlra |
+| X/main állapota | a commit szülője `3c1eabeafa6db5ccbd83b38a084407944a8c7869`, ami az X `main` jelenlegi feje (most olvasva), nem mozdult |
+
+A szerző a placeholder `Your Name <you@example.com>`, nincs személyes adat. A commit aláíratlan, ahogy a labor többi commitja.
+
+A push, a PR és a merge külön döntés, a tiéd (K-8). Ha mehet, a parancsok:
+
+```
+! git -C /tmp/tmp.yaKVJp3g2I/repo push origin phase1-me1-evidence
+! gh pr create --repo CIC-Security-Lab/ci-adversarial-lab --base main --head phase1-me1-evidence --title "phase 1: me1-evidence workflow" --body "see factory 06q"
+```
+
+A PR-on a `lab-gate` check a `lab-gate-pr.yml`-től jelenik meg. Ha mégsem jelenik meg, állj meg, és küldd el a PR check-listáját. Utána olvasva ellenőrzöm a PR fejét, a checket, és merge után a blobot és a post-merge futást.
+
+A szállítás a `lab-gate-pr` és a post-merge `lab-gate-bootstrap` futást fogyasztja (2 kísérlet), vagyis a K-5 számláló 5-ről 7/300-ra nő, ha mindkettő lefut. A futás és a bizonyíték-letöltés HOLD, külön GO. A H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD.
+
+### 2026-11-22 19:46 — Felhasználó
+
+~~~~~
+<bash-input> git -C /tmp/tmp.yaKVJp3g2I/repo push origin phase1-me1-evidence</bash-input>
+~~~~~
+
+### 2026-11-22 19:46 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'phase1-me1-evidence' on GitHub by visiting:        
+remote:      https://github.com/CIC-Security-Lab/ci-adversarial-lab/pull/new/phase1-me1-evidence        
+remote: 
+To github.com:CIC-Security-Lab/ci-adversarial-lab.git
+ * [new branch]      phase1-me1-evidence -&gt; phase1-me1-evidence</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 19:46 — Claude
+
+A push megtörtént, a PR még nincs meg. Futtasd:
+
+```
+! gh pr create --repo CIC-Security-Lab/ci-adversarial-lab --base main --head phase1-me1-evidence --title "phase 1: me1-evidence workflow" --body "see factory 06q"
+```
+
+Ha megvan a PR, jelezd. Olvasva ellenőrzöm: a `headRefOid` legyen `6b88c9c34837fb54e3068ea092fb8a475a2a1719`, és a `lab-gate` check `app_id` 15368, `head_sha` az, `conclusion` `success`. Merge csak ezután, a te futtatásoddal, `--match-head-commit`-tal.
+
+### 2026-11-22 19:46 — Felhasználó
+
+~~~~~
+<bash-input> gh pr create --repo CIC-Security-Lab/ci-adversarial-lab --base main --head phase1-me1-evidence --title "phase 1: me1-evidence workflow" --body "see factory 06q"</bash-input>
+~~~~~
+
+### 2026-11-22 19:46 — Felhasználó
+
+~~~~~
+<bash-stdout>Warning: 23 uncommitted changes
+https://github.com/CIC-Security-Lab/ci-adversarial-lab/pull/2</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 19:46 — Claude
+
+Az X repó #2 PR-ja rendben van, a `lab-gate` check megjelent.
+
+- **Fej:** a `headRefOid` `6b88c9c34837fb54e3068ea092fb8a475a2a1719`, a szkript által kiírt commit. A PR nyitott, a base `main`, a státusz `MERGEABLE` / `CLEAN`.
+- **Módosított fájl:** pontosan egy, `.github/workflows/me1-evidence.yml`.
+- **Check:** `lab-gate`, `app_id` 15368 (Actions), `head_sha` az `6b88c9c…`, `completed / success`.
+- **Futás:** 45062640050, workflow `lab-gate-pr`, `pull_request`, `success`. A `me1-evidence` nem futott, mert csak kézi indítású.
+
+Merge (a tiéd), a fejhez kötve:
+
+```
+! gh pr merge 2 --repo CIC-Security-Lab/ci-adversarial-lab --merge --match-head-commit 6b88c9c34837fb54e3068ea092fb8a475a2a1719
+```
+
+Mergelés után olvasva ellenőrzöm: a három workflow-fájl blobja a merge commiton (`lab-gate.yml` `ebdc21b0…`, `lab-gate-pr.yml` `ae50e51c…`, `pk-canary-channels.yml` `ede4968c…`, `me1-evidence.yml` `9030b6f1…`), a fájlkészlet pontosan ez a négy, és a post-merge `lab-gate-bootstrap` futás. Ha a kimenet üres, azt is jelezd, mert korábban ilyenkor a parancs nem mindig hatott érvénybe.
+
+A K-5 számláló a szállítással 5-ről 7/300-ra nő, ha a post-merge futás is lefut (a PR-futással már 6). A futás és a bizonyíték-letöltés HOLD, külön GO.
+
+### 2026-11-22 19:47 — Felhasználó
+
+~~~~~
+<pasted_content id="964d">
+**Szakmai GO az X repó #2 PR-jának merge-elésére**, a közölt ellenőrzések alapján.
+
+Kizárólag a `6b88c9c34837fb54e3068ea092fb8a475a2a1719` HEAD-re érvényes.
+
+Post-merge kötelező ellenőrzések:
+
+- Mind a négy workflow blobegyezése.
+- Pontos fájlkészlet.
+- Sikeres `lab-gate-bootstrap` futás.
+- A `me1-evidence` nem indult el automatikusan.
+
+**K-5: jelenleg 6/300**, sikeres post-merge futás után 7/300.
+
+A tényleges mérés és bizonyítékletöltés továbbra is HOLD.
+</pasted_content id="964d">
+~~~~~
+
+### 2026-11-22 19:48 — Claude
+
+Ez szakmai GO, a merge a tiéd. Futtasd:
+
+```
+! gh pr merge 2 --repo CIC-Security-Lab/ci-adversarial-lab --merge --match-head-commit 6b88c9c34837fb54e3068ea092fb8a475a2a1719
+```
+
+Ha megvan, jelezd, és a post-merge ellenőrzések közül elvégzem:
+- a négy workflow blobegyezését a merge commiton;
+- a pontos fájlkészletet;
+- a sikeres `lab-gate-bootstrap` futást, a `headSha` a merge commit;
+- hogy a `me1-evidence` nem indult el automatikusan.
+
+Ha a kimenet üres, azt is jelezd, mert korábban ilyenkor a parancs nem mindig hatott érvénybe.
+
+A K-5 számláló most 6/300, sikeres post-merge futás után 7/300. A futás és a bizonyíték-letöltés HOLD, külön GO.
+
+### 2026-11-22 19:48 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 2 --repo CIC-Security-Lab/ci-adversarial-lab --merge --match-head-commit 6b88c9c34837fb54e3068ea092fb8a475a2a1719</bash-input>
+~~~~~
+
+### 2026-11-22 19:48 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 19:49 — Claude
+
+Az X repó #2 PR-ja mergelve, a négy post-merge ellenőrzés rendben van.
+
+- **Merge commit:** `4d432f5e8250948af83ff909a7314eeddadb1c29`, 2026-11-22 19:48:33Z. A jóváhagyott fej `6b88c9c34837fb54e3068ea092fb8a475a2a1719` volt. Az X `main` most a merge commit.
+- **Blobok a merge commiton:** mind egyezik a jóváhagyott értékkel.
+  - `lab-gate.yml` `ebdc21b0b3f8cb9ed1621713e9234e00f4fb5756`
+  - `lab-gate-pr.yml` `ae50e51c0c8693023261840c37feb6304e10529e`
+  - `pk-canary-channels.yml` `ede4968c61568d57aa6824d814c0d94b09a8bb83`
+  - `me1-evidence.yml` `9030b6f1759297f344052ada7757ba22e80cd5af`
+- **Fájlkészlet:** pontosan ez a négy fájl.
+- **Post-merge futás:** 45062842372, `lab-gate-bootstrap`, `push`, `headSha` a merge commit, `completed / success`.
+- **A `me1-evidence` nem indult el automatikusan:** a futások listájában nincs `me1-evidence` futás. Az összes futás száma 6.
+
+**K-5 számláló:** 7/300. A szállítás két kísérletet fogyasztott: 6 egyedi futás a PK-futás 2 kísérletével együtt, azaz 7 kísérlet.
+
+A szállított tartalom egyezik a jóváhagyott factory-csomaggal, ezzel a szállítás lezárt. A tényleges M-E1 mérés előtt a tulajdonosi GO-ban rögzítendő a futás pontos hatóköre.
+
+**Mi vár döntésre tőled** (mind külön, kimondott GO):
+- **Az M-E1 mérési futás:** `workflow_dispatch`, az X `main`-jéről, `APPROVED_HEAD` = `4d432f5e8250948af83ff909a7314eeddadb1c29`. A workflow kb. 12 percig futhat. A gyanús-workflow jelölés valószínű, ilyenkor a webes jóváhagyás a te döntésed, és a futás 2. kísérletet kap. A K-5 előszámítás szerint ez legfeljebb 2 kísérlet, vagyis 9/300-ig. A futás elindítása, a bizonyíték-letöltés és a kiolvasás a tiéd. Szkriptet a kiadás után készítek, a PK-futás mintájára (egyetlen futás, indítás előtti ellenőrzések, az `.state` fájl az újraindítás ellen).
+- **K-4 (3) olvasása** a Relay felületén, és a **B sor**.
+- **Thread-napló push:** csak a te kifejezett szavadra.
+
+Az artifact-attestáció külön nyitott tétel. A H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD.
+
+### 2026-11-22 19:55 — Felhasználó
+
+~~~~~
+<pasted_content id="964d">
+**Szakmai GO az első M-E1 mérési futásra.** A szállítás lezárható.
+
+A jóváhagyható mérési hatókör:
+
+- Repository: `CIC-Security-Lab/ci-adversarial-lab`
+- Workflow: `me1-evidence.yml`
+- Event: `workflow_dispatch`
+- Branch: `main`
+- APPROVED_HEAD: `4d432f5e8250948af83ff909a7314eeddadb1c29`
+- Workflow blob: `9030b6f1759297f344052ada7757ba22e80cd5af`
+- Egyetlen indítás, automatikus újrafuttatás nélkül.
+- Második kísérlet kizárólag dokumentált platformoldali visszatartás és tulajdonosi jóváhagyás esetén.
+
+A `.state` alapú újraindítás-védelem indokolt.
+
+| Tétel                           | Állapot    |
+| ------------------------------- | ---------- |
+| Mérőcsomag                      | CLOSED     |
+| Szállítás                       | CLOSED     |
+| Első M-E1 futás                 | Szakmai GO |
+| Bizonyítékletöltés és kiolvasás | HOLD       |
+| Artifact-attestáció             | OPEN       |
+| Relay-implementáció             | HOLD       |
+
+**K-5: 7/300 → legfeljebb 9/300.**
+
+Az M-E1 végső ítélete továbbra is nyitott. A tényleges végrehajtás tulajdonosi GO-ra vár.
+</pasted_content id="964d">
+~~~~~
+
+### 2026-11-22 19:55 — Claude
+
+Ez szakmai GO, nem a te kimondott GO-d, ezért a futás indítóját nem készítem el, és semmit nem indítok. A szállítás lezárt. A hatókör, ahogy a javaslat rögzíti: `CIC-Security-Lab/ci-adversarial-lab`, `me1-evidence.yml`, `workflow_dispatch`, ág `main`, `APPROVED_HEAD` `4d432f5e8250948af83ff909a7314eeddadb1c29`, blob `9030b6f1759297f344052ada7757ba22e80cd5af`.
+
+Elég egy mondat a GO-hoz, pl.: "GO – az első M-E1 mérési futás, egyetlen indítással." A GO után ezt készítem el, helyben, nem futtatva:
+- **Indítószkript:** a PK-futás mintájára egyetlen futás, indítás előtti ellenőrzésekkel (ORG, az X `main` feje, a négy blob, nincs korábbi `me1-evidence` futás, a K-5 számláló, az `.state` fájl az újraindítás ellen). A futást `created_at` alapján azonosítja, a lejárat-kapus workflow miatt hosszabb várakozással (a futás kb. 12 percig is tarthat).
+- **Letöltés és kiolvasás:** külön lépés, mert ez külön GO: a `fetch-me1.sh`, a külön megbízható JWKS (`fetch-jwks.sh`) és a `read-me1.py` a négy kötelező kapcsolóval és a `--trusted-jwks`-szel.
+- **Második kísérlet:** csak ha a GitHub visszatartja az 1. kísérletet (`action_required`, 0 job), és te jóváhagyod a weben. Automatikus újrafuttatás nincs.
+
+A bizonyíték-letöltés és a kiolvasás HOLD, külön GO. Az artifact-attestáció külön nyitott tétel. A H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 7/300, a futás után legfeljebb 9/300.
+
+### 2026-11-22 19:57 — Felhasználó
+
+~~~~~
+<pasted_content id="964d">
+A hatókör megfelelő. A szakmai jóváhagyás érvényes.
+
+Gábor, tulajdonosként ezt kell kiadnod a végrehajtó ágensnek:
+
+> GO – az első M-E1 mérési futás, egyetlen indítással, a rögzített HEAD-hez és blobhoz kötve.
+
+A bizonyítékletöltés és minden további mérés HOLD.
+
+**K-5: 7/300.**
+</pasted_content id="964d">
+~~~~~
+
+### 2026-11-22 19:57 — Claude
+
+Ez ismét a javasolt szöveg, amit neked kell kimondanod. Én nem tekinthetem a GO-dnak, és a futás indítóját addig nem készítem el.
+
+Egy mondat elég, pl.: "GO – az első M-E1 mérési futás, egyetlen indítással, a rögzített HEAD-hez és blobhoz kötve." Utána elkészítem az indítószkriptet (helyben, nem futtatva), te indítod.
+
+A bizonyíték-letöltés és minden további mérés HOLD. A K-5 számláló 7/300.
+
+### 2026-11-22 19:58 — Felhasználó
+
+~~~~~
+GO – az első M-E1 mérési futás, egyetlen indítással, a rögzített HEAD-hez és blobhoz kötve.
+~~~~~
+
+### 2026-11-22 19:58 — Claude
+
+A GO megvan. Elkészítem a futás indítószkriptjét a PK-futás mintájára. Először a meglévő szkriptet nézem meg, hogy ugyanazt a szerkezetet és védelmeket vigyem át.
+
+### 2026-11-22 19:58 — Claude
+
+Az indítószkript elkészült, és a read-only előellenőrzést (`check` mód) lefuttattam: sikeres. Az indítást nem én végzem, az a tiéd: `~/.cache/relay-ci-parity-04/me1-run-212.sh`.
+
+**Az előellenőrzés eredménye** (nem dispatch-el, nem hoz létre `.state` fájlt, ellenőrizve: nincs):
+- Az X `main` feje pontosan `4d432f5e8250948af83ff909a7314eeddadb1c29`.
+- A négy workflow blobja és a pontosan négy fájlból álló fájlkészlet egyezik.
+- Nincs korábbi `me1-evidence.yml` futás.
+- A K-5: 6 futás olvasva, a keret 300.
+- A harness a lemezen megegyezik a factory merge commit (`e69b01cc…`) tartalmával.
+
+**Módok:**
+- **`start`:** pontosan egy futást indít (a `.state` fájl az újraindítás ellen, hibás indítás után is), és megvárja, legfeljebb 30 percig. Nem tölt le és nem olvas. Ha az 1. kísérlet `action_required`, kiírja a jóváhagyás helyét. A jóváhagyás a te döntésed a weben, és ugyanazon futás 2. kísérletét hozza létre. Új dispatch nincs.
+- **`fetch RUN_ID ATTEMPT`:** külön GO. Letölti a bizonyítékot, a bizalmi gyökeret külön fájlba a bizonyítékkönyvtáron kívülre (`~/.cache/ci-lab/me1-trust/`), majd kiolvassa a négy kötelező kapcsolóval és a `--trusted-jwks`-szel.
+- **`read RUN_ID ATTEMPT`:** újraolvasás, nem indít futást.
+
+**A futás várható lefolyása:** a workflow megvárja a token lejáratát, mielőtt kiírná, ezért kb. 12 percig is eltarthat. Az első kísérlet valószínűleg a gyanús-workflow jelölés miatt visszatartott lesz (nem mért).
+
+Indítás, ha kész vagy:
+
+```
+! bash ~/.cache/relay-ci-parity-04/me1-run-212.sh start
+```
+
+A kimenetet küldd el. Ha a kimenet üres, jelezd, mert korábban ilyenkor a parancs nem mindig hatott érvénybe. Ellenőrzöm az `.state` fájlt és a futás állapotát, mielőtt újra kérnéd.
+
+A K-5 számláló most 7/300 (6 egyedi futás, 7 kísérlet), az indítás után legfeljebb 9/300. A bizonyíték-letöltés és a kiolvasás külön GO. Az M-E1 ítélete nyitott, a P `NOT-READ`. Az artifact-attestáció külön nyitott tétel. A H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD.
+
+### 2026-11-22 19:59 — Felhasználó
+
+~~~~~
+<bash-input> bash ~/.cache/relay-ci-parity-04/me1-run-212.sh start</bash-input>
+~~~~~
+
+### 2026-11-22 20:01 — Felhasználó
+
+~~~~~
+<bash-stdout>K-5 counter before: 6 workflow runs read (all workflows); the cap is 300 attempts
+pre-flight OK: main = 4d432f5e8250948af83ff909a7314eeddadb1c29, four blobs and file set match, no earlier me1-evidence.yml run, harness = factory e69b01cc5822e98cc9ae1fdde6a5fe88a8048079
+run 45063800073 started. The workflow waits for the token to expire before it publishes it: up to ~12 minutes. Waiting (max 30 min).
+19:59:18Z in_progress/null/attempt 1
+Command did not complete within its 120s timeout and was moved to the background (ID: bs3g1jp1o). Output is being written to: /tmp/claude-1000/-home-sinkog-sync-claude-factory-CIC-workdir-jobs-relay-ci-parity-01-inventory-workspace/af350620-597b-4e95-b500-75750f0ef7d6/tasks/bs3g1jp1o.output. You will be notified when it completes. It is running now: do not start a second copy while it runs. If it is no longer needed, stop it with TaskStop. To check interim output, use Read on that file path.</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 20:03 — Felhasználó
+
+~~~~~
+hol tartunk?
+~~~~~
+
+### 2026-11-22 20:03 — Claude
+
+Megnézem az állapotot, olvasva. A szkript a háttérben vár tovább, ezt nem állítom le.
+
+### 2026-11-22 20:03 — Claude
+
+Az első M-E1 mérési futás elindult, és most fut.
+
+**Állapot (olvasva, 20:03:33Z):**
+- **Futás:** 45063800073, `workflow_dispatch`, `headSha` `4d432f5e8250948af83ff909a7314eeddadb1c29`, 1. kísérlet, `in_progress`. A GitHub **nem tartotta vissza**: a PK-futással ellentétben az 1. kísérlet azonnal elindult. Ez mért megfigyelés erre a workflow-ra.
+- **Job:** `me1-evidence`, 19:59:10Z-kor indult. A `Set up job` lépés kész, az `me1 collect` lépés fut: ebben vár a workflow a token lejáratára. Az `me1 artifact` még `pending`, vagyis a token még nem került az artifactba.
+- **`.state` fájl:** létrejött (`dispatched_at=19:59:05Z`, `run_id=45063800073`). Az újraindítás ellen véd.
+- **A szkript:** a háttérben vár tovább (a bash-input 120 s után háttérbe került, ez nem hiba). Ne indítsd újra, és ne állítsd le. A kimenete a végén jelzi, ha a futás befejeződött.
+
+**Várható lefolyás:** a lépés `exp + 121 s`-ig vár. A token élettartama nem mért, ezért a futás kb. 12 percig is tarthat. Ha az élettartam 600 s-nál hosszabb, a workflow fail-closed leáll (`token expiry too far`), és az artifact nem jön létre. Ez érvényes eredmény: akkor az M-E1 OIDC-bizonyíték `NOT-READ`, de nem `FAIL`.
+
+A szkript értesít a futás végén. Utána jelezd, és ellenőrzöm az `.state` fájlt és a futás végállapotát, mielőtt a letöltéshez a külön GO-t kérném. A bizonyíték-letöltés és a kiolvasás HOLD. A K-5 számláló 7/300 (6 egyedi futás, az M-E1 futással 7 egyedi futás, 8 kísérlet, ha nincs 2. kísérlet; legfeljebb 9/300). Új dispatch nincs.
+
+### 2026-11-22 20:06 — Claude
+
+Az első M-E1 mérési futás befejeződött: `completed / success`, 1. kísérlet, egyetlen indítással.
+
+**Olvasott megfigyelések (labor X repó, nincs bizonyíték-letöltés):**
+- **Futás:** 45063800073, `headSha` `4d432f5e8250948af83ff909a7314eeddadb1c29`. A GitHub **nem tartotta vissza**: nem lett `action_required`, nincs 2. kísérlet, a K-5 nem nőtt a jóváhagyás miatt.
+- **Időzítés:** az `me1 collect` lépés 19:59:13Z és 20:06:14Z között futott, kb. **7 perc 1 mp**. Ez egyezik a lejárat-kapus tervvel: a token lejáratára várt. A várakozás tehát nem 12 perc volt, a token élettartama valószínűleg kb. 5 perc, de ezt csak a letöltött token `exp` állítása igazolja.
+- **A workflow nem állt le** a `token expiry too far` hibával, ami azt jelenti, hogy a token `exp` távolsága ≤ 600 s volt.
+- **Artifact:** 14770618752 (`me1-evidence`), létrehozva **20:06:16Z**, nem lejárt. A feltöltés az `me1 artifact` lépésben történt, 20:06:14Z után, vagyis a várakozás **után**. A szerver által rögzített létrehozási idő az `exp + 120` utáni, ez a letöltés utáni kiolvasásban az olvasó külön ellenőrzi.
+- **`.state` fájl:** rendben, a futás azonosítója rögzítve. A `me1-evidence` workflow-nak egyetlen futása van.
+
+**Mit jelent ez, és mit nem:**
+- A workflow lefutott, és a lejárat-kapus publikálás a várt időrendben történt. Ez **mért** megfigyelés erre a workflow-ra.
+- **Nem** jelenti, hogy a token érvényes, hogy az aláírás ellenőrizhető, hogy a claim-nevek a dokumentáltak, és hogy az OIDC-kötés igazolt. Ezek a letöltött bizonyítékon, az olvasóval dőlnek el, és még nincsenek olvasva.
+- Az M-E1 ítélete nyitott. A P `NOT-READ`.
+
+**K-5 számláló:** 8/300 (7 egyedi futás, 8 kísérlet). Az előszámítás legfeljebb 9-et tervezett, mert a 2. kísérlet elmaradt.
+
+**A következő lépés külön GO-t igényel:**
+
+```
+bash ~/.cache/relay-ci-parity-04/me1-run-212.sh fetch 45063800073 1
+```
+
+Ez letölti a bizonyítékot, külön fájlba a bizonyítékkönyvtáron kívülre letölti a kibocsátó kulcsait, és kiolvassa a négy kötelező kapcsolóval. A szkript ellenőrzi a harness-egyezést is. A bizonyíték az artifactban ~2026-11-23 20:06 UTC-ig tölthető le (1 napos megőrzés), ezért érdemes ezt a mai napon elvégezni.
+
+Az artifact-attestáció külön nyitott tétel. A H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD.
+
+### 2026-11-22 20:18 — Felhasználó
+
+~~~~~
+<bash-input>bash ~/.cache/relay-ci-parity-04/me1-run-212.sh fetch 45063800073 1</bash-input>
+~~~~~
+
+### 2026-11-22 20:18 — Felhasználó
+
+~~~~~
+<bash-stdout>run is the approved one
+manifest written for run 45063800073 (attempt 1, head 4d432f5e8250948af83ff909a7314eeddadb1c29)
+fetched run 45063800073 attempt 1 artifact 14770618752 into /home/sinkog/.cache/ci-lab/me1-raw/45063800073
+fetched 4 key(s) from https://token.actions.githubusercontent.com/.well-known/jwks into /home/sinkog/.cache/ci-lab/me1-trust/jwks-45063800073.json (sha256 5f8164c9696c27837ad18c5fe7c7022a433bd5390183e8ff15c74d82233270f4)
+run binding                                          MET       run 45063800073 attempt 1, workflow_dispatch, completed/success, branch main
+repository                                           MET       manifest 'CIC-Security-Lab/ci-adversarial-lab'
+run id                                               MET       manifest 45063800073
+attempt                                              MET       manifest 1
+earlier attempts                                     MET       history acceptable for attempt 1
+artifact origin                                      MET       artifact 14770618752 created inside the attempt window
+approved head SHA                                    MET       run head 4d432f5e8250948af83ff909a7314eeddadb1c29
+trusted JWKS (separate from the evidence)            MET       4 key(s), outside the evidence package; sha256 5f8164c9696c27837ad18c5fe7c7022a433bd5390183e8ff15c74d82233270f4
+API metadata file agrees with the manifest           MET       api/run.json vs manifest
+OIDC signature (issuer's public keys, offline)       MET       RS256 signature valid
+OIDC issuer                                          MET       iss 'https://token.actions.githubusercontent.com'
+OIDC audience (the measurement's own)                MET       aud 'me1-evidence'
+OIDC issued inside the attempt window                MET       iat 1795377553, window 2026-11-22T19:59:06Z..2026-11-22T20:06:18Z
+OIDC provably expired before the artifact was created (server time) MET       exp 1795377853, artifact created_at 2026-11-22T20:06:16Z (needs &gt;= exp+60s)
+OIDC binds repository                                MET       claim 'CIC-Security-Lab/ci-adversarial-lab', API 'CIC-Security-Lab/ci-adversarial-lab'
+OIDC binds run_id                                    MET       claim '45063800073', API '45063800073'
+OIDC binds run_attempt                               MET       claim '1', API '1'
+OIDC binds sha                                       MET       claim '4d432f5e8250948af83ff909a7314eeddadb1c29', API '4d432f5e8250948af83ff909a7314eeddadb1c29'
+OIDC binds workflow_ref                              MET       claim 'CIC-Security-Lab/ci-adversarial-lab/.github/workflows/me1-evidence.yml@refs/heads/main', API 'CIC-Security-Lab/ci-adversarial-lab/.github/workflows/me1-evidence.yml@refs/heads/main'
+OIDC binds event_name                                MET       claim 'workflow_dispatch', API 'workflow_dispatch'
+OIDC binds job_workflow_ref (path+ref)               MET       claim 'CIC-Security-Lab/ci-adversarial-lab/.github/workflows/me1-evidence.yml@refs/heads/main'
+OIDC binds ref and subject (identity)                NOT-MET   ref 'refs/heads/main' sub 'repo:CIC-Security-Lab@359862858/ci-adversarial-lab@1467589211:ref:refs/heads/main'
+self-report (context.json)                           NOTE      identical to the signed claims (informational)
+P (PR-author influence)                              NOT-READ  needs the evidence of a pull_request run (separate GO)
+OVERALL: EVIDENCE NOT BOUND (NOT MET)
+INVENTORY (what each evidence type is; the verdict is taken in the report):
+  API run metadata   - created by the platform, read from outside; unsigned; binds path/ref, head, run, attempt
+  OIDC token claims  - created by the platform, signed; independently verifiable against the issuer's keys; see rows above
+  context.json       - created by the workflow itself: self-report, author-controlled, never evidence on its own
+The M-E1 verdict is NOT taken by this tool; the P check stays NOT-READ (needs a pull_request run).</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 20:19 — Claude
+
+Ez fontos eredmény. A valódi bizonyítékon 22 sor `MET`, egyetlen `NOT-MET` van, és az a `sub` állítás alakja. Mielőtt bármit állítanék, olvasással megnézem, mit ad a valódi token és az API.
+
+### 2026-11-22 20:19 — Claude
+
+A bizonyíték letöltve és kiolvasva. Az eredmény a tool szerint `EVIDENCE NOT BOUND (NOT MET)`, de egyetlen sor miatt: a `sub` állítás alakja.
+
+**Mit mértem (labor X repó, a futás 45063800073, 1. kísérlet):**
+- **Futás és eredet:** minden `MET`: a futás, a repó, a kísérlet, a head, az artifact eredete (14770618752, az időablakon belül jött létre), a bizalmi gyökér külön fájlban (4 kulcs, SHA-256 `5f8164c9…`), az API↔manifest egyezés.
+- **Aláírás:** az **RS256 aláírás érvényes** a kibocsátó nyilvános kulcsaival, offline ellenőrizve. A kibocsátó és a közönség (`me1-evidence`) egyezik. A kiadás az időablakon belül van.
+- **A lejárat-kapu működött:** `exp` 1795377853, az artifact létrehozása 20:06:16Z, ami az `exp` után legalább 60 s-mal van. A token **élettartama 300 s** (`exp − iat`), és az `nbf` az `iat` előtt 300 s-sal. A 600 s-os feltevésem tehát teljesült, és a várakozás 7 perc volt (300 s + 121 s).
+- **Kötés, mind `MET`:** `repository`, `run_id`, `run_attempt`, `sha`, `workflow_ref`, `event_name`, `job_workflow_ref` egyezik az API-metaadattal. A `job_workflow_ref` **jelen van** ebben a workflow-típusban is, és egyezik.
+- **Az önbevallás** (`context.json`) azonos az aláírt állításokkal (`NOTE`, tájékoztató).
+- **A P:** `NOT-READ`, ahogy tervezett.
+
+**Az egyetlen `NOT-MET`:**
+- Az olvasó a `sub` állítást `repo:CIC-Security-Lab/ci-adversarial-lab:ref:refs/heads/main` alakban várta (a dokumentációból). A valódi token: `repo:CIC-Security-Lab@359862858/ci-adversarial-lab@1467589211:ref:refs/heads/main`. A `sub` tehát a tulajdonos és a repó **numerikus azonosítóját** is tartalmazza.
+- Az azonosítók **egyeznek**: a token `repository_id` 1467589211 és `repository_owner_id` 359862858, és az API `repository.id` és `owner.id` értéke is ugyanez.
+
+**Hogyan értelmezem, és mit nem:**
+- Ez **nem a platformbizonyíték kötésének hibája**, hanem az **olvasó dokumentációra épülő elvárása** tévedett. Ezt a review előre jelezte (a claim-nevek dokumentáltak, nem mértek), most mért: a `sub` formátuma ebben a szervezetben azonosítós. Hogy ez szervezeti beállítás vagy a platform általános viselkedése, nem tudom.
+- A tool kimenetét **nem írom át**: az eredmény `NOT MET` marad, amíg az olvasót nem javítjuk. Javítás: új, review-köteles PR (06r). A `sub` mindkét alakját elfogadja, de az azonosítós alakban a számokat az API-ból és a `repository_id`/`repository_owner_id` állításokból **kötelezően egyezteti**, és negatív tesztet kap a hibás azonosítóra. Ehhez nem kell új futás: a meglévő bizonyítékot újraolvassuk. Az artifact már letöltött, így a lejárata nem akadály.
+- Az M-E1 ítélete **nyitott**. A P `NOT-READ`, így az ítélet legfeljebb `INCONCLUSIVE` lehet, amíg pull_request-futás bizonyítéka nincs.
+
+**Egyéb megfigyelések a valódi tokenről (mért, labor):** a token 31 állítást hordoz, köztük `job_workflow_sha`, `workflow_sha`, `ref_protected`, `repository_visibility`, `runner_environment`, `check_run_id`. Ezeket az olvasó még nem vizsgálja. A `job_workflow_sha` és a `workflow_sha` a commitot külön köti, ami az M-E1 négyesét erősítheti. A tokenből az `actor` és a `jti` értékét nem mutattam.
+
+**Következő lépés külön GO-t igényel:** a 06r javító PR (az olvasó `sub`-elvárása és a nem vizsgált állítások felvétele), review, merge, majd a meglévő bizonyíték újraolvasása. Új futás nem kell. K-5: 8/300, változatlan. Az artifact-attestáció külön nyitott tétel. A H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD.
+
+Mondjam ki a javaslatomat GO-ként, vagy a tervezést kéred előbb? Egy mondat elég a GO-hoz, pl.: "GO – az olvasó `sub`-elvárásának javítása külön PR-ban."
+
+### 2026-11-22 20:20 — Felhasználó
+
+~~~~~
+GO – az olvasó `sub`-elvárásának javítása külön PR-ban.
+~~~~~
+
+### 2026-11-22 20:21 — Claude
+
+A GO megvan. A javítást új jobban készítem el a 06q harness másolatán. A valódi token szerkezetét (a mért 31 állítás neve és a nem érzékeny értékek) regressziós fixtúraként is beépítem.
+
+### 2026-11-22 20:23 — Claude
+
+A `sub`-elvárás javítása elkészült egy aláírt commitban: `f3db1ab`, a `feature/relay-ci-parity-06r-sub-claim-fix` ágon. Nincs push, ezt te futtatod:
+
+```
+! bash ~/.cache/relay-ci-parity-04/push-212-sub-fix.sh
+```
+
+Utána megnyitom a PR-t (a body kész), és lefuttatom a gate-et.
+
+**A javítás:**
+- **`sub`:** mindkét alak elfogadott: az egyszerű, és az azonosítós `repo:OWNER@OWNERID/REPO@REPOID:ref:...`. Az azonosítós alakban a számoknak pontosan az API `owner.id` és `repository.id` értékeinek kell lenniük. Nincs "mindent elfogad" lazítás.
+- **Új kötelező kötés:** a `repository_id` és a `repository_owner_id` állítás az API azonosítóira. Hiányuk, eltérésük vagy a szám-típus `NOT-MET`.
+- **Új sorok:** a `workflow_sha` és a `job_workflow_sha` egyezik a head-del, ha jelen van (hiánya `NOTE`). A `ref_type`, `ref_protected`, `repository_visibility` és `runner_environment` jelentve (`NOTE`), nem ítélve.
+
+**Mért (helyi):**
+- A selftest 120 ellenőrzés, a lánc-teszt 29, mind a várt eredménnyel. Az új esetek között van a valódi token 31 állításos szerkezete regressziós fixtúraként (a nevek és a nem érzékeny értékek a valódi futásról, szintetikus aláírással).
+- A tesztek tudnak bukni: az azonosító-ellenőrzés nélküli `sub` 8, az `repository_id` kötés kikapcsolva 3, a `workflow_sha` kötés kikapcsolva 2 ponton bukik.
+- A `validate-spec`, a `validate-output` és a `verify-signatures` GO. A commitba csak explicit fájllistával került fájl, 7 fájl.
+
+**Az előzetes futás a valódi bizonyítékon:** a javított olvasó, csak olvasásra, helyben `EVIDENCE BOUND, P NOT READ`-et adott. A `sub`, a két azonosító-kötés és a `workflow_sha`/`job_workflow_sha` sor `MET`. **Ez nem a mérési eredmény**: a leírás és a PR kifejezetten előzetesnek jelöli. A hivatalos újraolvasás a merge után, a te futtatásoddal történik, új futás és új letöltés nélkül. A jelentésben az első `NOT-MET` olvasat és a javított olvasat külön szerepel, az elsőt nem írom át.
+
+**A review-nak figyelnie kell:**
+1. A `sub`-elfogadás elég szigorú-e.
+2. A kötelezővé tett azonosító-állítások egyetlen futás mért jelenlétére épülnek.
+3. Az azonosítós `sub` oka nem ismert: szervezeti beállítás vagy általános viselkedés.
+
+**Az M-E1 ítélete nyitott.** Az `EVIDENCE BOUND` nem `PASS`, a P `NOT-READ`, az ítélet legfeljebb `INCONCLUSIVE`, amíg pull_request-futás bizonyítéka nincs. A merge és az újraolvasás külön lépés. Új futás, H1/H2, M-A…M-D, valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-22 20:26 — Felhasználó
+
+~~~~~
+<bash-input> bash ~/.cache/relay-ci-parity-04/push-212-sub-fix.sh</bash-input>
+~~~~~
+
+### 2026-11-22 20:26 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'feature/relay-ci-parity-06r-sub-claim-fix' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-factory/pull/new/feature/relay-ci-parity-06r-sub-claim-fix        
+remote: 
+To github.com:CentralInfraCore/cic-factory.git
+ * [new branch]      feature/relay-ci-parity-06r-sub-claim-fix -&gt; feature/relay-ci-parity-06r-sub-claim-fix</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 20:29 — Claude
+
+A `sub`-javítás PR-ja nyitva: https://github.com/CentralInfraCore/cic-factory/pull/90, a `main` ágra.
+
+A gate zöld: futás 45066467688, `headSha` `f3db1ab32aafce6e1a59db3028d093361e6ea08b`, `completed / success`. A távoli ág feje is ez, egyezik a helyi HEAD-del.
+
+Tartalmi review-ra vár. A review-ban ezt kérem megnézni:
+- **A `sub`-elfogadás szigora:** nincs "mindent elfogad" lazítás, az azonosítós alakban a számok az API-hoz kötöttek.
+- **A kötelezővé tett azonosító-állítások:** a `repository_id` és a `repository_owner_id` egyetlen futás mért jelenlétére épül.
+- **Az ok:** az azonosítós `sub` oka nem ismert (szervezeti beállítás vagy általános viselkedés).
+- **Az ítélet:** az `EVIDENCE BOUND` nem `PASS`, a P `NOT-READ`, az M-E1 ítélete nyitott.
+
+A merge, az újraolvasás, új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-22 20:32 — Felhasználó
+
+~~~~~
+<pasted_content id="964d">
+## **cic-factory #90 – tartalmi review**
+
+
+
+APPROVED – szakmai GO
+
+CI SUCCESS
+
+
+
+A tényleges implementációt és a teszteseteket ellenőriztem. Blokkoló finding nincs.
+
+| Ellenőrzés                  | Eredmény                                   |
+| --------------------------- | ------------------------------------------ |
+| HEAD                        | `f3db1ab32aafce6e1a59db3028d093361e6ea08b` |
+| Gate                        | 45066467688 – SUCCESS                      |
+| Subject-ellenőrzés          | Megfelelő                                  |
+| Numerikus azonosítók kötése | Megfelelő                                  |
+| M-E1 ítélet hatóköre        | Megfelelő                                  |
+
+### **1. A&#x20;**`sub`**&#x20;elfogadásának szigora**
+
+A két engedélyezett alak pontos szövegegyezéssel kerül ellenőrzésre. Nincs wildcard vagy általánosított regex.
+
+Az azonosítós alakban:
+
+- A tulajdonos neve és azonosítója egyezik.
+- A repository neve és azonosítója egyezik.
+- A ref pontosan `refs/heads/main`.
+- A külön aláírt azonosító-állítások kötelezően egyeznek az API adataival.
+
+Ez nem egyszerű lazítás: **a korábbinál erősebb identitáskötés jött létre.**
+
+### **2. A kötelező azonosítók**
+
+A `repository_id` és `repository_owner_id` kötelezővé tétele elfogadható a jelenlegi mérési hatókörben.
+
+Ez konzervatív elfogadási politika, nem általánosan igazolt platformkövetelmény. Egy későbbi eltérő claim-szerkezet esetén új vizsgálat szükséges.
+
+### **3. A mérési eredmények kezelése**
+
+Helyesen elkülönül:
+
+- Az eredeti `NOT-MET` kiolvasás.
+- A javított olvasó szintetikus ellenőrzése.
+- A merge utáni hivatalos újraolvasás.
+- Az M-E1 végső ítélete.
+
+Az azonosítós subject megjelenésének oka továbbra is ismeretlenként szerepel.
+
+### **4. Tesztelés**
+
+| Tesztcsoport    | Jelentett eredmény |
+| --------------- | ------------------ |
+| Evidence reader | 120/120            |
+| Gyűjtőlánc      | 29/29              |
+| **Összesen**    | **149/149**        |
+
+A jelentett célzott mutációk is megfelelőek:
+
+- Subject-azonosítók ellenőrzésének kikapcsolása: 8 bukás.
+- Repository-azonosító kötésének kikapcsolása: 3 bukás.
+- Workflow SHA kötésének kikapcsolása: 2 bukás.
+
+## **Döntés**
+
+**Merge-re szakmai GO**, kizárólag a fent azonosított HEAD-re.
+
+A merge után a meglévő bizonyíték újraolvasása javasolt, változatlan nyers adatokkal és bizalmi gyökérrel, új platformfutás nélkül.
+
+- M-E1: OPEN.
+- P: NOT-READ.
+- Artifact-attestáció: OPEN.
+- Új futás, H1/H2, M-A…M-D, App-kulcsok, Relay-implementáció: HOLD.
+
+**K-5: 8/300.** Az újraolvasás nem fogyaszt további mérési keretet.
+</pasted_content id="964d">
+~~~~~
+
+### 2026-11-22 20:32 — Claude
+
+A #90 jóváhagyva: a szakmai GO a `f3db1ab32aafce6e1a59db3028d093361e6ea08b` fejre szól. A merge a tiéd, ezt futtasd:
+
+```
+! gh pr merge 90 --repo CentralInfraCore/cic-factory --merge --match-head-commit f3db1ab32aafce6e1a59db3028d093361e6ea08b
+```
+
+Ha megvan, jelezd. Utána ellenőrzöm a faegyezést és a post-merge gate-et. Ha a kimenet üres, azt is jelezd, mert korábban ilyenkor a parancs nem mindig hatott érvénybe.
+
+Az újraolvasás a merge után külön lépés. Ehhez a `me1-run-212.sh` szkriptet frissítem a javított harnessre és az új merge commitra, a blob-egyezés ellenőrzésével, és a szkript az újraolvasáskor a három harness-fájlt a merge committal veti össze. Új futás, új letöltés és a bizalmi gyökér cseréje nincs: ugyanaz a nyers bizonyíték és ugyanaz a JWKS-fájl (SHA-256 `5f8164c9…`). Az újraolvasás nem fogyaszt K-5 keretet.
+
+Az M-E1 nyitott, a P `NOT-READ`, az artifact-attestáció külön nyitott tétel. Új futás, H1/H2, M-A…M-D, valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-22 20:33 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 90 --repo CentralInfraCore/cic-factory --merge --match-head-commit f3db1ab32aafce6e1a59db3028d093361e6ea08b</bash-input>
+~~~~~
+
+### 2026-11-22 20:33 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 20:36 — Claude
+
+Az újraolvasó szkript készen áll: `~/.cache/relay-ci-parity-04/me1-run-212.sh`, a harness a `a4be7ce0…` merge commitra és a 06r útvonalra állítva (az előző változat `.bak`). A szkript szintaxisa rendben, a három harness-fájl blobja egyezik a merge committal. A nyers bizonyíték és a bizalmi gyökér változatlan: a JWKS-fájl SHA-256-ja továbbra is `5f8164c9…`.
+
+Az újraolvasás a hivatalos olvasat, ezért a tiéd, külön lépés. Nem indít futást és nem tölt le semmit, a K-5 keretet nem fogyasztja:
+
+```
+! bash ~/.cache/relay-ci-parity-04/me1-run-212.sh read 45063800073 1
+```
+
+A kimenetet küldd el. Ha a kimenet üres, azt is jelezd. Az eredményt a jelentésben két külön olvasatként rögzítem: az első `NOT MET` (a `sub`-elvárás miatt) és a javított olvasat. Az első olvasatot nem írom át.
+
+**Mit várhatunk, és mit nem:** az előzetes helyi futás `EVIDENCE BOUND, P NOT READ`-et adott. Ez a hivatalos olvasat is lehet, de az M-E1 ítélete így is nyitott: a P `NOT-READ`, az ítélet legfeljebb `INCONCLUSIVE`, amíg pull_request-futás bizonyítéka nincs. Az artifact-attestáció külön nyitott tétel. Új futás, H1/H2, M-A…M-D, valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-22 20:37 — Felhasználó
+
+~~~~~
+<pasted_content id="964d">
+cic-primitives #52 – negyedik review
+
+APPROVED – szakmai GO
+ CI SUCCESS
+
+Az F5–F6 javításokat a tényleges commit-diff alapján ellenőriztem. Új blokkoló finding nincs.
+Ellenőrzés    Eredmény
+HEAD    a7c144844de78b814c384bd1348de646d890a044
+Base    532541c31543ef33aeb461902bede31a6da9e21f
+Gate    45066829165 – SUCCESS
+F1–F4    CLOSED
+F5    CLOSED
+F6    CLOSED
+
+F5 – Evidence hatókör
+A javítás megfelelő. Az evidence-kulcs hatóköre egyértelműen elválasztásra került a teljes validációs folyamat hatókörétől.
+Eredmény típusa    A jelenlegi kulcs alkalmazható?
+Schema-pattern-validáció osztálya    Igen, class key
+Schema-pattern-validáció kódja és útvonala    Igen, result key
+Reader által elutasított dokumentum    Nem
+Értékvalidáció    Nem
+Verifier költségvetési eredménye    Nem
+Teljes release-verdikt    Nem
+
+A evidence_for_schema() modell a reader hibája esetén nem ad ki kulcsot. A beültetett key-on-reader-error hiba ellenőrzött elutasítása megfelelő.
+F6 – Domain separation
+Mind a hat digest- és kulcstípus önálló domain taget kapott:
+Típus    Domain tag
+Contract content    cic.pattern.contracts.content/1
+Contract delivery    cic.pattern.contracts.delivery/1
+Pin set    cic.pattern.pin.set/1
+Pin ordered    cic.pattern.pin.ordered/1
+Class key    cic.pattern.class/1
+Result key    cic.pattern.result/1
+
+A specifikáció, a futtatható modell és az ellenőrző összhangban van. A negatív kontrollok a domain separation eltávolítását is érzékelik.
+D1–D8 – végleges szakmai ajánlás
+Döntési pont    Ajánlás    Tartalom
+D1    GO    Hibás típusú pin: pattern_profile_unknown
+D2    GO    Explicit null deklaráció: unknown
+D3    GO    Pattern contract nélkül nincs pin-értékelés
+D4    GO    Forrás-sorrendű bejárás, megfelelő evidence-kötéssel
+D5    GO    Nem string kifejezés: reader error
+D6    GO    A séma-réteg saját hibaszókincse külön szerződés marad
+D7    HOLD    Séma-kompozíció és deklarációs sorrend
+D8    HOLD    Több szabálysértő érték jelentési sorrendje
+
+A D4 feltételét teljesítettnek tekintem.
+
+A tulajdonosi döntést Gábornak kell kimondania; a fenti táblázat a szakmai ajánlásom.
+Tesztelési és konformanciaállapot
+Ellenőrzés    Jelentett eredmény
+Jóváhagyott vektorok    513, változatlan
+Javasolt bővítő esetek    47
+Specifikációs modell eltérései    0
+Önteszt    36/36
+Teljes tesztkészlet    943 passed
+
+Merge-döntés
+Szakmai GO a #52 merge-elésére, kizárólag az alábbi HEAD-re:
+
+a7c144844de78b814c384bd1348de646d890a044
+
+A specifikációs csomag lezárható. Ez nem implementációs engedély.
+
+Az implementáció, a CI-kapu módosítása, a normatív publikálás, a független harmadik implementáció és az időbizonyíték kérdése továbbra is HOLD.
+
+A tulajdonosi merge és a D1–D8 döntések megerősítése után következhet a post-merge ellenőrzés.
+</pasted_content id="964d">
+~~~~~
+
+### 2026-11-22 20:37 — Claude
+
+Ez a beillesztett review a `cic-primitives` #52-ről szól, nem a #212 szálról. A mi szálunkhoz nem tartozik, a jóváhagyott HEAD-et, a D1–D8 döntéseket és a merge-et sem ebben a sessionben kezelem. A tartalmát nem ellenőriztem, és nem teszek vele semmit. A merge és a D1–D8 megerősítése a tulajdonosé.
+
+Ebben a szálban az újraolvasás vár rád, a javított olvasóval, a meglévő bizonyítékon:
+
+```
+! bash ~/.cache/relay-ci-parity-04/me1-run-212.sh read 45063800073 1
+```
+
+A kimenetet küldd el. Az újraolvasás nem indít futást, nem tölt le semmit, és nem fogyaszt K-5 keretet (8/300). Az M-E1 nyitott, a P `NOT-READ`. Új futás, H1/H2, M-A…M-D, valódi App-kulcsok és a Relay-implementáció HOLD.
+
+### 2026-11-22 20:39 — Felhasználó
+
+~~~~~
+<bash-input> bash ~/.cache/relay-ci-parity-04/me1-run-212.sh read 45063800073 1</bash-input>
+~~~~~
+
+### 2026-11-22 20:39 — Felhasználó
+
+~~~~~
+<bash-stdout>run binding                                          MET       run 45063800073 attempt 1, workflow_dispatch, completed/success, branch main
+repository                                           MET       manifest 'CIC-Security-Lab/ci-adversarial-lab'
+run id                                               MET       manifest 45063800073
+attempt                                              MET       manifest 1
+earlier attempts                                     MET       history acceptable for attempt 1
+artifact origin                                      MET       artifact 14770618752 created inside the attempt window
+approved head SHA                                    MET       run head 4d432f5e8250948af83ff909a7314eeddadb1c29
+trusted JWKS (separate from the evidence)            MET       4 key(s), outside the evidence package; sha256 5f8164c9696c27837ad18c5fe7c7022a433bd5390183e8ff15c74d82233270f4
+API metadata file agrees with the manifest           MET       api/run.json vs manifest
+OIDC signature (issuer's public keys, offline)       MET       RS256 signature valid
+OIDC issuer                                          MET       iss 'https://token.actions.githubusercontent.com'
+OIDC audience (the measurement's own)                MET       aud 'me1-evidence'
+OIDC issued inside the attempt window                MET       iat 1795377553, window 2026-11-22T19:59:06Z..2026-11-22T20:06:18Z
+OIDC provably expired before the artifact was created (server time) MET       exp 1795377853, artifact created_at 2026-11-22T20:06:16Z (needs &gt;= exp+60s)
+OIDC binds repository                                MET       claim 'CIC-Security-Lab/ci-adversarial-lab', API 'CIC-Security-Lab/ci-adversarial-lab'
+OIDC binds run_id                                    MET       claim '45063800073', API '45063800073'
+OIDC binds run_attempt                               MET       claim '1', API '1'
+OIDC binds sha                                       MET       claim '4d432f5e8250948af83ff909a7314eeddadb1c29', API '4d432f5e8250948af83ff909a7314eeddadb1c29'
+OIDC binds workflow_ref                              MET       claim 'CIC-Security-Lab/ci-adversarial-lab/.github/workflows/me1-evidence.yml@refs/heads/main', API 'CIC-Security-Lab/ci-adversarial-lab/.github/workflows/me1-evidence.yml@refs/heads/main'
+OIDC binds event_name                                MET       claim 'workflow_dispatch', API 'workflow_dispatch'
+OIDC binds job_workflow_ref (path+ref)               MET       claim 'CIC-Security-Lab/ci-adversarial-lab/.github/workflows/me1-evidence.yml@refs/heads/main'
+OIDC binds repository_id (API repository.id)         MET       claim '1467589211', API '1467589211'
+OIDC binds repository_owner_id (API owner.id)        MET       claim '359862858', API '359862858'
+OIDC binds ref and subject (identity, IDs from the API) MET       ref 'refs/heads/main' sub 'repo:CIC-Security-Lab@359862858/ci-adversarial-lab@1467589211:ref:refs/heads/main'
+OIDC binds workflow_sha (the workflow file's commit) MET       claim '4d432f5e8250948af83ff909a7314eeddadb1c29'
+OIDC binds job_workflow_sha (the workflow file's commit) MET       claim '4d432f5e8250948af83ff909a7314eeddadb1c29'
+OIDC informational claims                            NOTE      ref_type 'branch', ref_protected 'true', repository_visibility 'public', runner_environment 'github-hosted' (reported, not judged)
+self-report (context.json)                           NOTE      identical to the signed claims (informational)
+P (PR-author influence)                              NOT-READ  needs the evidence of a pull_request run (separate GO)
+OVERALL: EVIDENCE BOUND, P NOT READ
+INVENTORY (what each evidence type is; the verdict is taken in the report):
+  API run metadata   - created by the platform, read from outside; unsigned; binds path/ref, head, run, attempt
+  OIDC token claims  - created by the platform, signed; independently verifiable against the issuer's keys; see rows above
+  context.json       - created by the workflow itself: self-report, author-controlled, never evidence on its own</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 20:40 — Claude
+
+A hivatalos újraolvasás a javított olvasóval lefutott: `EVIDENCE BOUND, P NOT READ`. Az M-E1 ítélete nyitott.
+
+**Kiolvasás (a futás 45063800073, 1. kísérlet, ugyanaz a nyers bizonyíték és ugyanaz a bizalmi gyökér, SHA-256 `5f8164c9…`):**
+- **MET:** minden 28 ellenőrzés.
+  - Eredet: a futás, a repó, a kísérlet, a head, az artifact eredete.
+  - Aláírás: az RS256 aláírás érvényes, a kibocsátó és a közönség egyezik, az idő az ablakon belül van.
+  - Lejárat: a token bizonyíthatóan lejárt az artifact szerveroldali létrehozása előtt.
+  - Kötés: a `repository`, `run_id`, `run_attempt`, `sha`, `workflow_ref`, `event_name`, `job_workflow_ref`, az új `repository_id`, `repository_owner_id`, az azonosítós `sub` és a `workflow_sha`/`job_workflow_sha` mind egyezik az API-metaadattal.
+- **NOTE:** két sor. Az informatív állítások (`ref_type` `branch`, `ref_protected` `true`, `repository_visibility` `public`, `runner_environment` `github-hosted`) jelentve, nem ítélve. Az önbevallás (`context.json`) azonos az aláírt állításokkal.
+- **NOT-READ:** egy sor, a P (PR-szerző befolyása): pull_request-futás bizonyítéka kell hozzá.
+
+**Két olvasat, külön rögzítve (az elsőt nem írtam át):**
+1. Az első olvasat a 06q olvasójával: `EVIDENCE NOT BOUND (NOT MET)`, egyetlen sor miatt, a `sub` dokumentációra épülő elvárása miatt.
+2. A javított olvasat a 06r olvasóval: `EVIDENCE BOUND, P NOT READ`.
+
+**Mit jelent, és mit nem:**
+- A platform által aláírt OIDC-token ebben a labor-futásban független ellenőrzéssel köti a (workflow útvonal+ref, commit, azonosság, futás, kísérlet) négyest, és a token a nyilvános artifactba csak lejárata után került. Ez mért, **egy futáson, egy szervezetben**.
+- **Nem jelenti az M-E1 `PASS`-át.** A `PASS` feltétele, hogy a PR szerzője ne módosíthassa a bizonyítékot (P). Ezt egyetlen `workflow_dispatch` futás nem dönti el. Az ítélet legfeljebb `INCONCLUSIVE` lehet, amíg pull_request-futás bizonyítéka nincs. A `FAIL` sem indokolt, mert hiteles, platform által aláírt bizonyíték van.
+- Az S és R negatívok valódi bizonyítéka második futást, az R új commitot igényel. Ezek külön GO-t kérnek.
+- Az azonosítós `sub` oka nem ismert (szervezeti beállítás vagy általános viselkedés). Az artifact-attestáció külön nyitott tétel.
+
+**K-5:** 8/300, az újraolvasás nem fogyasztott keretet.
+
+**Mi következhet, mind külön GO-val:**
+- **M-E1 mérési jelentés** külön PR-ban: a két olvasat, a valódi token szerkezete, a megfigyelések (azonnali futás, 300 s-os token, azonosítós `sub`), a korlátok és a nyitott pontok. A jelentés nem mondja ki a `PASS`-t.
+- **A P és az S/R negatívok** mérőcsomagja (pull_request-futás, második futás), külön csomagban.
+- **A K-4 (3) olvasása** a Relay felületén, és a **B sor**.
+- **Thread-napló** frissítése lokálisan, a #90 lezárása után. A push csak a te kifejezett szavadra.
+
+Új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD.
+
+### 2026-11-22 20:42 — Felhasználó
+
+~~~~~
+<pasted_content id="964d">
+**Az első M-E1 mérési részlépés sikeresen lezárható.** Az M-E1 egésze továbbra is nyitott.
+
+| Vizsgálat                           | Eredmény                |
+| ----------------------------------- | ----------------------- |
+| Platformaláírás                     | MET                     |
+| Futás- és kísérletkötés             | MET                     |
+| Commit- és workflow-kötés           | MET                     |
+| Repository- és tulajdonos-identitás | MET                     |
+| Lejárat-kapus publikálás            | MET                     |
+| PR-szerző befolyása (P)             | NOT-READ                |
+| S/R negatív kontrollok              | OPEN                    |
+| Artifact-attestáció                 | OPEN                    |
+| M-E1 végső ítélet                   | INCONCLUSIVE – előzetes |
+
+### **Következő lépés**
+
+Szakmai GO az M-E1 részjelentés elkészítésére külön PR-ban.
+
+A jelentésben mindkét olvasat megőrzendő, az olvasó hibájával és javításával együtt. Különösen fontos az egyetlen futásból származó megfigyelések általánosításának tilalma.
+
+A P és az S/R negatív kontrollok mérőcsomagja ezután következzen, külön review-val.
+
+**K-5: 8/300 — 292 kísérlet maradt.**
+
+Új mérés és minden korábbi HOLD változatlan.
+
+Most már nem pusztán a GitHub saját állítására támaszkodunk: rendelkezünk egy ténylegesen ellenőrzött, platformaláírással hitelesített futási bizonyítékkal. A következő kérdés ennek a bizalmi határa.
+</pasted_content id="964d">
+~~~~~
+
+### 2026-11-22 20:43 — Claude
+
+Ez szakmai GO, nem a te kimondott GO-d, ezért a részjelentést nem kezdem el. Semmi nem változott: nincs új fájl, branch vagy PR.
+
+Egy mondat elég a GO-hoz, pl.: "GO – az M-E1 részjelentés elkészítése külön PR-ban." A jelentés, a javaslat szerint:
+- **Mindkét olvasat megőrizve:** az első `NOT MET` az olvasó hibájával (a `sub` dokumentációra épülő elvárása) és a javított `EVIDENCE BOUND, P NOT READ`, a #89–#90 review-körökkel.
+- **A valódi token szerkezete:** a 31 állításnév, a 300 s-os élettartam, az azonosítós `sub`, az azonnali futás (a GitHub nem tartotta vissza), az `me1 collect` ≈ 7 perce.
+- **Külön szakaszok:** a mért megfigyelések, a korlátok, és az **egyetlen futásból származó megfigyelések általánosításának tilalma**. Egy futás, egy szervezet, egy platform-pillanatkép; az azonosítós `sub` oka ismeretlen.
+- **Az M-E1 állapota:** előzetesen `INCONCLUSIVE`. A P `NOT-READ`, az S/R negatívok és az artifact-attestáció nyitott. A jelentés nem mondja ki a `PASS`-t, és a `FAIL` sem indokolt.
+- **A bizalmi határ:** a mostani ellenőrzés a kibocsátó kulcsainak sértetlenségére, a tulajdonosi gépre és a TLS-útvonalra épül (explicit előfeltétel).
+- **K-5:** 8/300, 292 maradék; a következő mérési csomag előszámításával.
+- **Claim-evidence tábla** és a nyitott kérdések, valamint a következő csomag (P és S/R) belépési feltételei.
+
+A K-5 számláló 8/300. Új mérés, H1/H2, M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD.
+
+### 2026-11-22 20:44 — Felhasználó
+
+~~~~~
+<pasted_content id="964d">
+A részjelentés tervezett tartalma szakmailag megfelelő.
+
+A tulajdonosi engedélyhez ezt add ki a végrehajtó ágensnek:
+
+> GO – az M-E1 részjelentés elkészítése külön PR-ban, a rögzített hatókörrel. Az M-E1 végső ítélete nyitott marad.
+
+A P és S/R mérőcsomag egyelőre csak tervezési tétel.
+
+**K-5: 8/300. Minden korábbi HOLD változatlan.**
+</pasted_content id="964d">
+~~~~~
+
+### 2026-11-22 20:44 — Claude
+
+Ez újra a javasolt szöveg, amit neked kell kimondanod. Én nem tekinthetem a GO-dnak, ezért a részjelentést nem kezdem el.
+
+Egy mondat elég, pl.: "GO – az M-E1 részjelentés elkészítése külön PR-ban, a rögzített hatókörrel. Az M-E1 végső ítélete nyitott marad."
+
+A P és az S/R mérőcsomag tervezési tétel marad, külön GO-val. Új mérés, H1/H2, M-A…M-D, valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-22 20:46 — Felhasználó
+
+~~~~~
+GO – az M-E1 részjelentés elkészítése külön PR-ban, a rögzített hatókörrel. Az M-E1 végső ítélete nyitott marad.
+~~~~~
+
+### 2026-11-22 20:46 — Claude
+
+A GO megvan. A részjelentést külön ágon és job alatt készítem el. Előtte a számokat újraszámoltam a két olvasat tényleges kimenetéből, és **hibát találtam a saját korábbi közléseimben**: az első olvasat 21 `MET` sort adott (nem 22-t), a második 26-ot (nem 28-at). A 22-es szám a már mergelt #90 két fájljában is szerepel. A jelentésben ezt külön errata-ként rögzítem, és a két fájlban javítom.
