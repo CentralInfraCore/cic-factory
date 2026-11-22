@@ -26,15 +26,17 @@ def jwt(claims):
     return b64e(b'{"alg":"RS256","kid":"k"}') + "." + b64e(json.dumps(claims).encode()) + "." + b64e(b"sig")
 
 
-def run_case(body, curl_out, date_values):
+def run_case(body, curl_out, date_values, sim=False):
+    """sim=True: a SIMULATED clock, date = T0 + the total slept so far (sleep advances it exactly)."""
     t = tempfile.mkdtemp()
     open(os.path.join(t, "body.sh"), "w").write(body)
     bindir = os.path.join(t, "bin")
     os.mkdir(bindir)
     shims = {
         "curl": '#!/bin/bash\ncat "$SHIM_DIR/curl.out"\n',
-        "sleep": '#!/bin/bash\necho "$1" >> "$SHIM_DIR/sleep.log"\n',
-        "date": '#!/bin/bash\nn=$(cat "$SHIM_DIR/date.n" 2>/dev/null || echo 0)\necho $((n+1)) > "$SHIM_DIR/date.n"\nsed -n "$((n+1))p" "$SHIM_DIR/date.values"\n',
+        "sleep": '#!/bin/bash\necho "$1" >> "$SHIM_DIR/sleep.log"\nslept=$(cat "$SHIM_DIR/slept" 2>/dev/null || echo 0)\necho $((slept + $1)) > "$SHIM_DIR/slept"\n',
+        "date": ('#!/bin/bash\necho $(( $(sed -n 1p "$SHIM_DIR/date.values") + $(cat "$SHIM_DIR/slept" 2>/dev/null || echo 0) ))\n' if sim else
+                 '#!/bin/bash\nn=$(cat "$SHIM_DIR/date.n" 2>/dev/null || echo 0)\necho $((n+1)) > "$SHIM_DIR/date.n"\nsed -n "$((n+1))p" "$SHIM_DIR/date.values"\n'),
     }
     for name, text in shims.items():
         p = os.path.join(bindir, name)
@@ -69,9 +71,17 @@ def main():
     exp = T0 + 300
     good = json.dumps({"value": jwt({"exp": exp, "iat": T0})}) + "\n"
     rc, sl, tok, out = run_case(body, good, [T0, exp + 121])
-    check("normal: waits exp+120-now, then publishes", rc == 0 and sl == [str(300 + 120)] and tok == jwt({"exp": exp, "iat": T0}), "sleep %s" % sl)
+    check("normal: waits exp+121-now, then publishes", rc == 0 and sl == [str(300 + 121)] and tok == jwt({"exp": exp, "iat": T0}), "sleep %s" % sl)
     rc, sl, tok, out = run_case(body, good, [T0, exp + 120])
-    check("clock after the wait not past exp+120 -> no token", rc != 0 and tok is None)
+    check("clock after the wait not past exp+120 -> no token (strict check unchanged)", rc != 0 and tok is None)
+    # F5: the clock advances by EXACTLY the slept time; a normal run must not be refused at the boundary
+    for delta in (1, 2, 119, 120, 121, 300, 599, 600):
+        c = json.dumps({"value": jwt({"exp": T0 + delta})}) + "\n"
+        rc, sl, tok, out = run_case(body, c, [T0], sim=True)
+        check("F5: simulated clock, exp - now = %d s -> published" % delta, rc == 0 and tok is not None and sl == [str(delta + 121)], "sleep %s" % sl)
+    c = json.dumps({"value": jwt({"exp": T0 + 601})}) + "\n"
+    rc, sl, tok, out = run_case(body, c, [T0], sim=True)
+    check("F5: exp - now = 601 s -> refused (cap at the exact boundary), no sleep, no token", rc != 0 and tok is None and sl == [])
     rc, sl, tok, out = run_case(body, good, [T0, T0 + 5])
     check("clock did not advance (shim) -> no token", rc != 0 and tok is None)
     far = json.dumps({"value": jwt({"exp": T0 + 4000})}) + "\n"

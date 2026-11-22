@@ -30,8 +30,8 @@ jobs:
           P=$(printf '%s' "$TOKEN" | cut -d. -f2 | tr '_-' '/+')
           EXP=$(printf '%s%s' "$P" "$(printf '%*s' $(( (4 - ${#P} % 4) % 4 )) '' | tr ' ' =)" | base64 -d | jq -er '.exp | select(type == "number") | floor')
           NOW=$(date +%s)
-          WAIT=$((EXP + 120 - NOW))
-          if [ "$WAIT" -gt 720 ]; then echo "token expiry too far" >&2; exit 1; fi
+          WAIT=$((EXP + 121 - NOW))
+          if [ "$WAIT" -gt 721 ]; then echo "token expiry too far" >&2; exit 1; fi
           if [ "$WAIT" -gt 0 ]; then sleep "$WAIT"; fi
           if [ "$(date +%s)" -le $((EXP + 120)) ]; then echo "token not provably expired" >&2; exit 1; fi
           printf '%s\n' "$TOKEN" > me1/oidc-token.jwt

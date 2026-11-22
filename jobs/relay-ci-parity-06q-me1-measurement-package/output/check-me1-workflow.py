@@ -64,8 +64,8 @@ RUN_EXPECTED = (
     'P=$(printf \'%s\' "$TOKEN" | cut -d. -f2 | tr \'_-\' \'/+\')\n'
     'EXP=$(printf \'%s%s\' "$P" "$(printf \'%*s\' $(( (4 - ${#P} % 4) % 4 )) \'\' | tr \' \' =)" | base64 -d | jq -er \'.exp | select(type == "number") | floor\')\n'
     'NOW=$(date +%s)\n'
-    'WAIT=$((EXP + 120 - NOW))\n'
-    'if [ "$WAIT" -gt 720 ]; then echo "token expiry too far" >&2; exit 1; fi\n'
+    'WAIT=$((EXP + 121 - NOW))\n'
+    'if [ "$WAIT" -gt 721 ]; then echo "token expiry too far" >&2; exit 1; fi\n'
     'if [ "$WAIT" -gt 0 ]; then sleep "$WAIT"; fi\n'
     'if [ "$(date +%s)" -le $((EXP + 120)) ]; then echo "token not provably expired" >&2; exit 1; fi\n'
     'printf \'%s\\n\' "$TOKEN" > me1/oidc-token.jwt\n'
@@ -155,8 +155,10 @@ def mutants(files):
     # F1: the token must not reach the artifact before it is provably expired
     yield "no wait before publishing", with_(w.replace('          if [ "$WAIT" -gt 0 ]; then sleep "$WAIT"; fi\n', ""))
     yield "no check that the wait elapsed", with_(w.replace('          if [ "$(date +%s)" -le $((EXP + 120)) ]; then echo "token not provably expired" >&2; exit 1; fi\n', ""))
-    yield "smaller safety margin", with_(w.replace("WAIT=$((EXP + 120 - NOW))", "WAIT=$((EXP + 1 - NOW))"))
-    yield "no cap on the wait", with_(w.replace('          if [ "$WAIT" -gt 720 ]; then echo "token expiry too far" >&2; exit 1; fi\n', ""))
+    yield "smaller safety margin", with_(w.replace("WAIT=$((EXP + 121 - NOW))", "WAIT=$((EXP + 1 - NOW))"))
+    yield "F5: wait computed to the boundary only (exp + 120)", with_(w.replace("WAIT=$((EXP + 121 - NOW))", "WAIT=$((EXP + 120 - NOW))"))
+    yield "F5: cap one second too low (720)", with_(w.replace('"$WAIT" -gt 721', '"$WAIT" -gt 720'))
+    yield "no cap on the wait", with_(w.replace('          if [ "$WAIT" -gt 721 ]; then echo "token expiry too far" >&2; exit 1; fi\n', ""))
     yield "token written before the wait", with_(w.replace('          NOW=$(date +%s)\n', '          printf \'%s\\n\' "$TOKEN" > me1/oidc-token.jwt\n          NOW=$(date +%s)\n'))
     yield "jq without -e", with_(w.replace("jq -er .value", "jq -r .value"))
     yield "no JWT shape check", with_(w.replace('          case "$TOKEN" in *.*.*) ;; *) echo "not a JWT" >&2; exit 1 ;; esac\n', ""))
