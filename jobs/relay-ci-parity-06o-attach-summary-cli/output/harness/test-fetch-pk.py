@@ -1,0 +1,162 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: CC-BY-NC-SA-4.0
+"""Mocked-GitHub test of fetch-pk.sh (no network, no lab access).
+
+A fake `gh` serves canned JSON, the fetch script runs for real, and read-pk.py reads what it
+produced. Every refusal path must exit non-zero AND must not leave a manifest.
+
+  python3 -I test-fetch-pk.py
+"""
+import importlib.util
+import json
+import os
+import shutil
+import stat
+import subprocess
+import sys
+import tempfile
+import zipfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+spec = importlib.util.spec_from_file_location("rp", os.path.join(HERE, "read-pk.py"))
+rp = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(rp)
+
+RUN, HEAD, REPO, JOB, ART = 123456, "a1" * 20, "o/r", 55, 777
+START, END = "2026-01-01T00:00:00Z", "2026-01-01T00:01:00Z"
+API = "repos/o/r/actions/runs/%d" % RUN
+
+GH = r'''#!/bin/bash
+f() { echo "$1" | sed 's#/#__#g'; }
+if [ "$1" = api ]; then
+  p=$2; shift 2; q=""; [ "${1:-}" = --jq ] && q=$2
+  n=$(cat "$MOCK/.n_$(f "$p")" 2>/dev/null || echo 0); n=$((n+1)); echo $n > "$MOCK/.n_$(f "$p")"
+  case "$p" in */zip) cat "$MOCK/artifact.zip"; exit 0;; esac
+  file="$MOCK/$(f "$p").json"
+  [ -e "$MOCK/$(f "$p").v$n.json" ] && file="$MOCK/$(f "$p").v$n.json"
+  [ -e "$file" ] || { echo "mock: no fixture for $p" >&2; exit 1; }
+  if [ -n "$q" ]; then jq -r "$q" "$file"; else cat "$file"; fi
+elif [ "$1" = run ] && [ "$2" = view ]; then cat "$MOCK/log.txt"
+else echo "mock: unexpected gh $*" >&2; exit 1; fi
+'''
+
+
+def j(path, obj, mock, variant=None):
+    name = path.replace("/", "__") + (".v%d" % variant if variant else "") + ".json"
+    json.dump(obj, open(os.path.join(mock, name), "w"))
+
+
+def attempt_obj(n, status="completed", conclusion="success", updated=END):
+    return {"id": RUN, "path": rp.WORKFLOW_PATH, "event": "workflow_dispatch", "status": status,
+            "conclusion": conclusion, "head_branch": "main", "run_attempt": n, "head_sha": HEAD,
+            "run_started_at": START, "updated_at": updated,
+            "repository": {"full_name": REPO}, "head_repository": {"full_name": REPO}}
+
+
+def art(id_=ART, created="2026-01-01T00:00:30Z", head=HEAD, run=RUN, expired=False):
+    return {"id": id_, "name": "pk-channels", "expired": expired, "created_at": created,
+            "size_in_bytes": 200, "workflow_run": {"id": run, "head_sha": head}}
+
+
+def build(att, prev_jobs=0, artifacts=None, latest=None, tweak=None):
+    mock = tempfile.mkdtemp()
+    latest = att if latest is None else latest
+    j(API, attempt_obj(latest), mock)
+    j(API + "/attempts/%d" % att, attempt_obj(att), mock)
+    j(API + "/attempts/%d/jobs" % att, {"jobs": [{"id": JOB, "name": "pk-channels"}]}, mock)
+    if att == 2:
+        j(API + "/attempts/1", {"run_attempt": 1, "status": "completed", "conclusion": "action_required"}, mock)
+        j(API + "/attempts/1/jobs", {"jobs": [{"id": 1, "name": "x"}] * prev_jobs}, mock)
+    j("repos/o/r/check-runs/%d/annotations" % JOB, [{"title": "pk", "message": rp.TOKEN}], mock)
+    j(API + "/artifacts", {"artifacts": [art()] if artifacts is None else artifacts}, mock)
+    with zipfile.ZipFile(os.path.join(mock, "artifact.zip"), "w") as z:
+        z.writestr("pk-artifact.txt", rp.TOKEN + "\n")
+    log = "\n".join(
+        "pk-channels\tpk channels\t2026-01-01T00:00:0%dZ %s" % (i, t) for i, t in enumerate([
+            "PK_UNMASKED: " + rp.TOKEN, "CANARY_UNRESTRICTED: ***", "PK-MARK start", rp.TOKEN,
+            "##[notice]" + rp.TOKEN, "masked-test: ***",
+            "PK-U length=%d sha256=%s" % (rp.EXPECTED_LEN, "a" * 64),
+            "PK-J visible-secret-names=" + json.dumps(rp.EXPECTED_NAMES, separators=(",", ":"))])) + "\n"
+    open(os.path.join(mock, "log.txt"), "w").write(log)
+    if tweak:
+        tweak(mock)
+    return mock
+
+
+def run_fetch(mock, att, pre_existing_out=False):
+    home = tempfile.mkdtemp()
+    os.makedirs(os.path.join(home, ".cache", "ci-lab"))
+    open(os.path.join(home, ".cache", "ci-lab", "env.sh"), "w").write("ORG=o\nX=r\nY=y\nexport ORG X Y\n")
+    bindir = tempfile.mkdtemp()
+    g = os.path.join(bindir, "gh")
+    open(g, "w").write(GH)
+    os.chmod(g, os.stat(g).st_mode | stat.S_IEXEC)
+    out = os.path.join(tempfile.mkdtemp(), "out")
+    if pre_existing_out:
+        os.makedirs(out)
+    env = dict(os.environ, HOME=home, MOCK=mock, PATH=bindir + ":" + os.environ["PATH"])
+    p = subprocess.run(["bash", os.path.join(HERE, "fetch-pk.sh"), str(RUN), out, HEAD, str(att)],
+                       env=env, capture_output=True, text=True)
+    return p.returncode, out, p.stderr.strip().splitlines()[-1:] 
+
+
+def main():
+    bad = 0
+
+    def check(label, ok, note=""):
+        nonlocal bad
+        print("%-4s %-62s %s" % ("ok" if ok else "FAIL", label, note))
+        bad += 0 if ok else 1
+
+    # --- accepted paths: fetch + read-pk end to end ---
+    for att, kw in ((1, {}), (2, {})):
+        mock = build(att)
+        rc, out, err = run_fetch(mock, att)
+        check("attempt %d: fetch succeeds" % att, rc == 0, " ".join(err))
+        if rc == 0:
+            m = json.load(open(os.path.join(out, "manifest.json")))
+            check("attempt %d: manifest holds artifact id and window" % att,
+                  m["artifact"]["id"] == ART and m["attempt_window"] == {"start": START, "end": END}
+                  and m["run_attempt"] == att)
+            sp = os.path.join(out, "..", "sum.txt")
+            open(sp, "w").write(rp.TOKEN + "\n")
+            check("attempt %d: attach summary with the attempt" % att,
+                  rp.attach_summary(out, sp, RUN, att) == 0)
+            res = rp.overall(rp.evaluate(out, HEAD, "a" * 64, REPO, RUN, att))
+            check("attempt %d: read-pk gives PK MET" % att, res == "PK MET", res)
+            check("attempt %d: wrong expected attempt is NOT MET" % att,
+                  rp.overall(rp.evaluate(out, HEAD, "a" * 64, REPO, RUN, 3 - att)) == "PK NOT MET")
+
+    # --- refusals: exit non-zero and no manifest ---
+    def refuse(label, mock, att, pre=False):
+        rc, out, err = run_fetch(mock, att, pre)
+        check("refused: " + label, rc != 0 and not os.path.exists(os.path.join(out, "manifest.json")),
+              "rc=%d %s" % (rc, " ".join(err)[:70]))
+
+    refuse("a later attempt exists (current attempt 3, fetching 2)", build(2, latest=3), 2)
+    refuse("current attempt differs from the asked one (fetching 1, run at 2)", build(1, latest=2), 1)
+    refuse("attempt changes while fetching (current 2 then 3)",
+           build(2, tweak=lambda m: j(API, attempt_obj(3), m, variant=2)), 2)
+    refuse("attempt object updated while fetching",
+           build(2, tweak=lambda m: j(API + "/attempts/2", attempt_obj(2, updated="2026-01-01T00:00:59Z"), m, variant=2)), 2)
+    refuse("attempt 1 of attempt 2 had a job", build(2, prev_jobs=1), 2)
+    refuse("artifact created before the window", build(1, artifacts=[art(created="2025-12-31T23:00:00Z")]), 1)
+    refuse("artifact created after the window", build(1, artifacts=[art(created="2026-01-01T00:09:00Z")]), 1)
+    refuse("artifact of another head", build(1, artifacts=[art(head="b2" * 20)]), 1)
+    refuse("artifact of another run", build(1, artifacts=[art(run=5)]), 1)
+    refuse("artifact expired", build(1, artifacts=[art(expired=True)]), 1)
+    refuse("two artifacts inside the window", build(1, artifacts=[art(), art(id_=778)]), 1)
+    refuse("no artifact", build(1, artifacts=[]), 1)
+    refuse("attempt 3 asked for", build(2), 3)
+    refuse("output directory exists", build(1), 1, pre=True)
+    # an artifact from another attempt's window next to the right one is ignored, not mixed up
+    mock = build(2, artifacts=[art(id_=1, created="2025-12-31T23:00:00Z"), art()])
+    rc, out, err = run_fetch(mock, 2)
+    ok = rc == 0 and json.load(open(os.path.join(out, "manifest.json")))["artifact"]["id"] == ART
+    check("an artifact of another window is not used (picked by id and window)", ok)
+    print("TEST %s" % ("FAILED" if bad else "OK"))
+    return 1 if bad else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
