@@ -2,7 +2,7 @@
 
 **Utólag készült**, a session `.jsonl` transcriptjéből (`~/.claude-personal/projects/-home-sinkog-sync-claude-factory-CIC-workdir-jobs-relay-issue-queue-01-workspace/81f1ed93-1498-4a48-9550-a87d4d857869.jsonl`), nem menet közben vezetve. Az időpontok UTC-ben, a transcript időbélyegeiből. A napló a session 2026-11-19 14:55-i szakaszától indul (CIC_Relay #162 modul-artifact hitelesítés: Relay #215–#219, cic-primitives #36–#47, Forms #166–#168, P1 pattern-profil, O5 motorválasztás); a session korábbi, 2026-11-14 – 2026-11-16 közötti szakasza (a privát biztonsági lelet kezelése) szándékosan nincs benne.
 
-A napló csak transcript: a felhasználó üzenetei (a beillesztett külső review-kkal szó szerint, a `<bash-input>` parancsokkal együtt) és Claude szöveges válaszai, időrendben. Eszközhívás és eszközkimenet, rendszer-emlékeztető, task-notification és a kontextus-összegzések nem szerepelnek. A PR-ok és a git-történet marad a forrás; ez a napló az interakció nyoma. Állapot a naplózás végén (2026-11-22): cic-primitives #46 mergelve (fe7e5ea); #47 (O5 motorválasztás) mergelve (55fee44, jóváhagyott fej 6fea578, post-merge gate sikeres), E1–E3 GO; a PR2 (O2/O3 döntés-előkészítés) indul; minden egyéb HOLD változatlan. A naplót a #47 lezárása után újragenerálta a `tools/session-transcript.py`; a korábban commitolt (522882b) rész változatlansága ellenőrizve.
+A napló csak transcript: a felhasználó üzenetei (a beillesztett külső review-kkal szó szerint, a `<bash-input>` parancsokkal együtt) és Claude szöveges válaszai, időrendben. Eszközhívás és eszközkimenet, rendszer-emlékeztető, task-notification és a kontextus-összegzések nem szerepelnek. A PR-ok és a git-történet marad a forrás; ez a napló az interakció nyoma. Állapot a naplózás végén (2026-11-22): cic-primitives #46 mergelve (fe7e5ea); #47 (O5 motorválasztás) mergelve (55fee44), E1-E3 GO; #48 (O2 méretszabály Pi<=2048, O3 hibakódok és precedencia) mergelve (865ed47, jóváhagyott fej 43c3f6c, post-merge gate sikeres), O2/O3 GO; minden egyéb HOLD változatlan (implementáció, normatív vektorok, CI-kapu, P2, P4, Forms #166/#167, séma-véglegesítés, Relay #162). A naplót a lezárások után újragenerálta a `tools/session-transcript.py`; a korábban commitolt részek változatlansága ellenőrizve.
 
 
 ### 2026-11-19 14:55 — Felhasználó
@@ -6901,4 +6901,505 @@ A PR2 kizárólag dokumentáció és izolált mérés. Külön review és SHA-ho
 
 **Minden korábbi HOLD változatlan.**
 </pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 11:47 — Claude
+
+~~~~~
+Thread-napló kész: `35adc01`, a korábbi rész változatlan, titok 0 találat. Következik a PR2. Először az O2/O3 jelenlegi állapotát olvasom a design-dokumentumban.
+~~~~~
+
+
+### 2026-11-22 12:04 — Claude
+
+~~~~~
+Folytatom: a méretmértéket (Π) pontos rekurzióra cseréltem. Most a keresést Π-plafononként futtatom (1024…30000), hogy lássam, plafononként mekkora a legrosszabb mért illesztés.
+~~~~~
+
+
+### 2026-11-22 12:05 — Claude
+
+~~~~~
+Háttérben fut a Π-plafononkénti legrosszabb-eset keresés és a költségmérés. A zavartalan időmérés miatt a többi mérést nem indítom mellé. Megvárom.
+~~~~~
+
+
+### 2026-11-22 12:05 — Claude
+
+~~~~~
+A háttérmérés még fut. A kész értesítésre várok, addig más mérést nem indítok, hogy ne zavarjam az időmérést.
+~~~~~
+
+
+### 2026-11-22 13:34 — Felhasználó
+
+~~~~~
+hol tart az ellenőrzés?
+~~~~~
+
+
+### 2026-11-22 13:34 — Claude
+
+~~~~~
+Az ellenőrzés két részből áll. A mérési rész lefutott, az O3-kód ellenőrzése még nincs lefuttatva.
+
+**Kész: O2 mérések (`limit_space.py`)**
+- **Határértékek:** minden jelölt korlátnál az utolsó elfogadott és az első elutasított érték a vártnak megfelelő.
+- **Legnagyobb elfogadott program:** a jelenlegi korlátok egy 256 karakteres mintával **241 250 NFA-állapotot** engednek. A minta `((a×250){0,4}){0,250}` alakú: a szorzatkorlát csak a számokat korlátozza, a belső szöveg hosszát nem. A fordítás ~200 ms és 66 MB. A korábbi „legnagyobb érvényes program 6376 állapot" állítás tehát téves volt.
+- **A 38,45 ms nem maximum.** Egy 23 802 állapotú, 256 karakteres elfogadott minta 650 ms-ig megy 256 karakteres bemeneten.
+- **Javasolt méretmérték (Π):** a minta szövegéből, motor nélkül kiszámítható rekurzió. Mind a 151 vizsgált mintán az NFA állapotszáma pontosan Π+1.
+- **Legrosszabb illesztés Π-plafononként (hegymászó keresés, alsó becslés):**
+
+| Π-plafon | Legrosszabb illesztés |
+|---|---|
+| 512 | 14 ms |
+| 1024 | 21 ms |
+| 2048 | 87 ms |
+| 4096 | 81 ms |
+| 8192 | 203 ms |
+| 30000 | 652 ms |
+
+  A 4096-os és a 2048-as érték nem monoton, mert a keresés véges és zajos. A költség nagyjából arányos a Π-vel (kb. 20–28 µs Π-nként 256 karakternél).
+- **Jelölt:** Π ≤ 2048, a legnagyobb meglévő contract Π=71.
+
+**Elkészült, de még nem futott: O3**
+- `pattern_codes.py`: a hibakódok, a háromszintű precedencia és a Π-szabály.
+- `codes_probe.py`: precedencia-, határérték-, totalitás- és determinizmus-ellenőrzés.
+
+Ezeket most futtatom. Utána jön a beültetett hibákkal végzett önteszt, a Go/Rust fordítás ellenőrzése a Π-határnál, a dokumentum (EN/HU) és a PR-leírás. Mindez csak dokumentáció és izolált mérés, a PR2 külön review-ra vár.
+~~~~~
+
+
+### 2026-11-22 13:55 — Felhasználó
+
+~~~~~
+hol tart az ellenőrtés
+~~~~~
+
+
+### 2026-11-22 13:56 — Claude
+
+~~~~~
+Az `limit_space.py` rendben van. A `codes_probe.py`-ban az import egy `try` blokkba került, azt újraírom.
+~~~~~
+
+
+### 2026-11-22 13:58 — Claude
+
+~~~~~
+A teljes O2 mérés (`limit_space.py`) még fut, a kimenete a végén íródik ki. Megvárom a háttérfeladat jelzését, és csak utána írom be a számokat a dokumentumba.
+~~~~~
+
+
+### 2026-11-22 14:00 — Felhasználó
+
+~~~~~
+hol tart az ellenőrzés?
+~~~~~
+
+
+### 2026-11-22 14:00 — Claude
+
+~~~~~
+A `limit_space.py` teljes futása még tart, kb. 2 perc 45 másodperce megy. A korábbi hasonló, részleges futások 5–6 percig tartottak, ez több csoportot is mér (a keresést is), ezért várhatóan 10 perc körül végez.
+
+**Kész:**
+- **O3-prototípus** (`pattern_codes.py`, `codes_probe.py`): precedencia, határérték, értékoldali sorrend, totalitás és determinizmus mind rendben. A 26 427 elutasított szövegből mindegyik pontosan egy kódot kapott, négy különböző hash-seeddel azonos az eredmény.
+- **Önteszt** (`selftest_codes.py`): a módosítatlan kontroll exit 0, mind a 7 beültetett hibát a kijelölt ellenőrzés találta meg, a 2 infrastruktúra-kontroll exit 2.
+- **Go/Rust ellenőrzés** (`engines_at_limit.py`): mind a három motor lefordít és azonos verdiktet ad minden elfogadott mintán, a Π=2048 és Π=2049 határon és a 241 250-es optimumon is.
+- **Egy javított elvárás:** az `size-after-syntax` precedencia-esetnél a saját elvárásom volt téves (`(` után üres csoport következik, nem kiegyensúlyozatlan zárójel). A besoroló jól működött.
+- **Egy holt szabály:** a besoroló két szerkesztés utáni horgony-ellenőrzése elérhetetlen, mert a `^`/`$` már az atomnál elbukik. A mérés ezt külön sorként jelzi.
+- **Egy véletlen mellékhatás:** a `probe_engines.py` importja az első futásnál három üres könyvtárat hozott létre. Ezeket töröltem, az importot pedig ideiglenes könyvtárra irányítottam.
+
+**Még hátra:** a `limit_space.py` teljes eredménye (a bevitelhez a Π-plafononkénti legrosszabb esetek), utána a dokumentum EN/HU, a README, a `SHA256SUMS`, a PR-leírás és a teljes tesztkészlet futtatása. A zavartalan időmérés miatt addig más mérést nem indítok.
+~~~~~
+
+
+### 2026-11-22 14:05 — Claude
+
+~~~~~
+Az EN dokumentum és a két korrekciós megjegyzés kész. Most jön a magyar összefoglaló, a README és a `SHA256SUMS`, a PR-leírás, a teljes tesztkészlet és a commit.
+~~~~~
+
+
+### 2026-11-22 14:08 — Claude
+
+~~~~~
+A PR2 változtatásai kész: csak `docs/` érintett, a teljes tesztkészlet 943 passed. Most commitolok és megírom a PR-leírást.
+~~~~~
+
+
+### 2026-11-22 14:08 — Claude
+
+~~~~~
+A PR2 helyben kész és commitolva. Nem pusholtam, nem nyitottam PR-t.
+
+- **Ág:** `docs/grammar-pattern-limits-errors`, a devel `55fee44`-ről.
+- **Commit:** `fd4261235f429e0aa2f990bb05ab853e8f786a7a`, 15 fájl, csak `docs/`.
+- **Tesztek:** a teljes készlet 943 passed.
+- **PR-leírás:** a `PR-BODY-primitives-p1-limits-errors.md` megvan.
+
+**Fontos lelet: az O2-höz átadott „38,45 ms maximum" nem a korlátok maximuma.**
+- A jelenlegi korlátok **nem korlátozzák a program méretét**: a szorzatkorlát a számokat korlátozza, nem az ismételt tartalmat. A 256 karakteres `((a×250){0,4}){0,250}` elfogadott, és **241 250 NFA-állapotra** bomlik, 194 ms fordítással és 66 MB memóriával.
+- A legrosszabb illesztést keresve egy 23 802 állapotú, elfogadott mintán 658 ms-ot mértem 256 karakteres bemeneten. Ez alsó becslés és zajos.
+- A korábbi „legnagyobb érvényes program 6376 állapot" állítás is téves volt. A két korábbi dokumentumba korrekciós megjegyzést tettem.
+- Ez a #47-ben kiszámolt komplexitás-állítás hibája is, nem csak az O2 bemenete. Érdemes a review-nál külön megnézni.
+
+**O2 javaslat:**
+- Egy új szabály az egész program méretére: **Π ≤ 2048**.
+- A Π a minta szövegéből, motor nélkül kiszámítható rekurzió. Az NFA állapotszáma pontosan Π+1, 151 mintán igazolva.
+- A többi korlát változatlan.
+- A legnagyobb meglévő contract Π-je 71, vagyis 28-szoros a tartalék.
+- A plafonnál a legrosszabb talált illesztés 50–87 ms, a fordítás legfeljebb 3 ms.
+- Az 1024 és a 4096 is egyformán támogatható az adatokkal, a szám a tiéd.
+- A natív motorok sem gyorsabbak ezeken az alakokon: Π=2048-nál Rust 61 ms, Go 2,9 ms, a saját kiértékelő 21 ms (hideg, egy futás). A méretkorlát tehát minden motort véd.
+
+**O3 javaslat:**
+- 25 kifejezés-kód és 3 érték-kód, egy elutasított kifejezés pontosan egy kódot kap.
+- A három pin-kód listázva van, de a prototípus nem gyakorolja.
+- Három szintű precedencia: egész szöveg, az olvasási sorrendben első megsértett szabály, végül a programméret.
+- Több kifejezésű sémánál a dokumentum-sorrendben első elutasított kifejezés kódja a mérvadó.
+- A producer és a verifier egymástól függetlenül ellenőriz.
+
+**Mérések:**
+- 32 kézzel írt precedencia-eset.
+- 30 154 szöveg totalitása: mind a 26 427 elutasítás pontosan egy kódot kapott.
+- Azonos eredmény négy hash-seeddel.
+- Önteszt: módosítatlan kontroll rendben, 7/7 beültetett hiba a kijelölt ellenőrzéssel észlelve, 2/2 infrastruktúra-kontroll exit 2.
+
+**Két észrevétel:**
+- A meglévő besoroló két szerkesztés utáni horgony-ellenőrzése elérhetetlen kód. Jeleztem, nem javítottam.
+- A független véletlen keresés túl gyenge keresztellenőrzése volt a DP-nek (5944 állapotig jutott). Ezt a dokumentum kimondja, a DP-t a felépítés igazolja.
+
+**Nem igazolt:** a valódi legrosszabb illesztési idő a korlátok mellett, a pin-hibák és a dokumentum-sorrend szabálya (a prototípus nem olvas sémát), valamint a Go/Rust melegített időzítése.
+
+**Push és PR (egy sor, a PR-t külön nyitod):**
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push -u origin docs/grammar-pattern-limits-errors && gh pr create --repo CentralInfraCore/cic-primitives --base devel --head docs/grammar-pattern-limits-errors --title "docs(pattern): P1 O2 size rule and O3 error codes (decision preparation)" --body-file [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-limits-errors.md
+```
+
+A push után a gate-et az új fejre figyelem. A merge csak külön review és SHA-hoz kötött jóváhagyás után mehet. Az implementáció, a normatív vektorok, a CI-kapu és minden korábbi HOLD változatlan.
+~~~~~
+
+
+### 2026-11-22 14:12 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push -u origin docs/grammar-pattern-limits-errors && gh pr create --repo CentralInfraCore/cic-primitives --base devel --head docs/grammar-pattern-limits-errors --title "docs(pattern): P1 O2 size rule and O3 error codes (decision preparation)" --body-file [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-limits-errors.md</bash-input>
+~~~~~
+
+
+### 2026-11-22 14:12 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'docs/grammar-pattern-limits-errors' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-primitives/pull/new/docs/grammar-pattern-limits-errors        
+remote: 
+To github.com:CentralInfraCore/cic-primitives.git
+ * [new branch]      docs/grammar-pattern-limits-errors -&gt; docs/grammar-pattern-limits-errors
+branch 'docs/grammar-pattern-limits-errors' set up to track 'origin/docs/grammar-pattern-limits-errors'.
+https://github.com/CentralInfraCore/cic-primitives/pull/48</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 14:16 — Claude
+
+~~~~~
+A PR2 megnyílt, és a gate zöld az új fejen.
+
+- **PR:** #48, base `devel`, https://github.com/CentralInfraCore/cic-primitives/pull/48
+- **Fej:** `fd4261235f429e0aa2f990bb05ab853e8f786a7a`. Ez egyezik a tesztelt committal (gate-futás: 45031578632).
+- **Gate:** `success`.
+- **PR:** `mergeable: true`, állapot `clean`.
+
+**Kérem:**
+1. Tartalmi review a #48-ra. Két pontot érdemes külön nézni: az 1. szakasz helyesbítését (a korlátok nem korlátozzák a program méretét, a 38,45 ms nem maximum) és a Π ≤ 2048 javaslatot.
+2. O2 és O3 tulajdonosi döntés, vagy review-megjegyzés, ha mást szeretnél. Konkrétan: a Π-plafon száma (2048, vagy 1024/4096) és a kódkészlet mint specifikációs bemenet.
+3. SHA-hoz kötött merge-jóváhagyás a `fd42612` fejre, ha minden rendben. Mergelni nem fogok.
+
+A PR-leírást nem módosítottam, mert az már a #48 megnyitásakor a végleges szöveg volt. Az implementáció, a normatív vektorkészlet, a CI-kapu, a P2/P4, a Forms #166/#167, a séma-véglegesítés és a Relay #162 implementáció HOLD marad. A thread-naplót és a memóriát a #48 lezárása után frissítem.
+~~~~~
+
+
+### 2026-11-22 14:18 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+## **Review – cic-primitives #48**
+
+**Verdikt: REQUEST CHANGES.** Az O2 iránya megfelelő, az O3 kódkészletét támogatom, de a precedencia specifikációja még nem teljesen determinisztikus.
+
+A GitHubon ellenőriztem:
+
+| Ellenőrzés        | Eredmény                                                                                                                    |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| PR                | [#48](https://github.com/CentralInfraCore/cic-primitives/pull/48?utm_source=chatgpt.com)                                    |
+| Head              | `fd4261235f429e0aa2f990bb05ab853e8f786a7a`                                                                                  |
+| Gate              | [45031578632](https://github.com/CentralInfraCore/cic-primitives/actions/runs/45031578632?utm_source=chatgpt.com) – SUCCESS |
+| Módosított fájlok | 15                                                                                                                          |
+| Hozzáadott sorok  | +1219                                                                                                                       |
+| Törölt sorok      | −3                                                                                                                          |
+| Hatókör           | Dokumentáció és izolált mérés                                                                                               |
+
+### **F1 – O3: a precedencia nem minden esetben követi a deklarált olvasási sorrendet**
+
+A `subset_check.py` karakterosztály-feldolgozása előzetesen átvizsgálja a teljes osztályt a tiltott halmazoperátorokért.
+
+Például:
+
+- `[^a&&b]`
+- `[z-a&&b]`
+
+Mindkét esetben a `pattern_class_set_operator` nyer, pedig az olvasási sorrend alapján korábban található szabálysértés.
+
+A 3.2 szakasz ezért nem írja le pontosan a tényleges precedenciát.
+
+**Javítás:** explicit szabálysorrend a karakterosztályokon és az ismétlési konstrukciókon belül, többhibás ellenpéldákkal. A specifikációból önállóan implementálható legyen ugyanaz a verdikt, a Python-kód ismerete nélkül.
+
+### **F2 – O2: összesített erőforrásigény**
+
+A Π-korlát egy kifejezés méretét megfelelően szabályozza, de a teljes dokumentum kiértékelési költségét nem.
+
+A korábban kért több contract együttes kiértékelésének vizsgálata hiányzik.
+
+Nem feltétlenül kell új normatív korlát, de az összesített költséget és a felelősségi határt dokumentálni kell.
+
+### **F3 – A Π-rekurzió pontosítása**
+
+Az NFA `build()` függvénye alapján a rekurzió helyesnek látszik. A dokumentáció azonban még mindig elsősorban a 151 mérési eset egyezésére támaszkodik.
+
+Kérem a konstrukciónkénti rövid levezetést, valamint az egészszám-túlcsordulás kezelésének rögzítését. Korai elutasításnál a nullaszoros ismétlést is figyelembe kell venni: egy nagy részfa nem feltétlenül jelent nagy végleges programot.
+
+## **Javasolt tulajdonosi döntések**
+
+| Döntés                                  | Ajánlás                       |
+| --------------------------------------- | ----------------------------- |
+| O2 – Π-plafon                           | **2048**                      |
+| O2 – többi korlát                       | Változatlan                   |
+| O2 – Π a profilverzió része             | GO                            |
+| O3 – 25 kifejezés-hibakód               | GO, specifikációs bemenetként |
+| O3 – 3 érték-hibakód                    | GO                            |
+| O3 – precedencia                        | F1 javítása után GO           |
+| Producer/verifier független ellenőrzése | GO                            |
+
+A 2048-as plafont megfelelő kompromisszumnak tartom: a meglévő legnagyobb contracthoz képest közel 29-szeres tartalékot ad.
+
+Az 1. szakasz helyesbítését elfogadom. Kifejezetten értékes, hogy a korábbi mérés hibás következtetését egy reprodukálható ellenpéldával cáfolja.
+
+**Merge: HOLD az F1–F3 javításáig.**
+
+Minden korábbi implementációs HOLD változatlan.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 14:20 — Claude
+
+~~~~~
+Elfogadom a review-t, javítom az F1–F3-at, a #48 hatókörében, vagyis csak dokumentáció és izolált mérés. Először a pontos szabálysorrendet írom le, és megírom hozzá egy független második implementációt a specifikációs szövegből. Ezt a besorolóval vetem össze, így a Python-kód ismerete nélkül is ellenőrizhető a verdikt.
+~~~~~
+
+
+### 2026-11-22 14:25 — Claude
+
+~~~~~
+Most a README, a PR-leírás és a `SHA256SUMS` frissítése következik, utána a teljes tesztkészlet és a commit.
+~~~~~
+
+
+### 2026-11-22 14:29 — Claude
+
+~~~~~
+Az F1–F3 javítása kész és commitolva, de még nincs pusholva.
+
+- **Új fej:** `43c3f6c3bb4c1453297b95ec4b6721778cdd9145`. A szülője az `fd42612`.
+- **Hatókör:** csak `docs/`, 14 fájl.
+- **Tesztek:** a teljes készlet 943 passed. A `sha256sum -c` tiszta.
+
+**F1 – a precedencia szövege téves volt, igazad volt.**
+- A korábbi 3.2 olvasási sorrendet állított az osztályokon belül is, de a besoroló a teljes osztályszöveget előbb átvizsgálja a halmazoperátorokra. A `[^a&&b]` és a `[z-a&&b]` ezért `pattern_class_set_operator`.
+- A szöveget javítottam, a prototípust nem. A 3.2 mostantól explicit szabálysorrend: T1–T3, S1–S5, osztályokra C1–C4, ismétlésekre Q1–Q6, a Python-kód ismerete nélkül is követhető.
+- A RED-initial (`red-initial-f1.txt`) a korábbi szöveg implementációját veti össze a prototípussal. A review mindkét példáján eltérnek.
+- Írtam egy **második implementációt csak a szabályszövegből** (`spec_classifier.py`, nem importálja a besorolót). 70 149 kifejezésen 0 eltérés van közte és a prototípus között. A szerző ugyanaz, tehát a kódút független, a gondolkodás nem. Ezt a dokumentum is kimondja.
+- A precedencia-esetek 32-ről 65-re nőttek, köztük a review ellenpéldái.
+- Önteszt: **11/11 beültetett hiba** észlelve a kijelölt ellenőrzéssel (3 a szöveg-implementációban), 2/2 infrastruktúra-kontroll exit 2.
+- Egy véletlen leletet is felfedtem: a `\$` záró horgony paritásszabálya eddig csak a kódban volt, most a szövegben is szerepel.
+
+**F2 – összesített költség.**
+- **Mérések:** a három valódi rekord egésze 0,37 ms fordítás és 0,3–1,1 ms illesztés. A K legrosszabb contract összköltsége additív: K=32 esetén 1600 ms, kb. 50 ms/contract.
+- **Felelősségi határ:** a profil egy kifejezést és egy értéket korlátoz. A contractok és az értékek számának korlátja a séma-/rekordréteg és a verifier dolga, saját költségkerettel (Π × kódpont összege mint gépfüggetlen egység). Új normatív korlátot és költségkeret-kódot szándékosan nem javasolok.
+- **Extrapoláció:** 1000 legrosszabb pár kb. 50 s. Ez nem mérés, és a dokumentum is így jelöli.
+
+**F3 – Π levezetése.**
+- **Levezetés:** konstrukciónként a `_Prog.build()`-ből, nem csak a 151 eset egyezésére támaszkodva.
+- **Kézi értékek:** 20 kézzel levezetett Π-érték egyezik a rekurzióval és az NFA állapotszámával (Π+1).
+- **Számábrázolás:** minden köztes érték ≤ 512 000 (= 256 × 2000), vagyis 32 bites előjeles egész elég, telítés nem kell. Mérve a legnagyobb köztes érték 241 250, a DP-optimummal együtt.
+- **Nullaszoros ismétlés:** a `(a{0,255}×5){0}b` Π-je 1, a nagy részfa tehát nem nagy végleges program. A méret az egész fán dől el a szintaktikai szint után, korai elutasítás csak a legkülső sorozat futó összegén megengedett.
+- **Beültetett hiba:** egy korai részfa-ellenőrzés ezt az esetet tévesen elutasítaná, és a próba észleli.
+
+**Két korlát, amit a dokumentum kimond:**
+- A Π ≤ 512 000 korlát a szorzatszabályból vezetett érv, 3833 kifejezésen ellenőrizve, nem gépi bizonyítás.
+- Az igazi próba egy harmadik, más szerzőtől és nyelven, csak a szövegből készült implementáció lenne. Ez a (HOLD-on lévő) vektor- és kapumunkához tartozik.
+
+**Push (a PR #48 ugyanaz marad, a leírást is frissítettem):**
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-limits-errors && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/48 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-limits-errors.md --jq .number
+```
+
+A push után a gate-et az új fejen figyelem. Utána kell új tartalmi review és SHA-hoz kötött merge-jóváhagyás. Mergelni nem fogok. Az implementáció, a normatív vektorok, a CI-kapu és minden korábbi HOLD változatlan.
+~~~~~
+
+
+### 2026-11-22 14:29 — Felhasználó
+
+~~~~~
+mi va! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-limits-errors && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/48 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-limits-errors.md --jq .number
+~~~~~
+
+
+### 2026-11-22 14:29 — Claude
+
+~~~~~
+A push nem futott le. A sor elé „mi va" került, így a `!` nem az üzenet elején állt, és a rendszer sima szövegnek vette, nem parancsnak. A távoli ág még az `fd42612`-n van, a helyi fej `43c3f6c`.
+
+Írd be változtatás nélkül, a `!` legyen az első karakter:
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-limits-errors && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/48 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-limits-errors.md --jq .number
+```
+
+Ha inkább azt szeretnéd, hogy én futtassam, szólj, és megteszem. Eddig a push mindig nálad volt, ezért nem indítottam el magamtól. A push után a gate-et az új fejen figyelem.
+~~~~~
+
+
+### 2026-11-22 14:29 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-limits-errors && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/48 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-limits-errors.md --jq .number</bash-input>
+~~~~~
+
+
+### 2026-11-22 14:29 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-primitives.git
+   fd42612..43c3f6c  docs/grammar-pattern-limits-errors -&gt; docs/grammar-pattern-limits-errors
+48</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 14:34 — Claude
+
+~~~~~
+A #48 gate-je zöld az új fejen.
+
+- **Fej:** `43c3f6c3bb4c1453297b95ec4b6721778cdd9145`. Ez egyezik a tesztelt committal (gate-futás: 45033110392).
+- **Gate:** `success`.
+- **PR:** `mergeable: true`, állapot `clean`.
+- **Leírás:** tartalmazza a „Review round 1" részt az F1–F3 válaszokkal.
+- **Hatókör:** az `fd42612`-höz képest csak `docs/` változott.
+
+**Kérem:**
+1. Új tartalmi review az F1–F3 javításokra a `43c3f6c` fején. Az F1 szövegét (3.2) és a második implementáció szerepét érdemes külön nézni.
+2. SHA-hoz kötött merge-jóváhagyás, ha rendben van. Mergelni nem fogok.
+3. Az O2/O3 tulajdonosi döntések rögzítése. A review ajánlása: Π ≤ 2048, a többi korlát változatlan, a kódkészlet GO, a precedencia az F1-javítás után.
+
+Az implementáció, a normatív vektorok, a CI-kapu, a P2/P4, a Forms #166/#167, a séma-véglegesítés és a Relay #162 implementáció HOLD marad. A thread-naplót és a memóriát a #48 lezárása után frissítem.
+~~~~~
+
+
+### 2026-11-22 14:42 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+## **Review – cic-primitives #48, második kör**
+
+**Verdikt: APPROVE – merge-re javasolt.**
+
+A GitHubon ellenőriztem az új commit módosításait, a mérési kódot és az eredményeket.
+
+| Ellenőrzés       | Eredmény                                                                                                                    |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Head             | `43c3f6c3bb4c1453297b95ec4b6721778cdd9145`                                                                                  |
+| Gate             | [45033110392](https://github.com/CentralInfraCore/cic-primitives/actions/runs/45033110392?utm_source=chatgpt.com) – SUCCESS |
+| Hatókör          | Megfelelő, kizárólag `docs/`                                                                                                |
+| PR teljes mérete | +1979 / −3 sor                                                                                                              |
+| F1–F3            | Lezárható                                                                                                                   |
+
+### **F1–F3 ellenőrzése**
+
+- **F1 – PASS:** explicit precedenciaszabályok, 65 kézzel meghatározott eset, 70 149 differenciális ellenőrzés, nulla eltérés. A második implementáció önálló kódútvonalat biztosít, bár nem független szerzőtől származik. Ezt megfelelően dokumentálták.
+- **F2 – PASS:** az összesített költséget megmérték. A primitív egyetlen kifejezés és érték feldolgozását szabályozza. A dokumentumszintű erőforráskorlát nem ennek a rétegnek a felelőssége.
+- **F3 – PASS:** konstrukciónkénti levezetés, aritmetikai felső korlát, nullaszoros ismétlés kezelése és az idő előtti elutasítás negatív kontrollja rendelkezésre áll.
+
+Egy későbbi implementációs megjegyzés: a verifier összesített erőforráskerete nem alapulhat kizárólag a Π × értékhossz szorzaton, mert az üres érték és a nulla méretű program feldolgozása is költséggel jár. Ez nem blokkolja a jelenlegi döntési csomagot.
+
+## **O2/O3 döntési ajánlás**
+
+| Döntés                                  | Verdikt |
+| --------------------------------------- | ------- |
+| Π ≤ 2048                                | GO      |
+| Egyéb korlátok változatlanok            | GO      |
+| Π a profilverzió része                  | GO      |
+| Normatív hibakódkészlet                 | GO      |
+| Explicit hibaprecedencia                | GO      |
+| Producer/verifier független ellenőrzése | GO      |
+
+A csomag illeszkedik a Primitives általad meghatározott architekturális szerepéhez. Nem visz át magasabb szintű feldolgozási felelősséget a primitívbe.
+
+**SHA-hoz kötött szakmai merge-jóváhagyás: APPROVE.**
+
+```
+gh pr merge 48 --repo CentralInfraCore/cic-primitives --merge \
+  --match-head-commit 43c3f6c3bb4c1453297b95ec4b6721778cdd9145
+```
+
+A tényleges merge tulajdonosi jóváhagyással történhet.
+
+Minden korábbi implementációs HOLD változatlan.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 14:42 — Claude
+
+~~~~~
+A review jóváhagyta a `43c3f6c` fejet, de maga is kimondja, hogy a tényleges merge tulajdonosi jóváhagyással történhet. Ezt a beillesztett review-t nem tekintem a te merge-jóváhagyásodnak, ezért nem mergelek. Ha ez a tulajdonosi GO, a megszokott módon te futtatod, és a `--match-head-commit` miatt elutasít, ha a fej közben elmozdult:
+
+```
+! gh pr merge 48 --repo CentralInfraCore/cic-primitives --merge --match-head-commit 43c3f6c3bb4c1453297b95ec4b6721778cdd9145
+```
+
+A merge után ezeket végzem el:
+1. A post-merge gate a devel merge-commitján.
+2. A fa-egyezés ellenőrzése: a devel fája és a jóváhagyott fej fája.
+3. A memória frissítése: #48 mergelve, O2/O3 GO (Π ≤ 2048, 25+3 kód, explicit precedencia, független producer/verifier ellenőrzés), a review tanulságai és a későbbi implementációs megjegyzés. A megjegyzés: a verifier összesített költségkerete nem alapulhat csak a Π × értékhossz szorzaton, mert az üres érték és a nulla méretű program feldolgozása is költséggel jár.
+4. A thread-napló újragenerálása helyi commitként, push nélkül.
+
+A review O2/O3 ajánlása GO. A döntéseket a merge és a te kifejezett szavad rögzíti, ezért addig nem jelölöm véglegesnek. Az implementáció, a normatív vektorok, a CI-kapu, a P2/P4, a Forms #166/#167, a séma-véglegesítés és a Relay #162 implementáció HOLD marad.
+~~~~~
+
+
+### 2026-11-22 14:42 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 48 --repo CentralInfraCore/cic-primitives --merge --match-head-commit 43c3f6c3bb4c1453297b95ec4b6721778cdd9145</bash-input>
+~~~~~
+
+
+### 2026-11-22 14:42 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 14:43 — Claude
+
+~~~~~
+A merge megtörtént, a fa-egyezés stimmel: a devel fája (`ecaea90…`) megegyezik a jóváhagyott fej fájával, és nincs különbség köztük. Megvárom a post-merge gate-et.
 ~~~~~
