@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: CC-BY-NC-SA-4.0
 """Harness reader for the phase 0 positive-control run (pk-canary-channels).
 
-  read-pk.py DIR --expect-head-sha SHA --expect-sha256 HEX   evaluate fetched evidence
+  read-pk.py DIR --expect-repo OWNER/REPO --expect-run-id ID \
+             --expect-head-sha SHA --expect-sha256 HEX   evaluate fetched evidence
   read-pk.py --write-manifest DIR RUN_JSON OWNER/REPO HEAD   (used by fetch-pk.sh) validate the run
                                                              and bind the fetched files to it
   read-pk.py --check-run RUN_JSON OWNER/REPO HEAD            (used by fetch-pk.sh) refuse a wrong run
@@ -21,7 +22,9 @@ Per-check result: MET / NOT-MET / NOT-READ. These describe the MEASURING INSTRUM
 only (positive controls); they are not verdicts on the platform property and not
 measurement results of H1/H2.
 
-PK MET needs ALL of: manifest bound to the approved head SHA (--expect-head-sha),
+PK MET needs ALL of: manifest bound to the owner-chosen repository and run id
+(--expect-repo, --expect-run-id: independent inputs, one head SHA can have several runs)
+and to the approved head SHA (--expect-head-sha),
 the expected secret digest (--expect-sha256) compared, every channel read and
 free of any other CANARY-212- value. A missing expectation is INCOMPLETE, never MET.
 """
@@ -69,7 +72,7 @@ def strings_of(obj):
             yield from strings_of(v)
 
 
-def check_manifest(d, expect_head):
+def check_manifest(d, expect_head, expect_repo=None, expect_run_id=None):
     """Returns (rows, manifest-or-None)."""
     rows = []
     mtxt = read(os.path.join(d, "manifest.json"))
@@ -112,6 +115,20 @@ def check_manifest(d, expect_head):
     rows.append(("run binding", "NOT-MET" if problems else "MET",
                  "; ".join(problems) if problems else
                  "run %s attempt 1, workflow_dispatch, completed/success, branch main" % m.get("run_id")))
+    if expect_repo is None:
+        rows.append(("repository", "NOT-READ", "--expect-repo not given"))
+    else:
+        rows.append(("repository", "MET" if m.get("repository") == expect_repo else "NOT-MET",
+                     "manifest repository %r" % (m.get("repository"),)))
+    if expect_run_id is None:
+        rows.append(("run id", "NOT-READ", "--expect-run-id not given"))
+    elif not re.match(r"^[0-9]+$", str(expect_run_id)):
+        rows.append(("run id", "NOT-MET", "expected run id is not numeric"))
+    else:
+        rid = m.get("run_id")
+        rows.append(("run id", "MET" if isinstance(rid, int) and not isinstance(rid, bool)
+                     and rid == int(expect_run_id) else "NOT-MET",
+                     "manifest run id %r" % (rid,)))
     if expect_head is None:
         rows.append(("approved head SHA", "NOT-READ", "--expect-head-sha not given"))
     elif not SHA_RE.match(expect_head):
@@ -122,9 +139,9 @@ def check_manifest(d, expect_head):
     return rows, m
 
 
-def evaluate(d, expect_head=None, expect_sha=None):
+def evaluate(d, expect_head=None, expect_sha=None, expect_repo=None, expect_run_id=None):
     res = []  # (check, result, note)
-    mrows, man = check_manifest(d, expect_head)
+    mrows, man = check_manifest(d, expect_head, expect_repo, expect_run_id)
     res += mrows
     log = read(os.path.join(d, "log.txt"))
     ann_txt = read(os.path.join(d, "annotations.json"))
@@ -333,13 +350,15 @@ def attach_summary(d, src, run_id):
 
 
 HEAD = "a1" * 20
+REPO = "o/r"
+RUN = 123456
 SHA = "a" * 64
 
 
 def write_manifest(d, **over):
     m = {"workflow_path": WORKFLOW_PATH, "event": "workflow_dispatch", "status": "completed",
          "conclusion": "success", "head_branch": "main", "run_attempt": 1,
-         "run_id": 123456, "head_sha": HEAD,
+         "run_id": 123456, "head_sha": HEAD, "repository": REPO,
          "files": {rel: sha256_file(os.path.join(d, rel)) for rel in FETCHED}}
     m.update(over)
     json.dump(m, open(os.path.join(d, "manifest.json"), "w"))
@@ -426,6 +445,9 @@ def selftest():
         ("run not completed", manifest(status="in_progress"), NOT),
         ("branch is not main", manifest(head_branch="feature/x"), NOT),
         ("rerun attempt 2", manifest(run_attempt=2), NOT),
+        ("manifest repository differs from the expected", manifest(repository="o/other"), NOT),
+        ("manifest repository missing", manifest(repository=None), NOT),
+        ("manifest run id differs from the expected", manifest(run_id=123457), NOT),
         ("workflow path differs", manifest(workflow_path=".github/workflows/lab-gate-pr.yml"), NOT),
         ("log replaced after the manifest (stale mix)", edit("log.txt", lambda t: t + "# other run\n", remanifest=False), NOT),
         ("stale extra file in the directory", lambda d: open(os.path.join(d, "old-summary.txt"), "w").write(TOKEN), NOT),
@@ -435,20 +457,27 @@ def selftest():
     ]
     bad = 0
     for label, m, want in cases:
-        got = overall(evaluate(build(m), HEAD, SHA))
+        got = overall(evaluate(build(m), HEAD, SHA, REPO, RUN))
         ok = got == want
         print("%-4s %-52s want=%s got=%s" % ("ok" if ok else "FAIL", label, want, got))
         bad += 0 if ok else 1
     extra = [
-        ("expected digest differs", dict(expect_head=HEAD, expect_sha="b" * 64), NOT),
-        ("expected digest not given (F4)", dict(expect_head=HEAD, expect_sha=None), INC),
-        ("approved head SHA not given", dict(expect_head=None, expect_sha=SHA), INC),
-        ("approved head SHA differs", dict(expect_head="c3" * 20, expect_sha=SHA), NOT),
-        ("expected digest malformed", dict(expect_head=HEAD, expect_sha="zz"), NOT),
+        ("expected digest differs", dict(expect_sha="b" * 64), NOT),
+        ("expected digest not given (F4)", dict(expect_sha=None), INC),
+        ("approved head SHA not given", dict(expect_head=None), INC),
+        ("approved head SHA differs", dict(expect_head="c3" * 20), NOT),
+        ("expected digest malformed", dict(expect_sha="zz"), NOT),
+        ("different repository (F2.1)", dict(expect_repo="o/other"), NOT),
+        ("repository not given", dict(expect_repo=None), INC),
+        ("same head, other run id (F2.1)", dict(expect_run_id=123457), NOT),
+        ("run id not given", dict(expect_run_id=None), INC),
+        ("run id not numeric", dict(expect_run_id="12x"), NOT),
     ]
     d = build(lambda d: None)
     for label, kw, want in extra:
-        got = overall(evaluate(d, **kw))
+        base = dict(expect_head=HEAD, expect_sha=SHA, expect_repo=REPO, expect_run_id=RUN)
+        base.update(kw)
+        got = overall(evaluate(d, **base))
         ok = got == want
         print("%-4s %-52s want=%s got=%s" % ("ok" if ok else "FAIL", label, want, got))
         bad += 0 if ok else 1
@@ -506,7 +535,8 @@ def main(argv):
             return 2
         return attach_summary(args[1], args[2], args[3])
     opts = {}
-    for flag, key in (("--expect-head-sha", "expect_head"), ("--expect-sha256", "expect_sha")):
+    for flag, key in (("--expect-head-sha", "expect_head"), ("--expect-sha256", "expect_sha"),
+                      ("--expect-repo", "expect_repo"), ("--expect-run-id", "expect_run_id")):
         if flag in args:
             i = args.index(flag)
             if i + 1 >= len(args):
