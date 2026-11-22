@@ -8,12 +8,15 @@
 - **Nevek (a tulajdonos javaslata):** szervezet `CIC-Security-Lab`; X repó `ci-adversarial-lab`; Y repó `ci-identity-lab`.
 - **Mindegyik lépés** négy részből áll: **Parancs/beállítás** (a tulajdonos futtatja), **Hatás**, **Olvasó ellenőrzés** (futtathatom is, hitelesítő adat nélkül, nyilvános metaadatra, vagy te futtatod és beillesztheted), **Mit kapok vissza** (kizárólag nem titkos kimenet).
 - **Hitelesítő adatot, kulcsot, tokent, gépi fiók jelszavát nem küldesz nekem.** A kanári érték értéktelen (O-5); ezt a kivételt a 4.5 lépés rögzíti.
+- **A `set -euo pipefail` sorokat tartalmazó blokkokat szkriptfájlként futtasd** (`bash script.sh`), ne az interaktív shellben beillesztve, mert egy hiba az egész shellt kilépteti. Ez a fail-closed viselkedés szándékos.
 - **Parancsváltozók** (egy shellben):
 
 ```bash
 ORG=CIC-Security-Lab
 X=ci-adversarial-lab
 Y=ci-identity-lab
+# guard: no command of this runbook may ever target the production organization
+[ "$ORG" != "CentralInfraCore" ] || { echo "refusing: production org" >&2; exit 1; }
 ```
 
 - **Platformviselkedés jelölése.** A parancsok szintaxisa és a hivatkozott beállítási útvonalak a platform dokumentációjából származnak; **ebben a sessionben nem futtattam őket, nem mért**. Ahol egy lépés a jelzett kimenetet nem adja, **állj meg és közöld**; ne találgass és ne kerüld meg. Ahol az olvasott érték „olvasott", azt ebben a sessionben csak olvasó lekérdezéssel olvastam.
@@ -36,7 +39,7 @@ A #82 5.1 szerint a **G0** feltételei: K-1 (szervezet, X repó), K-2, K-5, K-8,
 
 | Sor | Lépés | Döntés / kapu | Függ |
 |---|---|---|---|
-| **A** (G0, sorrend) | 4.1 szervezet → 4.2 X repó → 4.3 alapállapot-rögzítés → 4.4 kanári-környezet → 4.5 kanári-értékek → 4.6 workflow-csomag (nálam, külön GO) → 4.7 védett ág alapállapota → 4.8 G0 ellenőrzés | G0 | K-1, K-2, K-5, K-8, O-5 (a) |
+| **A** (G0, sorrend) | 4.1 szervezet → 4.2 X repó → 4.3 alapállapot-rögzítés → 4.4 kanári-konfigurációk → 4.5 kanári-értékek → 4.6 workflow-csomag (nálam, külön GO) → 4.7 védett ág alapállapota → 4.8 G0 ellenőrzés | G0 | K-1, K-2, K-5, K-8, O-5 (a) |
 | **B** (párhuzamos sáv, **nem** G0) | 5.1 Y repó → 5.2 két App kulcs nélkül (O-2a) → 5.3 gépi fiókok (O-3) → 5.4 kanári-pár (O-5b) → 5.5 O-4 szkriptek | G2, G3a | K-1, O-2a, O-3, O-5b, K-3 időpont |
 | **C** (nem kapu) | 6 K-4 olvasás | — | — |
 
@@ -81,83 +84,119 @@ gh api "repos/$ORG/$X" --jq '{full_name, visibility, private, allow_forking, def
 
 ### 4.3 Az alapállapot rögzítése (K-6, O-4 előtti állapot)
 
-A mérés ellenőrzési alapja a **módosítás előtti állapot**; ezt a mérés minden beállítás-módosítása előtt rögzíteni kell. A következő lekérdezések **csak olvasnak**; a kimenet a factory job `raw/` alá kerül (K-8), ezért titokellenőrzéssel.
+A mérés ellenőrzési alapja a **módosítás előtti állapot**; ezt a mérés minden beállítás-módosítása előtt rögzíteni kell. A lekérdezések **csak olvasnak**. Három szabály, amely a nyers kimenet nekem átadását védi:
+
+1. **Csak a szükséges mezők** kerülnek a fájlba (`--jq` kiválasztással). A szervezet teljes API-válasza kapcsolattartó e-mail-címet is tartalmazhat, ezért **teljes választ nem mentünk**.
+2. **A titokellenőrzés fail-closed:** a **találat**, a **találat hiánya** és az **ellenőrzési hiba** három külön kimenet. Csak a „nincs találat" enged tovább; a találat és a hiba is **megállít**.
+3. **A továbbítás sorrendje:** sikeres titokellenőrzés → **tulajdonosi átvizsgálás** (a fájlok átolvasása) → csak ezután kerülhet bármi a factory `raw/` alá vagy hozzám.
 
 ```bash
+set -euo pipefail
 mkdir -p ~/.cache/ci-lab/baseline && cd ~/.cache/ci-lab/baseline
-gh api "orgs/$ORG"                                   > org.json
-gh api "repos/$ORG/$X"                               > repo-x.json
-gh api "repos/$ORG/$X/actions/permissions"           > actions-permissions.json
-gh api "repos/$ORG/$X/actions/permissions/workflow"  > actions-workflow-permissions.json
+rm -f ./*.json
+gh api "orgs/$ORG" --jq '{login, plan: .plan.name, two_factor_requirement_enabled, default_repository_permission}' > org.json
+gh api "repos/$ORG/$X" --jq '{full_name, visibility, private, allow_forking, default_branch, archived}' > repo-x.json
+gh api "repos/$ORG/$X/actions/permissions"          > actions-permissions.json
+gh api "repos/$ORG/$X/actions/permissions/workflow" > actions-workflow-permissions.json
 gh api "repos/$ORG/$X/actions/permissions/fork-pr-contributor-approval" > fork-pr-approval.json
-gh api "repos/$ORG/$X/rulesets"                      > rulesets.json
-gh api "repos/$ORG/$X/branches/main" --jq '{protected, name}' > branch-main.json
+gh api "repos/$ORG/$X/rulesets" --jq '[.[] | {id, name, target, enforcement}]' > rulesets.json
+gh api "repos/$ORG/$X/branches/main" --jq '{name, protected}' > branch-main.json
+
+# fail-closed scan: 0 = clean, 1 = pattern found, 2 = scan error / nothing to scan
+scan() {
+  local dir="$1" rc
+  [ -d "$dir" ] && [ -n "$(ls -A "$dir")" ] || { echo "ERROR: nothing to scan in $dir" >&2; return 2; }
+  grep -rEn 'ghp_|ghs_|gho_|ghu_|github_pat_|BEGIN [A-Z ]*PRIVATE KEY|CANARY-212-' "$dir" && rc=0 || rc=$?
+  case "$rc" in
+    0) echo "FAIL: secret-like pattern found, do not forward" >&2; return 1 ;;
+    1) echo "OK: scan ran, no pattern found"; return 0 ;;
+    *) echo "ERROR: scan itself failed (grep rc=$rc), do not forward" >&2; return 2 ;;
+  esac
+}
+scan . || { echo "STOP: baseline must not be forwarded"; exit 1; }
 ```
 
 - **Hatás:** nincs változás; az X repó **alapállapota** rögzített (Actions-engedély, workflow-jogosultság, fork-jóváhagyás, szabálykészletek).
-- **Mit kapok vissza:** a fájlok tartalma, miután futtattad rajtuk a titokellenőrzést:
+- **Tulajdonosi átvizsgálás (kötelező, a scan után):** `cat ~/.cache/ci-lab/baseline/*.json`; nem szerepelhet benne e-mail-cím, személyes név vagy bármilyen azonosító, amit nem szántál nyilvánosnak. A szervezet adataiból **csak** a fenti mezők mennek tovább.
+- **Mit kapok vissza:** a fájlok tartalma, **csak** a `scan` „OK" kimenete és az átvizsgálás után.
+- **Megjegyzés:** a `fork-pr-approval.json` végpontja a platform újabb része; ha `404`, a `set -e` megállít. Ilyenkor a felületi állapotot rögzítsd szövegesen (Settings → Actions → General → „Fork pull request workflows"), és ezt a sort hagyd ki.
+
+### 4.4 A kanári-konfigurációk (O-5 (a), E-6)
+
+**A védettség hipotézis, nem tény.** Az, hogy egy környezeti titok az alapágra korlátozott ág-szabállyal a PR-ból induló futás számára elérhetetlen-e, **az M-B1 mérési tárgya**. Különösen az olyan események, amelyek az alapág kontextusában futnak (például a `pull_request_target`, ahol a futás ágazonosítója az alapágra mutat, és az ágszabály ezért önmagában **nem zárja ki** a PR-ból indított futást), a mérés kérdései, nem előfeltételezett válaszok. A kanári konfigurációk ezért **négy, külön kezelt konfigurációként** jönnek létre; az egyik sem tekinthető „védettnek" a mérés előtt:
+
+| Konfiguráció | Név | Hely | Szerepe a mérésben |
+|---|---|---|---|
+| **K0 (U)** | `CANARY_UNRESTRICTED` | az X repó szintű titka, korlátozás nélkül | **ültetett** kontroll: ismerten hozzáférő konfiguráció (M-B1 PK (U)); a harness olvassa |
+| **K1** | `CANARY_BRANCHONLY` | a `canary-branch` környezet titka, **csak az ágszabály** (`main`) | **vizsgált hipotézis (H1):** az ágszabály önmagában elégséges-e |
+| **K2** | `CANARY_BRANCH_APPROVAL` | a `canary-approval` környezet titka: **ágszabály + kötelező jóváhagyó** | **külön vizsgált konfiguráció (H2):** a jóváhagyóval kiegészített védelem; **nem azonos a K1-gyel** |
+| **K3 (J)** | `CANARY_UNREFERENCED` | a `canary-unreferenced` környezet titka, amelyre **egyetlen workflow sem hivatkozik** | **ismert jó** kontroll: a nem hivatkozott érték **szerkezetileg** nem olvasható ki, a hipotézis igazságától függetlenül |
+
+- **A PK nem függ a hipotézistől.** A (J) kontroll **nem a K1 vagy a K2** „védettségén" alapul (az éppen a mérés tárgya), hanem a K3-on, amelyet a harness a konfiguráció szerkezetéből ismer védettnek. Ha a K1 vagy a K2 értéke olvasható, az **FAIL** a platformtulajdonságra (H1/H2), a PK ettől függetlenül teljesülhet; **INCONCLUSIVE csak** akkor, ha a **mérési mechanizmus** kontrollja (K0 olvasható, K3 nem) bukik.
+- **A jóváhagyót (K2) a tulajdonos adja** (S1 csak beállít, jóváhagy; nem PR-szerző). A jóváhagyás maga a mérés tárgya is (M-B4), ezért a K2 jóváhagyási lépése rögzítendő.
+
+- **Parancs (környezetek):**
 
 ```bash
-grep -rEn 'ghp_|ghs_|gho_|github_pat_|BEGIN [A-Z ]*PRIVATE KEY' . || echo "no secret patterns"
-```
-
-- **Megjegyzés:** a `fork-pr-approval.json` végpontja a platform újabb része; ha `404`, a felületi állapotot rögzítsd (Settings → Actions → General → „Fork pull request workflows"), és írd le szövegesen.
-
-### 4.4 A kanári-környezet (O-5 (a), E-6)
-
-A kanári **ugyanazzal a tárolási hellyel és védelemmel** jön létre, mint amit a kibocsátó hitelesítő adata egy valódi telepítésben kapna (E-6; M-B1 elrendezése): **környezeti titok, az alapágra korlátozott ág-szabállyal**. Ehhez **nem kell App és nem kell az O-2**.
-
-- **Parancs:**
-
-```bash
-ENVN=canary-issuer
-gh api -X PUT "repos/$ORG/$X/environments/$ENVN" --input - <<'JSON'
+set -euo pipefail
+OWNER_ID=$(gh api user --jq .id)   # reviewer for K2 only; stays local, not forwarded
+gh api -X PUT "repos/$ORG/$X/environments/canary-branch" --input - <<'JSON'
 {"deployment_branch_policy": {"protected_branches": false, "custom_branch_policies": true}}
 JSON
-gh api -X POST "repos/$ORG/$X/environments/$ENVN/deployment-branch-policies" -f name=main -f type=branch
+gh api -X POST "repos/$ORG/$X/environments/canary-branch/deployment-branch-policies" -f name=main -f type=branch
+
+gh api -X PUT "repos/$ORG/$X/environments/canary-approval" --input - <<JSON
+{"deployment_branch_policy": {"protected_branches": false, "custom_branch_policies": true},
+ "reviewers": [{"type": "User", "id": $OWNER_ID}], "prevent_self_review": false}
+JSON
+gh api -X POST "repos/$ORG/$X/environments/canary-approval/deployment-branch-policies" -f name=main -f type=branch
+
+gh api -X PUT "repos/$ORG/$X/environments/canary-unreferenced" --input - <<'JSON'
+{"deployment_branch_policy": null}
+JSON
 ```
 
-- **Hatás:** a `canary-issuer` nevű környezet, amelyhez **csak az `main` ágról induló** futás fér hozzá.
-- **Olvasó ellenőrzés:**
+- **Hatás:** három környezet (`canary-branch`, `canary-approval`, `canary-unreferenced`); a hozzáférést **nem** tekintjük igazoltnak, csak a konfigurációt rögzítjük.
+- **Olvasó ellenőrzés** (a **teljes védelmi konfigurációt** rögzíti, nem csak az ágszabályt):
 
 ```bash
-gh api "repos/$ORG/$X/environments/$ENVN" --jq '{name, deployment_branch_policy}'
-gh api "repos/$ORG/$X/environments/$ENVN/deployment-branch-policies" --jq '.branch_policies[] | {name, type}'
+for E in canary-branch canary-approval canary-unreferenced; do
+  gh api "repos/$ORG/$X/environments/$E" --jq '{name, can_admins_bypass, protection_rules: [.protection_rules[] | {type, wait_timer, reviewers: ([.reviewers[]?.type])}], deployment_branch_policy}'
+done
 ```
 
-- **Elvárás:** `custom_branch_policies` = `true`, egyetlen szabály: `main`. Ha a végpont eltér, a felületen állítsd be (Settings → Environments → `canary-issuer` → Deployment branches: *Selected branches* → `main`), és írd le.
-- **Visszafordítás:** a környezet törölhető (`gh api -X DELETE …`); a törlés a repó archiválása előtt nem szükséges.
+- **Elvárás:** a `canary-branch` ágszabálya `custom_branch_policies = true` és egyetlen `main` szabály; a `canary-approval` ugyanez **plusz** egy kötelező jóváhagyó; a `canary-unreferenced` nincs ágszabály. Az `can_admins_bypass` értékét **rögzítsd** (a mérés ezt is vizsgálja). Ha a végpont eltér, a felületen állítsd be (Settings → Environments), és írd le.
+- **Visszafordítás:** a környezetek törölhetők (`gh api -X DELETE …`); az 5.6 szakasz szerint **a 3b előtt el is kell távolítani őket**.
 
 ### 4.5 A kanári-értékek (O-5 (a))
 
-Két **véletlen, értéktelen** érték:
-
-| Név | Hely | Szerepe a mérésben |
-|---|---|---|
-| `CANARY_PROTECTED` | a `canary-issuer` környezet titka (4.4) | a **védett konfiguráció**; (J) ismert jó kontroll az M-B1/M-B2 PK-jában (a kanári nem olvasható a PR-ból induló futásban) |
-| `CANARY_UNRESTRICTED` | az X repó szintű titka, korlátozás nélkül | az **ültetett (U)** kontroll: ismerten hozzáférő konfiguráció, amelyet a harness olvas (M-B1 PK (U)) |
+Négy **véletlen, értéktelen** érték, mindegyik a 4.4 szerinti helyére:
 
 - **Parancs:**
 
 ```bash
+set -euo pipefail
 umask 077; mkdir -p ~/.cache/ci-lab
-P="CANARY-212-$(openssl rand -hex 16)"
-U="CANARY-212-$(openssl rand -hex 16)"
-printf '%s\n' "CANARY_PROTECTED=$P" "CANARY_UNRESTRICTED=$U" > ~/.cache/ci-lab/canary-X.txt
-printf '%s' "$P" | gh secret set CANARY_PROTECTED    --env "$ENVN" --repo "$ORG/$X"
-printf '%s' "$U" | gh secret set CANARY_UNRESTRICTED               --repo "$ORG/$X"
+: > ~/.cache/ci-lab/canary-X.txt
+mk() { printf 'CANARY-212-%s' "$(openssl rand -hex 16)"; }
+U=$(mk); B=$(mk); A=$(mk); N=$(mk)
+printf '%s\n' "CANARY_UNRESTRICTED=$U" "CANARY_BRANCHONLY=$B" "CANARY_BRANCH_APPROVAL=$A" "CANARY_UNREFERENCED=$N" > ~/.cache/ci-lab/canary-X.txt
+printf '%s' "$U" | gh secret set CANARY_UNRESTRICTED                                  --repo "$ORG/$X"
+printf '%s' "$B" | gh secret set CANARY_BRANCHONLY       --env canary-branch          --repo "$ORG/$X"
+printf '%s' "$A" | gh secret set CANARY_BRANCH_APPROVAL  --env canary-approval        --repo "$ORG/$X"
+printf '%s' "$N" | gh secret set CANARY_UNREFERENCED     --env canary-unreferenced    --repo "$ORG/$X"
 ```
 
-- **Szabály:** az értékeket **véletlenül kell előállítani, és sehol máshol nem szabad használni** (E-1: a kanári és a valódi hitelesítő adat nem fedi át egymást; a kanári soha nem azonos egy valódi értékkel). A `CANARY-212-` előtag a kiszivárgás-észlelés azonosítója.
-- **Olvasó ellenőrzés** (csak nevek és időbélyegek, érték nem):
+- **Szabály:** az értékeket **véletlenül kell előállítani, és sehol máshol nem szabad használni** (E-1: a kanári és a valódi hitelesítő adat nem fedi át egymást). A `CANARY-212-` előtag a kiszivárgás-észlelés azonosítója. A `CANARY_UNREFERENCED` névre **egyetlen workflow-fájl sem hivatkozhat** (a 4.6 csomag review-ján ellenőrzendő).
+- **Olvasó ellenőrzés** (csak nevek, érték nem):
 
 ```bash
-gh secret list --env "$ENVN" --repo "$ORG/$X"
 gh secret list --repo "$ORG/$X"
+for E in canary-branch canary-approval canary-unreferenced; do gh secret list --env "$E" --repo "$ORG/$X"; done
 ```
 
-- **Mit kapok vissza:** a két lista (nevek), és **a két kanári értéke** a `~/.cache/ci-lab/canary-X.txt` fájlból. **Ez az egyetlen kivétel a „nem küldesz titkot" szabály alól:** a kanári **értéktelen** (a #82 O-5 szerint nem titok a számomra); az észleléshez a harnessnek ismernie kell, hogy mit keressen a naplókban és artifactokban. Ha mégsem akarod megadni az értéket, a harness csak az `CANARY-212-` előtagra és a hossz-mintára tud keresni, ami gyengébb észlelés (ezt az eredményekben jelölni kell).
-- **Visszafordítás:** a titkok törölhetők (`gh secret delete`); a fájl törlendő a mérés lezárásakor.
+- **Mit kapok vissza:** a listák (nevek), és **a négy kanári értéke** a `~/.cache/ci-lab/canary-X.txt` fájlból. **Ez az egyetlen kivétel a „nem küldesz titkot" szabály alól:** a kanári **értéktelen** (#82 O-5); az észleléshez a harnessnek ismernie kell, mit keressen a naplókban és artifactokban. Ha mégsem adod meg, a harness csak az `CANARY-212-` előtagra és a hossz-mintára tud keresni, ami **gyengébb észlelés**, és az eredményekben jelölni kell.
+- **Visszafordítás:** a titkok törölhetők (`gh secret delete`); a fájl a mérés lezárásakor, **és a 3b előtt** törlendő (5.6).
 
 ### 4.6 A 0. fázis workflow-csomagja (nálam, külön GO és review)
 
@@ -202,15 +241,20 @@ gh api "repos/$ORG/$X/branches/main/protection" --jq '{required_status_checks: .
 
 A G0 teljesülésének **olvasó ellenőrzése** (én is futtathatom a nyilvános részére; a többit te):
 
-| # | Feltétel (#82 5.1) | Ellenőrzés | Kimenet |
+| # | Feltétel (#82 5.1) | Ellenőrzés | Elvárt kimenet |
 |---|---|---|---|
 | 1 | K-1: szervezet és X repó létezik | 4.1, 4.2 olvasó parancsa | `login`, `full_name` |
 | 2 | K-2: nyilvános | 4.2 | `visibility = public` |
-| 3 | K-5: 300 futás korlát elfogadva | nem parancs | a tulajdonosi elfogadás szövege |
-| 4 | K-8: a push-t a tulajdonos futtatja, nincs hitelesítő adat nálam | nem parancs | a tulajdonosi elfogadás |
-| 5 | O-5 (a): kanáriértékek a védett és a nem védett helyen | 4.5 `gh secret list` | két név, két hely |
-| 6 | védett ág alapállapota rögzítve | 4.7 | `strict`, `enforce_admins`, check neve |
-| 7 | az alapállapot-fájlok elkészültek és titokellenőrzöttek | 4.3 | a titokellenőrzés kimenete |
+| 3 | **Az Actions tényleges engedélyezése** | `gh api "repos/$ORG/$X/actions/permissions" --jq '{enabled, allowed_actions}'`, és egy **tényleges futás** létezik a 4.6 csomag után (`gh run list --repo "$ORG/$X" --limit 1`) | `enabled = true`; legalább egy futás |
+| 4 | K-5: 300 futás korlát elfogadva | nem parancs | a tulajdonosi elfogadás szövege |
+| 5 | K-8: a push-t a tulajdonos futtatja, nincs hitelesítő adat nálam | nem parancs | a tulajdonosi elfogadás |
+| 6 | O-5 (a): a négy kanári-konfiguráció létezik | 4.5 `gh secret list` (repo + három környezet) | a négy név a négy helyen |
+| 7 | **Az environment teljes védelmi konfigurációja** | 4.4 olvasó parancsa mindhárom környezetre | ágszabály, jóváhagyó, `can_admins_bypass`, ahogy a 4.4 elvárása írja |
+| 8 | Védett ág alapállapota rögzítve | 4.7 | `strict`, `enforce_admins`, a check neve |
+| 9 | **A jóváhagyott workflow-csomag SHA-ja** | az X `main` fején a csomag fájljainak **blob-SHA-ja** egyezik a factory-ban jóváhagyott fej fájljaival: `gh api "repos/$ORG/$X/contents/<path>?ref=main" --jq .sha` összevetve a factory `git rev-parse <approved-sha>:<path>` értékével | minden fájlnál egyezés; a jóváhagyott factory-SHA rögzítve |
+| 10 | **A megkövetelt check pontos azonossága** | `gh api "repos/$ORG/$X/commits/main/check-runs" --jq '.check_runs[] | {name, app: .app.slug, app_id: .app.id}'` | a `name` **egyezik** a 4.7 `CHECK_NAME` értékével, és a kibocsátó az **Actions** azonosság (a korábbi mérésben app id 15368) |
+| 11 | **A mérési és az éles szervezet elkülönítése** | (a) `gh api "orgs/$ORG/actions/secrets" --jq .total_count` = 0 és `gh api "orgs/$ORG/actions/variables" --jq .total_count` = 0 (nincs örökölt szervezeti titok); (b) `gh api "orgs/$ORG/members" --jq '[.[].login]'` = a várt kör; (c) a runbook minden parancsa a `$ORG` változót használja, a guard megállít az éles szervezetnél; (d) a `CentralInfraCore` repói és beállításai a forgatókönyv alatt **nem módosultak** (a tulajdonos megerősíti) | (a) 0; (b) a várt tagok; (c) nincs `CentralInfraCore` az átvitt parancsokban; (d) megerősítés |
+| 12 | Az alapállapot-fájlok elkészültek, a fail-closed scan **OK**, a tulajdonosi átvizsgálás megtörtént | 4.3 | a `scan` „OK" kimenete; az átvizsgálás tulajdonosi megerősítése |
 
 **A G0 teljesülése után** a 0. fázis a harness önellenőrzésével indul (minden PK külön, a tételek előtt). **Az indulása külön GO**, ez a forgatókönyv nem indítja el.
 
@@ -263,11 +307,25 @@ Webes felület: a szervezet → Settings → Developer settings → GitHub Apps 
 
 ### 5.4 A kanári-pár (O-5 (b)) — a G3a kapuhoz
 
-Az Y repón **két kanári**, a későbbi valódi kibocsátó- és verifier-kulcs tárolási helyén (E-6; M-D5): két külön környezet (`canary-issuer-y`, `canary-verifier-y`), mindkettő az `main` ágra korlátozva, **külön** a másiktól. A parancsok a 4.4–4.5 mintát követik az Y repóra, **két** környezettel és két értékkel. **Valódi kulcs ekkor még nem létezik** (E-4).
+Az Y repón **két kanári**, a későbbi valódi kibocsátó- és verifier-kulcs tárolási helyén (E-6; M-D5): két külön környezet (`canary-issuer-y`, `canary-verifier-y`), mindkettő az `main` ágra korlátozva, **külön** a másiktól. A parancsok a 4.4–4.5 mintát követik az Y repóra, **két** környezettel és két értékkel. A védettség itt is **hipotézis** (az M-D5 és a B1–B4 eredménye dönt), és a PK kontrollok a 4.4 elve szerint **nem függenek a vizsgált hipotézistől** (külön ültetett és ismerten védett kontroll-érték). **Valódi kulcs ekkor még nem létezik** (E-4); a kanárik a 3b előtt eltávolítandók (5.6).
 
 ### 5.5 Az O-4 szkriptek (G2/G3a)
 
 A beállítás-módosító szkriptek (a #82 O-4 9 sora) **az én feladatom elkészíteni, külön GO-val és review-val**; a tulajdonos futtatja őket, a hitelesítő adatával, amelyet én nem látok. Ez a forgatókönyv azokat **nem** tartalmazza, mert tartalmuk a mérési tételek elrendezésétől függ (K-6 zárt lista).
+
+### 5.6 A kanáris és a valódi kulcsos fázis közötti átmenet (E-1, E-2, E-4)
+
+A #82 előírja az **időbeli elkülönítést** is: a kanáris fázisok (0–3a) **lezárulnak**, mielőtt a valódi kulcs létrejön (3b). A #82 G3b kapuját (5.1: O-1, O-2 (b), a 3a lezárása) ez a forgatókönyv az alábbi **átmeneti ellenőrzéssel egészíti ki** (**pontosítás, review-ra jelölve**: az E-4 időbeli elkülönítés lépésekre bontása). **A 3b fázis ennek a forgatókönyvnek nem része;** a lépések a kulcs létrehozása **előtt** futnak, és **a kulcs a lépések teljesülése nélkül nem jön létre**.
+
+| # | Átmeneti lépés | Ellenőrzés (olvasó) | Elvárt |
+|---|---|---|---|
+| 1 | A 0–3a fázisok **lezárva**, az eredmények és a nyers kimenet rögzítve (`raw/`, titokellenőrzéssel) | a tulajdonos megerősítése; a factory `raw/` | a lezárás jegyzete |
+| 2 | **Az ellenséges futások lezárva:** nincs nyitott ellenséges PR, nincs folyamatban lévő vagy sorban álló futás az **Y** repón (és az X-en sem, amíg ott kulcs lenne) | `gh pr list --repo "$ORG/$Y" --state open`; `gh run list --repo "$ORG/$Y" --status in_progress` és `--status queued` | mind üres |
+| 3 | **A kanárik eltávolítva** (az X és az Y repón: titkok és kanári-környezetek, a `canary-X.txt` fájl és az Y kanári-pár fájlja) | `gh secret list --repo "$ORG/$Y"` és a környezetenkénti listák; `ls ~/.cache/ci-lab/` | nincs `CANARY_*` név; a fájlok törölve |
+| 4 | **Az izoláció ellenőrizve:** a valódi kulcs **soha nem kerül az X repóba**; az Y repón **nincs GitHub-titokként kulcs** (E-3), és az ellenséges PR akkor sem fut az Y-ban, amikor kulcs létezik (E-2) | `gh secret list --repo "$ORG/$Y"` (üres); a fork-PR workflow-jóváhagyás **minden külső** szerzőre kötelező az Y-on (felületi/API olvasás, rögzítve) | üres titoklista; jóváhagyás-szabály rögzítve |
+| 5 | A kulcs **csak ezután** jön létre, a tulajdonos saját gépén (O-2 (b)); a 3b végén **azonnal visszavonja** (O-6) | tulajdonosi jegyzet (idő, nem titok) | az időrend: 1–4. lépés **előbb** |
+
+Ha bármelyik lépés nem teljesül, a kulcs **nem jön létre**, és a 3b nem indul (a mérés leállása a 7. szakasz szerint).
 
 ## 6. C sor — K-4 olvasás
 
@@ -300,6 +358,9 @@ A 0. fázis és a B sor végrehajtása közben **azonnal állj meg és közöld*
 | A parancsok az itt leírt hatást adják | concept (dokumentált platformviselkedés, ebben a sessionben **nem ellenőrzött**) | a platform dokumentációja; nincs futtatás | minden lépés olvasó ellenőrzéssel zárul; eltérésnél leállás (7. szakasz) | az API-végpontok eltérhetnek; a felületi alternatíva jelölve |
 | A forgatókönyv nem módosítja a #82 K-1–K-8 ajánlásait | concept | a 1. szakasz; a pontosítások jelölve (a `strict`/`enforce_admins` kezdőérték javaslat, a kanári-érték átadása) | tartalmi review | a tulajdonos a javaslatoktól eltérhet; az eltérést rögzíteni kell |
 | A 0. fázis (G0) az O-2a, O-3, O-5b nélkül is nyitható | concept (következtetés a #82 K-3/E-5-ből, nem mért) | 3. szakasz A/B sor; #82 K-3 | a 0–1. fázis mérése közben derül ki | ha egy tétel mégis igényli a második identitást, a függés későn derül ki |
+| Az alapágra korlátozott környezeti titok a PR-ból induló futás számára elérhetetlen | **hipotézis, nem mért** (a platform dokumentációja szerint az alapág-kontextusú események, pl. `pull_request_target`, az alapágra mutatnak) | 4.4: négy külön konfiguráció (K0–K3), a K1 és K2 külön vizsgált | az M-B1 méri; a PK a K0 (U) és a K3 (J) kontrollon alapul, nem a K1/K2-n | ha a K1 olvasható, a védelem ágszabállyal nem elégséges; ez érvényes eredmény (FAIL) |
+| A nyers kimenet átadása csak sikeres, fail-closed titokellenőrzés és tulajdonosi átvizsgálás után történik | concept | 4.3: három külön kimenet (találat / nincs találat / hiba), mezőválasztás, kötelező átvizsgálás | a `scan` kimenete; a tulajdonosi átvizsgálás | a mintakészlet nem teljes; a tulajdonosi átvizsgálás kézi |
+| A kanáris és a valódi kulcsos fázis időben elkülönül | concept | 5.6 átmeneti ellenőrzés, a G3b előfeltétele | az 5.6 olvasó ellenőrzései; a kulcs csak az 1–4. lépés után jön létre | a kézi sorrend betartása a tulajdonosra van bízva |
 | A kanári az éles kulccsal azonos védelmű tárolási helyen reprezentálja a kulcs csatornáit | **következtetés, nem mért** | #81 2.5 és E-6 | a 0. fázis dokumentálja a kanári elhelyezését | a kanári a konfigurációt méri, nem a kulcsot (E-6) |
 | A kanári értékek megadása nekem értéktelen adat átadása | concept | 4.5 szabály; #82 O-5 | a tulajdonos megerősíti, hogy az érték véletlen és nem használt máshol | ha az érték mégis valós, kiszivárgás (E-1) |
 | Nincs hitelesítő adat, kulcs vagy token átadás nekem | concept (tervezési tulajdonság) | 1. szakasz; 4.5, 5.2, 5.3 | a tulajdonos soha nem küld ilyet; a `raw/` titokellenőrzés (4.3) | a titokellenőrzés mintái nem teljesek |
