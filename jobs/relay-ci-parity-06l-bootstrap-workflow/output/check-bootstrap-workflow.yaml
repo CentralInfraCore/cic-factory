@@ -1,0 +1,70 @@
+---
+module: check-bootstrap-workflow
+description: 'Check the 4.6a bootstrap workflow against the binding constraints of
+  the phase 0 runbook (06k, 4.6a). Fail-closed: the parsed document must equal the
+  expected document exactly (every key and value, the command included), duplicate
+  keys are rejected. check-bootstrap-workflow.py FILE        check one file (exit
+  0 = conforms) check-bootstrap-workflow.py --selftest FILE check that FILE conforms
+  AND that each planted deviation is rejected'
+tags: []
+category: []
+used_in: []
+entrypoint: true
+related_nodes: []
+objects:
+- name: CHECK_NAME
+  kind: const
+  description: ''
+  references: []
+- name: FORBIDDEN_TEXT
+  kind: const
+  description: ''
+  references: []
+- name: EXPECTED
+  kind: const
+  description: ''
+  references: []
+- name: StrictLoader
+  kind: class
+  decorators: []
+  description: SafeLoader that rejects duplicate mapping keys (PyYAML keeps the last).
+  implements:
+  - yaml.SafeLoader
+  references:
+  - yaml.SafeLoader
+- name: _construct_mapping
+  kind: function
+  decorators: []
+  description: ''
+  references:
+  - yaml.SafeLoader
+  - yaml.YAMLError
+  calls:
+  - loader.construct_object
+  - seen.add
+  - yaml.YAMLError
+- name: check
+  kind: function
+  decorators: []
+  description: ''
+  references:
+  - yaml.YAMLError
+  - yaml.load
+  calls:
+  - errors.append
+  - text.lower
+  - yaml.load
+- name: mutants
+  kind: function
+  decorators: []
+  description: Planted deviations; each must be rejected.
+  references: []
+  calls:
+  - text.replace
+- name: main
+  kind: function
+  decorators: []
+  description: ''
+  references: []
+  calls:
+  - fh.read

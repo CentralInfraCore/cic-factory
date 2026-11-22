@@ -9,6 +9,7 @@ phase 0 runbook (06k, 4.6a). Fail-closed: the parsed document must equal the exp
                                           check that FILE conforms AND that each
                                           planted deviation is rejected
 """
+import re
 import sys
 import yaml
 
@@ -21,10 +22,10 @@ FORBIDDEN_TEXT = [
 ]
 
 
-# The complete expected document. PyYAML (YAML 1.1) reads the key 'on' as True.
+# The complete expected document. The key 'on' is the TEXT "on" (see StrictLoader).
 EXPECTED = {
     "name": "lab-gate-bootstrap",
-    True: {"push": {"branches": ["main"]}},
+    "on": {"push": {"branches": ["main"]}},
     "permissions": {"contents": "read"},
     "jobs": {
         CHECK_NAME: {
@@ -42,6 +43,22 @@ EXPECTED = {
 
 class StrictLoader(yaml.SafeLoader):
     """SafeLoader that rejects duplicate mapping keys (PyYAML keeps the last)."""
+
+
+# YAML 1.1 (PyYAML default) reads on/off/yes/no as booleans, so the key 'on'
+# would become True and a key written 'yes' or 'true' would be accepted in its
+# place. GitHub reads the key as the text "on"; follow that: only true/false
+# (any case of the YAML 1.2 core schema) are booleans, so 'on' stays text and
+# a 'yes'/'true' key stays a different key and is rejected.
+StrictLoader.yaml_implicit_resolvers = {
+    ch: [(tag, rx) for tag, rx in rules if tag != "tag:yaml.org,2002:bool"]
+    for ch, rules in yaml.SafeLoader.yaml_implicit_resolvers.items()
+}
+StrictLoader.add_implicit_resolver(
+    "tag:yaml.org,2002:bool",
+    re.compile(r"^(?:true|True|TRUE|false|False|FALSE)$"),
+    list("tTfF"),
+)
 
 
 def _construct_mapping(loader, node, deep=False):
@@ -101,6 +118,11 @@ def mutants(text):
     yield "other step name", text.replace("name: bootstrap", "name: other")
     yield "other workflow name", text.replace("lab-gate-bootstrap", "other")
     yield "extra job key", text.replace("    timeout-minutes: 2\n", "    timeout-minutes: 2\n    continue-on-error: true\n")
+    yield "key 'on' written as yes", text.replace("\non:\n", "\nyes:\n")
+    yield "key 'on' written as true", text.replace("\non:\n", "\ntrue:\n")
+    yield "key 'on' written as True", text.replace("\non:\n", "\nTrue:\n")
+    yield "key 'on' written as On", text.replace("\non:\n", "\nOn:\n")
+    yield "key 'on' written as ON", text.replace("\non:\n", "\nON:\n")
     yield "second step", text + "      - name: more\n        run: echo y\n"
     yield "empty file", ""
     yield "not yaml", "a: [\n"
