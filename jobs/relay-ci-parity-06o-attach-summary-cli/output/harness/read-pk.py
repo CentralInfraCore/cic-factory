@@ -533,6 +533,10 @@ DEL = object()
 
 
 def selftest():
+    if os.environ.get("PK_SELFTEST_CHILD"):
+        # a command-line test case started the selftest again: report it, never recurse
+        print("selftest started from inside a selftest (recursion guard)", file=sys.stderr)
+        return 99
     def build(mutate):
         d = tempfile.mkdtemp()
         good_fixture(d)
@@ -769,7 +773,8 @@ def selftest():
 
     def cli(*argv):
         p = subprocess.run([sys.executable, "-I", os.path.abspath(__file__)] + [str(a) for a in argv],
-                           capture_output=True, text=True)
+                           capture_output=True, text=True,
+                           env=dict(os.environ, PK_SELFTEST_CHILD="1"))
         return p.returncode, p.stdout + p.stderr
 
     def cli_case(label, got, want):
@@ -806,12 +811,78 @@ def selftest():
     os.remove(os.path.join(d2, "manifest.json")); os.remove(os.path.join(d2, "summary.txt"))
     cli_case("CLI write-manifest: approved run", cli("--write-manifest", d2, t + "/run.json", "o/r", HEAD, 1, t + "/prev.json", t + "/arts.json", "c" * 64)[0], 0)
     cli_case("CLI write-manifest: missing argument", cli("--write-manifest", d2, t + "/run.json", "o/r", HEAD, 1, t + "/prev.json", t + "/arts.json")[0], 2)
+    # --- command line: wrong VALUES per entry point, an attempt-2 end to end, --selftest mixed ---
+    def bad_json(name, text):
+        pth = os.path.join(t, name)
+        open(pth, "w").write(text)
+        return pth
+
+    broken = bad_json("broken.json", "{not json")
+    cli_case("CLI check-run: wrong head", cli("--check-run", t + "/run.json", "o/r", "b2" * 20, 1, t + "/prev.json")[0], 1)
+    cli_case("CLI check-run: head not a SHA", cli("--check-run", t + "/run.json", "o/r", "zz", 1, t + "/prev.json")[0], 1)
+    cli_case("CLI check-run: wrong repository", cli("--check-run", t + "/run.json", "o/other", HEAD, 1, t + "/prev.json")[0], 1)
+    cli_case("CLI check-run: attempt not numeric", cli("--check-run", t + "/run.json", "o/r", HEAD, "x", t + "/prev.json")[0], 1)
+    cli_case("CLI check-run: attempt 2 without history", cli("--check-run", t + "/run.json", "o/r", HEAD, 2, t + "/prev.json")[0], 1)
+    cli_case("CLI check-run: run JSON broken", cli("--check-run", broken, "o/r", HEAD, 1, t + "/prev.json")[0], 1)
+    cli_case("CLI check-run: file does not exist", cli("--check-run", "/nonexistent.json", "o/r", HEAD, 1, t + "/prev.json")[0], 1)
+    cli_case("CLI pick-artifact: wrong head", cli("--pick-artifact", t + "/run.json", t + "/arts.json", "b2" * 20)[0], 1)
+    cli_case("CLI pick-artifact: artifact list broken", cli("--pick-artifact", t + "/run.json", broken, HEAD)[0], 1)
+    json.dump({"artifacts": []}, open(os.path.join(t, "none.json"), "w"))
+    cli_case("CLI pick-artifact: no artifact", cli("--pick-artifact", t + "/run.json", t + "/none.json", HEAD)[0], 1)
+    cli_case("CLI pick-artifact: run JSON missing", cli("--pick-artifact", "/nonexistent.json", t + "/arts.json", HEAD)[0], 1)
+    for label, over in (("wrong head", {"head": "b2" * 20}), ("attempt not numeric", {"att": "x"}),
+                        ("zip digest malformed", {"zip": "zz"}), ("history file broken", {"prev": broken}),
+                        ("artifact list broken", {"arts": broken})):
+        dd = build(lambda d: None)
+        os.remove(os.path.join(dd, "manifest.json")); os.remove(os.path.join(dd, "summary.txt"))
+        cli_case("CLI write-manifest: " + label,
+                 cli("--write-manifest", dd, t + "/run.json", "o/r", over.get("head", HEAD), over.get("att", 1),
+                     over.get("prev", t + "/prev.json"), over.get("arts", t + "/arts.json"), over.get("zip", "c" * 64))[0], 1)
+        cli_case("CLI write-manifest: " + label + " leaves no manifest", os.path.exists(os.path.join(dd, "manifest.json")), False)
+    base = [d, "--expect-repo", REPO, "--expect-run-id", RUN, "--expect-attempt", 1, "--expect-head-sha", HEAD, "--expect-sha256", SHA]
+
+    def with_(flag, value):
+        a = list(base)
+        a[a.index(flag) + 1] = value
+        return a
+    cli_case("CLI evaluate: wrong digest", cli(*with_("--expect-sha256", "b" * 64))[0], 1)
+    cli_case("CLI evaluate: digest malformed", cli(*with_("--expect-sha256", "zz"))[0], 1)
+    cli_case("CLI evaluate: wrong run id", cli(*with_("--expect-run-id", RUN + 1))[0], 1)
+    cli_case("CLI evaluate: run id not numeric", cli(*with_("--expect-run-id", "x"))[0], 1)
+    cli_case("CLI evaluate: wrong attempt", cli(*with_("--expect-attempt", 2))[0], 1)
+    cli_case("CLI evaluate: wrong repository", cli(*with_("--expect-repo", "o/other"))[0], 1)
+    cli_case("CLI evaluate: wrong head", cli(*with_("--expect-head-sha", "b2" * 20))[0], 1)
+    cli_case("CLI evaluate: flag without a value", cli(d, "--expect-repo")[0], 2)
+    cli_case("CLI evaluate: extra positional argument", cli(*(base + ["extra"]))[0], 2)
+    cli_case("CLI evaluate: directory does not exist", cli("/nonexistent-dir", *base[1:])[0], 1)
+    # attempt 2 end to end through real subprocess calls
+    d3 = build(manifest(run_attempt=2, previous_attempts=[HELD_ATTEMPT_1]))
+    os.remove(os.path.join(d3, "summary.txt"))
+    m3 = json.load(open(os.path.join(d3, "manifest.json"))); m3.pop("summary")
+    json.dump(m3, open(os.path.join(d3, "manifest.json"), "w"))
+    sp3 = os.path.join(d3, "..", "cli-summary-2.txt")
+    open(sp3, "w").write(TOKEN + "\n")
+    cli_case("CLI attempt 2: attach with attempt 1 is refused", cli("--attach-summary", d3, sp3, 123456, 1)[0], 2)
+    cli_case("CLI attempt 2: attach with attempt 2", cli("--attach-summary", d3, sp3, 123456, 2)[0], 0)
+    rc, out = cli(d3, "--expect-repo", REPO, "--expect-run-id", RUN, "--expect-attempt", 2,
+                  "--expect-head-sha", HEAD, "--expect-sha256", SHA)
+    cli_case("CLI attempt 2: evaluate gives PK MET, exit 0", (rc, "OVERALL: PK MET" in out), (0, True))
+    cli_case("CLI attempt 2: evaluate expecting attempt 1 is NOT MET",
+             cli(d3, "--expect-repo", REPO, "--expect-run-id", RUN, "--expect-attempt", 1,
+                 "--expect-head-sha", HEAD, "--expect-sha256", SHA)[0], 1)
+    # --selftest only as the sole argument
+    cli_case("CLI --selftest mixed with --attach-summary is refused (exit 2)", cli("--selftest", "--attach-summary", d3, sp3, 123456, 2)[0], 2)
+    cli_case("CLI --selftest mixed with a directory is refused (exit 2)", cli(d3, "--selftest")[0], 2)
+    cli_case("CLI --selftest with an extra argument is refused (exit 2)", cli("--selftest", "extra")[0], 2)
     print("SELFTEST %s" % ("FAILED" if bad else "OK"))
     return 1 if bad else 0
 
 
 def main(argv):
     if "--selftest" in argv:
+        if argv[1:] != ["--selftest"]:
+            print("refusing: --selftest must be the only argument", file=sys.stderr)
+            return 2
         return selftest()
     args = argv[1:]
     if args and args[0] == "--write-manifest":

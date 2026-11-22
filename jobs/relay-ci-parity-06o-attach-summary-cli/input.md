@@ -18,6 +18,8 @@ A #86 (06n) mergelve (31fbded). A meglévő PK-bizonyíték letöltése és kiol
 
 - Az `--attach-summary DIR FILE RUN_ID ATTEMPT` parancssori hívás működik.
 - Az összes parancssori belépési pont (`--attach-summary`, `--write-manifest`, `--check-run`, `--pick-artifact`, az értékelő) **tényleges alfolyamat-hívással** tesztelt: helyes hívás, hiányzó argumentum, hibás érték.
+- Az összes belépési ponton helyes hívás, hiányzó argumentum és **hibás érték** is tesztelt; a 2. kísérlet csatolása teljes alfolyamat-hívással.
+- Az `--selftest` kizárólag önálló hívásként elfogadott: más argumentummal kevert hívás elutasított, és nem helyettesíti a kért műveletet.
 - A teszt tud bukni: a hibás sorral visszaállított változaton a selftest elbukik.
 
 ## Elfogadhatatlan rövidítések
