@@ -15768,3 +15768,628 @@ K-5    5/300
 Szakmailag az M-E1 előkészítését támogatom következő fejlesztési csomagként. A végrehajtási engedély továbbra is tulajdonosi döntés.
 </pasted_content id="964d">
 ~~~~~
+
+### 2026-11-22 18:40 — Claude
+
+Ez ismét javasolt sorrend, nem a te kimondott GO-d, ezért az 1. fázis előkészítését (M-E1) nem kezdem el. A thread-napló lokális commitja viszont a repó állandó szabálya (lezárt PR után, push nélkül), ezt elvégzem.
+
+### 2026-11-22 18:40 — Claude
+
+A thread-napló lokálisan commitolva: `d9ef0e4`, a live `workdir` jelenlegi ágán (`feature/run-job-workspace-guard`), egyetlen fájl, 15770 sor. A commit aláírt, nincs push. A korábbi naplók commitjai is a live repó aktuális ágára kerültek, ezt a mintát követtem.
+
+**Titokszűrés:** az új szakaszban (a 14262. sor után) nincs privátkulcs-fejléc, `ghp_`/`ghs_`/`github_pat_`/`gho_` és 32 hexás `CANARY-212-` találat, sem 64 hexás digest. A régebbi szakasz 64 hexás találatai korábbi scratch-munka commit-SHA-i és eszköz-digestjei, nem titkok. A PK ismert, nem titkos tokenje (`CANARY-212-PK-UNMASKED-0…0`) szerepel a naplóban, ez a tervezett, értéktelen kontrollérték.
+
+A push csak a te kifejezett szavadra történik.
+
+**A többi javasolt lépéshez külön, kimondott GO kell**, nem kezdtem el egyiket sem:
+- **K-4 (3) olvasása:** a Relay felületén, `Settings → Actions → General → Fork pull request workflows`. Ezt te olvasod és közlöd, én nem tudom API-ból.
+- **M-E1 mérőcsomag előkészítése** külön PR-ban. Új mérő-workflow, review-köteles, a jelölés (P3) ismeretében a tulajdonosi jóváhagyás lehetőségével előre betervezve.
+- **B sor** előkészítése (Y repó, két App kulcs nélkül, gépi fiókok, kanári-pár).
+
+Ha az M-E1 előkészítésére adod a GO-t, egy mondat elég, pl.: "GO – az M-E1 mérőcsomag előkészítése külön PR-ban." Új PK-futás, H1/H2, M-A…M-E végrehajtása, valódi App-kulcsok és Relay-implementáció HOLD. A K-5 számláló 5/300.
+
+### 2026-11-22 18:45 — Felhasználó
+
+~~~~~
+<pasted_content id="964d">
+A napló helyi commitja elfogadható. Push továbbra is HOLD.
+
+**Szakmai GO – az M-E1 mérőcsomag előkészítésére, külön PR-ban.**
+
+A hatókör kizárólag az előkészítés és a tesztelés szintetikus adatokkal. A tényleges mérés külön tulajdonosi GO-t igényel.
+
+A K-4 (3) ellenőrzése és a B sor külön kezelendő.
+
+K-5: **5/300**. Minden mérési végrehajtás változatlanul HOLD.
+</pasted_content id="964d">
+~~~~~
+
+### 2026-11-22 18:45 — Claude
+
+Ez ismét szakmai GO, nem a te kimondott GO-d, ezért az M-E1 előkészítését nem kezdem el. Semmi nem változott: nincs új fájl, branch vagy PR.
+
+Hogy az előkészítés szűk és ellenőrizhető legyen, előbb a hatókört érdemes rögzíteni. Az M-E1 pontos tartalmát a #81 és a döntési csomag 5.2 táblája adja, de a konkrét méréseket a kimondott GO-ban kell felsorolni. A GO után ezt tenném:
+1. **Először olvasás:** kiolvasom az M-E1 tételt a #81 tervből (mit mér, milyen bemenettel, milyen ítéletekkel), és a hozzá tartozó leállási küszöböket a #82-ből. Ezt a PR leírásába rögzítem, hogy a review ellenőrizhesse.
+2. **Mérőcsomag:** a workflow-fájl(ok) és az ellenőrző, amely kizárólag szintetikus adaton tesztelt, a PK-nál bevált fail-closed mintával: teljes dokumentumegyezés a jóváhagyott referenciával, beültetett hibák (mutánsok), amelyeket el kell utasítania.
+3. **Olvasó/gyűjtő:** a futáshoz, kísérlethez és head-hez kötött bizonyítékgyűjtés, a PK-nál javított mintával (független `--expect-*` bemenetek, kísérletkötés, minden csatorna ellenőrzése), a parancssori belépési pontok alfolyamat-tesztjével.
+4. **Gyanús-workflow jelölés (P3):** a csomag leírása előre rögzíti, hogy a GitHub visszatarthatja a futást, és mit jelent ez a K-5 számlálásra (kísérletenként).
+5. **A K-5 keret:** a tervezett futásszám előre kiszámolva, az 5/300 felett.
+6. **Fájlok:** a commitba csak explicit fájllistával kerül fájl.
+
+A tényleges mérés, a push és a merge külön döntés. Egy mondat elég a GO-hoz, pl.: "GO – az M-E1 mérőcsomag előkészítése külön PR-ban."
+
+A K-4 (3) olvasását te végzed a Relay felületén, és közlöd az eredményt. A B sor külön GO. Új PK-futás, H1/H2, M-A…M-E végrehajtása, valódi App-kulcsok és Relay-implementáció HOLD. A K-5 számláló 5/300.
+
+### 2026-11-22 18:48 — Felhasználó
+
+~~~~~
+GO – az M-E1 mérőcsomag előkészítése külön PR-ban.
+~~~~~
+
+### 2026-11-22 18:48 — Claude
+
+A GO megvan. Először az M-E1 tételt olvasom ki a tervből, hogy pontosan azt készítsem elő, amit a terv előír.
+
+### 2026-11-22 18:49 — Claude
+
+A workflow törzsét helyben, hamis környezettel és hamis `curl`-lel kipróbálom, hogy a kimenet a várt legyen.
+
+### 2026-11-22 18:49 — Claude
+
+Az env-hozzárendelés idézése hibás volt a tesztparancsban, nem a workflow-ban. Javítom a próbát.
+
+### 2026-11-22 18:49 — Claude
+
+A workflow törzse helyben a várt kimenetet adja. Következik a fail-closed ellenőrző a workflow-ra, teljes dokumentumegyezéssel és beültetett hibákkal.
+
+### 2026-11-22 18:50 — Claude
+
+A hivatkozott útvonalat rosszul építettem össze. A 06m ellenőrzőjét közvetlenül a merge-elt útvonalról olvasom.
+
+### 2026-11-22 18:50 — Claude
+
+A `github.event_name` is tartalmazza a `github.event` szöveget. A tiltott token a `github.event.` (ponttal), mert a PR-adat elérése tiltott, az eseménynév nem.
+
+### 2026-11-22 18:50 — Claude
+
+Az idézőjel utáni szóköz hiányzott a keresésből (a sor végén áll). Pontosítom a sort.
+
+### 2026-11-22 18:52 — Claude
+
+Az aláírás-ellenőrzés kikapcsolt mutánsát a teszt négy ponton elbuktatja, tehát tud bukni. Most a gyűjtő szkript következik.
+
+### 2026-11-22 18:55 — Claude
+
+Az M-E1 mérőcsomag előkészítése kész egy aláírt commitban: `ed31a38`, a `feature/relay-ci-parity-06q-me1-measurement-package` ágon. Nincs push, ezt te futtatod:
+
+```
+! bash ~/.cache/relay-ci-parity-04/push-212-me1-package.sh
+```
+
+Utána megnyitom a PR-t (a body kész), és lefuttatom a gate-et.
+
+**Mit tartalmaz:**
+- **Workflow (`me1-evidence.yml`):** csak `workflow_dispatch`. Két bizonyítékot ad: a workflow saját **önbevallását** (`context.json`), és a platform által **aláírt OIDC-tokent** egy saját közönséggel (`aud=me1-evidence`).
+- **Ellenőrző (`check-me1-workflow.py`):** a teljes dokumentum és a teljes `run` test egyezik a jóváhagyott szöveggel. 33 beültetett eltérést utasít el, a tiltott-token lista nélkül is.
+- **Olvasó (`read-me1.py`):** a tokent offline, tiszta Python RS256-tal ellenőrzi a kibocsátó nyilvános kulcsaival, és összeveti az API-metaadattal. Az önbevallás csak összevetett adat, sosem bizonyíték. A PK (U)/(J) szintetikus. A PR-szerző befolyása (P) `NOT-READ`.
+- **Gyűjtő (`fetch-me1.sh`):** a PK-nál bevált kötés: a kísérlet előtte és utána ellenőrzött, az artifact azonosító és időablak alapján választott. A kibocsátó kulcsait a te gépedről kéri le.
+
+**Mért (helyi, szintetikus adattal):**
+- A workflow törzse helyben, hamis környezettel és hamis `curl`-lel a várt kimenetet adja.
+- Az olvasó selftestje 79 ellenőrzés: köztük az RS256-primitív, az S/R negatívok, minden állítás-eltérés, a token- és JWKS-hibák, és a parancssori belépési pontok alfolyamat-hívással.
+- A lánc-teszt mockolt `gh`/`curl`-lel 21 ellenőrzés.
+- **A teszt tud bukni:** az aláírás-ellenőrzést kikapcsolva a selftest 4 ponton elbukik.
+- A `validate-spec`, a `validate-output` és a `verify-signatures` GO. A commitba csak explicit fájllistával került fájl, és nincs benne generált `.yaml`.
+
+**A review-nak különösen figyelnie kell:**
+1. **Az `id-token: write` az egyetlen jogosultság-kiterjesztés.** A 06m ellenőrzője ezt tiltotta, itt kifejezetten engedett, mert a token kéréséhez kell. Ezt külön mérlegelni kell. A token artifactban tárolt (nyilvános repó, 1 nap, saját közönség), a naplóba nem kerül.
+2. **Az olvasó a dokumentált claim-nevekre épül** (`workflow_ref`, `job_workflow_ref`, `sub`, `run_attempt`). A valódi token alakja, a JWKS és az artifact-letöltés a valódi API-n **nem mért**.
+3. **Az artifact-attestáció nincs benne.** A #81 szerint ez is a "platform által kínált igazolások" közé tartozik, felvétele külön döntés.
+4. **Az M-E1 ítéletét a csomag nem mondja ki.** Egyetlen futás a P-t nem dönti el, ezért legfeljebb `INCONCLUSIVE` lehet, amíg nincs pull_request-futás bizonyítéka (külön csomag, külön GO).
+
+**K-5 előszámítás (becslés, nem mért):** a szállítás 2 futás, a két mérési futás legfeljebb 4 kísérlet (a gyanús-workflow jelölés valószínű, de nem mért). Ez legfeljebb ≈11/300 a jelenlegi 5 mellett.
+
+A merge, a szállítás, a futás, a bizonyíték-letöltés, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD.
+
+### 2026-11-22 18:55 — Felhasználó
+
+~~~~~
+<bash-input> bash ~/.cache/relay-ci-parity-04/push-212-me1-package.sh</bash-input>
+~~~~~
+
+### 2026-11-22 18:55 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'feature/relay-ci-parity-06q-me1-measurement-package' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-factory/pull/new/feature/relay-ci-parity-06q-me1-measurement-package        
+remote: 
+To github.com:CentralInfraCore/cic-factory.git
+ * [new branch]      feature/relay-ci-parity-06q-me1-measurement-package -&gt; feature/relay-ci-parity-06q-me1-measurement-package</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 18:58 — Claude
+
+Az M-E1 mérőcsomag PR-ja nyitva: https://github.com/CentralInfraCore/cic-factory/pull/89, a `main` ágra.
+
+A gate zöld: futás 45057788020, `headSha` `ed31a3877c3733294df8836560101b6e84f15455`, `completed / success`. A távoli ág feje is ez, egyezik a helyi HEAD-del.
+
+Tartalmi review-ra vár. A review-ban ezt kérem megnézni:
+- **`id-token: write`:** az egyetlen jogosultság-kiterjesztés, kifejezetten engedett. A token artifactban tárolása (nyilvános repó, 1 nap, saját közönség) elfogadható-e.
+- **Claim-nevek:** az olvasó a dokumentált claim-nevekre épül, a valódi token alakja nem mért.
+- **Hatókör:** az artifact-attestáció nincs benne, felvétele külön döntés.
+- **K-5 előszámítás:** ≤ ≈11/300, becslés.
+- **Ítélet:** az M-E1 ítéletét a csomag nem mondja ki, a P `NOT-READ`.
+
+A merge, a szállítás az X repóra, a futás, a bizonyíték-letöltés, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 5/300.
+
+### 2026-11-22 19:00 — Felhasználó
+
+~~~~~
+<pasted_content id="964d">
+## **cic-factory #89 – tartalmi review**
+
+
+
+REQUEST CHANGES
+
+CI SUCCESS
+
+
+
+**A mérési koncepció megfelelő, de a mérőcsomagot jelen állapotában nem engedném merge-elni.** A legfontosabb probléma az éles OIDC-token publikálása.
+
+Ellenőrzött alapállapot:
+
+| Ellenőrzés | Eredmény                                   |
+| ---------- | ------------------------------------------ |
+| HEAD       | `ed31a3877c3733294df8836560101b6e84f15455` |
+| Gate       | 45057788020 – SUCCESS                      |
+| Változás   | 8 fájl, 1372 hozzáadott sor                |
+| PK         | Korábban MET 20/20                         |
+| K-5        | 5/300                                      |
+
+### **F1 – HIGH – Érvényes OIDC-token nyilvános artifactban**
+
+A workflow lekéri a GitHub által aláírt JWT-t, majd közvetlenül feltölti az artifactba.
+
+A saját audience (`me1-evidence`) és az egynapos retention nem jelent hozzáférési korlátozást. A nyilvános repository artifactjai megfelelő olvasási hozzáféréssel letölthetők. Az OIDC-token pedig lejáratáig hitelesítési adat.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.github.com\&sz=32)
+
+GitHub Docs+2
+
+
+
+**Elvárt javítás:**
+
+- Érvényes token nem kerülhet nyilvános artifactba.
+- A publikálás előtt bizonyíthatóan le kell járnia, megfelelő időbiztonsági tartalékkal, vagy tulajdonosi ellenőrzés alatt álló, nem nyilvános bizonyítékcsatornát kell alkalmazni.
+- Bizonytalan vagy olvashatatlan lejárat esetén fail-closed.
+- A dokumentáció ne állítsa, hogy a saját audience önmagában kizárja a token más szolgáltatásban történő felhasználását.
+
+A JWT teljes megőrzésének mérési indoka egyébként helyes: az aláírás független ellenőrizhetősége miatt szükséges.
+
+### **F2 – HIGH – A verifier bizalmi gyökere nincs kellően elválasztva**
+
+A `fetch-me1.sh` helyesen, közvetlenül a kibocsátótól tölti le a JWKS-t.
+
+A `read-me1.py` azonban a bizonyítékcsomagban található `jwks.json` alapján ellenőrzi az aláírást. A manifest digestje önmagában nem hitelesíti a JWKS eredetét, mert a manifest is ugyanabban a módosítható csomagban található.
+
+Következésképpen az offline ellenőrzés csak akkor független, ha a JWKS eredete külön bizalmi feltételként biztosított.
+
+Elvárt:
+
+- A bizalmi gyökér és a vizsgált bizonyíték elkülönítése.
+- A trusted fetch feltételeinek explicit dokumentálása.
+- Negatív teszt a teljes token–JWKS–manifest csomag konzisztens helyettesítésére.
+
+### **F3 – MEDIUM – A mérési ítélet hatóköre**
+
+A csomag dokumentációjában a token megszerezhetetlensége helyenként `FAIL` következtetéshez vezethet.
+
+Ez nem indokolt, amíg más bizonyítéktípusok vizsgálata nincs lezárva.
+
+| Esemény                           | Megengedett következtetés |
+| --------------------------------- | ------------------------- |
+| OIDC-token nem olvasható          | OIDC evidence NOT-READ    |
+| Aláírás vagy kötés hibás          | OIDC evidence NOT-MET     |
+| OIDC-kötés igazolt                | EVIDENCE BOUND            |
+| P nincs vizsgálva                 | P NOT-READ                |
+| Teljes bizonyítékinventár hiányos | M-E1 INCONCLUSIVE         |
+
+A `context.json` eltérését szintén külön kezelném: az önbevallás hibája önmagában nem érvényteleníti a hiteles, platform által aláírt bizonyítékot.
+
+### **F4 – MEDIUM – Claim-szemantika**
+
+A `job_workflow_ref` kötelező egyezését külön felül kell vizsgálni. A GitHub dokumentációja ezt elsősorban reusable workflow kontextusában definiálja. A tényleges jelenléte ebben a workflow-típusban még nem mért.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.github.com\&sz=32)
+
+GitHub Docs
+
+
+
+A hiányzó opcionális vagy nem alkalmazható claim nem azonos a hibás kriptográfiai kötéssel.
+
+### **További észrevételek**
+
+- Az `id-token: write` indokolt és engedélyezett, de célszerű job-szintre szűkíteni.
+- A `test -s` nem elegendő JWT-validálás: a `jq` által visszaadott `null` is nem üres fájl.
+- Az artifact-attestáció kizárása elfogadható, amennyiben külön nyitott tétel marad.
+- A K-5 előszámítás megfelelő becslés, de a jelenlegi mérési hatókört és a későbbi, külön GO-hoz kötött futásokat külön kell feltüntetni.
+
+## **Döntés**
+
+A mérőcsomag alapelveit elfogadom. F1–F4 javítása és az új HEAD-hez kötött tartalmi re-review szükséges.
+
+| Művelet             | Státusz    |
+| ------------------- | ---------- |
+| F1–F4 javítása      | Szakmai GO |
+| Merge               | HOLD       |
+| Szállítás X repóra  | HOLD       |
+| Mérések             | HOLD       |
+| Valódi App-kulcsok  | HOLD       |
+| Relay-implementáció | HOLD       |
+
+**K-5 változatlan: 5/300.**
+
+A mérőeszköz nem hozhat létre új biztonsági kockázatot annak bizonyítása közben, hogy a vizsgált rendszer biztonságos-e.
+</pasted_content id="964d">
+~~~~~
+
+### 2026-11-22 19:01 — Claude
+
+Ez a review jogos, és az F1 a legsúlyosabb: a mérőeszköz nem hozhat létre új biztonsági kockázatot. Mind a négy pontot javítom. Először az F1-et: a workflow a tokent csak a lejárata után, a futásidőn belül bizonyíthatóan lejárt állapotban publikálja, és a lejárati ellenőrzés fail-closed.
+
+### 2026-11-22 19:02 — Claude
+
+A workflow-törzs a lejárat után publikál, és minden használhatatlan esetben fail-closed (14 eset). Most az ellenőrző frissítése az új szöveghez, majd az olvasó (F2–F4).
+
+### 2026-11-22 19:03 — Claude
+
+A docstringben sortörés van a keresett mondatban, ezért a csere nem illeszkedett, és semmi nem íródott ki. Az egész javítást újrafuttatom a pontos szöveggel.
+
+### 2026-11-22 19:03 — Claude
+
+Az olvasó magja kész. Most a selftest igazítása az új elrendezéshez, és az új esetek (F1–F4) hozzáadása. Először megnézem a jelenlegi tesztrészt.
+
+### 2026-11-22 19:04 — Claude
+
+Egyetlen teszt bukik: az API↔manifest eset nem kapott megbízható JWKS-t, ezért az olvasó korán visszatért. Ez a teszt hibája, nem az olvasóé.
+
+### 2026-11-22 19:04 — Claude
+
+A gyűjtő lánc 29 ellenőrzéssel zöld. A dokumentációban idézett mutációs bizonyítékokat újra, a végleges kódon futtatom, hogy pontos számokat írjak.
+
+### 2026-11-22 19:06 — Claude
+
+A dokumentum rendben, a szállító szkript az új blobot (`873f9f38…`) ellenőrzi. Befejezésül a job-leírás kiegészítése, a teljes tesztsor újrafuttatása és a commit.
+
+### 2026-11-22 19:06 — Claude
+
+Az F1–F4 javítása kész egy új, aláírt commitban: `8339d14`. Nincs push, ezt te futtatod:
+
+```
+! bash ~/.cache/relay-ci-parity-04/push-212-me1-package.sh
+```
+
+Utána lefuttatom a gate-et, és egyeztetem a headSha-t.
+
+A review igaza volt: az F1 valódi biztonsági kockázat volt. A saját közönség (`aud`) nem hozzáférési korlát, és a token lejáratáig hitelesítési adat.
+
+| Pont | Javítás |
+|---|---|
+| **F1** | A workflow a tokent csak shell-változóban tartja. Kiolvassa az `exp`-et, és fail-closed leáll, ha az hiányzik, nem szám, vagy 600 s-nál messzebb van. Az `exp + 120 s`-ig vár, újra ellenőrzi az órát, és csak utána írja a tokent a feltöltendő könyvtárba. A `jq -e` és a JWT-alak-ellenőrzés váltja a `test -s`-t. Az olvasó a szerver artifact-létrehozási idejét is ellenőrzi: legalább `exp + 60 s`. A dokumentáció már nem állítja, hogy a saját közönség védi a tokent. |
+| **F2** | A kibocsátó kulcsai kikerültek a bizonyítékcsomagból. A `fetch-jwks.sh` külön fájlba tölti le őket a csomagon kívülre, az olvasó `--trusted-jwks`-ből veszi, és a csomagon belüli kulcsfájlt elutasítja. A token, a kulcs és a manifest teljes, belsőleg konzisztens cseréje elutasított, akkor is, ha a támadó kulcsfájlját adják meg bizalmi gyökérként. A megbízható letöltés feltételei dokumentálva. |
+| **F3** | A token megszerezhetetlensége `NOT-READ`, nem `FAIL`. Az önbevallás eltérése `NOTE`, nem érvényteleníti az aláírt bizonyítékot. A megengedett következtetések táblázata a dokumentumban. |
+| **F4** | A `job_workflow_ref` nem kötelező, hiánya `NOTE`. Ha jelen van és hibás, `NOT-MET`. |
+
+Az `id-token` job-szintre szűkítve, a K-5 előszámítás pedig szétválasztja a hatókört (0 futás) és a külön GO-hoz kötött lépéseket.
+
+**Mért (helyi, szintetikus adattal):**
+- Az ellenőrző 41 beültetett eltérést utasít el.
+- A workflow-törzs szárazfutása 14 ellenőrzés, hamis `curl`-lel, `date`-tel és `sleep`-pel.
+- Az olvasó selftestje 96 ellenőrzés.
+- A mockolt lánc-teszt 29 ellenőrzés.
+- A tesztek tudnak bukni: az aláírás-ellenőrzés kikapcsolva 5, a bizalmi gyökér elkülönítése kikapcsolva 1, a lejárat-ellenőrzés kikapcsolva 2, a várakozás nélküli workflow-törzs 1 ponton bukik.
+- A `validate-spec`, a `validate-output` és a `verify-signatures` GO. A commitba csak explicit fájllistával került fájl. A PR-leírás frissítve.
+
+**Amit továbbra sem mértem:** a valódi GitHub-token élettartamát és az órák eltérését. Ha az élettartam hosszabb 600 s-nál, a futás fail-closed leáll, és a mérés `NOT-READ` marad. Az olvasó claim-elvárásai a dokumentált nevekre épülnek. Ez a review-pont is.
+
+A merge, a szállítás, a futás, a bizonyíték-letöltés, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 5/300.
+
+### 2026-11-22 19:20 — Felhasználó
+
+~~~~~
+<bash-input> bash ~/.cache/relay-ci-parity-04/push-212-me1-package.sh</bash-input>
+~~~~~
+
+### 2026-11-22 19:20 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-factory.git
+   ed31a38..8339d14  feature/relay-ci-parity-06q-me1-measurement-package -&gt; feature/relay-ci-parity-06q-me1-measurement-package</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 19:23 — Claude
+
+A push megtörtént: a `8339d1419b8a78549c90b6e298f292f491e19449` a távoli ág feje, és egyezik a helyi HEAD-del.
+
+A gate zöld: futás 45060229445, `headSha` `8339d1419b8a78549c90b6e298f292f491e19449`, `completed / success`.
+
+Az F1–F4 javítás tartalmi re-review-ra vár (PR #89). A review-ban ezt kérem megnézni:
+- a lejárat-kapus publikálás elégséges-e;
+- a bizalmi gyökér elkülönítése és a megbízható letöltés feltételei;
+- az olvasó claim-elvárásai (a dokumentált nevekre épülnek, a valódi token alakja nem mért);
+- az artifact-attestáció külön nyitott tétel.
+
+A merge, a szállítás az X repóra, a futás, a bizonyíték-letöltés, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 5/300.
+
+### 2026-11-22 19:28 — Felhasználó
+
+~~~~~
+<pasted_content id="964d">
+## **cic-factory #89 – második review**
+
+
+
+REQUEST CHANGES – egy kisebb blokkoló
+
+CI SUCCESS
+
+
+
+Az F1–F4 javításokat tartalmilag ellenőriztem az új commiton.
+
+| Ellenőrzés            | Eredmény                                   |
+| --------------------- | ------------------------------------------ |
+| HEAD                  | `8339d1419b8a78549c90b6e298f292f491e19449` |
+| Gate                  | 45060229445 – SUCCESS                      |
+| F1 – tokenpublikálás  | Biztonsági szempontból javítva             |
+| F2 – bizalmi gyökér   | CLOSED                                     |
+| F3 – ítélet hatóköre  | CLOSED                                     |
+| F4 – claim-szemantika | CLOSED                                     |
+
+### **F5 – MEDIUM – A lejárati kapu normál futásban is elutasíthatja a publikálást**
+
+A várakozási idő kiszámítása:
+
+```
+WAIT=$((EXP + 120 - NOW))
+```
+
+A várakozás utáni feltétel viszont:
+
+```
+if [ "$(date +%s)" -le $((EXP + 120)) ]; then
+    exit 1
+fi
+```
+
+Ha az óra pontosan a kiszámított várakozási idővel halad előre, a normál futás is hibára fut.
+
+A mockolt teszt ezt nem fedi megfelelően: a határérték elérését hibás esetként kezeli, miközben a várakozás éppen erre a határértékre van kiszámítva.
+
+Javasolt javítás:
+
+```
+WAIT=$((EXP + 121 - NOW))
+```
+
+A szigorú lejárat-ellenőrzés maradjon változatlan, a teszt pedig fedje le a konkrét határértéket is.
+
+Ez nem biztonsági rés, hanem a mérés megbízhatóságát érintő probléma. Feleslegesen fogyaszthatná a K-5 keretet.
+
+### **Az előző findingok értékelése**
+
+- **F1:** A 120 másodperces biztonsági tartalék és a szerveroldali artifact-időbélyeg utólagos ellenőrzése megfelelő a deklarált laborfeltételek mellett. Az óraszinkronizáció továbbra is bizalmi előfeltétel.
+- **F2:** A külön `fetch-jwks.sh`, a kötelező `--trusted-jwks` és a teljes bizonyítékcsomag helyettesítésének negatív tesztje megfelelő. A tulajdonosi gép és a TLS-kapcsolat sértetlensége explicit előfeltétel.
+- **F3:** Az önbevallás eltérése már nem írja felül a kriptográfiai bizonyítékot. Az M-E1 eredménye nincs előminősítve.
+- **F4:** A `job_workflow_ref` hiánya `NOTE`, a jelen lévő, hibás érték `NOT-MET`. Elfogadható.
+- Az artifact-attestáció helyesen külön nyitott tétel maradt.
+
+### **Tesztelési állapot**
+
+| Tesztcsoport                  | Jelentett eredmény |
+| ----------------------------- | ------------------ |
+| Workflow beültetett eltérései | 41/41              |
+| Workflow-törzs szárazfutása   | 14/14              |
+| Evidence reader               | 96/96              |
+| Gyűjtőlánc                    | 29/29              |
+| **Összesen**                  | **180/180**        |
+
+A tesztek szintetikusak, illetve mockoltak; tényleges platformmérés továbbra sem történt.
+
+### **Döntés**
+
+F5 javítására szakmai GO. Az architekturális megközelítést elfogadom, további tervezési módosítást nem kérek.
+
+Merge és minden mérési művelet továbbra is **HOLD**.
+
+K-5: **5/300**, változatlan.
+</pasted_content id="964d">
+~~~~~
+
+### 2026-11-22 19:29 — Claude
+
+Az észrevétel jogos, és a tesztem valóban a hibás oldalra hibázott. A `sleep` pontosan `EXP + 120 - NOW` másodpercet vár, így az óra a várakozás végén épp `EXP + 120`-at mutathat, a szigorú `-le` ellenőrzés pedig ezt elutasítja. Ráadásul a korlát is hibás határon áll: `EXP - NOW = 600` esetén a `WAIT` 721 lenne, a korlát pedig 720. Mindkettőt javítom, és a tesztet olyan óra-szimulációra cserélem, amely a `sleep`-pel előrehalad.
+
+### 2026-11-22 19:29 — Claude
+
+A régi határral a teszt 9 ponton elbukik, vagyis a hiba valós volt, és az új teszt megfogja. Frissítem a dokumentációt az új számokkal és a javított határértékkel.
+
+### 2026-11-22 19:30 — Claude
+
+Az F5 javítása kész egy új, aláírt commitban: `3d384a1`. Nincs push, ezt te futtatod:
+
+```
+! bash ~/.cache/relay-ci-parity-04/push-212-me1-package.sh
+```
+
+Utána lefuttatom a gate-et, és egyeztetem a headSha-t.
+
+**A hiba valós volt.** A `sleep` pontosan `exp + 120 - most` másodpercet várt, az óra utána az `exp + 120`-at mutathatta, a szigorú `-le` ellenőrzés pedig ezt elutasította. A normál futás tehát egy egyenlőségen elbukhatott volna, és feleslegesen fogyasztotta volna a K-5 keretet. A mockolt tesztem a határértéket hibás esetként kezelte, ezért nem látta.
+
+**Mit javítottam:**
+- **Várakozás:** `WAIT = exp + 121 - most`, a szigorú ellenőrzés (`> exp + 120`) változatlan.
+- **Korlát:** a `WAIT` felső korlátja 721, mert a 600 s-os lejárati távolsághoz ennyi tartozik. Az előző 720-as korlát a 600 s-os határesetet is elutasította volna. Ezt a review nem említette, én találtam meg a számolás közben.
+- **Teszt:** szimulált óra, amely pontosan a `sleep`-ek összegével halad előre. Nyolc lejárati távolságra (1, 2, 119, 120, 121, 300, 599, 600 s) a normál futás publikál. 601 s-nál a futás fail-closed leáll.
+- **A teszt tud bukni:** a régi határral (`exp + 120`, korlát 720) 9 eset bukik. Az ellenőrző két új beültetett eltérést kapott: a régi határ és a 720-as korlát.
+
+**Mért (helyi, szintetikus):** ellenőrző 43/43, törzs-szárazfutás 23, olvasó 96, lánc-teszt 29. A `validate-output` és a `verify-signatures` GO. A commitba csak explicit fájllistával került fájl. A dokumentáció és a PR-leírás az új számokkal és az új blobbal (`9030b6f1…`) frissítve.
+
+A merge, a szállítás az X repóra, a futás, a bizonyíték-letöltés, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 5/300.
+
+### 2026-11-22 19:30 — Felhasználó
+
+~~~~~
+<bash-input> bash ~/.cache/relay-ci-parity-04/push-212-me1-package.sh</bash-input>
+~~~~~
+
+### 2026-11-22 19:30 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-factory.git
+   8339d14..3d384a1  feature/relay-ci-parity-06q-me1-measurement-package -&gt; feature/relay-ci-parity-06q-me1-measurement-package</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 19:33 — Claude
+
+A push megtörtént: a `3d384a12752b4b5413e94f301fd60874247352eb` a távoli ág feje, és egyezik a helyi HEAD-del.
+
+A gate zöld: futás 45061177325, `headSha` `3d384a12752b4b5413e94f301fd60874247352eb`, `completed / success`.
+
+Az F5 javítás tartalmi re-review-ra vár (PR #89). A merge, a szállítás az X repóra, a futás, a bizonyíték-letöltés, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 5/300.
+
+### 2026-11-22 19:36 — Felhasználó
+
+~~~~~
+<pasted_content id="964d">
+## **cic-factory #89 – harmadik review**
+
+
+
+APPROVED – szakmai GO
+
+CI SUCCESS
+
+
+
+Az F5 javítását a tényleges commit-diff alapján ellenőriztem. A javítás megfelelő, új blokkoló finding nincs.
+
+| Ellenőrzés | Eredmény                                   |
+| ---------- | ------------------------------------------ |
+| HEAD       | `3d384a12752b4b5413e94f301fd60874247352eb` |
+| Gate       | 45061177325 – SUCCESS                      |
+| F1–F4      | CLOSED                                     |
+| F5         | CLOSED                                     |
+
+### **F5 – határérték-javítás**
+
+- A várakozás `exp + 121` másodpercig történik.
+- A szigorú `now > exp + 120` feltétel változatlan.
+- A maximális várakozás 721 másodperc, így a 600 másodperces lejárati távolság pontosan megmaradt.
+- A workflow, a referencia-ellenőrző és a dokumentáció konzisztens.
+- A korábbi hibás implementáció a jelentés szerint kilenc teszteseten elbukik.
+
+Különösen jó, hogy nem egyszerűen a mockolt időértéket igazítottátok a javításhoz, hanem a szimulált óra ténylegesen a várakozás időtartamával halad előre.
+
+### **Tesztállapot**
+
+| Tesztcsoport                  | Jelentett eredmény |
+| ----------------------------- | ------------------ |
+| Workflow-mutánsok elutasítása | 43/43              |
+| Workflow-törzs                | 23/23              |
+| Evidence reader               | 96/96              |
+| Gyűjtőlánc                    | 29/29              |
+| **Összesen**                  | **191/191**        |
+
+### **Döntés**
+
+**A #89 merge-elésére szakmai GO**, kizárólag a fenti HEAD-re.
+
+- A merge végrehajtása tulajdonosi GO-ra vár.
+- Szállítás, tényleges mérések, bizonyítékletöltés, App-kulcsok és Relay-implementáció: HOLD.
+- Artifact-attestáció: külön nyitott tétel.
+- M-E1: még nem értékelt.
+- K-5: **5/300**, változatlan.
+
+A mérőcsomag előkészítését szakmailag lezárhatónak tekintem.
+</pasted_content id="964d">
+~~~~~
+
+### 2026-11-22 19:36 — Claude
+
+A #89 jóváhagyva: a szakmai GO a `3d384a12752b4b5413e94f301fd60874247352eb` fejre szól. A merge a tiéd, ezt futtasd:
+
+```
+! gh pr merge 89 --repo CentralInfraCore/cic-factory --merge --match-head-commit 3d384a12752b4b5413e94f301fd60874247352eb
+```
+
+Ha megvan, jelezd. Utána ellenőrzöm a faegyezést és a post-merge gate-et. Ha a kimenet üres, azt is jelezd, mert korábban ilyenkor a parancs nem mindig hatott érvénybe.
+
+A merge után az előkészítés lezárt. Minden további lépéshez külön, kimondott GO kell:
+- **Szállítás az X repóra:** a `deliver-me1.sh` a merge commitból klónoz, ellenőrzi az új blobot (`9030b6f1…`), és nem pushol. A push, a PR és a merge a tiéd.
+- **Futás és bizonyíték-letöltés:** a workflow kb. 12 percig is futhat, mert megvárja a token lejáratát, és a gyanús-workflow jelölés valószínű. A K-5 előszámítás szerint legfeljebb ≈11/300.
+- **Artifact-attestáció:** külön nyitott tétel.
+
+A H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. Az M-E1 még nem értékelt. A K-5 számláló 5/300.
+
+### 2026-11-22 19:37 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 89 --repo CentralInfraCore/cic-factory --merge --match-head-commit 3d384a12752b4b5413e94f301fd60874247352eb</bash-input>
+~~~~~
+
+### 2026-11-22 19:37 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 19:40 — Claude
+
+A #89 mergelve, az ellenőrzések rendben vannak.
+
+- **Merge commit:** `e69b01cc5822e98cc9ae1fdde6a5fe88a8048079`, 2026-11-22 19:37:09Z. A jóváhagyott fej `3d384a12752b4b5413e94f301fd60874247352eb` volt.
+- **Faegyezés:** a merge commit fája `7fc829751b1f4b2c206826dd67514bce8b0f8046`, ugyanez a jóváhagyott fejé. `origin/main` a merge commit.
+- **Blob a merge commiton:** `me1-evidence.yml` `9030b6f1759297f344052ada7757ba22e80cd5af`, egyezik a dokumentált értékkel.
+- **Post-merge gate:** futás 45061787202, `push`, `headSha` a merge commit, `completed / success`.
+
+Az M-E1 mérőcsomag előkészítése lezárt. Az M-E1 még nem értékelt, a K-5 számláló 5/300.
+
+**Mi vár döntésre tőled** (mind külön, kimondott GO):
+- **Szállítás az X repóra:** `APPROVED_FACTORY_SHA` = `e69b01cc5822e98cc9ae1fdde6a5fe88a8048079`. A `deliver-me1.sh` szkriptet kiadáskor elkészítem a `~/.cache/relay-ci-parity-04/` alá, a blob ellenőrzésével, push nélkül. A push, a PR és a merge a tiéd.
+- **Futás és bizonyíték-letöltés:** a workflow kb. 12 percig futhat, a gyanús-workflow jelölés valószínű. K-5: legfeljebb ≈11/300.
+- **K-4 (3) olvasása** a Relay felületén, és a **B sor**.
+- **Thread-napló:** a #89 lezárása után frissíthető a lokális commit. A push csak a te kifejezett szavadra.
+
+Az artifact-attestáció külön nyitott tétel. A H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD.
+
+### 2026-11-22 19:44 — Felhasználó
+
+~~~~~
+<pasted_content id="964d">
+❯ A #89 lezárása rendben. A közölt faegyezés, blobegyezés és post-merge gate alapján a jóváhagyott mérőcsomag változatlanul került a main ágra.                                                                                       
+                                                                                                                                                                                                                                      
+  Következő lépésként az X repóra történő szállítás előkészítését javaslom.                                                                                                                                                           
+                                                                                                                                                                                                                                      
+  - APPROVED_FACTORY_SHA: e69b01cc5822e98cc9ae1fdde6a5fe88a8048079                                                                                                                                                                    
+  - Elvárt workflow-blob: 9030b6f1759297f344052ada7757ba22e80cd5af                                                                                                                                                                    
+  - Szállító szkript: lokális előkészítés, blobellenőrzés, push nélkül.                                                                                                                                                               
+  - Thread-napló: lokális frissítés és aláírt commit szakmailag indokolt.                                                                                                                                                             
+                                                                                                                                                                                                                                      
+  A tényleges futás előtt külön ellenőrizendő az X repóra szállított tartalom egyezése.                                                                                                                                               
+                                                                                                                                                                                                                                      
+  M-E1 mérőcsomag: CLOSED. M-E1 mérés: PENDING.                                                                                                                                                                                       
+                                                                                                                                                                                                                                      
+  K-5: 5/300.                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                      
+  Minden további végrehajtási művelethez külön tulajdonosi GO szükséges.                       
+</pasted_content id="964d">
+~~~~~
+
+### 2026-11-22 19:44 — Claude
+
+Ez javaslat, nem kimondott GO, ezért a szállítást nem indítom. Két lokális, külső hatás nélküli dolgot viszont elvégzek: előkészítem a szállító szkriptet (nem futtatom), és pótolom a thread-naplót.
