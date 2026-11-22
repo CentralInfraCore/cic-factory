@@ -107,7 +107,7 @@ A bootstrap futás nem mérési futás, külön rögzített; a konzervatív szab
 
 - **Manuális attestáció:** a job-összegzés csatornát az API nem szolgáltatja; a csatolt másolatot a tulajdonos tanúsította (a manifest jelöli). Nem gépi bizonyíték.
 - **Közvetett artifact-kötés:** az API nem ad kísérletenkénti artifact-azonosítót; a kötés a kísérlet időablakára és az egyedi azonosítóra épül (a kiolvasó `artifact origin` ellenőrzése). A jelenlegi szűk PK-elfogadási modellben elfogadható, nem a GitHub által közvetlenül szolgáltatott kísérlet-azonosítás.
-- **Egy futás, egy platform-pillanatkép:** a P1–P5 egyetlen laborfuttatáson alapul; a viselkedés időbeli stabilitása nem mért.
+- **Kevés futás, egy platform-pillanatkép:** a P1–P4 egyetlen PK-futás két kísérletén, a P5 pedig az X repó külön PR- és post-merge futásain alapul. A megfigyelt viselkedések időbeli stabilitása nem mért.
 - **A naplóformátum** a PK által olvasott sorokra igazolt, nem általában.
 - **A gyanús-workflow jelölés oka nem ismert**; egy másik változat futtatása nélkül nem állapítható meg, és az új futás keretet fogyaszt (külön tétel, külön GO).
 - **A repón kívüli wrapper** (`pk-run-212.sh`) a CI-ben nem tesztelt (technikai adósság, külön döntés).
@@ -126,6 +126,12 @@ A bootstrap futás nem mérési futás, külön rögzített; a konzervatív szab
 
 **Nem teljesült, nem része ennek a jelentésnek:** a B sor és a 2–3. fázis kapui.
 
+**A 2–3b fázisok belépési feltételei** (a döntési csomag 5.1 szakasza szerint, ide csak hivatkozva, új követelmény nélkül; mind HOLD, saját GO-val):
+- **G2** (2. fázis): O-3 (A és B gépi fiók), az O-4 szkriptek (3.–9. sor), K-6.
+- **G3a** (3a fázis): K-1 az Y repóra, O-2 (a) (két App, kulcs nélkül), O-5 (b) (kanári-pár), O-4 (1., 5. sor az Y-ra), a B1–B4 eredménye ismert.
+- **G3b** (3b fázis, az egyetlen, amelyben valódi App-kulcs létezik): O-1 (installáció-felfüggesztés és visszaállítás), O-2 (b) (a kulcs létrehozása és lokális őrzése a tulajdonos gépén, E-3), a 3a fázis lezárása (M-D5 és M-B4 PASS vagy elfogadott kockázat); a kanáris fázisok lezárulnak, mielőtt a valódi kulcs létrejön (E-4).
+- **Lezárás:** O-6 (a kulcsok visszavonása a tulajdonos által, az App-ok felfüggesztése, a repók archiválása; a törlés HOLD).
+
 ## 9. Claim-evidence tábla
 
 | Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat |
@@ -140,6 +146,7 @@ A bootstrap futás nem mérési futás, külön rögzített; a konzervatív szab
 | A mérőeszköz javításai (#85–#87) mind review-zva és SHA-hoz kötötten mergelve | olvasott | 4. szakasz, post-merge gate-ek | `gh pr view`, fa-egyezés, `gh run list` | — |
 | K-5: 5/300 (kísérletenként) | olvasott | 5. szakasz, `total_count` 4, 2 kísérlet a PK-nál | `gh api actions/runs` | a konzervatív számlálás a tulajdonos szabálya |
 | A Relay alapértelmezett workflow-jogosultsága `write`; a K-4 (3) nyitott | olvasott (T-2), nyitott (T-5) | runbook 2. szakasz | a tulajdonos olvassa a felületen | külön biztonsági tétel, nem módosítva |
+| A 2–3b fázisok belépési feltételei (G2, G3a, G3b, lezárás) | hivatkozott, nem új követelmény | 8. szakasz, a döntési csomag 5.1 kapu-táblája | az 5.1 tábla összevetése | a feltételek a #82 állapotát tükrözik; a tulajdonos módosíthatja |
 | A H1/H2 hipotézisek eredménye | **nem állítom** | — | az 1–2. fázis mérései, külön GO | — |
 | Production-igazolás | **nem állítom** | — | — | scratch ≠ production |
 | Az X vagy az éles szervezet módosult a jelentés készítésekor | nem | nincs ilyen parancs; csak olvasó API-hívások | `git log`, a tulajdonos futtatási jegyzete | — |
