@@ -68,7 +68,7 @@ A 06q olvasója a `sub` alakját a dokumentációból feltételezte. A javítás
 
 ## 5. A bizalmi határ
 
-Az eredmény **független a futás kódjától és szerzőjétől** (az aláírást a kibocsátó kulcsaival, a futás közreműködése nélkül ellenőriztük), de **nem független a GitHubtól**: a token és az API-metaadat, amellyel összevetettük, ugyanattól a platformtól származik. A bizonyíték erejének feltételei:
+Az aláírás ellenőrzése a futás kódjától és szerzőjétől függetlenül végezhető el (a kibocsátó kulcsaival, a futás közreműködése nélkül végeztük). **Ez nem igazolja a bizonyíték előállításának, kiválasztásának vagy publikálásának szerzői befolyástól való mentességét**: ez utóbbi a P vizsgálat nyitott kérdése (`NOT-READ`), a kriptográfiai ellenőrzés függetlensége és a bizonyíték befolyásolhatatlansága két külön tulajdonság. **Az ellenőrzés bizalmi gyökere továbbra is a GitHub**: a token és az API-metaadat, amellyel összevetettük, ugyanattól a platformtól származik. A bizonyíték erejének feltételei:
 
 1. **A kibocsátó nyilvános kulcsai** a tulajdonos gépén, TLS-en, közvetlenül a kibocsátótól, a futás után, a bizonyítékcsomagon **kívül** (külön fájlban, a csomagon belüli kulcsfájl elutasított). A tulajdonosi gép és a TLS-útvonal sértetlensége feltétel, nem védett.
 2. **A GitHub őszintesége** mint kibocsátó és API: az eredmény nem igazolja, hogy a GitHub nem hamisítaná a bizonyítékot.
@@ -143,7 +143,7 @@ Az eredmény **független a futás kódjától és szerzőjétől** (az aláír�
 | A platform viselkedése más szervezetben, időben, workflow-típusnál | **nem állítom** | — | nincs | az általánosítás tilos |
 | A saját hibák (token-publikálás, F5, `sub`-elvárás, számlálási errata) | rögzített | 6. szakasz, a #89–#90 review-k | git-történet, PR-ok | — |
 | K-5: 8/300 | olvasott | 8. szakasz | `gh api actions/runs`, a futások listája | a konzervatív számlálás a tulajdonos szabálya |
-| Az X vagy az éles szervezet módosult a jelentés készítésekor | nem | nincs ilyen parancs; csak helyi fájlok | `git log` | — |
+| Az X vagy az éles szervezet módosult a jelentés készítésekor | nem (**végrehajtási naplóra alapozott állítás**) | a jelentés készítésekor csak olvasó API-hívások és helyi fájlműveletek futottak; az X repón írást kizárólag a tulajdonos végzett (szállítás, merge, futás), a saját parancsaim naplója szerint | a session végrehajtási naplója és a tulajdonos futtatási jegyzete; a `git log` ezt **nem** bizonyítja | a napló az én oldalam; a tulajdonosi műveletek külön naplója az övé |
 
 ## 11. Mit nem állít ez a dokumentum
 
