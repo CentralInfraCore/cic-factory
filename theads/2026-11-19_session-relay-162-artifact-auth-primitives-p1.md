@@ -2,7 +2,7 @@
 
 **Utólag készült**, a session `.jsonl` transcriptjéből (`~/.claude-personal/projects/-home-sinkog-sync-claude-factory-CIC-workdir-jobs-relay-issue-queue-01-workspace/81f1ed93-1498-4a48-9550-a87d4d857869.jsonl`), nem menet közben vezetve. Az időpontok UTC-ben, a transcript időbélyegeiből. A napló a session 2026-11-19 14:55-i szakaszától indul (CIC_Relay #162 modul-artifact hitelesítés: Relay #215–#219, cic-primitives #36–#47, Forms #166–#168, P1 pattern-profil, O5 motorválasztás); a session korábbi, 2026-11-14 – 2026-11-16 közötti szakasza (a privát biztonsági lelet kezelése) szándékosan nincs benne.
 
-A napló csak transcript: a felhasználó üzenetei (a beillesztett külső review-kkal szó szerint, a `<bash-input>` parancsokkal együtt) és Claude szöveges válaszai, időrendben. Eszközhívás és eszközkimenet, rendszer-emlékeztető, task-notification és a kontextus-összegzések nem szerepelnek. A PR-ok és a git-történet marad a forrás; ez a napló az interakció nyoma. Állapot a naplózás végén (2026-11-22): cic-primitives #46 mergelve (fe7e5ea); #47 (O5 motorválasztás) mergelve (55fee44), E1-E3 GO; #48 (O2 méretszabály Pi<=2048, O3 hibakódok és precedencia) mergelve (865ed47), O2/O3 GO; #49 (a pattern-profil normatív vektorkészletének vázlata) mergelve (9fe89b1); #50 (az eszközlánc integritás-ellenőrzése, azonos-pin vektorok) mergelve (5ffa48a); #51 (a profilverzió azonosítója: 1, a fájltól függetlenül tartva, pontos típusellenőrzéssel) mergelve (532541c, jóváhagyott fej 8ea2560, post-merge gate sikeres); minden egyéb HOLD változatlan (implementációs specifikáció, CI-kapu módosítása, normatív publikálás, implementáció, független harmadik implementáció, P2, P4, Forms #166/#167, séma-véglegesítés, Relay #162). A naplót a lezárások után újragenerálta a `tools/session-transcript.py`; a korábban commitolt részek változatlansága ellenőrizve.
+A napló csak transcript: a felhasználó üzenetei (a beillesztett külső review-kkal szó szerint, a `<bash-input>` parancsokkal együtt) és Claude szöveges válaszai, időrendben. Eszközhívás és eszközkimenet, rendszer-emlékeztető, task-notification és a kontextus-összegzések nem szerepelnek. A PR-ok és a git-történet marad a forrás; ez a napló az interakció nyoma. Állapot a naplózás végén (2026-11-22): cic-primitives #46-#51 mergelve (az O5 motorválasztás, az O2/O3 korlátok és hibakódok, a normatív vektorkészlet vázlata, az eszközlánc-integritás, a profilverzió azonosítója: 1); #52 (a P1 implementációs specifikációja: bejárási sorrend, reader/validator határ, pin-feloldás, bizonyíték-azonosító, 27 kötelezettség, 47 javasolt bővítő eset) mergelve (7446f1f, jóváhagyott fej a7c1448, post-merge gate 45067544555 sikeres); D1-D6 GO, D7 és D8 HOLD; a specifikáció elkészült, az implementáció előkészítéséhez külön tulajdonosi GO kell; minden egyéb HOLD változatlan (implementáció, CI-kapu módosítása, normatív publikálás, független harmadik implementáció, P2, P4, Forms #166/#167, séma-véglegesítés, Relay #162). A naplót a lezárások után újragenerálta a `tools/session-transcript.py`; a korábban commitolt részek változatlansága ellenőrizve.
 
 
 ### 2026-11-19 14:55 — Felhasználó
@@ -8979,4 +8979,998 @@ Az implementációs specifikáció, a CI-kapu módosítása, a normatív publik�
 
 ~~~~~
 A merge megtörtént. A fa-egyezés stimmel, és a vektorfájl SHA-256 értéke a devel-en `e7ece43a…`. Megvárom a post-merge gate-et.
+~~~~~
+
+
+### 2026-11-22 18:46 — Claude
+
+~~~~~
+Post-merge zöld. Frissítem a memóriát és a thread-naplót.
+~~~~~
+
+
+### 2026-11-22 18:47 — Claude
+
+~~~~~
+A #51 mergelve, a post-merge ellenőrzések rendben vannak.
+
+- **Merge:** `532541c31543ef33aeb461902bede31a6da9e21f` a devel-en, 2026-11-22 18:43 UTC. A jóváhagyott fej `8ea2560` volt.
+- **Post-merge gate:** az `532541c`-n a gate `success` (futás: 45056696635).
+- **Fa-egyezés:** a devel fája (`33b0f68…`) megegyezik a jóváhagyott fej fájával, nincs különbség.
+- **Vektorfájl a devel-en:** a SHA-256 `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`, változatlan.
+- **Memória:** frissítve (`MEMORY.md` és `project_162_artifact_auth_plan.md`): a profilverzió-azonosító, az eszközök, a pontos típusellenőrzés tanulsága és a következő mérföldkő.
+- **Thread-napló:** újragenerálva a `bd40dbc` helyi commitban, push nélkül. A korábban commitolt rész változatlan, a titokkeresés 0 találat.
+
+**Rögzített döntés:** a profil verzióazonosítója `1`. Pozitív egész, a profil csak az `1`-et ismeri, nincs implicit alapértelmezett verzió, az ismeretlen verzió elutasítandó, és a szemantika vagy a normatív korlátok változása új profilverziót igényel.
+
+**P1 állapot:**
+- A vektorkészlet 513 vektor és 66 követelmény.
+- Az ellenőrzők a döntött korlátokat, kódkészletet és verziót a fájltól függetlenül tartják.
+- Nincs nyitott PR, a devel `532541c`.
+
+**Következő szakmai mérföldkő:** az implementációs specifikáció lezárása. Ehhez külön GO kell, nem indítom.
+
+**HOLD marad:**
+- az implementációs specifikáció és a CI-kapu módosítása;
+- a normatív publikálás és az implementáció;
+- a független harmadik implementáció;
+- a P2, a P4, a Forms #166/#167, a séma-véglegesítés és a Relay #162 implementáció.
+
+A helyi thread-napló commitja (`bd40dbc`) nincs pusholva. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár. Várom a következő utasítást.
+~~~~~
+
+
+### 2026-11-22 18:58 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**A #51 lezárható. A P1 tervezési alapállapota rögzített.**
+
+A következő szakmai lépés az implementációs specifikáció elkészítése, külön PR-ban.
+
+Ennek tartalmaznia kell:
+
+- A beágyazott contractok determinisztikus bejárási sorrendjét.
+- A dokumentumolvasó és a pattern-validator felelősségi határát.
+- A profilverzió feloldását és a hibás típusú pin kezelését.
+- A validációs sorrendet és a hibaprecedenciát.
+- A producer és verifier kötelezettségeit.
+- A 66 követelmény és az implementációs kötelezettségek visszakövethetőségét.
+- A jelenlegi vektorokkal nem fedett követelmények ellenőrzési tervét.
+
+Az 513 elfogadott vektor változatlan referencia maradjon. Új esetek külön review-köteles bővítésként jelenjenek meg.
+
+**Szakmai GO az implementációs specifikáció elkészítésére.**
+
+Ez nem implementációs engedély. A végrehajtáshoz tulajdonosi GO szükséges.
+
+Minden további HOLD változatlan.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 19:00 — Claude
+
+~~~~~
+Szakmai GO az implementációs specifikáció elkészítésére, külön PR-ban. Úgy értem, hogy dokumentáció és izolált ellenőrzőeszköz készül helyben, push és implementáció nélkül, a megszokott menetrend szerint. Az 513 vektor referenciaként érintetlen marad, a vektorokkal nem fedett követelményekre ellenőrzési terv készül, az új esetek pedig csak javasolt bővítésként jelennek meg.
+~~~~~
+
+
+### 2026-11-22 19:03 — Claude
+
+~~~~~
+A specifikációs szöveg megvan. Most az ellenőrzőt futtatom rajta, utána jön az önteszt a beültetett hibákkal, a HU összefoglaló, a README és a SHA256SUMS.
+~~~~~
+
+
+### 2026-11-22 19:06 — Claude
+
+~~~~~
+Most a PR-leírást írom meg.
+~~~~~
+
+
+### 2026-11-22 19:07 — Claude
+
+~~~~~
+Az implementációs specifikáció helyben kész és commitolva, de nincs pusholva és nincs PR. Ez nem implementációs engedély, és nem is kezeltem annak.
+
+- **Ág:** `docs/grammar-pattern-implementation-spec`, a devel `532541c`-ről.
+- **Fej:** `8dc25ace8b0e2b279f7b0308924ff09e978ddecd`, csak új fájlok `docs/` alatt. Meglévő fájlhoz nem nyúltam.
+- **Tesztek:** a teljes készlet 943 passed. A `sha256sum -c` tiszta.
+- **Vektorfájl:** érintetlen, a SHA-256 `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`. Az integritás-elfogadási futás és a változatlansági ellenőrzés továbbra is exit 0.
+
+**A specifikáció** (`docs/en/GRAMMAR-PATTERN-IMPLEMENTATION-SPEC.md`, HU összefoglalóval):
+- **Szerepek és határok:** a dokumentumolvasó, a pattern-validátor, a producer, a verifier és a kapu felelőssége. A validátor soha nem kap dokumentumot, YAML-csomópontot vagy nem-sztringet. A dokumentum bejárása nem a pattern primitív felelőssége.
+- **Bejárási sorrend:** mélységi preorder, a leképezések forrás-sorrendben, a sorozatok index szerint. A pattern contract ott látogatott, ahol a `contract` kulcs áll a testvérei között. Ehhez order-megőrző olvasó kell, a Go `map` nem jó.
+- **Pin-feloldás:** nincs deklaráció → `missing`. A nem azonos deklarációk → `conflict`, az `unknown` előtt. Az azonosak egynek számítanak. Az egyetlen érték, ami nem pontosan az `int` `1` → `unknown`. **A hibás típusú pin (`true`, `1.0`, a `1` szöveg, `null`, `0`) így `pattern_profile_unknown`, új kód nélkül.** Új kód ugyanis új profilverziót igényelne.
+- **Validációs sorrend:** olvasó (olvasói hiba, nincs pattern-kód), pin, a kifejezések az olvasó sorrendjében, majd az értékek. Elutasított sémával értéket nem értékelünk.
+- **Producer és verifier:** a verifier független, saját költségkerettel és saját kóddal. A review megjegyzését beépítettem: a keret nem támaszkodhat csak a Π × értékhosszra, contractonkénti és értékenkénti fix költség is kell.
+
+**Visszakövethetőség:**
+- 25 kötelezettség (`obligations.yaml`) a **66 követelményhez** és a 4 vektorral nem tesztelhető követelményhez.
+- A `check_spec_trace.py` elutasítja a csomagot, ha bármelyik követelményt nem nevezi meg kötelezettség.
+
+**Vektorokkal nem fedett követelmények ellenőrzési terve** (9 elem):
+- P-01 időzítési kapu determinisztikus munkaszámlálóval.
+- P-02 producer-csonk és független verifier.
+- P-03 futási evidence formátuma.
+- P-04 verifier-költségkeret.
+- P-05 kódpont-alapú harness: a Go és a Rust sztring nem tárolhat magányos helyettesítőt, és bájtot számol.
+- P-06 olvasói tesztek.
+- P-07–P-09 javasolt bővítések.
+
+**30 javasolt bővítő eset** (17 pin, 7 bejárás, 6 olvasói határ):
+- A szövegből levezetve, egy futtatható olvasat (`spec_model.py`) értékeli őket, nem a profil implementációja.
+- **Nem részei az 513-nak**, külön review-köteles bővítésként kerülhetnek be.
+
+**Bizonyíték:**
+- A `check_spec_trace.py` a 30 bővítő esetet és a **20 elfogadott sémavektor** verdiktjét és pozícióját is 0 eltéréssel adja vissza az új szabályokkal.
+- Az önteszt 15/15: 11 beültetett hiba, 2 modellhiba és egy infrastruktúra-kontroll.
+- A beültetett modellhibák között szerepel az is, hogy a verziót Python-egyenlőséggel hasonlítja, ami a `true`-t és az `1.0`-t átengedné.
+
+**Pontok a tulajdonosnak** (a dokumentum 12. szakasza, ajánlás, nem döntés):
+- D1 a hibás típusú pin `unknown`, új kód nélkül.
+- D2 a `null` deklaráció ismeretlen.
+- D3 a pattern contract nélküli séma pinje nem értékelődik.
+- D4 a forrás-sorrendű bejárás. Alternatíva a kulcsok rögzített sorrendje (`contract`, `fields`, `item_fields`), ami a DRAFT sémához kötne.
+- D5 a nem sztring kifejezés olvasói hiba.
+- D6 a séma-réteg hibaszókincse nincs specifikálva.
+- D7 a séma-részek összeállítása és a pin-deklarációk sorrendje nyitott.
+- D8 több szabálysértő érték sorrendje egy rekordban nyitott.
+
+**Nem igazolt, a dokumentum kimondja:**
+- Implementáció nincs, az 1–6. szakasz követelmény, nem mért viselkedés.
+- A modell ugyanazon szerző olvasata, és a kifejezés-osztályozást a meglévő prototípusra bízza.
+- A bejárási sorrend nem biztos, hogy az, amit a release sémákra szeretnél.
+- Az időzítési, függetlenségi, evidence- és költségkeret-elemek tervek, nem tesztek.
+- Független harmadik implementáció nincs.
+
+**Push és PR-nyitás (te futtatod):**
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push -u origin docs/grammar-pattern-implementation-spec && gh pr create --repo CentralInfraCore/cic-primitives --base devel --head docs/grammar-pattern-implementation-spec --title "docs(pattern): P1 implementation specification draft with traceability" --body-file [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-implementation-spec.md
+```
+
+A push után a gate-et az új fejen figyelem, és összeállítom a SHA-hoz kötött review-csomagot. Mergelni nem fogok. Az implementáció, a CI-kapu módosítása, a normatív publikálás és minden korábbi HOLD változatlan. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 19:30 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push -u origin docs/grammar-pattern-implementation-spec && gh pr create --repo CentralInfraCore/cic-primitives --base devel --head docs/grammar-pattern-implementation-spec --title "docs(pattern): P1 implementation specification draft with traceability" --body-file [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-implementation-spec.md</bash-input>
+~~~~~
+
+
+### 2026-11-22 19:31 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'docs/grammar-pattern-implementation-spec' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-primitives/pull/new/docs/grammar-pattern-implementation-spec        
+remote: 
+To github.com:CentralInfraCore/cic-primitives.git
+ * [new branch]      docs/grammar-pattern-implementation-spec -&gt; docs/grammar-pattern-implementation-spec
+branch 'docs/grammar-pattern-implementation-spec' set up to track 'origin/docs/grammar-pattern-implementation-spec'.
+https://github.com/CentralInfraCore/cic-primitives/pull/52</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 19:34 — Claude
+
+~~~~~
+A #52 gate-je zöld. A SHA-hoz kötött review-csomagot lent állítottam össze.
+
+## Review-csomag: cic-primitives #52
+
+https://github.com/CentralInfraCore/cic-primitives/pull/52
+
+| Ellenőrzés | Eredmény |
+|---|---|
+| Fej | `8dc25ace8b0e2b279f7b0308924ff09e978ddecd` |
+| Base | `devel` (`532541c31543ef33aeb461902bede31a6da9e21f`) |
+| Gate | 45061192019, `success`, a `headSha` egyezik a fejjel |
+| Mergelhető | igen, állapot `clean` |
+| Méret | 11 fájl, +762 / −0 sor |
+| Hatókör | csak új fájlok `docs/` alatt, törlés 0, meglévő fájl módosítása 0 |
+| Teljes tesztkészlet | 943 passed |
+
+**Vektorfájl:**
+- A SHA-256 az origin fejen `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`.
+- Az 513 vektor változatlan referencia.
+- Az új esetek külön, javasolt bővítésként szerepelnek (`extension-cases.yaml`), az elfogadott fájlba nem kerültek be.
+
+**Reprodukálható futtatások** (a `docs/evidence/pattern-spec-trace/` könyvtárból):
+- `python3 check_spec_trace.py` → exit 0, a 66 + 4 követelmény mindegyike megnevezett, a 30 bővítő eset és a 20 elfogadott sémavektor 0 eltéréssel egyezik a futtatható olvasattal.
+- `python3 selftest_spec_trace.py` → 15/15.
+- A meglévő eszközök: `python3 ../pattern-vectors/integrity_check.py --acceptance --expect-sha256 e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0 --docs ../..` → exit 0.
+
+**A kért tartalom:**
+- a beágyazott contractok determinisztikus bejárási sorrendje;
+- a dokumentumolvasó és a pattern-validátor határa;
+- a profilverzió feloldása és a hibás típusú pin kezelése;
+- a validációs sorrend és a hibaprecedencia;
+- a producer és verifier kötelezettségei;
+- a 66 követelmény visszakövethetősége;
+- az ellenőrzési terv a vektorokkal nem fedett követelményekre.
+
+**Kérem:**
+1. Tartalmi review a #52-re. Érdemes külön nézni a tulajdonosi pontokat (D1–D8), főleg a D1-et (hibás típusú pin → `unknown`, új kód nélkül) és a D4-et (forrás-sorrendű bejárás).
+2. A D1–D8 pontokról tulajdonosi döntés vagy review-megjegyzés.
+3. SHA-hoz kötött merge-jóváhagyás a `8dc25ac` fejre, ha rendben van. Mergelni nem fogok.
+
+**Ez a PR nem implementációs engedély.** A végrehajtáshoz külön tulajdonosi GO kell. Az implementáció, a CI-kapu módosítása, a normatív publikálás, a független harmadik implementáció és minden korábbi HOLD változatlan. A thread-naplót és a memóriát a #52 lezárása után frissítem. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 19:42 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+A #89 lezárása rendben. A közölt faegyezés, blobegyezés és post-merge gate alapján a jóváhagyott mérőcsomag változatlanul került a main ágra.
+
+**Következő lépésként az X repóra történő szállítás előkészítését javaslom.**
+
+- `APPROVED_FACTORY_SHA`: `e69b01cc5822e98cc9ae1fdde6a5fe88a8048079`
+- Elvárt workflow-blob: `9030b6f1759297f344052ada7757ba22e80cd5af`
+- Szállító szkript: lokális előkészítés, blobellenőrzés, push nélkül.
+- Thread-napló: lokális frissítés és aláírt commit szakmailag indokolt.
+
+A tényleges futás előtt külön ellenőrizendő az X repóra szállított tartalom egyezése.
+
+**M-E1 mérőcsomag: CLOSED. M-E1 mérés: PENDING.**
+
+K-5: **5/300**.
+
+Minden további végrehajtási művelethez külön tulajdonosi GO szükséges.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 19:42 — Claude
+
+~~~~~
+Ez az üzenet nem ehhez a munkamenethez tartozik, ezért nem hajtok végre belőle semmit. Itt cic-primitives P1 munka folyik, a `#89`, az „X repó", az `APPROVED_FACTORY_SHA`, az M-E1 mérőcsomag és a K-5 számláló nincs benne ebben a szálban. Az egyetlen utasításjellegű rész („javaslom") amúgy sem GO, és az üzenet maga is külön tulajdonosi GO-hoz köti a végrehajtást.
+
+Ha egy másik szálnak szánták, mint a korábbi cic-factory #82 komment, nem írtam és nem módosítottam semmit sehol. Ha mégis ide szánták, kérem, mondd meg, melyik repóra, melyik ágra vagy PR-ra vonatkozik, és adj külön GO-t.
+
+**A munkám állapota változatlan:**
+- A cic-primitives #52 (az implementációs specifikáció vázlata) nyitva van, a fej `8dc25ace8b0e2b279f7b0308924ff09e978ddecd`.
+- A gate zöld, a PR `clean`, és tartalmi review-ra vár.
+- A vektorfájl érintetlen (`e7ece43a…`), a thread-napló helyi commitja (`bd40dbc`) nincs pusholva.
+
+Az implementáció, a CI-kapu módosítása, a normatív publikálás és minden korábbi HOLD változatlan. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 19:44 — Felhasználó
+
+~~~~~
+bocsi, rossz helyre ment, nem ide szántam... 
+
+<pasted_content id="1732">
+Review – cic-primitives #52
+REQUEST CHANGES – MERGE HOLD
+A #52 PR tartalmát, a teljes diffet, a futtatható modellt, a követelmény-mátrixot és az új vektorjavaslatokat ellenőriztem.
+
+Az implementációs specifikáció alapvető iránya helyes. A szerepkörök szétválasztása és a meglévő megfelelőségi referencia megőrzése megfelelő. Viszont néhány olyan pontot találtam, amelyet még az implementáció előtt kell pontosítani, mert többnyelvű környezetben eltérő viselkedést eredményezhet.
+1. SHA-hoz kötött ellenőrzés
+Ellenőrzés    Eredmény
+Fej    8dc25ace8b0e2b279f7b0308924ff09e978ddecd
+Base    532541c31543ef33aeb461902bede31a6da9e21f
+Gate 45061192019    SUCCESS
+Diff    11 fájl, +762 / −0
+Hatókör    Új fájlok, kizárólag docs/
+Elfogadott vektorok    513, változatlan blob
+Implementációs kötelezettségek    25
+Ellenőrzési terv    9 elem
+Új, javasolt esetek    30
+
+A vektorfájl blobazonosítója továbbra is 4637680acaee6f7854233cda390c76a1876a460f.
+
+A futtatásokat saját környezetben nem ismételtem meg; a GitHub-állapotot és a commitolt forrásokat ellenőriztem.
+2. Findings
+F1 – A pin-deklarációk azonossága nincs teljesen definiálva
+MEDIUM – BLOCKING
+Fájl: docs/evidence/pattern-spec-trace/spec_model.py, resolve_pin().
+
+A D1 döntési iránya helyes: hibás típusú pin esetén pattern_profile_unknown, új hibakód nélkül.
+
+Az azonosság ellenőrzése azonban jelenleg:
+distinct = {    (type(v).__name__,     json.dumps(v, sort_keys=True, default=str))    for v in declarations}
+
+
+
+Ez nem garantálja az összetett YAML-értékek típushelyes azonosságát.
+
+Például:
+- {1: a} és {"1": a} azonos JSON-reprezentációt eredményezhet.
+- Vegyes típusú mapping-kulcsok esetén a rendezés kivételt dobhat.
+- A default=str különböző típusokat azonos szöveggé alakíthat.
+Mivel a konfliktus megelőzi az ismeretlen verzió hibáját, ez befolyásolja a normatív verdiktet.
+
+Javítás: pontosan definiált, rekurzív, típusérzékeny azonossági szabály vagy a pin-összehasonlítás bemeneti értéktartományának egyértelmű korlátozása.
+
+Ne a Python szerializációs viselkedése határozza meg a CIC szemantikáját.
+F2 – A forrássorrend és a kanonikus reprezentáció kapcsolata
+MEDIUM – BLOCKING
+A D4 forrássorrendű bejárása elfogadható architekturális irány. A Primitives valóban nem dönthet a dokumentum struktúrájának bejárásáról.
+
+Viszont a következő két dokumentum eltérő első hibát eredményezhet:
+node:
+  contract: [...]
+  fields: [...]
+
+
+node:
+  fields: [...]
+  contract: [...]
+
+
+Az E-TRV-01 és E-TRV-02 ezt szándékosan demonstrálja.
+
+A CIC-ben viszont figyelembe kell venni a kanonikus reprezentációt és annak hash-ét is. Ha két dokumentum kanonizált alakja azonos, de a forrássorrend miatt eltérő verdiktet adnak, akkor a kanonikus hash önmagában nem lehet elegendő a teljes validációs eredmény újrafelhasználásához.
+
+Javítás: rögzíteni kell, hogy a döntést befolyásoló bejárási sorrend hogyan kapcsolódik a validáció bemeneti identitásához és a bizonyítékhoz.
+
+A kompozíció konkrét szabálya ettől még maradhat HOLD.
+F3 – Nulla méretű program és üres bemenet az időkorlátnál
+MEDIUM – BLOCKING
+A P-01 determinisztikus munkakorlátja:
+\[
+W \leq c \times \Pi \times N
+\]
+
+Ez nulla munkát engedne meg, ha:
+- a program mérete nulla;
+- a vizsgált érték üres.
+Mindkettő megengedett a már elfogadott profilban.
+
+A probléma a verifier összesített költségvetésénél már felismert, de az evaluator saját munkakorlátjánál még nincs megoldva.
+
+Javasolt alak:
+\[
+W \leq c(\Pi+1)(N+1)
+\]
+
+A pontos konstans és a számlált műveletek az implementációs mérési tervben rögzíthetők.
+F4 – A követelmény-mátrix ellenőrzése részben formai
+LOW
+A check_spec_trace.py ellenőrzi, hogy minden követelményhez tartozik kötelezettség, és minden hivatkozott tervazonosító létezik.
+
+Nem ellenőrzi azonban, hogy a hivatkozott terv ténylegesen lefedi-e az adott követelményt.
+
+Emellett:
+- Az O-VF-01 az angol specifikációban a 0–3. lépések független végrehajtását írja elő.
+- Az obligations.yaml ugyanezen kötelezettsége csak az 1–3. lépéseket nevezi meg.
+A dokumentumolvasó független ellenőrzése nem maradhat ki a machine-readable szerződésből.
+
+A jelenlegi csomag strukturális visszakövethetőséget bizonyít, nem teljes szemantikai lefedettséget. Ezt a megkülönböztetést meg kell őrizni.
+3. D1–D8 szakmai állásfoglalás
+Ezek szakmai ajánlások, nem tulajdonosi döntések.
+Pont    Szakmai ítélet    Megjegyzés
+D1    GO    Hibás típus → unknown, F1 pontosításával
+D2    GO    Explicit null nem azonos a hiánnyal
+D3    GO    Pattern nélkül nincs pattern-profil ellenőrzés
+D4    CONDITIONAL    Forrássorrend, F2 rendezésével
+D5    GO    Nem sztring expression: reader error
+D6    GO    A reader hibakészlete külön réteg
+D7    HOLD    A séma-kompozíció feladata
+D8    HOLD    A record reader feladata
+
+A D1 és D5 között nincs ellentmondás. A pin értékének értelmezése a profil feladata, az expression mező strukturális típusa viszont a dokumentumolvasóé.
+4. Ami kifejezetten jó
+A PR megőrzi a CIC egyik lényegi architekturális határát: a Primitives a key:value pár kulcsához tartozó feldolgozási paraméter szemantikáját definiálja, nem a teljes dokumentum feldolgozását.
+
+A dokumentumolvasó, a validator, a producer, a verifier és a gate felelősségének szétválasztása helyes.
+
+Különösen fontos, hogy:
+- a verifier nem hisz automatikusan a producernek;
+- a hibás séma esetén értékvalidáció nem indul;
+- a verifier összesített erőforrás-korlátja külön kezelendő;
+- a 30 új eset nem változtatja meg hallgatólagosan az 513 elfogadott vektort;
+- a futtatható modell nincs független implementációként feltüntetve.
+5. Review-döntés
+repository: CentralInfraCore/cic-primitives
+pull_request: 52
+reviewed_head: 8dc25ace8b0e2b279f7b0308924ff09e978ddecd
+review: REQUEST_CHANGES
+findings:
+  F1: MEDIUM
+  F2: MEDIUM
+  F3: MEDIUM
+  F4: LOW
+merge: HOLD
+approved_vectors: UNCHANGED
+implementation: HOLD
+all_other_holds: UNCHANGED
+
+
+Szakmai GO kizárólag az F1–F4 javítására és a kapcsolódó negatív tesztek bővítésére.
+
+Nem látok olyan problémát, amely a P1 korábban elfogadott szemantikájának újranyitását igényelné. Ezek az implementációs határfelületek pontosításai.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 19:45 — Claude
+
+~~~~~
+Köszönöm, a korábbi üzenetet nem tekintem érvényesnek. A #52 review-ja elfogadott: az F1–F4 javítására és a kapcsolódó negatív tesztekre szakmai GO van, ezt végzem helyben, ugyanazon a #52-es ágon. Az F1 típushelyes rekurzív azonosság, az F2 a bejárási sorrend és a bizonyíték kapcsolata, az F3 a `(Π+1)(N+1)` munkakorlát, az F4 a tervek tényleges lefedésének ellenőrzése.
+~~~~~
+
+
+### 2026-11-22 19:50 — Claude
+
+~~~~~
+Az F1–F4 javítása kész, a tesztek zöldek: 943 passed, a vektorfájl érintetlen. Commitolok, majd a PR-leírást frissítem az új fej adataival.
+~~~~~
+
+
+### 2026-11-22 19:51 — Claude
+
+~~~~~
+Az F1–F4 javítása kész és commitolva, de még nincs pusholva. A PR-leírás frissítve.
+
+- **Új fej:** `7a7fe9cfde97498832f199c19432720968d760c4`, a szülője `8dc25ac`.
+- **Hatókör:** a csomag fájljai a `docs/` alatt, a base-hez képest nem-docs fájl 0.
+- **Vektorfájl:** változatlan, a SHA-256 `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`. Az integritás-elfogadási futás és a `verify_unchanged.py` exit 0.
+- **Tesztek:** a teljes készlet 943 passed. A `sha256sum -c` tiszta.
+
+**F1 – a pin-azonosság típushelyes:**
+- **Hiba:** a korábbi modell `json.dumps(..., default=str)`-t használt. Ez az `1` és a `"1"` kulcsot összemossa, vegyes kulcstípusnál pedig kivételt dob.
+- **Új szabály:** a specifikáció rekurzív, típusérzékeny szabályt ír elő.
+  - A bool nem int.
+  - A float a binary64 bitmintája szerint azonos, minden NaN azonos, a `0.0` és a `-0.0` különbözik, és sosem azonos az int-tel.
+  - A leképezés kulcsai a típusukkal számítanak, a bejegyzések sorrendje közömbös.
+  - A lista sorrendje számít.
+  - A nem skalár kulcs olvasói hiba.
+- **Új esetek:** tíz új eset (`E-PIN-18`–`27`).
+
+**F2 – a bejárási sorrend és a bizonyíték kapcsolata:**
+- **Osztály és kód:** a verdikt *osztálya* (elfogadott/elutasított) nem függ a kézbesítési sorrendtől, csak a jelentett kód és útvonal. A tulajdonságvizsgálat minden permutációra lefut.
+- **Digest-ek:**
+  - A kanonikus tartalom-digest az osztályhoz használható fel újra.
+  - A kódhoz és az útvonalhoz csak a **kézbesítési digest** (SHA-256 a sorrendezett, hosszelőtagos (útvonal, kifejezés) listán).
+  - Az evidence a profilverzióval és az implementációval együtt nevezi meg (új O-GT-02, P-10).
+  - Az `E-TRV-01` és az `E-TRV-02` tartalom-digestje azonos, a kézbesítési digestje különbözik.
+- **Kompozíció:** a séma-kompozíció szabálya HOLD marad.
+
+**F3 – munkakorlát:**
+- **Új alak:** `W ≤ c·(Π+1)·(N+1)`. A régi `c·Π·N` nulla munkát engedne a nulla méretű programra és az üres értékre.
+- **Mérés** (`work_bound.py`): 95 pár, ebből 27 `Π = 0` vagy `N = 0`. A legnagyobb arány 1,36, az ideiglenes c = 8 mindenhol áll. A régi alakot mind a 27 pár megcáfolja.
+
+**F4 – szerkezeti és szemantikai lefedettség:**
+- **Lefedettség-ellenőrzés:** az ellenőrző most azt is vizsgálja, hogy az obligáció által hivatkozott terv *tényleg felsorolja* az adott követelményt.
+- **Szöveg és szerződés egyezése:** az O-VF-01 a szövegben és a gépi szerződésben is a 0–3. lépést nevezi meg, a dokumentumolvasóval együtt.
+- **Új és bővített tervek:** új producer-szintű terv a P-11, a P-02 és a P-07 bővült.
+- **Nyílt állítás:** a dokumentum és az ellenőrző kimondja, hogy a csomag szerkezeti visszakövethetőséget és belső konzisztenciát bizonyít, nem a tervek végrehajtása utáni teljes szemantikai lefedettséget.
+
+**Negatív tesztek** (önteszt 26/26, volt 15):
+- **Beültetett hibák a csomag másolatában:** 14 hiba, köztük három új az F4-hez.
+- **Modellhibák:** 6 modellhiba. A szerializációra épülő azonosságot kétféleképpen is elkapja: téves verdiktként és összeomlott modellként. További modellhiba a sorrendtől függő verdiktosztály és a sorrendet elfedő digest.
+- **Munkakorlát:** 4 ellenőrzés: pozitív kontroll, négyzetes evaluator, túl kicsi konstans és nulla-eset nélküli korpusz.
+- **Infrastruktúra:** infrastruktúra-kontroll.
+
+**Önkritika:** az egyik korábbi tesztem hamis hibaértéket adott, mert egy új obligáció is kapott `gate` szerepet. Az észrevételt a tesztben javítottam, és a végső futás 26/26.
+
+**Push és a PR-leírás frissítése (te futtatod, a #52 ugyanaz marad):**
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-implementation-spec && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/52 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-implementation-spec.md --jq .number
+```
+
+A push után a gate-et az új fejen figyelem, és összeállítom az új SHA-hoz kötött review-csomagot. Mergelni nem fogok. Ez továbbra sem implementációs engedély: az implementáció, a CI-kapu, a normatív publikálás és minden korábbi HOLD változatlan. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 19:53 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-implementation-spec && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/52 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-implementation-spec.md --jq .number</bash-input>
+~~~~~
+
+
+### 2026-11-22 19:53 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-primitives.git
+   8dc25ac..7a7fe9c  docs/grammar-pattern-implementation-spec -&gt; docs/grammar-pattern-implementation-spec
+52</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 19:59 — Claude
+
+~~~~~
+A #52 gate-je zöld az új fejen. A SHA-hoz kötött review-csomagot lent állítottam össze.
+
+## Review-csomag: cic-primitives #52, második kör
+
+| Ellenőrzés | Eredmény |
+|---|---|
+| Fej | `7a7fe9cfde97498832f199c19432720968d760c4` |
+| Base | `devel` (`532541c31543ef33aeb461902bede31a6da9e21f`) |
+| Gate | 45063337846, `success`, a `headSha` egyezik a fejjel |
+| Mergelhető | igen, állapot `clean` |
+| Méret | 13 fájl, +1113 / −0 sor |
+| Hatókör | csak `docs/` (a base-hez képest nem-docs fájl 0), törlés 0 |
+| Teljes tesztkészlet | 943 passed |
+| PR-leírás | frissítve, tartalmazza a „Review round 1 of #52" részt |
+
+**Vektorfájl:**
+- A SHA-256 az origin fejen `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`.
+- A `git diff --numstat 532541c <fej> -- docs/design/pattern-profile-vectors` üres.
+- Az 513 vektor változatlan referencia.
+
+**A review kérései:**
+- **F1:** a pin-azonosság típushelyes, rekurzív szabály a specifikációban, nem szerializáció. Új esetek: `E-PIN-18`–`27`.
+- **F2:** a verdikt osztálya nem függ a kézbesítési sorrendtől. A kód és az útvonal csak a **kézbesítési digesthez** köthető, a tartalom-digest csak az osztályhoz (O-GT-02, P-10).
+- **F3:** a munkakorlát `W ≤ c·(Π+1)·(N+1)`. A régi alakot 27 mért pár cáfolja (`Π = 0` vagy `N = 0`).
+- **F4:** az ellenőrző a hivatkozott terv tényleges lefedését és a szöveg–szerződés egyezést is vizsgálja. A dokumentum kimondja, hogy szerkezeti visszakövethetőséget és konzisztenciát bizonyít, nem teljes szemantikai lefedettséget.
+
+**Reprodukálható futtatások** (a `docs/evidence/pattern-spec-trace/` könyvtárból):
+- `python3 check_spec_trace.py` → exit 0, a 66 + 4 követelmény mindegyike megnevezett és lefedett, a 40 bővítő eset és a 20 elfogadott sémavektor 0 eltéréssel egyezik, a tulajdonság- és digest-ellenőrzések rendben.
+- `python3 work_bound.py` → exit 0, a legnagyobb arány 1,36, a c = 8 mindenhol áll.
+- `python3 selftest_spec_trace.py` → 26/26.
+- `python3 ../pattern-vectors/integrity_check.py --acceptance --expect-sha256 e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0 --docs ../..` → exit 0.
+
+**Kérem:**
+1. Új tartalmi review az F1–F4 javításokra a `7a7fe9c` fején.
+2. A D1–D8 pontokról tulajdonosi döntés. A review szakmai ítélete: D1 GO, D2 GO, D3 GO, D4 feltételes (az F2 rendezésével, ez most megtörtént), D5 GO, D6 GO, D7 HOLD, D8 HOLD.
+3. SHA-hoz kötött merge-jóváhagyás a `7a7fe9c` fejre, ha rendben van. Mergelni nem fogok.
+
+**Ez a PR továbbra sem implementációs engedély.** A végrehajtáshoz külön tulajdonosi GO kell. Az implementáció, a CI-kapu módosítása, a normatív publikálás, a független harmadik implementáció és minden korábbi HOLD változatlan. A thread-naplót és a memóriát a #52 lezárása után frissítem. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 20:02 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Review – cic-primitives #52, második kör
+REQUEST CHANGES – MERGE HOLD
+A négy korábbi finding közül kettő lezárható. Az F1 javítása jelentős előrelépés, az F2-ben azonban találtam egy konkrét, hibás evidence-reuse döntést lehetővé tevő esetet.
+1. Ellenőrzött GitHub-állapot
+Ellenőrzés    Eredmény
+PR #52    OPEN
+Fej    7a7fe9cfde97498832f199c19432720968d760c4
+Base    532541c31543ef33aeb461902bede31a6da9e21f
+Gate 45063337846    SUCCESS
+Diff    13 fájl, +1113 / −0
+Hatókör    Kizárólag docs/
+Elfogadott vektorok    Változatlanok
+
+A base és a head vektorfájljának GitHubról lekért tartalma azonos. A blobazonosító továbbra is 4637680acaee6f7854233cda390c76a1876a460f.
+2. Korábbi findingok
+Finding    Állapot
+F1 – Rekurzív típusazonosság    PARTIAL
+F2 – Evidence és bejárási sorrend    OPEN
+F3 – Determinisztikus munkakorlát    CLOSED
+F4 – Követelmény-visszakövethetőség    CLOSED
+
+F1 – A reader még elveszítheti a típusinformációt
+MEDIUM
+
+Az identical() rekurzív összehasonlítása megfelelő irány. A JSON-szerializációtól való függőség megszűnt, a típusosztályok egyértelműek.
+
+Viszont az összehasonlítást megelőző Python dict reprezentáció nem feltétlenül őrzi meg ezeket a különbségeket:
+1: a
+true: b
+1.0: c
+
+
+A Python ezeket azonos mapping-kulcsként kezelheti, miközben a specifikáció három eltérő típusú kulcsot definiál.
+
+Ugyanez érinti a 0.0 és -0.0 kulcsokat.
+
+A _mapping() egyszerű set() alapú duplikációellenőrzése is a Python egyenlőségi szabályát alkalmazza.
+
+Szükséges:
+- A reader és a pin-azonossági szabály összehangolása.
+- Típusmegőrző reprezentáció vagy egyértelmű bemeneti korlátozás.
+- Negatív tesztek a típusütköző mapping-kulcsokra.
+F2 – A digest nem tartalmazza a pin-deklarációkat
+HIGH – BLOCKING
+
+Ez a legfontosabb fennmaradó probléma.
+
+A content_digest() és a delivery_digest() kizárólag a (path, expression) párokat hash-eli.
+
+A pin-deklarációk azonban szintén meghatározzák a validáció eredményét.
+
+Vegyük ugyanazt az egyébként érvényes contractot:
+Pin-deklaráció    Content digest    Delivery digest    Verdikt
+[1]    A    B    ACCEPT
+[2]    A    B    REFUSE – unknown
+[]    A    B    REFUSE – missing
+[1, 2]    A    B    REFUSE – conflict
+
+A jelenlegi specifikáció alapján az első eset elfogadási bizonyítéka a második esetben is újrafelhasználható lenne.
+
+Ez a CIC reuse modelljében FALSE_REUSE lehetőség.
+
+A content és delivery digest szétválasztását helyesnek tartom, de mindkettőt a teljes releváns validációs bemenethez kell kötni.
+
+Legalább:
+- típushelyes pin-deklarációk;
+- contractok és útvonalak;
+- profilazonosító;
+- releváns implementációs és ellenőrzési kontextus.
+Az ezekből képzett teljes evidence-azonosító és a rész-digestek szerepét egyértelműen el kell választani.
+
+Kötelező negatív teszt: változatlan contractok mellett megváltozó pin ne tehessen egy korábbi validációs eredményt újrafelhasználhatóvá.
+F3 – Munkakorlát
+CLOSED
+Az új korlát:
+\[
+W \leq c(\Pi+1)(N+1)
+\]
+
+megoldja a nulla méretű program és üres bemenet problémáját.
+
+A mérés megfelelően elkülöníti a tapasztalati eredményt a matematikai garanciától.
+- 95 vizsgált pár.
+- 27 ellenpélda a korábbi képletre.
+- 1,36 maximális megfigyelt arány.
+- 8-as ideiglenes konstans.
+A végleges komplexitási bizonyítás továbbra is az implementációs mérési terv része.
+F4 – Visszakövethetőség
+CLOSED
+A hivatkozott terv követelménylistájának ellenőrzése ténylegesen bekerült.
+
+Az O-VF-01 már a dokumentumolvasót is magában foglalja, a 0–3. lépések független végrehajtásával.
+
+A strukturális visszakövethetőség és a szemantikai lefedettség közötti különbség egyértelműen dokumentált.
+3. D1–D8 szakmai döntési ajánlás
+Pont    Ítélet
+D1 – Hibás típusú pin    GO, F1 pontosításával
+D2 – Explicit null    GO
+D3 – Pattern nélküli séma    GO
+D4 – Forrássorrend    Feltételes GO, F2 javításával
+D5 – Expression típusa    GO
+D6 – Reader hibakészlete    GO
+D7 – Séma-kompozíció    HOLD
+D8 – Record bejárási sorrend    HOLD
+
+Ezek szakmai állásfoglalások; a tulajdonosi döntést nem helyettesítik.
+4. Review-döntés
+repository: CentralInfraCore/cic-primitives
+pull_request: 52
+reviewed_head: 7a7fe9cfde97498832f199c19432720968d760c4
+review: REQUEST_CHANGES
+findings:
+  F1: PARTIAL
+  F2: OPEN_HIGH
+  F3: CLOSED
+  F4: CLOSED
+merge: HOLD
+approved_vectors: UNCHANGED
+implementation: HOLD
+all_other_holds: UNCHANGED
+
+
+Szakmai GO az F1 és F2 célzott javítására.
+
+Az F2 különösen fontos: nem a pattern szemantikájával van probléma, hanem azzal, hogy a szemantikai döntés bizonyítékát milyen bemeneti identitáshoz kötjük. Pontosan azon a határon járunk, amely a CIC egészének működésében kritikus.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 20:03 — Claude
+
+~~~~~
+Elfogadom a review-t, célzottan javítom az F1-et és az F2-t. Az F2 a lényeg: a bizonyíték-azonosítónak a pin-deklarációkat is kötnie kell, különben ugyanaz a contract-halmaz egy `[1]` pin elfogadási bizonyítékát egy `[2]` pinre is újrahasznosíthatóvá tenné. Az F1: a reader típusmegőrző reprezentációt használ a pin-értékekhez, és az olvasó a duplikált kulcsot a specifikáció szerinti azonossággal ismeri fel.
+~~~~~
+
+
+### 2026-11-22 20:04 — Claude
+
+~~~~~
+Az új esetek a modellen működnek. Most a `check_spec_trace.py` kapja meg az F2 bizonyíték-ellenőrzéseit (kulcsok, újrahasznosítás, kódolás-injektivitás), és a `pin_text` kezelését.
+~~~~~
+
+
+### 2026-11-22 20:06 — Claude
+
+~~~~~
+A mérések és az önteszt lefutottak (31/31). Lezárom: SHA256SUMS, teljes teszt, commit, PR-leírás.
+~~~~~
+
+
+### 2026-11-22 20:08 — Claude
+
+~~~~~
+Az F1 és az F2 javítása kész és commitolva, de még nincs pusholva. A PR-leírás frissítve.
+
+- **Új fej:** `5951edc6ae02890c9ef799acffb65883f25c82c2`, a szülője `7a7fe9c`.
+- **Hatókör:** csak `docs/`, a base-hez képest nem-docs fájl 0.
+- **Vektorfájl:** változatlan, a SHA-256 `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`. Az integritás-elfogadási futás és a `verify_unchanged.py` exit 0.
+- **Tesztek:** a teljes készlet 943 passed. A `sha256sum -c` tiszta.
+
+**F2 (HIGH) – a bizonyíték-azonosító mostantól a teljes bemenethez kötött.**
+- **A hiba:** ugyanaz az érvényes contract a `[1]` pinnel elfogadott, a `[2]`/`[true]` pinnel ismeretlen, a `[]` pinnel hiányzó, az `[1, 2]` pinnel ütköző, a contract-digest viszont mind az ötnél azonos volt. Az első elfogadási bizonyítéka így újrahasznosítható lett volna a többire.
+- **Komponensek:** a contract-tartalom-digest, a contract-kézbesítési digest, a pin-halmaz-digest és a pin-sorrendes digest. Egyik sem újrahasznosítási kulcs.
+- **Típusos kanonikus kódolás:** a deklarált értékeké a specifikáció szabálya, szerializációs könyvtár nélkül. Két érték kódolása akkor és csak akkor azonos, ha az értékek azonosak.
+- **Azonosítók:**
+  - A **bizonyíték-azonosító** a profilverziót, a kézbesítési digestet, a típusos pin-deklarációkat, az implementáció-azonosítót és a konformancia-referenciát (a jóváhagyott vektorfájl hash-ét) köti.
+  - Az **osztálykulcs** ugyanez a tartalom-digesttel és a pin-halmaz-digesttel.
+  - Az osztály csak azonos osztálykulcs alatt hasznosítható újra, a kód és az útvonal csak azonos bizonyíték-azonosító alatt.
+
+**A kötelező negatív teszt:**
+- Változatlan contractok mellett a `[1]`, `[2]`, `[]`, `[1,2]`, `[true]`, `[1.0]` hat különböző osztálykulcsot és hat különböző bizonyíték-azonosítót ad.
+- Korábbi eredmény semmilyen másik pin alatt nem hasznosítható újra.
+- Beültetett hiba: a pint elhagyó kulcs két ellenőrzésen bukik. A komponens-digestre alapozott újrahasznosítás is bukik.
+
+**F1 – a reader már nem veszíti el a típust:**
+- **A hiba:** a Python dict az `1`, `true` és `1.0` kulcsot egyesíti, és a halmazos duplikátum-ellenőrzés a gazdanyelv egyenlőségét használja. A specifikáció három eltérő kulcsot definiál.
+- **A pin-érték** típusmegőrző reprezentációban érkezik: a leképezés (kulcs, érték) bejegyzések listája, a kulcsok megtartják a típusukat. A duplikált kulcsot a specifikáció azonossági szabálya találja meg. A nem skalár kulcs olvasói hiba.
+- **A séma-dokumentum minden leképezés-kulcsa sztring.** Ez egyértelmű bemeneti korlátozás, a nem sztring kulcs olvasói hiba (O-RD-04, O-RD-06).
+- **Hét új eset** (`E-PIN-28`–`34`).
+- **Negatív teszt:** az `1`, `true`, `1.0` kulcsokat összevonó olvasót két eset is elkapja.
+
+**Önteszt:** 31/31 (volt 26), 47 bővítő eset, 27 kötelezettség, 11 tervelem.
+
+**Önkritika:** a modell eredeti `identical()`-je a Python dictekkel dolgozott, ezért a review-nak igaza volt. A reader és az azonossági szabály közti réteget most a `TMap` és a típusmegőrző betöltő köti össze. A bővítő esetek fájlját a gazdanyelvi parser tölti be, ezért a típusütköző pin-értékek ott YAML-szövegként (`pin_text`) szerepelnek, különben ez a betöltő merítette volna össze a kulcsokat.
+
+**Push és a PR-leírás frissítése (te futtatod, a #52 ugyanaz marad):**
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-implementation-spec && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/52 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-implementation-spec.md --jq .number
+```
+
+A push után a gate-et az új fejen figyelem, és összeállítom az új SHA-hoz kötött review-csomagot. Mergelni nem fogok. Ez továbbra sem implementációs engedély: az implementáció, a CI-kapu, a normatív publikálás és minden korábbi HOLD változatlan. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 20:18 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-implementation-spec && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/52 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-implementation-spec.md --jq .number</bash-input>
+~~~~~
+
+
+### 2026-11-22 20:18 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-primitives.git
+   7a7fe9c..5951edc  docs/grammar-pattern-implementation-spec -&gt; docs/grammar-pattern-implementation-spec
+52</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 20:22 — Claude
+
+~~~~~
+A #52 gate-je zöld az új fejen. A SHA-hoz kötött review-csomag lent van.
+
+## Review-csomag: cic-primitives #52, harmadik kör
+
+| Ellenőrzés | Eredmény |
+|---|---|
+| Fej | `5951edc6ae02890c9ef799acffb65883f25c82c2` |
+| Base | `devel` (`532541c31543ef33aeb461902bede31a6da9e21f`) |
+| Gate | 45065674837, `success`, a `headSha` egyezik a fejjel |
+| Mergelhető | igen, állapot `clean` |
+| Méret | 13 fájl, +1347 / −0 sor |
+| Hatókör | csak `docs/` (a base-hez képest nem-docs fájl 0), törlés 0 |
+| Teljes tesztkészlet | 943 passed |
+| PR-leírás | frissítve, tartalmazza a „Review round 2 of #52" részt |
+
+**Vektorfájl:**
+- A SHA-256 az origin fejen `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`.
+- A `git diff --numstat 532541c <fej> -- docs/design/pattern-profile-vectors` üres.
+- Az 513 vektor változatlan referencia.
+
+**A review kérései:**
+- **F2 (HIGH):**
+  - A bizonyíték-azonosító és az osztálykulcs már a típusos pin-deklarációkat, a profilverziót, az implementációt és a konformancia-referenciát is köti.
+  - A komponens-digestek közül egyik sem újrahasznosítási kulcs.
+  - A kötelező negatív teszt: változatlan contractok mellett a pin cseréje nem tesz korábbi eredményt újrahasznosíthatóvá.
+- **F1:**
+  - A pin-érték típusmegőrző reprezentációban érkezik, a duplikált kulcsot a specifikáció azonossági szabálya találja meg.
+  - A séma-dokumentum minden leképezés-kulcsa sztring.
+  - Hét új eset: `E-PIN-28`–`34`.
+
+**Reprodukálható futtatások** (a `docs/evidence/pattern-spec-trace/` könyvtárból):
+- `python3 check_spec_trace.py` → exit 0: a 66 + 4 követelmény mindegyike megnevezett és lefedett, az 47 bővítő eset és a 20 elfogadott sémavektor 0 eltéréssel egyezik, a tulajdonság-, kulcs- és kódolás-ellenőrzések rendben.
+- `python3 work_bound.py` → exit 0.
+- `python3 selftest_spec_trace.py` → 31/31.
+- `python3 ../pattern-vectors/integrity_check.py --acceptance --expect-sha256 e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0 --docs ../..` → exit 0.
+
+**Állapot a review szerint:**
+- Az F3 és az F4 lezárt, az F1 részben, az F2 nyitott volt. Az utóbbi kettő javítása ebben a fejben van.
+- A D1–D8 szakmai ítéletei: D1 GO, D2 GO, D3 GO, D4 feltételes GO (az F2 javításával), D5 GO, D6 GO, D7 HOLD, D8 HOLD.
+
+**Kérem:**
+1. Új tartalmi review az F1–F2 javításokra az `5951edc` fején.
+2. A D1–D8 pontokról tulajdonosi döntés, különösen a D4-ről (forrás-sorrendű bejárás), amely az F2 javítása után már feltétel nélkül kezelhető.
+3. SHA-hoz kötött merge-jóváhagyás az `5951edc` fejre, ha rendben van. Mergelni nem fogok.
+
+**Ez a PR továbbra sem implementációs engedély.** A végrehajtáshoz külön tulajdonosi GO kell. Az implementáció, a CI-kapu módosítása, a normatív publikálás, a független harmadik implementáció és minden korábbi HOLD változatlan. A thread-naplót és a memóriát a #52 lezárása után frissítem. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 20:26 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Review – cic-primitives #52, harmadik kör
+REQUEST CHANGES – SZŰKÍTETT HOLD
+Az F1 és az F2 eredeti hibája javítva. A korábban azonosított pin-változásból eredő FALSE_REUSE lehetőség megszűnt.
+
+Két szűk pontosítást kérek még az evidence-szerződés lezárása előtt. Új architekturális tervezési körre nincs szükség.
+1. Ellenőrzött GitHub-állapot
+Ellenőrzés    Eredmény
+PR #52    OPEN
+Fej    5951edc6ae02890c9ef799acffb65883f25c82c2
+Base    532541c31543ef33aeb461902bede31a6da9e21f
+Gate 45065674837    SUCCESS
+Diff    13 fájl, +1347 / −0
+Hatókör    Kizárólag docs/
+Vektorfájl blob- és tartalomegyezés    Igazolt
+Javasolt bővítő esetek    47
+Implementációs kötelezettségek    27
+Ellenőrzési terv    11 elem
+
+2. Korábbi findingok lezárása
+Finding    Állapot
+F1 – Típusmegőrző reprezentáció    CLOSED
+F2 – Pinhez kötött reuse-kulcs    CLOSED
+F3 – Munkakorlát    CLOSED
+F4 – Visszakövethetőség    CLOSED
+
+F1 – Típusmegőrzés
+A TMap és a _TypedLoader megfelelően kiküszöböli a Python mapping-kulcsainak implicit egyenlőségéből adódó problémát.
+
+Az azonossági szabály, a reprezentáció és a kanonikus kódolás összhangban áll. Az új tesztek a korábban hiányzó eseteket célozzák.
+F2 – Evidence-azonosító
+A komponens-digestek és a tényleges újrafelhasználási kulcsok szétválasztása helyes.
+Bemenet változása    Osztálykulcs    Eredménykulcs
+Pin értéke    Változik    Változik
+Contractok sorrendje    Azonos    Változik
+Azonos pin megismétlése    Azonos    Változik
+Profilverzió    Változik    Változik
+Implementációazonosító    Változik    Változik
+Konformanciareferencia    Változik    Változik
+
+Ez már megfelelően kezeli az előző review konkrét ellenpéldáját.
+3. Új findingok
+F5 – Az evidence hatóköre
+MEDIUM
+A specifikáció szerint az evidence-azonosító a teljes validációs eredményt azonosítja.
+
+A jelenlegi kulcsok azonban csak a már kiolvasott séma pattern-validációját fedik le. Nem tartalmazzák:
+- a record tényleges értékeit;
+- a reader hibás dokumentumokra vonatkozó eredményét;
+- a verifier költségvetési kontextusát.
+Nem kell ezeket most hozzáadni.
+
+Ehelyett egyértelműen rögzíteni kell, hogy a kulcsok kizárólag a sikeres dokumentumolvasást követő séma pattern-validációs verdiktjére használhatók.
+
+Az értékvalidáció, a reader hibája és a teljes release-verdict újrafelhasználása külön szerződés.
+F6 – A domain separation hiányos
+LOW
+A specifikáció minden komponens-digesthez külön domain taget ír elő.
+
+A pin_ordered_digest() és a pin_set_digest() ezt betartja, a content_digest() és a delivery_digest() azonban változatlanul:
+h = hashlib.sha256()
+
+
+
+A magasabb szintű kulcsok domain separationje jelenleg védi a két kulcstípus elkülönítését, ezért ez önmagában nem FALSE_REUSE hiba.
+
+Viszont a modell nem követi pontosan a specifikációt. Kérem a két contract-digest saját domain tagjének bevezetését és ellenőrzését.
+4. D1–D8 végleges szakmai ajánlás
+Pont    Ajánlás
+D1 – Hibás típusú pin → unknown    GO
+D2 – Explicit null    GO
+D3 – Pattern nélküli séma    GO
+D4 – Forrássorrendű bejárás    GO
+D5 – Nem string expression    GO
+D6 – Külön reader hibakészlet    GO
+D7 – Séma-kompozíció    HOLD
+D8 – Record bejárási sorrend    HOLD
+
+A D4-re vonatkozó korábbi szakmai feltételt teljesítettnek tekintem. A forrássorrendű bejárás elfogadható anélkül, hogy a Primitives-t egy konkrét sémaelrendezéshez kötnénk.
+
+A tulajdonosi jóváhagyást Gábornak kell kimondania.
+5. Review-döntés
+repository: CentralInfraCore/cic-primitives
+pull_request: 52
+reviewed_head: 5951edc6ae02890c9ef799acffb65883f25c82c2
+review: REQUEST_CHANGES
+findings:
+  F1: CLOSED
+  F2: CLOSED
+  F3: CLOSED
+  F4: CLOSED
+  F5: MEDIUM
+  F6: LOW
+merge: HOLD
+approved_vectors: UNCHANGED
+implementation: HOLD
+all_other_holds: UNCHANGED
+
+
+Szakmai GO az F5–F6 célzott javítására.
+
+A P1 implementációs specifikációja gyakorlatilag lezárható állapotban van. A fennmaradó két finding már nem a pattern szemantikáját, hanem a bizonyítékok pontos felhasználási határát érinti.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 20:26 — Claude
+
+~~~~~
+Elfogadom az F5–F6-ot, célzottan javítom: a kulcsok hatókörét pontosan rögzítem, és a két contract-digest is saját domain taget kap.
+~~~~~
+
+
+### 2026-11-22 20:27 — Claude
+
+~~~~~
+Az F5–F6 javítása és az önteszt (36/36) kész. Igazítom a dokumentumok darabszámait, lezárom a SHA256SUMS-t, futtatom a teljes tesztet, és commitolok.
+~~~~~
+
+
+### 2026-11-22 20:30 — Claude
+
+~~~~~
+Most a PR-leírást frissítem az új fej adataival.
+~~~~~
+
+
+### 2026-11-22 20:30 — Claude
+
+~~~~~
+Az F5–F6 javítása kész és commitolva, de még nincs pusholva. A PR-leírás frissítve.
+
+- **Új fej:** `a7c144844de78b814c384bd1348de646d890a044`, a szülője `5951edc`.
+- **Hatókör:** csak `docs/`, a base-hez képest nem-docs fájl 0.
+- **Vektorfájl:** változatlan, a SHA-256 `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`. Az integritás-elfogadási futás és a `verify_unchanged.py` exit 0.
+- **Tesztek:** a teljes készlet 943 passed. A `sha256sum -c` tiszta.
+
+**F5 – az evidence hatóköre:**
+- **Mire jók a kulcsok:** az osztálykulcs és a bizonyíték-azonosító kizárólag a sikeres dokumentumolvasást követő séma-pattern-validáció verdiktjét azonosítja.
+- **Mit nem tartalmaznak:** a record értékeit, a reader eredményét hibás dokumentumra és a verifier költségvetési kontextusát.
+- **Mire nem használhatók:** érték-validáció, reader-hiba és teljes release-verdikt azonosítójaként soha. Ezek újrahasznosítása külön szerződés, itt nem specifikált.
+- **Reader-hibánál nincs kulcs:** a reader által elutasított dokumentum egyáltalán nem kap kulcsot. Ezt a modell és az ellenőrző minden reader-hibás esetre vizsgálja.
+- **Hol szerepel:** a 4.1 szakaszban és az O-GT-02 kötelezettségben. Az ellenőrző elutasítja azt a specifikációt, amely már nem mondja ki a „successful document read" hatókört.
+
+**F6 – domain separation:**
+- **Két új tag:** a két contract-digest saját domain taget kapott: `cic.pattern.contracts.content/1` és `cic.pattern.contracts.delivery/1`. A pin-digestek és a két azonosító taget korábban is használt.
+- **A modell követi a szöveget.** Az ellenőrző a szövegben felsorolt tageket a modell konstansaival veti össze.
+- **Üres bemenet:** az üres bemeneten sem esik egybe két komponens-digest.
+- **Egy contract:** ugyanazon contract tartalom- és kézbesítési digestje különbözik.
+- **Kulcsok:** az osztálykulcs és az eredménykulcs különbözik.
+
+**Önteszt:** 36/36 (volt 31): 16 beültetett hiba a csomag másolatában és 14 modell-ellenőrzés 10 beültetett hibára.
+
+**Önkritika:** az előző körök dokumentumaiban „11 beültetett modellhibát" írtam, de az valójában 11 ellenőrzés volt 8 hibán, mert egyes hibákat két ellenőrzés is elkap. Ezt most pontosan, „14 modell-ellenőrzés 10 hibára" formában mondja ki a dokumentum és a PR-leírás.
+
+**Push és a PR-leírás frissítése (te futtatod, a #52 ugyanaz marad):**
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-implementation-spec && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/52 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-implementation-spec.md --jq .number
+```
+
+A push után a gate-et az új fejen figyelem, és összeállítom az új SHA-hoz kötött review-csomagot. Mergelni nem fogok. A D4 feltételét a review teljesítettnek tekinti, a végleges D1–D8 ajánlás: D1–D6 GO, D7 és D8 HOLD, a tulajdonosi jóváhagyás a tiéd. Ez továbbra sem implementációs engedély: az implementáció, a CI-kapu, a normatív publikálás és minden korábbi HOLD változatlan. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 20:30 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-implementation-spec && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/52 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-implementation-spec.md --jq .number</bash-input>
+~~~~~
+
+
+### 2026-11-22 20:30 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-primitives.git
+   5951edc..a7c1448  docs/grammar-pattern-implementation-spec -&gt; docs/grammar-pattern-implementation-spec
+52</bash-stdout><bash-stderr></bash-stderr>
 ~~~~~
