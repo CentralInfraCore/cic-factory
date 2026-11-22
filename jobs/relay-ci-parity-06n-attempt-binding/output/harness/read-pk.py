@@ -4,12 +4,15 @@
 
   read-pk.py DIR --expect-repo OWNER/REPO --expect-run-id ID --expect-attempt N \
              --expect-head-sha SHA --expect-sha256 HEX   evaluate fetched evidence
-  read-pk.py --write-manifest DIR RUN_JSON OWNER/REPO HEAD ATTEMPT PREV_JSON
+  read-pk.py --write-manifest DIR RUN_JSON OWNER/REPO HEAD ATTEMPT PREV_JSON ARTIFACTS_JSON ZIP_SHA256
                                                              (used by fetch-pk.sh) validate the run
                                                              and bind the fetched files to it
   read-pk.py --check-run RUN_JSON OWNER/REPO HEAD ATTEMPT PREV_JSON
                                                              (used by fetch-pk.sh) refuse a wrong run
-  read-pk.py --attach-summary DIR FILE RUN_ID                bind an owner-copied job summary
+  read-pk.py --pick-artifact RUN_JSON ARTIFACTS_JSON HEAD    (used by fetch-pk.sh) print the id of THE
+                                                             artifact created inside the attempt window
+  read-pk.py --attach-summary DIR FILE RUN_ID ATTEMPT        bind an owner-copied job summary to the
+                                                             run AND the attempt the owner names
   read-pk.py --selftest                                      the reader must accept a good
                                                              fixture and reject every planted
                                                              defect (it can fail)
@@ -79,6 +82,62 @@ def strings_of(obj):
             yield from strings_of(v)
 
 
+ISO = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
+
+
+def window_of(run):
+    w = {"start": run.get("run_started_at"), "end": run.get("updated_at")}
+    ok = all(isinstance(v, str) and ISO.match(v) for v in w.values()) and w["start"] <= w["end"]
+    return w, ok
+
+
+def pick_artifact(run, artifacts, head):
+    """The artifact of THIS attempt: right name, run, head, not expired, created inside the
+    attempt window. Returns (record, error-or-None); exactly one must qualify."""
+    w, ok = window_of(run)
+    if not ok:
+        return None, "attempt window unreadable"
+    lst = artifacts.get("artifacts") if isinstance(artifacts, dict) else None
+    if not isinstance(lst, list):
+        return None, "artifact list unreadable"
+    hit = []
+    for a in lst:
+        wr = a.get("workflow_run") or {}
+        ca = a.get("created_at")
+        if (a.get("name") == "pk-channels" and wr.get("id") == run.get("id")
+                and wr.get("head_sha") == head and a.get("expired") is False
+                and isinstance(ca, str) and ISO.match(ca) and w["start"] <= ca <= w["end"]
+                and isinstance(a.get("id"), int) and not isinstance(a.get("id"), bool)):
+            hit.append(a)
+    if len(hit) != 1:
+        return None, "%d artifact(s) qualify for this attempt (need exactly 1)" % len(hit)
+    a = hit[0]
+    return {"id": a["id"], "name": a["name"], "workflow_run_id": run["id"], "head_sha": head,
+            "created_at": a["created_at"], "size_in_bytes": a.get("size_in_bytes")}, None
+
+
+def artifact_ok(m):
+    w = m.get("attempt_window")
+    a = m.get("artifact")
+    if not (isinstance(w, dict) and isinstance(w.get("start"), str) and isinstance(w.get("end"), str)
+            and ISO.match(w["start"]) and ISO.match(w["end"]) and w["start"] <= w["end"]):
+        return "attempt window missing or unreadable"
+    if not isinstance(a, dict):
+        return "artifact record missing"
+    if not isinstance(a.get("id"), int) or isinstance(a.get("id"), bool) or a["id"] <= 0:
+        return "artifact id"
+    if a.get("name") != "pk-channels":
+        return "artifact name"
+    if a.get("workflow_run_id") != m.get("run_id") or a.get("head_sha") != m.get("head_sha"):
+        return "artifact run or head differs from the manifest"
+    ca = a.get("created_at")
+    if not (isinstance(ca, str) and ISO.match(ca) and w["start"] <= ca <= w["end"]):
+        return "artifact created outside the attempt window"
+    if not (isinstance(a.get("zip_sha256"), str) and re.match(r"^[0-9a-f]{64}$", a["zip_sha256"])):
+        return "artifact zip digest"
+    return None
+
+
 def previous_ok(attempt, prev):
     """Returns an error text or None."""
     if attempt == 1:
@@ -130,7 +189,7 @@ def check_manifest(d, expect_head, expect_repo=None, expect_run_id=None, expect_
         problems.append("unlisted file(s) %s" % extra)
     rows.append(("run binding", "NOT-MET" if problems else "MET",
                  "; ".join(problems) if problems else
-                 "run %s attempt 1, workflow_dispatch, completed/success, branch main" % m.get("run_id")))
+                 "run %s attempt %s, workflow_dispatch, completed/success, branch main" % (m.get("run_id"), m.get("run_attempt"))))
     if expect_repo is None:
         rows.append(("repository", "NOT-READ", "--expect-repo not given"))
     else:
@@ -157,6 +216,9 @@ def check_manifest(d, expect_head, expect_repo=None, expect_run_id=None, expect_
     perr = previous_ok(att, m.get("previous_attempts")) if isinstance(att, int) and not isinstance(att, bool) else "attempt missing"
     rows.append(("earlier attempts", "MET" if perr is None else "NOT-MET",
                  perr or "history acceptable for attempt %r" % (att,)))
+    aerr = artifact_ok(m)
+    rows.append(("artifact origin", "MET" if aerr is None else "NOT-MET",
+                 aerr or "artifact %s created inside the attempt window" % m["artifact"]["id"]))
     if expect_head is None:
         rows.append(("approved head SHA", "NOT-READ", "--expect-head-sha not given"))
     elif not SHA_RE.match(expect_head):
@@ -182,13 +244,16 @@ def evaluate(d, expect_head=None, expect_sha=None, expect_repo=None, expect_run_
         s = (man or {}).get("summary")
         ok = (isinstance(s, dict) and man is not None
               and s.get("run_id") == man.get("run_id")
+              and isinstance(s.get("attempt"), int) and not isinstance(s.get("attempt"), bool)
+              and s.get("attempt") == man.get("run_attempt")
+              and (expect_attempt is None or str(s.get("attempt")) == str(expect_attempt))
               and s.get("sha256") == sha256_file(os.path.join(d, "summary.txt")))
         if not ok:
             res.append(("summary binding", "NOT-MET",
-                        "summary.txt is not attached to this run's manifest"))
+                        "summary.txt is not attached to this run AND attempt in the manifest"))
             summ = None
         else:
-            res.append(("summary binding", "MET", "owner-attested copy for run %s" % man["run_id"]))
+            res.append(("summary binding", "MET", "owner-attested copy for run %s attempt %s" % (man["run_id"], man["run_attempt"])))
 
     ann_strings = None
     ann_ok = False
@@ -348,11 +413,41 @@ def check_run_main(run_json, repo, head, attempt, prev_json):
     return 0
 
 
-def write_manifest_from_run(d, run_json, repo, head, attempt, prev_json):
+def pick_artifact_main(run_json, artifacts_json, head):
+    try:
+        run = json.loads(read(run_json))
+        arts = json.loads(read(artifacts_json))
+    except (TypeError, ValueError):
+        print("refusing: run or artifact JSON unreadable", file=sys.stderr)
+        return 1
+    rec, err = pick_artifact(run, arts, head)
+    if err:
+        print("refusing: " + err, file=sys.stderr)
+        return 1
+    print(rec["id"])
+    return 0
+
+
+def write_manifest_from_run(d, run_json, repo, head, attempt, prev_json, artifacts_json, zip_sha):
     run, got, err = check_run(run_json, repo, head, attempt, prev_json)
     if err:
         print("refusing: " + err, file=sys.stderr)
         return 1
+    try:
+        arts = json.loads(read(artifacts_json))
+    except (TypeError, ValueError):
+        print("refusing: artifact JSON unreadable", file=sys.stderr)
+        return 1
+    rec, aerr = pick_artifact(run, arts, head)
+    if aerr:
+        print("refusing: " + aerr, file=sys.stderr)
+        return 1
+    if not re.match(r"^[0-9a-f]{64}$", zip_sha or ""):
+        print("refusing: zip digest malformed", file=sys.stderr)
+        return 1
+    rec["zip_sha256"] = zip_sha
+    got["attempt_window"] = window_of(run)[0]
+    got["artifact"] = rec
     m = dict(got, run_id=run["id"], repository=repo,
              files={rel: sha256_file(os.path.join(d, rel)) for rel in FETCHED})
     if any(v is None for v in m["files"].values()):
@@ -364,7 +459,7 @@ def write_manifest_from_run(d, run_json, repo, head, attempt, prev_json):
     return 0
 
 
-def attach_summary(d, src, run_id):
+def attach_summary(d, src, run_id, attempt):
     mp = os.path.join(d, "manifest.json")
     mtxt = read(mp)
     text = read(src)
@@ -372,6 +467,9 @@ def attach_summary(d, src, run_id):
         print("refusing: manifest.json or the summary file is unreadable", file=sys.stderr)
         return 2
     m = json.loads(mtxt)
+    if str(m.get("run_attempt")) != str(attempt):
+        print("refusing: attempt %s differs from the manifest attempt %s" % (attempt, m.get("run_attempt")), file=sys.stderr)
+        return 2
     if str(m.get("run_id")) != str(run_id):
         print("refusing: run id %s differs from the manifest run %s" % (run_id, m.get("run_id")), file=sys.stderr)
         return 2
@@ -381,15 +479,18 @@ def attach_summary(d, src, run_id):
     dst = os.path.join(d, "summary.txt")
     with open(dst, "w", encoding="utf-8") as fh:
         fh.write(text)
-    m["summary"] = {"run_id": m["run_id"], "sha256": sha256_file(dst),
+    m["summary"] = {"run_id": m["run_id"], "attempt": m["run_attempt"], "sha256": sha256_file(dst),
                     "source": "owner copy from the web UI (attested by the owner, not machine-verified)"}
     with open(mp, "w", encoding="utf-8") as fh:
         json.dump(m, fh, indent=2, sort_keys=True)
-    print("attached summary to run %s" % m["run_id"])
+    print("attached summary to run %s attempt %s" % (m["run_id"], m["run_attempt"]))
     return 0
 
 
 HEAD = "a1" * 20
+WINDOW = {"start": "2026-01-01T00:00:00Z", "end": "2026-01-01T00:01:00Z"}
+ARTIFACT = {"id": 777, "name": "pk-channels", "workflow_run_id": 123456, "head_sha": HEAD,
+            "created_at": "2026-01-01T00:00:30Z", "size_in_bytes": 200, "zip_sha256": "c" * 64}
 REPO = "o/r"
 RUN = 123456
 SHA = "a" * 64
@@ -399,6 +500,7 @@ def write_manifest(d, **over):
     m = {"workflow_path": WORKFLOW_PATH, "event": "workflow_dispatch", "status": "completed",
          "conclusion": "success", "head_branch": "main", "run_attempt": 1,
          "previous_attempts": [], "run_id": 123456, "head_sha": HEAD, "repository": REPO,
+         "attempt_window": dict(WINDOW), "artifact": dict(ARTIFACT),
          "files": {rel: sha256_file(os.path.join(d, rel)) for rel in FETCHED}}
     m.update(over)
     json.dump(m, open(os.path.join(d, "manifest.json"), "w"))
@@ -422,8 +524,12 @@ def good_fixture(d, sha=SHA):
     write_manifest(d)
     open(os.path.join(d, "summary.txt"), "w").write(TOKEN + "\n")
     m = json.load(open(os.path.join(d, "manifest.json")))
-    m["summary"] = {"run_id": m["run_id"], "sha256": sha256_file(os.path.join(d, "summary.txt"))}
+    m["summary"] = {"run_id": m["run_id"], "attempt": m["run_attempt"],
+                    "sha256": sha256_file(os.path.join(d, "summary.txt"))}
     json.dump(m, open(os.path.join(d, "manifest.json"), "w"))
+
+
+DEL = object()
 
 
 def selftest():
@@ -451,6 +557,20 @@ def selftest():
         def m(d):
             old = json.load(open(os.path.join(d, "manifest.json")))
             old.update(over)
+            if "run_attempt" in over and "summary" not in over and isinstance(old.get("summary"), dict):
+                old["summary"]["attempt"] = over["run_attempt"]   # keep the attachment consistent
+            json.dump(old, open(os.path.join(d, "manifest.json"), "w"))
+        return m
+
+    def sub(key, **over):
+        """change one field of a nested manifest record (or delete it with value DEL)"""
+        def m(d):
+            old = json.load(open(os.path.join(d, "manifest.json")))
+            for k, v in over.items():
+                if v is DEL:
+                    old[key].pop(k, None)
+                else:
+                    old[key][k] = v
             json.dump(old, open(os.path.join(d, "manifest.json"), "w"))
         return m
 
@@ -496,6 +616,20 @@ def selftest():
         ("manifest attempt 1, owner expects 2", lambda d: None, NOT, {"expect_attempt": 2}),
         ("attempt 3 is not accepted", manifest(run_attempt=3, previous_attempts=[HELD_ATTEMPT_1, dict(HELD_ATTEMPT_1, run_attempt=2)]), NOT, {"expect_attempt": 3}),
         ("attempt 1 with an earlier attempt recorded", manifest(previous_attempts=[HELD_ATTEMPT_1]), NOT),
+        # --- summary bound to the attempt (06n F2) ---
+        ("summary without an attempt", sub("summary", attempt=DEL), NOT),
+        ("summary attached to another attempt", sub("summary", attempt=2), NOT),
+        ("summary attempt differs from the expected", lambda d: None, NOT, {"expect_attempt": 2}),
+        ("summary of attempt 2 on an attempt-2 manifest", manifest(run_attempt=2, previous_attempts=[HELD_ATTEMPT_1]), MET, {"expect_attempt": 2}),
+        # --- artifact origin (06n F1) ---
+        ("artifact record missing", manifest(artifact=None), NOT),
+        ("attempt window missing", manifest(attempt_window=None), NOT),
+        ("artifact created before the attempt window", sub("artifact", created_at="2025-12-31T23:59:59Z"), NOT),
+        ("artifact created after the attempt window", sub("artifact", created_at="2026-01-01T00:02:00Z"), NOT),
+        ("artifact of another run", sub("artifact", workflow_run_id=999), NOT),
+        ("artifact of another head", sub("artifact", head_sha="b2" * 20), NOT),
+        ("artifact id not an integer", sub("artifact", id="777"), NOT),
+        ("artifact zip digest malformed", sub("artifact", zip_sha256="zz"), NOT),
         ("expected attempt not given", lambda d: None, INC, {"expect_attempt": None}),
         ("expected attempt not numeric", lambda d: None, NOT, {"expect_attempt": "x"}),
         ("manifest repository differs from the expected", manifest(repository="o/other"), NOT),
@@ -545,40 +679,92 @@ def selftest():
         r = {"id": 123456, "path": WORKFLOW_PATH, "event": "workflow_dispatch",
              "status": "completed", "conclusion": "success", "head_branch": "main",
              "run_attempt": 1, "head_sha": HEAD,
+             "run_started_at": WINDOW["start"], "updated_at": WINDOW["end"],
              "repository": {"full_name": "o/r"}, "head_repository": {"full_name": "o/r"}}
         r.update(over)
         return r
+    A_OK = {"artifacts": [{"id": 777, "name": "pk-channels", "expired": False,
+                           "created_at": "2026-01-01T00:00:30Z", "size_in_bytes": 200,
+                           "workflow_run": {"id": 123456, "head_sha": HEAD}}]}
+
+    def arts(**over):
+        a = json.loads(json.dumps(A_OK))
+        a["artifacts"][0].update(over)
+        return a
+
+    ZIP = "c" * 64
     mcases = [
-        ("manifest writer: approved run, attempt 1", run_json(), 0, 1, []),
-        ("manifest writer: other head", run_json(head_sha="b2" * 20), 1, 1, []),
-        ("manifest writer: push event", run_json(event="push"), 1, 1, []),
-        ("manifest writer: failed run", run_json(conclusion="failure"), 1, 1, []),
-        ("manifest writer: attempt 2 not asked for", run_json(run_attempt=2), 1, 1, []),
-        ("manifest writer: other branch", run_json(head_branch="x"), 1, 1, []),
-        ("manifest writer: other repository", run_json(repository={"full_name": "o/other"}), 1, 1, []),
-        ("manifest writer: fork head", run_json(head_repository={"full_name": "f/r"}), 1, 1, []),
-        ("manifest writer: other workflow", run_json(path=".github/workflows/lab-gate-pr.yml"), 1, 1, []),
-        ("manifest writer: attempt 2 after held attempt 1", run_json(run_attempt=2), 0, 2, [HELD_ATTEMPT_1]),
-        ("manifest writer: attempt 2, no history", run_json(run_attempt=2), 1, 2, []),
-        ("manifest writer: attempt 2, attempt 1 had a job", run_json(run_attempt=2), 1, 2, [dict(HELD_ATTEMPT_1, jobs=1)]),
-        ("manifest writer: run says 1, owner says 2", run_json(), 1, 2, [HELD_ATTEMPT_1]),
-        ("manifest writer: attempt 3", run_json(run_attempt=3), 1, 3, [HELD_ATTEMPT_1, dict(HELD_ATTEMPT_1, run_attempt=2)]),
-        ("manifest writer: attempt not numeric", run_json(), 1, "x", []),
+        ("manifest writer: approved run, attempt 1", run_json(), 0, 1, [], A_OK, ZIP),
+        ("manifest writer: other head", run_json(head_sha="b2" * 20), 1, 1, [], A_OK, ZIP),
+        ("manifest writer: push event", run_json(event="push"), 1, 1, [], A_OK, ZIP),
+        ("manifest writer: failed run", run_json(conclusion="failure"), 1, 1, [], A_OK, ZIP),
+        ("manifest writer: attempt 2 not asked for", run_json(run_attempt=2), 1, 1, [], A_OK, ZIP),
+        ("manifest writer: other branch", run_json(head_branch="x"), 1, 1, [], A_OK, ZIP),
+        ("manifest writer: other repository", run_json(repository={"full_name": "o/other"}), 1, 1, [], A_OK, ZIP),
+        ("manifest writer: fork head", run_json(head_repository={"full_name": "f/r"}), 1, 1, [], A_OK, ZIP),
+        ("manifest writer: other workflow", run_json(path=".github/workflows/lab-gate-pr.yml"), 1, 1, [], A_OK, ZIP),
+        ("manifest writer: attempt 2 after held attempt 1", run_json(run_attempt=2), 0, 2, [HELD_ATTEMPT_1], A_OK, ZIP),
+        ("manifest writer: attempt 2, no history", run_json(run_attempt=2), 1, 2, [], A_OK, ZIP),
+        ("manifest writer: attempt 2, attempt 1 had a job", run_json(run_attempt=2), 1, 2, [dict(HELD_ATTEMPT_1, jobs=1)], A_OK, ZIP),
+        ("manifest writer: run says 1, owner says 2", run_json(), 1, 2, [HELD_ATTEMPT_1], A_OK, ZIP),
+        ("manifest writer: attempt 3", run_json(run_attempt=3), 1, 3, [HELD_ATTEMPT_1, dict(HELD_ATTEMPT_1, run_attempt=2)], A_OK, ZIP),
+        ("manifest writer: attempt not numeric", run_json(), 1, "x", [], A_OK, ZIP),
+        # artifact origin
+        ("manifest writer: artifact created before the window", run_json(), 1, 1, [], arts(created_at="2025-12-31T23:59:00Z"), ZIP),
+        ("manifest writer: artifact created after the window", run_json(), 1, 1, [], arts(created_at="2026-01-01T00:05:00Z"), ZIP),
+        ("manifest writer: artifact of another head", run_json(), 1, 1, [], arts(workflow_run={"id": 123456, "head_sha": "b2" * 20}), ZIP),
+        ("manifest writer: artifact of another run", run_json(), 1, 1, [], arts(workflow_run={"id": 5, "head_sha": HEAD}), ZIP),
+        ("manifest writer: artifact expired", run_json(), 1, 1, [], arts(expired=True), ZIP),
+        ("manifest writer: no artifact", run_json(), 1, 1, [], {"artifacts": []}, ZIP),
+        ("manifest writer: two artifacts in the window", run_json(), 1, 1, [],
+         {"artifacts": A_OK["artifacts"] + [dict(A_OK["artifacts"][0], id=778)]}, ZIP),
+        ("manifest writer: one in, one outside the window", run_json(), 0, 1, [],
+         {"artifacts": A_OK["artifacts"] + [dict(A_OK["artifacts"][0], id=778, created_at="2025-01-01T00:00:00Z")]}, ZIP),
+        ("manifest writer: attempt window unreadable", run_json(updated_at=None), 1, 1, [], A_OK, ZIP),
+        ("manifest writer: zip digest malformed", run_json(), 1, 1, [], A_OK, "zz"),
     ]
-    for label, rj, want, att, prev in mcases:
+    import contextlib, io
+    for label, rj, want, att, prev, ar, zsha in mcases:
         d = build(lambda d: None)
         os.remove(os.path.join(d, "manifest.json"))
+        os.remove(os.path.join(d, "summary.txt"))   # the writer does not attach a summary
         rp = os.path.join(d, "..", "run-%d.json" % id(rj))
         pp = os.path.join(d, "..", "prev-%d.json" % id(rj))
+        ap = os.path.join(d, "..", "arts-%d.json" % id(rj))
         json.dump(rj, open(rp, "w"))
         json.dump(prev, open(pp, "w"))
-        import contextlib, io
+        json.dump(ar, open(ap, "w"))
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-            got = write_manifest_from_run(d, rp, "o/r", HEAD, att, pp)
+            got = write_manifest_from_run(d, rp, "o/r", HEAD, att, pp, ap, zsha)
         ok = got == want
         print("%-4s %-52s want=%s got=%s" % ("ok" if ok else "FAIL", label, want, got))
         bad += 0 if ok else 1
-    print("SELFTEST %s (%d cases)" % ("FAILED" if bad else "OK", len(cases) + len(extra) + len(mcases)))
+        if want == 0:
+            ck = overall(evaluate(d, HEAD, SHA, "o/r", 123456, att))
+            ok = ck == INC   # every channel but the not-yet-attached summary is read
+            print("%-4s %-52s want=%s got=%s" % ("ok" if ok else "FAIL", "  (the written manifest is accepted by the reader)", INC, ck))
+            bad += 0 if ok else 1
+    # owner-supplied attempt on the summary attachment
+    for label, att_arg, want in (("attach-summary: right run and attempt", 1, 0),
+                                 ("attach-summary: wrong attempt", 2, 2),
+                                 ("attach-summary: attempt not numeric", "x", 2)):
+        d = build(lambda d: None)
+        os.remove(os.path.join(d, "summary.txt"))
+        mm = json.load(open(os.path.join(d, "manifest.json"))); mm.pop("summary")
+        json.dump(mm, open(os.path.join(d, "manifest.json"), "w"))
+        sp = os.path.join(d, "..", "sum-%d.txt" % id(label))
+        open(sp, "w").write(TOKEN + "\n")
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            got = attach_summary(d, sp, 123456, att_arg)
+        ok = got == want
+        print("%-4s %-52s want=%s got=%s" % ("ok" if ok else "FAIL", label, want, got))
+        bad += 0 if ok else 1
+        if want == 0:
+            ck = overall(evaluate(d, HEAD, SHA, "o/r", 123456, 1))
+            ok = ck == "PK MET"
+            print("%-4s %-52s want=PK MET got=%s" % ("ok" if ok else "FAIL", "  (the attached summary is read as MET)", ck))
+            bad += 0 if ok else 1
+    print("SELFTEST %s" % ("FAILED" if bad else "OK"))
     return 1 if bad else 0
 
 
@@ -587,17 +773,22 @@ def main(argv):
         return selftest()
     args = argv[1:]
     if args and args[0] == "--write-manifest":
-        if len(args) != 7:
+        if len(args) != 9:
             print(__doc__, file=sys.stderr)
             return 2
         return write_manifest_from_run(*args[1:])
+    if args and args[0] == "--pick-artifact":
+        if len(args) != 4:
+            print(__doc__, file=sys.stderr)
+            return 2
+        return pick_artifact_main(*args[1:])
     if args and args[0] == "--check-run":
         if len(args) != 6:
             print(__doc__, file=sys.stderr)
             return 2
         return check_run_main(*args[1:])
     if args and args[0] == "--attach-summary":
-        if len(args) != 4:
+        if len(args) != 5:
             print(__doc__, file=sys.stderr)
             return 2
         return attach_summary(args[1], args[2], args[3])

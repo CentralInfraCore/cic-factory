@@ -20,6 +20,9 @@ A #85 (06m, 4.6b csomag) mergelve (7d83465), a csomag az X repón (`CIC-Security
 - Kötelező, független `--expect-attempt` bemenet az olvasónak; hiánya `INCOMPLETE`.
 - A letöltés és a manifest ugyanahhoz a kísérlethez kötött (a kísérlet-specifikus API végpontok: `runs/ID/attempts/N`, `.../jobs`, napló `--attempt N`).
 - A korábbi kísérletek állapotának rögzítése a manifestben.
+- (review F1) A letöltés a futás aktuális kísérletét a gyűjtés előtt és után is ellenőrzi; az artifact egyedi azonosítóval választott (a kísérlet időablakán belül létrehozott egyetlen), a manifest rögzíti az azonosítót és az eredet adatait; bizonytalan eredet esetén fail-closed.
+- (review F2) A manuálisan csatolt összegzéshez a tulajdonos explicit kísérletszámot ad; az olvasó egyezteti a manifesttel és az `--expect-attempt` értékével; a manuális eredet jelölése megmarad.
+- (review F3) A diagnosztikai üzenet a tényleges kísérletszámot írja.
 - A 2. kísérlet elfogadásának további feltétele: az 1. kísérlet `completed` / `action_required`, nulla jobbal. 3. vagy későbbi kísérlet nem fogadható el.
 - Negatív tesztek minden új elfogadási feltételre; a többi integritásellenőrzés (futásazonosító, repó, head SHA, digest, csatornák) változatlan.
 
