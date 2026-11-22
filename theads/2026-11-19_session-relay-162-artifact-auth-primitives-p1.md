@@ -2,7 +2,7 @@
 
 **Utólag készült**, a session `.jsonl` transcriptjéből (`~/.claude-personal/projects/-home-sinkog-sync-claude-factory-CIC-workdir-jobs-relay-issue-queue-01-workspace/81f1ed93-1498-4a48-9550-a87d4d857869.jsonl`), nem menet közben vezetve. Az időpontok UTC-ben, a transcript időbélyegeiből. A napló a session 2026-11-19 14:55-i szakaszától indul (CIC_Relay #162 modul-artifact hitelesítés: Relay #215–#219, cic-primitives #36–#47, Forms #166–#168, P1 pattern-profil, O5 motorválasztás); a session korábbi, 2026-11-14 – 2026-11-16 közötti szakasza (a privát biztonsági lelet kezelése) szándékosan nincs benne.
 
-A napló csak transcript: a felhasználó üzenetei (a beillesztett külső review-kkal szó szerint, a `<bash-input>` parancsokkal együtt) és Claude szöveges válaszai, időrendben. Eszközhívás és eszközkimenet, rendszer-emlékeztető, task-notification és a kontextus-összegzések nem szerepelnek. A PR-ok és a git-történet marad a forrás; ez a napló az interakció nyoma. Állapot a naplózás végén (2026-11-22): cic-primitives #46 mergelve (fe7e5ea); #47 (O5 motorválasztás) mergelve (55fee44), E1-E3 GO; #48 (O2 méretszabály Pi<=2048, O3 hibakódok és precedencia) mergelve (865ed47), O2/O3 GO; #49 (a pattern-profil normatív vektorkészletének vázlata: 509 vektor, 65 követelmény) mergelve (9fe89b1, jóváhagyott fej 315c3d2, post-merge gate sikeres); minden egyéb HOLD változatlan (CI-kapu, implementáció, publikálás, P2, P4, Forms #166/#167, séma-véglegesítés, Relay #162). A naplót a lezárások után újragenerálta a `tools/session-transcript.py`; a korábban commitolt részek változatlansága ellenőrizve.
+A napló csak transcript: a felhasználó üzenetei (a beillesztett külső review-kkal szó szerint, a `<bash-input>` parancsokkal együtt) és Claude szöveges válaszai, időrendben. Eszközhívás és eszközkimenet, rendszer-emlékeztető, task-notification és a kontextus-összegzések nem szerepelnek. A PR-ok és a git-történet marad a forrás; ez a napló az interakció nyoma. Állapot a naplózás végén (2026-11-22): cic-primitives #46 mergelve (fe7e5ea); #47 (O5 motorválasztás) mergelve (55fee44), E1-E3 GO; #48 (O2 méretszabály Pi<=2048, O3 hibakódok és precedencia) mergelve (865ed47), O2/O3 GO; #49 (a pattern-profil normatív vektorkészletének vázlata) mergelve (9fe89b1); #50 (az eszközlánc integritás-ellenőrzése: bájtkanárik, külső SHA-256 referencia, acceptance mód; azonos-pin vektorok) mergelve (5ffa48a, jóváhagyott fej 64e2ad1, post-merge gate sikeres); minden egyéb HOLD változatlan (CI-kapu módosítása, normatív publikálás, implementáció, profilverzió azonosítója, implementációs specifikáció, független harmadik implementáció, P2, P4, Forms #166/#167, séma-véglegesítés, Relay #162). A naplót a lezárások után újragenerálta a `tools/session-transcript.py`; a korábban commitolt részek változatlansága ellenőrizve.
 
 
 ### 2026-11-19 14:55 — Felhasználó
@@ -7829,4 +7829,607 @@ A CI-kapu, az implementáció, a vektorfájl publikálása, a P2/P4, a Forms #16
 
 ~~~~~
 A merge megtörtént, a fa-egyezés stimmel (a devel fája `ba76c3d…`, nincs különbség a jóváhagyott fejhez képest). Megvárom a post-merge gate-et.
+~~~~~
+
+
+### 2026-11-22 16:30 — Claude
+
+~~~~~
+Post-merge zöld. Frissítem a memóriát és a thread-naplót.
+~~~~~
+
+
+### 2026-11-22 16:31 — Claude
+
+~~~~~
+A #49 mergelve, a post-merge ellenőrzések rendben vannak.
+
+- **Merge:** `9fe89b1c53eed142b53cea7449b36931b60d6573` a devel-en, 2026-11-22 16:26 UTC. A jóváhagyott fej `315c3d2` volt.
+- **Post-merge gate:** a `9fe89b1`-en a gate `success` (futás: 45043897567).
+- **Fa-egyezés:** a devel fája (`ba76c3d…`) megegyezik a jóváhagyott fej fájával, nincs különbség.
+- **Memória:** frissítve (`MEMORY.md` és `project_162_artifact_auth_plan.md`), a #49 állapotával, a rögzített döntésekkel, a következő csomaggal és a review függetlenségi megjegyzésével.
+- **Thread-napló:** újragenerálva a `006a17c` helyi commitban, push nélkül. A korábban commitolt rész változatlan, a titokkeresés 0 találat.
+
+**Rögzített döntések:**
+- Az 509 vektor a megfelelőségi referencia tervezete.
+- Azonos pin külön deklarációkból elfogadható, eltérő pin elutasítandó.
+- A duplikált YAML-kulcs a dokumentumolvasó dolga.
+- A Π = 0 megengedett.
+- A beágyazott contractok sorrendje az implementációs specifikációra vár.
+- A profilverzió azonosítója a pin-döntésre vár.
+- Az elérhetetlen anchor-ágak nem részei a normatív szemantikának.
+
+**Állapot:** nincs nyitott PR. Az azonos-pin vektor a következő, külön csomagban kerül be. A harmadik implementációt egy valóban független fejlesztő kapja, csak a specifikációt és a vektorokat.
+
+**Egy észrevétel:** a `\u` escape-korrupció a Bash-bemeneten is előfordult, nem csak a Write/Edit-en. Ezt a memóriába is felvettem, és az ASCII-kódolás-ellenőrzés a vektoreszközben ezért fontos.
+
+A CI-kapu, az implementáció, a vektorfájl publikálása, a P2/P4, a Forms #166/#167, a séma-véglegesítés és a Relay #162 implementáció HOLD marad. Új lépést csak kifejezett GO-ra indítok. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 16:39 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+A #49 lezárását elfogadom a jelentett post-merge ellenőrzések alapján.
+
+P1 – jelenlegi állapot
+Terület    Állapot
+O1–O6 architekturális döntések    LEZÁRVA
+Feldolgozási korlátok és hibakódok    LEZÁRVA
+509 megfelelőségi vektor tervezete    ELFOGADVA
+Azonos pin szemantikája    ELDÖNTVE
+Független harmadik implementáció    HOLD
+Profilverzió azonosítója    NYITOTT
+Implementációs specifikáció    HOLD
+Normatív vektorok publikálása és CI-kapu    HOLD
+
+A \u escape-korrupció fontos megfigyelés. Az ellenőrzésnek az eredeti bájtsorozat megőrzésére is ki kell terjednie, mert önmagában az ASCII-ellenőrzés nem mutat ki minden escape-sérülést.
+
+Javasolt következő lépések:
+1. A profilverzió azonosítójának véglegesítése.
+2. Az implementációs specifikáció lezárása.
+3. A hiányzó megfelelőségi vektorok elkészítése.
+4. Független, harmadik implementáció.
+5. Eredmények összevetése.
+6. Normatív vektorkészlet és CI-kapu véglegesítése.
+Az eredeti architekturális irány változatlan: a Primitives a key:value páros kulcsához tartozó feldolgozási paraméterek determinisztikus szemantikáját határozza meg.
+
+Minden meglévő HOLD érvényben marad. A fenti sorrend javaslat, nem végrehajtási GO.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 16:40 — Claude
+
+~~~~~
+A P1 állapottáblázatát és a sorrendet tudomásul veszem, nem végrehajtási GO-nak kezelem. Nem indítok új lépést.
+
+Igazad van az escape-korrupcióról. A `\u0041` sima `A`-vá alakult, az ASCII, tehát az ASCII-ellenőrzés átengedte volna. Én a fájl újraolvasásával vettem észre, nem az ellenőrző. A megfigyelést felvettem a memóriába (`feedback_write_edit_unicode_escape_corruption.md`), a Bash-bemeneti előfordulással együtt.
+
+**A következő vektor-csomagban javasolt bájtmegőrzési ellenőrzés:**
+- A `check_vectors.py` kapjon kanári-vektorokat, amelyek szövege szó szerint backslash + `u0041`, `x41` és hasonló escape-szekvencia. Ezeket a fájl bájtjaihoz kell kötni, nem a dekódolt értékhez.
+- Alternatíva az írás előtti és utáni hash-összevetés.
+- Ugyanebbe a csomagba kerül az azonos-pin vektor is.
+
+Ez javaslat, a döntés a tiéd.
+
+**Állapot:** nincs nyitott PR, a devel `9fe89b1`. A helyi thread-napló commitja (`006a17c`) nincs pusholva. A HOLD-ok változatlanok: a profilverzió azonosítója, az implementációs specifikáció, a független harmadik implementáció, a vektorok publikálása és a CI-kapu. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 16:41 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**Döntés: mindkét ellenőrzési mechanizmus GO a következő vektorcsomag tartalmi követelményeként.**
+
+A két mechanizmus eltérő hibát fed le:
+
+- **Bájtszintű kanári:** az escape-szekvenciák elvárt reprezentációjának ellenőrzése, dekódolás előtt.
+- **SHA-256 összevetés:** a jóváhagyott eredeti bájtsorozat sértetlenségének ellenőrzése írás után.
+
+Követelmények:
+
+- A kanári elvárt bájtsorozata független legyen a potenciálisan hibás írási mechanizmustól.
+- A hash referenciaértéke ne a már kiírt fájlból származzon.
+- Negatív teszt igazolja, hogy a `\u0041` → `A` átalakulást az ellenőrző elutasítja.
+- Az ellenőrző ne javítsa automatikusan a sérült tartalmat.
+- Az azonos-pin vektor ugyanezen csomag része legyen.
+
+Ez az eszközlánc integritásának ellenőrzése, nem a Primitives szemantikájának bővítése.
+
+**A végrehajtás és minden korábbi HOLD változatlan.**
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 16:41 — Claude
+
+~~~~~
+A döntést rögzítettem a memóriában (`project_162_artifact_auth_plan.md`). Még nem indítottam el a csomagot, mert az utolsó mondatod („A végrehajtás … HOLD változatlan") szerint a végrehajtás külön GO-t kér.
+
+**A rögzített követelmények a következő vektorcsomaghoz:**
+- **Bájtszintű kanári:** az escape-szekvenciák elvárt bájtjait dekódolás előtt ellenőrzi. Az elvárt bájtsorozat független az írási mechanizmustól.
+- **SHA-256 összevetés:** a hash referenciaértéke nem a kiírt fájlból származik. Írás után a jóváhagyott eredeti bájtok sértetlenségét ellenőrzi.
+- **Negatív teszt:** a `\u0041` → `A` átalakulást az ellenőrző elutasítja.
+- **Nincs automatikus javítás:** az ellenőrző nem javítja a sérült tartalmat.
+- **Azonos-pin vektor:** ugyanebben a csomagban kerül be.
+- **Hatókör:** ez az eszközlánc integritásának ellenőrzése, a Primitives szemantikája nem bővül.
+
+**Egy tervezési kérdés, amit indulás előtt rögzíteni kell:** a „független referencia" két forrásból jöhetne.
+- **Az eszközön kívüli referenciabájtok:** a jóváhagyott hash-ek a review-ban, a PR-leírásban vagy a tulajdonosi jóváhagyásban szerepelnének. Ez a legerősebb.
+- **A script maga:** a hash a futtató scriptben, bájtkonstansként. Ez gyengébb, mert a script is átmegy ugyanazon a mechanizmuson.
+
+Javaslatom az első. Ehhez a jóváhagyott vektorfájl hash-ét a csomag nyitásakor külön kiírom a leírásba, és te vagy a review rögzíted. Ez a tervezési döntés a csomag indításakor, a GO-val együtt eldönthető.
+
+Indítsam a csomagot, vagy várok külön GO-ra? A HOLD-ok változatlanok: a CI-kapu, az implementáció, a vektorfájl publikálása, a profilverzió azonosítója, az implementációs specifikáció és a harmadik implementáció. Az időbizonyíték-döntés külön, hétfőre esedékes.
+~~~~~
+
+
+### 2026-11-22 16:42 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**GO – a következő vektorcsomag elkészítésére.**
+
+A külső referencia alkalmazását jóváhagyom. A scriptbe ágyazott hash önmagában nem megfelelő bizalmi alap.
+
+Feltételek:
+
+- A referencia SHA-256 az írást megelőző, független bájtsorozatból származzon.
+- A referenciaérték kerüljön a PR-leírásba, és a review során ellenőrizzük.
+- A bájtszintű kanárik és a negatív tesztek legyenek reprodukálhatók.
+- Kizárólag az eszközlánc integritásának ellenőrzése és az azonos-pin vektor kerüljön a csomagba.
+- A meglévő 509 vektor tartalma és elvárt eredménye változatlan maradjon.
+
+**Engedélyezett:** elkészítés, lokális tesztelés, commit, push, PR-nyitás.
+
+**HOLD:** merge, CI-kapu módosítása, normatív publikálás, implementáció és minden korábban rögzített HOLD.
+
+A PR elkészültekor kérem a SHA-hoz kötött review-csomagot.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 16:44 — Claude
+
+~~~~~
+GO, elkészítem a csomagot. Hatókör: az integritás-ellenőrzés (bájtkanári, külső SHA-256) és az azonos-pin vektor, a meglévő 509 vektor változatlanul. A push és a PR-nyitás engedélyezett, a merge HOLD. Az írás előtti referencia-bájtsorozathoz a jóváhagyott `9fe89b1`-es fájlból indulok, a hash-t a memóriában számolom ki a kiírás előtt.
+~~~~~
+
+
+### 2026-11-22 16:50 — Claude
+
+~~~~~
+A csomag helyben kész és commitolva, de nincs pusholva és nincs PR. A push parancsot a rendszer elutasította, ezért nem próbáltam újra. A PR-leírás elkészült.
+
+- **Ág:** `docs/grammar-pattern-vectors-integrity`, a devel `9fe89b1`-ről.
+- **Fej:** `60a445acef101a991182a00e1566ef4b2350a4d3`, csak `docs/`.
+- **Tesztek:** a teljes készlet 943 passed. A `sha256sum -c` tiszta.
+
+**Referencia-értékek** (a PR-leírásban is szerepelnek):
+- **Jóváhagyott vektorfájl** (a #49 merge-elt git-objektuma): `bea100d469b427f738af397451fcb92d9b262397b95cf2c7e88d9bb6aff69607`.
+- **Új vektorfájl:** `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`. Ezt a szándékolt bájtokból számoltam ki a memóriában az írás előtt: a jóváhagyott bájtok plusz a beszúrások. Utána kiírtam, visszaolvastam és összevetettem. A commitolt blob hash-e egyezik vele.
+
+**Elkészült:**
+- **Bájtszintű kanárik** (`integrity_check.py`):
+  - Nyolc escape-alakú szöveg nyers bájtjait ellenőrzi dekódolás előtt.
+  - A két dokumentum prózában idézett szekvenciáját is védi.
+  - Az elvárt bájtok egész számként vannak a scriptben, így nem függnek az írási mechanizmustól.
+- **Külső SHA-256 referencia:** a referenciát az `--expect-sha256` kapcsoló vagy az `integrity-reference.json` adja, soha nem az ellenőrzött fájl. Az ellenőrző csak olvas, és nem javít.
+- **Meglévő vektorok változatlansága** (`verify_unchanged.py`):
+  - A 509 vektor, a 65 követelmény és a metaadatok bejegyzésenként egyeznek a merge-elt fájllal.
+  - A jóváhagyott sorok sorrendben részsorozatok.
+  - A vektorfájlra a `git diff --numstat` szerint 5 hozzáadás és 0 törlés jött.
+- **Azonos-pin vektorok:**
+  - A `declared` pin-állapot azonos verziók listája, az új követelmény az `R-PIN-IDENTICAL`.
+  - `S-017` (kettő azonos, elfogadva), `S-018` (három azonos, elfogadva), `S-019` (azonos ismeretlen verzió, `pattern_profile_unknown`), `S-020` (azonos pin, a 2. contract elutasítva).
+  - A különböző deklarációk maradnak a `conflict` állapot, ezek a vektorok változatlanok.
+
+**Reprodukálható negatív tesztek** (`selftest_integrity.py`, 22/22):
+- **Szimulált korrupció:** a `\u0041` → `A` átalakítást mindkét mechanizmus elutasítja, külön-külön is.
+- **A két mechanizmus különbözik:** a kanárik által nem fedett hibát csak a SHA-256 látja.
+- **A referencia forrása:** a sérült fájlból számolt referencia átmegy a SHA-256-on, a kanári mégis elutasítja. Ez mutatja, miért kell a referenciának az írás előttről jönnie.
+- **Nincs javítás:** a sérült másolat bájtra változatlan marad.
+- **Változatlansági ellenőrzés:** hat beültetett eltérést utasít el.
+- **Infrastruktúra:** a hiányzó fájl, a hiányzó referencia és a hiányzó objektum exit 2, nem detekció.
+
+**Konformancia:** a prototípus, a szövegből írt implementáció, a Go és a Rust a 513 vektoron és 296 natív eseten 0 eltérést adott. A vektor-önteszt 43/43.
+
+**Push és PR-nyitás (te futtatod):**
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push -u origin docs/grammar-pattern-vectors-integrity && gh pr create --repo CentralInfraCore/cic-primitives --base devel --head docs/grammar-pattern-vectors-integrity --title "docs(pattern): P1 tool-chain integrity checks and the identical-pin vectors" --body-file [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-vectors-integrity.md
+```
+
+Ha engedélyezed, hogy a push-t és a PR-nyitást én futtassam, szólj. Eddig mindig te futtattad, és ez a parancs is elutasításba ütközött. A push után a gate-et az új fejre figyelem, és összeállítom a SHA-hoz kötött review-csomagot. Mergelni nem fogok.
+
+A merge, a CI-kapu módosítása, a normatív publikálás, az implementáció és minden korábbi HOLD változatlan. Az időbizonyíték-döntés külön, hétfőre esedékes.
+~~~~~
+
+
+### 2026-11-22 17:11 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push -u origin docs/grammar-pattern-vectors-integrity && gh pr create --repo CentralInfraCore/cic-primitives --base devel --head docs/grammar-pattern-vectors-integrity --title "docs(pattern): P1 tool-chain integrity checks and the identical-pin vectors" --body-file [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-vectors-integrity.md</bash-input>
+~~~~~
+
+
+### 2026-11-22 17:11 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'docs/grammar-pattern-vectors-integrity' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-primitives/pull/new/docs/grammar-pattern-vectors-integrity        
+remote: 
+To github.com:CentralInfraCore/cic-primitives.git
+ * [new branch]      docs/grammar-pattern-vectors-integrity -&gt; docs/grammar-pattern-vectors-integrity
+branch 'docs/grammar-pattern-vectors-integrity' set up to track 'origin/docs/grammar-pattern-vectors-integrity'.
+https://github.com/CentralInfraCore/cic-primitives/pull/50</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 17:15 — Claude
+
+~~~~~
+A PR megnyílt, és a gate zöld. A SHA-hoz kötött review-csomagot lent állítottam össze.
+
+## Review-csomag: cic-primitives #50
+
+https://github.com/CentralInfraCore/cic-primitives/pull/50
+
+| Ellenőrzés | Eredmény |
+|---|---|
+| Fej | `60a445acef101a991182a00e1566ef4b2350a4d3` |
+| Base | `devel` (`9fe89b1c53eed142b53cea7449b36931b60d6573`) |
+| Gate | 45048047269, `success`, a `headSha` egyezik a fejjel |
+| Mergelhető | igen, állapot `clean` |
+| Méret | 18 fájl, +410 / −30 sor |
+| Hatókör | csak `docs/`, meglévő nem-docs fájlhoz nem nyúltam |
+| Teljes tesztkészlet | 943 passed |
+
+**Referencia-hash-ek, a GitHub origin fejről újraszámolva:**
+- **Jóváhagyott vektorfájl** (`9fe89b1`, a merge-elt git-objektum): `bea100d469b427f738af397451fcb92d9b262397b95cf2c7e88d9bb6aff69607`.
+- **Új vektorfájl** (a pusholt fejen): `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`. Ez egyezik a PR-leírásban és az `integrity-reference.json`-ban lévő, az írás előtt a memóriában számolt értékkel.
+
+**A review ellenőrizheti, a repó eszközei nélkül:**
+- `git show <fej>:docs/design/pattern-profile-vectors/pattern-profile.yaml | sha256sum` az új hash-t adja.
+- `git show 9fe89b1c53eed142b53cea7449b36931b60d6573:docs/design/pattern-profile-vectors/pattern-profile.yaml | sha256sum` a jóváhagyott hash-t adja.
+- `git diff --numstat 9fe89b1 <fej> -- docs/design` a vektorfájlra 5 hozzáadást és 0 törlést mutat.
+
+**Reprodukálható futtatások** (a `docs/evidence/pattern-vectors/` könyvtárból):
+- `python3 integrity_check.py --docs ../..` → exit 0.
+- `python3 verify_unchanged.py` → a 509 vektor, a 65 követelmény és a metaadatok változatlanok, a hozzáadott elemek `S-017`–`S-020` és `R-PIN-IDENTICAL`.
+- `python3 selftest_integrity.py` → 22/22.
+- `python3 selftest_vectors.py` → 43/43 (a Go/Rust-hoz kell az `engine_env.sh`).
+- `python3 conform.py` → 513 vektor és 296 natív eset, 0 eltérés.
+
+**Feltételek:**
+- A referencia az írás előtti bájtsorozatból származik, és a PR-leírásban szerepel.
+- A kanárik és a negatív tesztek reprodukálhatók, a `\u0041` → `A` átalakítást mindkét mechanizmus elutasítja.
+- A csomag csak az integritás-ellenőrzést és az azonos-pin vektort tartalmazza.
+- A meglévő 509 vektor tartalma és elvárása változatlan.
+
+**Két korlát, amit a leírás kimond:**
+- A scriptek és dokumentumok hash-ei az írás utáni, committolt blobokból számoltak, ezért ezek csak származási adatok. Az írás előtti referencia kizárólag a vektorfájlé.
+- Az ellenőrzés a vizsgált fájlok integritását védi, más útvonalon írt fájlokét nem.
+
+**Kérem:**
+1. Tartalmi review a #50-re. Érdemes külön nézni a referencia származását (írás előtti-e), és a „sérült fájlból számolt referencia" esetet.
+2. SHA-hoz kötött merge-jóváhagyás a `60a445a` fejre, ha rendben van. Mergelni nem fogok.
+
+A merge, a CI-kapu módosítása, a normatív publikálás, az implementáció és minden korábbi HOLD változatlan. A thread-naplót és a memóriát a #50 lezárása után frissítem. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 17:19 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+cic-primitives #50 – Review
+Döntés: REQUEST CHANGES – két szűk körű javítás szükséges.
+
+A vektorcsomag tartalmát és az architekturális irányt elfogadom. Az integritás-ellenőrző bizalmi határán azonban két pontosítást kérek a merge előtt.
+1. Független ellenőrzés
+A GitHubról közvetlenül lekértem a két commit vektorfájljának nyers tartalmát, és a repository ellenőrző eszközeitől függetlenül újraszámoltam az SHA-256 értékeket.
+Ellenőrzés    Eredmény
+PR head: 60a445a    PASS
+Base: 9fe89b1    PASS
+Gate: 45048047269    PASS
+Hatókör: 18 fájl, kizárólag docs/    PASS
+Változás: +410 / −30 sor    PASS
+Eredeti vektorfájl: 71 310 bájt    PASS
+Új vektorfájl: 72 268 bájt    PASS
+
+Függetlenül kiszámolt SHA-256 értékek:
+
+Régi:
+
+bea100d469b427f738af397451fcb92d9b262397b95cf2c7e88d9bb6aff69607
+
+Új:
+
+e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0
+
+Mindkettő pontosan egyezik a PR-leírásban rögzített referenciával.
+
+A hash egyezése bizonyított. Az írás előtti keletkezés időrendje viszont továbbra is a készítő által dokumentált származási állítás, amelyet a végleges fájl hash-e önmagában nem bizonyít.
+2. Review findings
+F1 – A referencia bizalmi határának pontosítása
+Súlyosság: Medium
+
+Az integrity_check.py jelenleg elfogadja a --reference kapcsolóval átadott referenciafájlt anélkül, hogy annak származását ellenőrizné.
+
+A negatív teszt ezt helyesen demonstrálja: a sérült fájlból számolt hash átmegy a SHA-256 ellenőrzésen.
+
+A dokumentáció viszont azt állítja, hogy az ilyen referenciaforrást az eszköz elutasítja. Ez technikailag nem igaz: az eszköz nem tudja megállapítani a referencia keletkezésének időpontját.
+
+Elvárt javítás:
+- A dokumentáció különböztesse meg a referencia ellenőrzését és hitelesítését.
+- A review elfogadási futtatása explicit --expect-sha256 paraméterrel történjen, a függetlenül jóváhagyott értékkel.
+- A repository referenciafájlja önmagában ne számítson független bizalmi alapnak.
+F2 – Mindkét ellenőrzés kikapcsolható
+Súlyosság: Medium
+
+A következő paraméterkombináció ellenőrzés nélkül is sikeres kilépést eredményezhet:
+python3 integrity_check.py --no-canary --no-sha
+
+
+A program ilyenkor beolvassa a fájlt, de egyik integritási ellenőrzést sem végzi el, majd all expectations held eredményt ad.
+
+Elvárt javítás:
+- A két kapcsoló együttes használata legyen tiltott.
+- Kilépési kód: 2 – INCOMPLETE.
+- Kerüljön hozzá reprodukálható negatív teszt.
+Az egyenkénti kikapcsolhatóságot a negatív tesztek miatt meg kell tartani.
+3. Azonos-pin vektorok
+Mind a négy új vektor tartalmilag elfogadva.
+Vektor    Szemantika    Review
+S-017    Két azonos ismert pin    PASS
+S-018    Három azonos ismert pin    PASS
+S-019    Azonos, de ismeretlen pin    PASS
+S-020    Azonos pin, hibás második contract    PASS
+
+A vektorok nem vezetnek be új Primitives-szemantikát, kizárólag a korábbi tulajdonosi döntést teszik ellenőrizhetővé.
+
+A meglévő 509 vektor módosítását a diffben nem találtam.
+4. Összesített értékelés
+Terület    Állapot
+Hatókör    PASS
+Referencia-hash-ek egyezése    PASS
+Bájtszintű kanárik    PASS
+Meglévő vektorkészlet megőrzése    PASS
+Azonos-pin szemantika    PASS
+Dokumentált negatív tesztek    PASS
+Referencia bizalmi határa    F1
+Fail-closed működés    F2
+
+GO kizárólag F1 és F2 javítására, lokális tesztelésére és a meglévő PR frissítésére.
+
+A vektorfájl maradjon változatlan, a most függetlenül ellenőrzött SHA-256 értéket őrizzük meg.
+
+Merge és minden korábbi HOLD változatlan.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 17:19 — Claude
+
+~~~~~
+Elfogadom az F1–F2-t, a vektorfájl változatlan marad (`e7ece43a…`). A tool a referencia ellenőrzését és hitelesítését külön kezeli, az `--acceptance` mód explicit `--expect-sha256` értéket kér, és a két kapcsoló együtt tiltott.
+~~~~~
+
+
+### 2026-11-22 17:22 — Claude
+
+~~~~~
+A javítás commitolva, a vektorfájl érintetlen. Most a frissített PR-leírást írom meg az új hash-ekkel és az elfogadási futtatás parancsával.
+~~~~~
+
+
+### 2026-11-22 17:23 — Claude
+
+~~~~~
+A javítás kész és commitolva, de nincs pusholva. A PR-leírás is frissült.
+
+- **Új fej:** `64e2ad1ca370168a4f6cb757e264e173f0937e89`, a szülője `60a445a`.
+- **Hatókör:** csak `docs/`. Az ellenőrző, az önteszt, a két dokumentum, a README, az eredmények és a `SHA256SUMS` változott.
+- **Vektorfájl:** változatlan. A `git diff --numstat 60a445a HEAD -- docs/design` üres, a SHA-256 továbbra is `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`.
+- **Tesztek:** a teljes készlet 943 passed. A `sha256sum -c` tiszta.
+
+**F1 – az ellenőrzés nem hitelesítés** (a review-nak igaza volt):
+- **Tévedés:** a korábbi dokumentáció azt állította, hogy az eszköz elutasítja az utólag számolt referenciát. Ez technikailag nem igaz, mert az eszköz nem tudja megállapítani a referencia keletkezésének idejét.
+- **Javítás a dokumentációban:** a tool *ellenőrzi*, hogy a fájl egyezik a referenciával, de *nem hitelesíti* a referenciát. A hitelesítés eljárás: a PR-leírásban rögzített érték, amelyet a review a git-objektumokból függetlenül újraszámol. Az írás előtti keletkezés a készítő dokumentált állítása, és a PR-leírás ezt így is mondja ki.
+- **Új `--acceptance` mód:** explicit `--expect-sha256` értéket kér. A `--reference`-t, a kikapcsolt ellenőrzést és a hiányzó értéket elutasítja (exit 2).
+- **Alapfuttatás:** a kimenete kimondja, hogy a repository referenciafájlja nem független bizalmi alap. Az `integrity-reference.json` így nem számít független alapnak.
+- **Review-futtatás:** `python3 docs/evidence/pattern-vectors/integrity_check.py --acceptance --expect-sha256 e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0 --docs docs`. Ennek a kimenete a `results/integrity_acceptance.txt`, exit 0.
+
+**F2 – fail-closed:**
+- A `--no-canary --no-sha` együtt tiltott, exit 2 (INCOMPLETE), sérült fájlon is.
+- Az egyenkénti kikapcsolás megmarad, az önteszt ezzel mutatja, hogy a két mechanizmus különbözik.
+
+**Új reprodukálható negatív tesztek** (`selftest_integrity.py`, 31/31, volt 22):
+- a két kapcsoló együtt, tiszta és sérült fájlon is → exit 2;
+- az elfogadási futás sikeres az explicit értékkel, és ezt ki is mondja;
+- az elfogadási futás elutasított az érték nélkül, referenciafájllal és kikapcsolt kapcsolóval;
+- az elfogadási futás elutasítja a sérült fájlt a jóváhagyott értékkel;
+- a sérült fájlból vett értéket az eszköz nem tudja megkülönböztetni (a SHA-256 átmegy), a kanári viszont elutasítja;
+- az alapfuttatás kimondja, hogy csak ellenőrzés.
+
+**A PR-leírásban az új fej blob-hash-ei szerepelnek**, az írás utáni származás jelölésével. A leírás külön kimondja, hogy az írás előtti sorrend a készítő állítása, amelyet a végleges hash önmagában nem bizonyít.
+
+**Push és a PR-leírás frissítése (te futtatod, a #50 ugyanaz marad):**
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-vectors-integrity && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/50 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-vectors-integrity.md --jq .number
+```
+
+Ezt a parancsot én nem futtattam, mert az előző push-t is elutasította a rendszer. A push után a gate-et az új fejen figyelem, és összeállítom az új SHA-hoz kötött review-csomagot. Mergelni nem fogok. A merge és minden korábbi HOLD változatlan.
+~~~~~
+
+
+### 2026-11-22 17:23 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-vectors-integrity && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/50 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-vectors-integrity.md --jq .number</bash-input>
+~~~~~
+
+
+### 2026-11-22 17:23 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-primitives.git
+   60a445a..64e2ad1  docs/grammar-pattern-vectors-integrity -&gt; docs/grammar-pattern-vectors-integrity
+50</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 17:28 — Claude
+
+~~~~~
+A #50 gate-je zöld az új fejen. A SHA-hoz kötött review-csomagot lent állítottam össze.
+
+## Review-csomag: cic-primitives #50, második kör
+
+| Ellenőrzés | Eredmény |
+|---|---|
+| Fej | `64e2ad1ca370168a4f6cb757e264e173f0937e89` |
+| Base | `devel` (`9fe89b1c53eed142b53cea7449b36931b60d6573`) |
+| Gate | 45049204813, `success`, a `headSha` egyezik a fejjel |
+| Mergelhető | igen, állapot `clean` |
+| Méret | 19 fájl, +458 / −30 sor |
+| Hatókör | csak `docs/` |
+| Teljes tesztkészlet | 943 passed |
+| PR-leírás | frissítve, tartalmazza a „Verification is not authentication" részt |
+
+**Vektorfájl:**
+- A pusholt fejen a SHA-256 továbbra is `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`.
+- A `git diff --numstat 60a445a <fej> -- docs/design` üres, vagyis az előző review-fejhez képest a vektorfájl nem változott.
+
+**A review kérései:**
+- **F1:** a dokumentáció, a tool kimenete és a PR-leírás különbséget tesz az *ellenőrzés* (a fájl egyezik a referenciával) és a *hitelesítés* között. A hitelesítés a review eljárása: az explicit `--acceptance --expect-sha256` futás a függetlenül jóváhagyott értékkel. A repository referenciafájlja nem független bizalmi alap, és az alapfuttatás ezt kiírja.
+- **F2:** a `--no-canary --no-sha` együtt tiltott, exit 2, sérült fájlon is. Az egyenkénti kikapcsolás megmarad.
+
+**Reprodukálható futtatások** (a `docs/evidence/pattern-vectors/` könyvtárból):
+- `python3 integrity_check.py --acceptance --expect-sha256 e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0 --docs ../..` → exit 0.
+- `python3 integrity_check.py --no-canary --no-sha` → exit 2.
+- `python3 selftest_integrity.py` → 31/31.
+- `python3 verify_unchanged.py` → a 509 vektor, a 65 követelmény és a metaadatok változatlanok.
+
+**A leírás kimondja, hogy az írás előtti keletkezés időrendje a készítő dokumentált állítása**, amelyet a végleges fájl hash-e önmagában nem bizonyít. A review is ezt állapította meg, és a leírás ezt át is vette.
+
+**Kérem:**
+1. Új tartalmi review az F1–F2 javításokra a `64e2ad1` fején.
+2. SHA-hoz kötött merge-jóváhagyás, ha rendben van. Mergelni nem fogok.
+
+A merge, a CI-kapu módosítása, a normatív publikálás, az implementáció és minden korábbi HOLD változatlan. A thread-naplót és a memóriát a #50 lezárása után frissítem. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 17:33 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+cic-primitives #50 – Review, második kör
+APPROVE – F1 és F2 lezárva. Merge GO.
+
+A GitHubon ellenőriztem a javításokat, a commitot, a gate eredményét és a vektorfájl változatlanságát.
+1. Független ellenőrzés
+Ellenőrzés    Eredmény
+Head: 64e2ad1ca370168a4f6cb757e264e173f0937e89    PASS
+Base: 9fe89b1    PASS
+Gate: 45049204813    PASS
+Hatókör: 19 fájl, kizárólag docs/    PASS
+Méret: +458 / −30 sor    PASS
+Vektorfájl bájtszintű azonossága az előző review-fejjel    PASS
+
+Mindkét review-fejen a vektorfájl Git blob azonosítója:
+
+4637680acaee6f7854233cda390c76a1876a460f
+
+A közvetlenül lekért fájltartalmak is azonosak. A korábban függetlenül kiszámolt SHA-256 referencia változatlanul érvényes.
+2. Findings
+F1 – Referencia bizalmi határa
+CLOSED
+- A dokumentáció megkülönbözteti a verification és authentication fogalmát.
+- Az acceptance mód explicit referenciaértéket követel.
+- Az acceptance mód egyik ellenőrzés kikapcsolását sem engedélyezi.
+- A repository referenciafájlja nem minősül független bizalmi alapnak.
+- A referencia keletkezési időrendje nem szerepel bizonyított tényként.
+F2 – Ellenőrzés nélküli sikeres kilépés
+CLOSED
+Mindkét ellenőrzés együttes kikapcsolását a program már a fájl feldolgozása előtt elutasítja.
+- Kilépési kód: 2.
+- Ép és sérült fájlon egyaránt tesztelt.
+- Az egyenkénti kikapcsolás megmaradt.
+A commitolt eredményekben mind a 31 önellenőrzés sikeres. Új blokkoló hibát nem találtam.
+3. SHA-hoz kötött merge-jóváhagyás
+APPROVED
+
+CentralInfraCore/cic-primitives #50
+Jóváhagyott commit64e2ad1ca370168a4f6cb757e264e173f0937e89
+
+F1–F2
+
+CLOSED
+
+Merge
+
+GO
+
+
+A merge a jóváhagyott fejhez kötve végrehajtható:
+gh pr merge 50 \
+  --repo CentralInfraCore/cic-primitives \
+  --merge \
+  --match-head-commit 64e2ad1ca370168a4f6cb757e264e173f0937e89
+
+
+Merge után kérem a szokásos faegyezést, post-merge gate-et és a memória, illetve a thread-napló aktualizálását.
+
+A CI-kapu módosítása, a normatív publikálás, az implementáció, a profilverzió véglegesítése és minden egyéb korábbi HOLD változatlan.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 17:33 — Claude
+
+~~~~~
+A review jóváhagyta a `64e2ad1` fejet, és a merge-et „GO"-nak jelöli. A merge-et a megszokott módon te futtatod, mert nem kértél kifejezetten, hogy én mergeljek:
+
+```
+! gh pr merge 50 --repo CentralInfraCore/cic-primitives --merge --match-head-commit 64e2ad1ca370168a4f6cb757e264e173f0937e89
+```
+
+A `--match-head-commit` miatt elutasít, ha a fej közben elmozdult. Ha inkább azt szeretnéd, hogy én futtassam, szólj, és megteszem. Az előző push-ot a rendszer elutasította, ezért a merge-et sem indítom magamtól.
+
+A merge után ezeket végzem el:
+1. Post-merge gate a devel merge-commitján.
+2. Fa-egyezés ellenőrzése a jóváhagyott fejjel. Külön megnézem, hogy a vektorfájl SHA-256 értéke `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`-e a devel-en.
+3. Memória frissítése: #50 mergelve, az F1/F2 tanulságai (az ellenőrzés nem hitelesítés, a fail-closed kapcsolók), az azonos-pin vektorok bekerülése.
+4. Thread-napló újragenerálása helyi commitként, push nélkül.
+
+A CI-kapu módosítása, a normatív publikálás, az implementáció, a profilverzió véglegesítése és minden korábbi HOLD változatlan. Az időbizonyíték-döntés külön, hétfőre esedékes.
+~~~~~
+
+
+### 2026-11-22 17:33 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 50 --repo CentralInfraCore/cic-primitives --merge --match-head-commit 64e2ad1ca370168a4f6cb757e264e173f0937e89</bash-input>
+~~~~~
+
+
+### 2026-11-22 17:33 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 17:33 — Claude
+
+~~~~~
+A merge megtörtént. A fa-egyezés stimmel, és a vektorfájl SHA-256 értéke a devel-en `e7ece43a…`. Megvárom a post-merge gate-et.
 ~~~~~
