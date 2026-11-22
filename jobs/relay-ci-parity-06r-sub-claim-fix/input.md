@@ -2,7 +2,7 @@
 
 ## Kontextus
 
-Az első M-E1 mérési futás (45063800073, a labor X repó, `me1-evidence.yml`, 1. kísérlet, `success`) bizonyítékának kiolvasása `EVIDENCE NOT BOUND (NOT MET)` lett egyetlen sor miatt: a token `sub` állítása a **numerikus tulajdonos- és repó-azonosítót is tartalmazza** (`repo:OWNER@OWNERID/REPO@REPOID:ref:refs/heads/main`), az olvasó a dokumentált egyszerű alakot várta (`repo:OWNER/REPO:ref:refs/heads/main`). Az azonosítók egyeznek az API-éval és a `repository_id`/`repository_owner_id` állításokkal; a többi 22 ellenőrzés `MET`. A hiba az olvasó dokumentációra épülő elvárásában volt, nem a platformbizonyíték kötésében. Tulajdonosi GO (2026-11-22): az olvasó `sub`-elvárásának javítása külön PR-ban. K-5: 8/300.
+Az első M-E1 mérési futás (45063800073, a labor X repó, `me1-evidence.yml`, 1. kísérlet, `success`) bizonyítékának kiolvasása `EVIDENCE NOT BOUND (NOT MET)` lett egyetlen sor miatt: a token `sub` állítása a **numerikus tulajdonos- és repó-azonosítót is tartalmazza** (`repo:OWNER@OWNERID/REPO@REPOID:ref:refs/heads/main`), az olvasó a dokumentált egyszerű alakot várta (`repo:OWNER/REPO:ref:refs/heads/main`). Az azonosítók egyeznek az API-éval és a `repository_id`/`repository_owner_id` állításokkal; a többi 21 ellenőrzés `MET` (a PR-leírás és ez a szöveg eredetileg tévesen 22-t írt; javítva a 06s jelentésben, errata). A hiba az olvasó dokumentációra épülő elvárásában volt, nem a platformbizonyíték kötésében. Tulajdonosi GO (2026-11-22): az olvasó `sub`-elvárásának javítása külön PR-ban. K-5: 8/300.
 
 ## Hatókör
 
