@@ -1,0 +1,14 @@
+name: lab-gate-pr
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  lab-gate:
+    name: lab-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: gate
+        run: echo "lab-gate on pull_request, the check exists"
