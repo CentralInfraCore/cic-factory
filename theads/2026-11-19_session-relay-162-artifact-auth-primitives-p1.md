@@ -2,7 +2,7 @@
 
 **Utólag készült**, a session `.jsonl` transcriptjéből (`~/.claude-personal/projects/-home-sinkog-sync-claude-factory-CIC-workdir-jobs-relay-issue-queue-01-workspace/81f1ed93-1498-4a48-9550-a87d4d857869.jsonl`), nem menet közben vezetve. Az időpontok UTC-ben, a transcript időbélyegeiből. A napló a session 2026-11-19 14:55-i szakaszától indul (CIC_Relay #162 modul-artifact hitelesítés: Relay #215–#219, cic-primitives #36–#47, Forms #166–#168, P1 pattern-profil, O5 motorválasztás); a session korábbi, 2026-11-14 – 2026-11-16 közötti szakasza (a privát biztonsági lelet kezelése) szándékosan nincs benne.
 
-A napló csak transcript: a felhasználó üzenetei (a beillesztett külső review-kkal szó szerint, a `<bash-input>` parancsokkal együtt) és Claude szöveges válaszai, időrendben. Eszközhívás és eszközkimenet, rendszer-emlékeztető, task-notification és a kontextus-összegzések nem szerepelnek. A PR-ok és a git-történet marad a forrás; ez a napló az interakció nyoma. Állapot a naplózás végén (2026-11-22): cic-primitives #46 mergelve (fe7e5ea); #47 (O5 motorválasztás) mergelve (55fee44), E1-E3 GO; #48 (O2 méretszabály Pi<=2048, O3 hibakódok és precedencia) mergelve (865ed47), O2/O3 GO; #49 (a pattern-profil normatív vektorkészletének vázlata) mergelve (9fe89b1); #50 (az eszközlánc integritás-ellenőrzése: bájtkanárik, külső SHA-256 referencia, acceptance mód; azonos-pin vektorok) mergelve (5ffa48a, jóváhagyott fej 64e2ad1, post-merge gate sikeres); minden egyéb HOLD változatlan (CI-kapu módosítása, normatív publikálás, implementáció, profilverzió azonosítója, implementációs specifikáció, független harmadik implementáció, P2, P4, Forms #166/#167, séma-véglegesítés, Relay #162). A naplót a lezárások után újragenerálta a `tools/session-transcript.py`; a korábban commitolt részek változatlansága ellenőrizve.
+A napló csak transcript: a felhasználó üzenetei (a beillesztett külső review-kkal szó szerint, a `<bash-input>` parancsokkal együtt) és Claude szöveges válaszai, időrendben. Eszközhívás és eszközkimenet, rendszer-emlékeztető, task-notification és a kontextus-összegzések nem szerepelnek. A PR-ok és a git-történet marad a forrás; ez a napló az interakció nyoma. Állapot a naplózás végén (2026-11-22): cic-primitives #46 mergelve (fe7e5ea); #47 (O5 motorválasztás) mergelve (55fee44), E1-E3 GO; #48 (O2 méretszabály Pi<=2048, O3 hibakódok és precedencia) mergelve (865ed47), O2/O3 GO; #49 (a pattern-profil normatív vektorkészletének vázlata) mergelve (9fe89b1); #50 (az eszközlánc integritás-ellenőrzése, azonos-pin vektorok) mergelve (5ffa48a); #51 (a profilverzió azonosítója: 1, a fájltól függetlenül tartva, pontos típusellenőrzéssel) mergelve (532541c, jóváhagyott fej 8ea2560, post-merge gate sikeres); minden egyéb HOLD változatlan (implementációs specifikáció, CI-kapu módosítása, normatív publikálás, implementáció, független harmadik implementáció, P2, P4, Forms #166/#167, séma-véglegesítés, Relay #162). A naplót a lezárások után újragenerálta a `tools/session-transcript.py`; a korábban commitolt részek változatlansága ellenőrizve.
 
 
 ### 2026-11-19 14:55 — Felhasználó
@@ -8429,6 +8429,553 @@ A CI-kapu módosítása, a normatív publikálás, az implementáció, a profilv
 
 
 ### 2026-11-22 17:33 — Claude
+
+~~~~~
+A merge megtörtént. A fa-egyezés stimmel, és a vektorfájl SHA-256 értéke a devel-en `e7ece43a…`. Megvárom a post-merge gate-et.
+~~~~~
+
+
+### 2026-11-22 17:37 — Claude
+
+~~~~~
+Post-merge zöld. Frissítem a memóriát és a thread-naplót.
+~~~~~
+
+
+### 2026-11-22 17:38 — Claude
+
+~~~~~
+A #50 mergelve, a post-merge ellenőrzések rendben vannak.
+
+- **Merge:** `5ffa48a0d9aa54628d4c1095060a147962afc52c` a devel-en, 2026-11-22 17:33 UTC. A jóváhagyott fej `64e2ad1` volt.
+- **Post-merge gate:** a `5ffa48a`-n a gate `success` (futás: 45050102566).
+- **Fa-egyezés:** a devel fája (`a0ec2a8…`) megegyezik a jóváhagyott fej fájával, nincs különbség.
+- **Vektorfájl a devel-en:** a SHA-256 `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`, egyezik a független referenciával.
+- **Memória:** frissítve (`MEMORY.md` és `project_162_artifact_auth_plan.md`). Rögzítettem a #50 állapotát és a review tanulságát (az ellenőrzés nem hitelesítés, a fail-closed kapcsolók).
+- **Thread-napló:** újragenerálva az `a0322e3` helyi commitban, push nélkül. A korábban commitolt rész változatlan, a titokkeresés 0 találat.
+
+**Állapot:** a pattern-profil vektorkészlete 513 vektor és 66 követelmény, az integritás-ellenőrzéssel együtt a devel-en van. Nincs nyitott PR. A helyi thread-napló commitja (`a0322e3`) nincs pusholva.
+
+**HOLD marad:**
+- a CI-kapu módosítása;
+- a normatív publikálás;
+- az implementáció;
+- a profilverzió azonosítója (a pin-döntésre vár);
+- az implementációs specifikáció;
+- a független harmadik implementáció;
+- a P2, a P4, a Forms #166/#167, a séma-véglegesítés és a Relay #162 implementáció.
+
+Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár. Új lépést csak kifejezett GO-ra indítok.
+~~~~~
+
+
+### 2026-11-22 17:49 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+A #50 lezárását a jelentett post-merge ellenőrzések alapján elfogadom.
+
+**P1 – stabil ellenőrzési alapállapot:&#x20;**`5ffa48a`
+
+| Terület                               | Eredmény   |
+| ------------------------------------- | ---------- |
+| Megfelelőségi vektorok                | 513        |
+| Ellenőrzött követelmények             | 66         |
+| Hibakódok                             | 31         |
+| Natív konformanciaesetek              | 296        |
+| Implementációk közötti mért eltérések | 0          |
+| Integritási önellenőrzések            | 31/31      |
+| Vektoreszköz önellenőrzései           | 43/43      |
+| Teljes tesztkészlet                   | 943 passed |
+
+A következő szakmai mérföldkő a profilverzió azonosítójának véglegesítése, majd az implementációs specifikáció lezárása.
+
+A hétfői időbizonyíték-döntést ettől elkülönítve kezeljük.
+
+**Minden HOLD változatlan. Új végrehajtási GO-t jelenleg nem adok.**
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 17:49 — Claude
+
+~~~~~
+Nem indítok új lépést, mert nincs végrehajtási GO. A #50 lezárását és a `5ffa48a` alapállapotot rögzítettem.
+
+**Alapállapot (devel `5ffa48a`):** 513 vektor, 66 követelmény, 31 kód, 296 natív eset, 0 eltérés. A vektor-önteszt 43/43, az integritás-önteszt 31/31, a teljes tesztkészlet 943 passed.
+
+**Következő mérföldkő:** a profilverzió azonosítója, majd az implementációs specifikáció. Ezeket szétválasztottan kezelem a hétfői időbizonyíték-döntéstől.
+
+**Amit a profilverzió-döntéshez érdemes előre tudni** (előkészítés, nem indítom):
+- A vektorok munkahipotézisként az `1`-es verziót használják. A `check_vectors.py` ma bármely pozitív egészet elfogad, ha a fájlon belül konzisztens. A véglegesítés után a verziót a döntött értékhez kell kötni, ahogy a korlátokat.
+- Az azonos-pin döntés (azonos deklarációk egynek számítanak) már rögzítve van, a verzió azonosítója viszont nem.
+- A beágyazott contractok bejárási sorrendje az implementációs specifikációra vár. A vektorok jelenleg lapos listát használnak.
+
+A helyi thread-napló commitja (`a0322e3`) nincs pusholva. Minden HOLD változatlan: a CI-kapu módosítása, a normatív publikálás, az implementáció, a független harmadik implementáció, a P2, a P4, a Forms #166/#167, a séma-véglegesítés és a Relay #162 implementáció. Várom a következő utasítást.
+~~~~~
+
+
+### 2026-11-22 17:56 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**GO – a profilverzió azonosítójának véglegesítésére.**
+
+Döntés: a jelenleg specifikált pattern-profil verzióazonosítója `1`.
+
+Követelmények:
+
+- A verzióazonosító pozitív egész szám.
+- A jelenlegi profil kizárólag az `1` értéket ismeri.
+- Nincs implicit alapértelmezett verzió.
+- Az ismeretlen verzió elutasítandó.
+- A szemantika vagy a normatív korlátok változása új profilverziót igényel.
+- A `check_vectors.py` az elfogadott verzióazonosítót a vektorfájltól függetlenül ellenőrizze.
+- Negatív teszt igazolja, hogy a vektorfájl belsőleg konzisztens, de nem jóváhagyott verzióra történő átállítása elutasítást eredményez.
+
+A meglévő 513 vektor és azok elvárt eredménye változatlan maradjon.
+
+**Engedélyezett:** dokumentáció, izolált ellenőrzőeszköz módosítása, lokális tesztelés, commit, push, külön PR nyitása.
+
+**HOLD:** merge, implementációs specifikáció, CI-kapu, normatív publikálás és minden egyéb korábbi HOLD.
+
+Alapállapot: `5ffa48a0d9aa54628d4c1095060a147962afc52c`.
+
+A következő lépéshez SHA-hoz kötött review-csomagot kérek.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 17:56 — Claude
+
+~~~~~
+GO, a profilverzió-azonosító véglegesítésére. A vektorfájl bájtra változatlan marad. A `check_vectors.py` a döntött verziót a fájltól függetlenül tartja, és negatív teszt mutatja, hogy a belsőleg konzisztens, de nem jóváhagyott verzióra átírt fájl elutasított.
+~~~~~
+
+
+### 2026-11-22 18:00 — Claude
+
+~~~~~
+A profilverzió-azonosító véglegesítése helyben kész és commitolva, de még nincs pusholva és nincs PR. A push-t a rendszer korábban elutasította, ezért nem próbáltam meg.
+
+- **Ág:** `docs/grammar-pattern-profile-version`, az `5ffa48a`-ról.
+- **Fej:** `aabe90bf3107c08015128b445cddd7f7b8febc3d`, csak `docs/`.
+- **Tesztek:** a teljes készlet 943 passed. A `sha256sum -c` tiszta.
+- **PR-leírás:** a `PR-BODY-primitives-p1-profile-version.md` megvan.
+
+**A vektorfájl változatlan:**
+- A SHA-256 továbbra is `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`.
+- A `git diff --numstat 5ffa48a HEAD -- docs/design` üres.
+- A 513 vektor és az elvárások változatlanok.
+
+**Döntés a dokumentációban:** a profilverzió-azonosító `1`: pozitív egész, a profil csak az `1`-et ismeri, nincs implicit alapértelmezett verzió, az ismeretlen verzió elutasított, a szemantika vagy a normatív korlátok változása új profilverziót igényel. Rögzítettem a vektor-dokumentum 6b szakaszában, a HU összefoglalóban és egy döntéssorban a profil-design 4.1-ben.
+
+**Az ellenőrzés:** a `check_vectors.py` a döntött azonosítót (`1`) és az ismert verziók halmazát (`{1}`) a vektorfájltól függetlenül tartja. Elutasítja:
+- az `1`-től eltérő deklarált verziót;
+- a nem pozitív egész verziót;
+- az ismert halmazon kívüli verziójú ismert pint;
+- az ismert verziót használó `unknown` pin vektort.
+
+A konformancia a deklarált verziót a séma-szabály verziójával veti össze.
+
+**Negatív tesztek** (48/48, volt 43):
+- **Nem jóváhagyott verzióra átírt fájl:** a fájlt konzisztensen átírtam a nem jóváhagyott 2-es verzióra: a deklaráció, minden ismert pin és minden azonos deklaráció együtt változott. Az önteszt először azt állítja, hogy az átírt fájl belsőleg konzisztens, azután a `check_vectors.py` és a konformancia is elutasítja (`DISAGREE P.meta profile.version`).
+- **Hibás verziótípus:** a `1` szöveg és a `0` verzió elutasított.
+- **Ismeretlen pin ismert verzióval:** az `unknown` pin vektort, amely az ismert verziót használja, elutasítja.
+
+**Vektorral nem fedett pont, amit a dokumentum kimond:** a nem egész pin-érték (`one`, `1.0`) kezelése a dokumentumolvasó és az implementációs specifikáció dolga. Erre nem adtam vektort, mert a vektorfájl a döntés szerint változatlan.
+
+**Push és PR-nyitás (te futtatod):**
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push -u origin docs/grammar-pattern-profile-version && gh pr create --repo CentralInfraCore/cic-primitives --base devel --head docs/grammar-pattern-profile-version --title "docs(pattern): P1 profile version identifier 1, held independently of the vector file" --body-file [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-profile-version.md
+```
+
+A push után a gate-et az új fejen figyelem, és összeállítom a SHA-hoz kötött review-csomagot. Mergelni nem fogok. A merge, az implementációs specifikáció, a CI-kapu, a normatív publikálás és minden korábbi HOLD változatlan. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 18:15 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push -u origin docs/grammar-pattern-profile-version && gh pr create --repo CentralInfraCore/cic-primitives --base devel --head docs/grammar-pattern-profile-version --title "docs(pattern): P1 profile version identifier 1, held independently of the vector file" --body-file [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-profile-version.md</bash-input>
+~~~~~
+
+
+### 2026-11-22 18:15 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'docs/grammar-pattern-profile-version' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-primitives/pull/new/docs/grammar-pattern-profile-version        
+remote: 
+To github.com:CentralInfraCore/cic-primitives.git
+ * [new branch]      docs/grammar-pattern-profile-version -&gt; docs/grammar-pattern-profile-version
+branch 'docs/grammar-pattern-profile-version' set up to track 'origin/docs/grammar-pattern-profile-version'.
+https://github.com/CentralInfraCore/cic-primitives/pull/51</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 18:20 — Claude
+
+~~~~~
+A gate még futott, amikor a lekérdezés lezárult. Megvárom a végét.
+~~~~~
+
+
+### 2026-11-22 18:20 — Claude
+
+~~~~~
+A PR megnyílt, és a gate zöld. A SHA-hoz kötött review-csomag lent van.
+
+## Review-csomag: cic-primitives #51
+
+https://github.com/CentralInfraCore/cic-primitives/pull/51
+
+| Ellenőrzés | Eredmény |
+|---|---|
+| Fej | `aabe90bf3107c08015128b445cddd7f7b8febc3d` |
+| Base | `devel` (`5ffa48a0d9aa54628d4c1095060a147962afc52c`) |
+| Gate | 45054072096, `success`, a `headSha` egyezik a fejjel |
+| Mergelhető | igen, állapot `clean` |
+| Méret | 9 fájl, +73 / −17 sor |
+| Hatókör | csak `docs/` (a base-hez képest nem-docs fájl 0) |
+| Teljes tesztkészlet | 943 passed |
+
+**Vektorfájl:**
+- A SHA-256 az origin fejen `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`, egyezik a #50-ben függetlenül ellenőrzött értékkel.
+- A `git diff --numstat 5ffa48a <fej> -- docs/design` üres.
+- A 513 vektor és az elvárások változatlanok.
+
+**Döntés és ellenőrzés:**
+- Az azonosító `1`: pozitív egész, a profil csak ezt ismeri, nincs implicit alapértelmezett verzió, az ismeretlen verzió elutasított, a szemantika vagy a normatív korlátok változása új verziót igényel.
+- A `check_vectors.py` a döntött azonosítót és az ismert halmazt a vektorfájltól függetlenül tartja.
+
+**Reprodukálható futtatások** (a `docs/evidence/pattern-vectors/` könyvtárból):
+- `python3 check_vectors.py` → exit 0.
+- `python3 conform.py` → 513 vektor és 296 natív eset, 0 eltérés.
+- `python3 selftest_vectors.py` → 48/48.
+- `python3 selftest_integrity.py` → 31/31.
+- `python3 integrity_check.py --acceptance --expect-sha256 e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0 --docs ../..` → exit 0.
+- `python3 verify_unchanged.py` → a 509 jóváhagyott vektor változatlan.
+
+**A kért negatív teszt:** a `selftest_vectors.py` a vektorfájlt **konzisztensen a nem jóváhagyott 2-es verzióra** írja át: a deklaráció, minden ismert pin és minden azonos deklaráció együtt változik. Az önteszt először azt állítja, hogy az átírt fájl belsőleg konzisztens, utána a `check_vectors.py` (`meta.profile.version`) és a konformancia (`DISAGREE P.meta profile.version`) is elutasítja. Ehhez jön a `1` szöveg és a `0` verzió elutasítása, valamint az ismert verziót használó `unknown` pin vektor elutasítása.
+
+**Vektorral nem fedett pont, amit a PR kimond:** a nem egész pin-érték (`one`, `1.0`) kezelése a dokumentumolvasó és az implementációs specifikáció dolga. Erre nem adtam vektort, mert a vektorfájl a döntés szerint változatlan.
+
+**Kérem:**
+1. Tartalmi review a #51-re.
+2. SHA-hoz kötött merge-jóváhagyás az `aabe90b` fejre, ha rendben van. Mergelni nem fogok.
+
+A merge, az implementációs specifikáció, a CI-kapu, a normatív publikálás és minden korábbi HOLD változatlan. A thread-naplót és a memóriát a #51 lezárása után frissítem. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 18:25 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+cic-primitives #51 – Review
+REQUEST CHANGES – a verzióazonosító döntése helyes, két kisebb javítás szükséges.
+1. Független ellenőrzés
+Ellenőrzés    Eredmény
+Head: aabe90bf3107c08015128b445cddd7f7b8febc3d    PASS
+Base: 5ffa48a    PASS
+Gate: 45054072096    PASS
+Hatókör: 9 fájl, kizárólag docs/    PASS
+Méret: +73 / −17 sor    PASS
+Vektorfájl változatlansága    PASS
+Verzióazonosító független rögzítése    PASS
+Konzisztensen átírt, nem jóváhagyott verzió negatív tesztje    PASS
+
+A vektorfájl Git blob azonosítója változatlan: 4637680acaee6f7854233cda390c76a1876a460f.
+2. Findings
+F1 – Típusazonosság a verzió ellenőrzésénél
+Súlyosság: Medium
+
+A check_vectors.py helyesen kizárja a logikai értékeket a profile.version ellenőrzésekor.
+
+A conform.py azonban egyszerű értékegyezést használ. Pythonban:
+True == 1   # True1.0 == 1    # True
+
+
+
+Ezért a konformancia-ellenőrző önállóan elfogadhat nem egész típusú profilazonosítót.
+
+Elvárt javítás:
+- A conform.py is ellenőrizze a verzió típusát az érték mellett.
+- Negatív teszt true és 1.0 profilverzióra.
+- Mindkét ellenőrző utasítsa el ezeket.
+Ez kizárólag a vektorfájl metaadatának ellenőrzésére vonatkozik. A sémában található pin feldolgozása továbbra is az implementációs specifikáció feladata.
+F2 – Ellentmondó dokumentáció
+Súlyosság: Low
+
+Az angol és a magyar vektordokumentáció #49 F2 összefoglalójában továbbra is az szerepel, hogy a profilverzió munkahipotézis.
+
+Az új fejezet helyesen véglegesíti az 1 értéket.
+
+A korábbi mondatot történeti állításként kell megjelölni, és az új döntésre hivatkozni.
+3. Architekturális értékelés
+Az alapvető döntéseket elfogadom:
+- DECIDED_PROFILE_VERSION = 1
+- KNOWN_PROFILE_VERSIONS = {1}
+- Nincs implicit verzió.
+- A vektorfájl nem írhatja felül a jóváhagyott szemantikát.
+- A normatív változás új profilverziót igényel.
+A csomag nem bővíti a Primitives felelősségi körét.
+
+GO kizárólag F1–F2 javítására és a meglévő PR frissítésére.
+
+A 513 vektor maradjon változatlan. Merge és minden korábbi HOLD érvényben marad.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 18:26 — Claude
+
+~~~~~
+A korábbi szerkesztő-script az EN dokumentum egyik mondatán megakadt, ezért az EN/HU/README módosítások nem íródtak ki. A tényleges mondatokhoz igazítva újra elvégzem őket.
+~~~~~
+
+
+### 2026-11-22 18:29 — Claude
+
+~~~~~
+Most frissítem a PR-leírást az új fej adataival.
+~~~~~
+
+
+### 2026-11-22 18:29 — Claude
+
+~~~~~
+Az F1–F2 javítása kész és commitolva, de még nincs pusholva. A PR-leírás frissítve.
+
+- **Új fej:** `8ea25606c037f0a945a52add62e46096dcf5a0b6`, a szülője `aabe90b`.
+- **Hatókör:** csak `docs/`.
+- **Vektorfájl:** változatlan, a SHA-256 `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`. Az `aabe90b` és a `5ffa48a` alap felé is üres a `git diff --numstat -- docs/design`.
+- **Tesztek:** a teljes készlet 943 passed. A `sha256sum -c` tiszta.
+
+**F1 – a profilverzió pontos típusa mindkét ellenőrzőben:**
+- **Javítás:** a `conform.py` mostantól az értéken kívül a pontos `int` típust is ellenőrzi, ahogy a `check_vectors.py`. A `type(v) is int` kizárja a `True == 1` és az `1.0 == 1` egyenlőséget.
+- **Negatív tesztek:** a `true` és az `1.0` profilverziót a `check_vectors.py` elutasítja (`meta.profile.version.type`). A konformancia is elutasítja (`DISAGREE P.meta profile.version got bool:True` / `got float:1.0`).
+- **Hatókör:** ez csak a vektorfájl metaadatára vonatkozik. A sémában lévő pin feldolgozása marad az implementációs specifikáció dolga.
+
+**F2 – ellentmondó dokumentáció:**
+- **Történeti jelölés:** az EN és HU vektordokumentáció #49 F2 összefoglalójában a „munkahipotézis" mondatot történeti állításnak jelöltem, és a 2026-11-22-i döntésre hivatkozom. A README ugyanígy módosult.
+- **A vektorfájl fejléc-megjegyzése** még munkahipotézisnek nevezi az `1`-es verziószámot. A fájl a döntés szerint változatlan marad, ezért ezt nem írtam át. A dokumentum kimondja, hogy ez a mondat történeti, és a döntés felülírja.
+
+**Önteszt:** 52/52, volt 48. Az integritás-önteszt 31/31, a konformancia 513 vektor és 296 natív eset, 0 eltérés.
+
+**Önkritika:** a szerkesztő-scriptem egy mondaton megakadt, ezért az EN/HU/README módosítások az első futásnál nem íródtak ki. Észrevettem, a tényleges mondatokhoz igazítva újrafuttattam, és a végén a dokumentumok kanári-ellenőrzése is lefutott.
+
+**Push és a PR-leírás frissítése (te futtatod, a #51 ugyanaz marad):**
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-profile-version && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/51 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-profile-version.md --jq .number
+```
+
+A push után a gate-et az új fejen figyelem, és összeállítom az új SHA-hoz kötött review-csomagot. Mergelni nem fogok. A merge, az implementációs specifikáció, a CI-kapu, a normatív publikálás és minden korábbi HOLD változatlan. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 18:35 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-profile-version && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/51 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-profile-version.md --jq .number</bash-input>
+~~~~~
+
+
+### 2026-11-22 18:35 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-primitives.git
+   aabe90b..8ea2560  docs/grammar-pattern-profile-version -&gt; docs/grammar-pattern-profile-version
+51</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 18:40 — Claude
+
+~~~~~
+A #51 gate-je zöld az új fejen. A SHA-hoz kötött review-csomag lent van.
+
+## Review-csomag: cic-primitives #51, második kör
+
+| Ellenőrzés | Eredmény |
+|---|---|
+| Fej | `8ea25606c037f0a945a52add62e46096dcf5a0b6` |
+| Base | `devel` (`5ffa48a0d9aa54628d4c1095060a147962afc52c`) |
+| Gate | 45055935028, `success`, a `headSha` egyezik a fejjel |
+| Mergelhető | igen, állapot `clean` |
+| Méret | 9 fájl, +84 / −19 sor |
+| Hatókör | csak `docs/` (a base-hez képest nem-docs fájl 0) |
+| Teljes tesztkészlet | 943 passed |
+| PR-leírás | frissítve, tartalmazza a „Review round 1" részt |
+
+**Vektorfájl:**
+- A SHA-256 az origin fejen `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`.
+- A `git diff --numstat 5ffa48a <fej> -- docs/design` üres.
+- A git blob azonosítója a review szerint `4637680acaee6f7854233cda390c76a1876a460f`, változatlan.
+- A 513 vektor és az elvárások változatlanok.
+
+**A review kérései:**
+- **F1:** a `check_vectors.py` és a `conform.py` is a pontos `int` típust ellenőrzi az érték mellett (`type(v) is int`). A `true` és az `1.0` profilverziót mindkét ellenőrző elutasítja. A konformancia kimenete: `DISAGREE P.meta profile.version got bool:True` / `got float:1.0`.
+- **F2:** a „munkahipotézis" mondatokat az EN és HU dokumentumban, valamint a README-ben történeti állításnak jelöltem, és a 2026-11-22-i döntésre hivatkozom. A vektorfájl fejléc-megjegyzése a döntés szerint változatlan maradt, a dokumentum ezt kimondja.
+
+**Reprodukálható futtatások** (a `docs/evidence/pattern-vectors/` könyvtárból):
+- `python3 check_vectors.py` → exit 0.
+- `python3 conform.py` → 513 vektor és 296 natív eset, 0 eltérés.
+- `python3 selftest_vectors.py` → 52/52 (volt 48).
+- `python3 selftest_integrity.py` → 31/31.
+- `python3 integrity_check.py --acceptance --expect-sha256 e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0 --docs ../..` → exit 0.
+- `python3 verify_unchanged.py` → a 509 jóváhagyott vektor változatlan.
+
+**Kérem:**
+1. Új tartalmi review az F1–F2 javításokra a `8ea2560` fején.
+2. SHA-hoz kötött merge-jóváhagyás, ha rendben van. Mergelni nem fogok.
+
+A merge, az implementációs specifikáció, a CI-kapu, a normatív publikálás és minden korábbi HOLD változatlan. A thread-naplót és a memóriát a #51 lezárása után frissítem. Az időbizonyíték-döntés külön, hétfőre esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-22 18:43 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+# **Review – cic-primitives #51, második kör**
+
+APPROVED – MERGE GO
+
+A [PR #51](https://github.com/CentralInfraCore/cic-primitives/pull/51?utm_source=chatgpt.com) aktuális fejét és tényleges diffjét ellenőriztem a GitHubon. Mindkét korábbi finding lezárható. Új blokkoló problémát nem találtam.
+
+## **1. SHA-hoz kötött ellenőrzés**
+
+| Ellenőrzés                                                                                                 | Eredmény                                   |
+| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Aktuális fej                                                                                               | `8ea25606c037f0a945a52add62e46096dcf5a0b6` |
+| Base                                                                                                       | `5ffa48a0d9aa54628d4c1095060a147962afc52c` |
+| [Gate](https://github.com/CentralInfraCore/cic-primitives/actions/runs/45055935028?utm_source=chatgpt.com) | SUCCESS                                    |
+| Mergelhető                                                                                                 | Igen                                       |
+| Teljes diff                                                                                                | 9 fájl, +84 / −19                          |
+| Hatókör                                                                                                    | Kizárólag `docs/`                          |
+| Vektorfájl változatlansága                                                                                 | Igazolt                                    |
+| F1                                                                                                         | CLOSED                                     |
+| F2                                                                                                         | CLOSED                                     |
+| Új finding                                                                                                 | 0                                          |
+
+## **2. F1 – Pontos típusellenőrzés**
+
+CLOSED
+
+A `check_vectors.py` mind a típus-, mind az értékellenőrzésben megköveteli a pontos `int` típust.
+
+A `conform.py` szintén megszünteti a Python implicit egyenlőségéből származó elfogadási lehetőséget.
+
+| Profilverzió | Checker    | Conformance |
+| ------------ | ---------- | ----------- |
+| `1`          | Elfogadás  | Elfogadás   |
+| `true`       | Elutasítás | Elutasítás  |
+| `1.0`        | Elutasítás | Elutasítás  |
+| `"1"`        | Elutasítás | Elutasítás  |
+| `2`          | Elutasítás | Elutasítás  |
+
+A négy új negatív teszt ténylegesen szerepel az öntesztben. Az elvárt hibajelzéshez és az 1-es kilépési kódhoz kötöttek, így egy infrastruktúrahiba önmagában nem eredményezhet sikeres negatív tesztet.
+
+A javítás megfelelően szűkített: a vektorfájl profilmetaadatait ellenőrzi, nem előlegezi meg a dokumentumolvasó implementációs specifikációját.
+
+## **3. F2 – Dokumentációs konzisztencia**
+
+CLOSED
+
+Az angol és magyar dokumentáció, valamint a README egyértelműen történeti állításként kezeli a korábbi munkahipotézist.
+
+A 2026-11-22-i tulajdonosi döntés elsőbbsége világos.
+
+Helyes döntés volt a vektorfájl fejlécének változatlanul hagyása: a dokumentáció feloldja a történeti ellentmondást anélkül, hogy megszakítaná a #50-ben elfogadott integritási referenciát.
+
+## **4. Bizonyítékfolytonosság**
+
+A GitHubról külön lekértem a base és az aktuális fej vektorfájlját. A blobazonosító és a visszaadott tartalom egyaránt egyezik.
+
+```
+4637680acaee6f7854233cda390c76a1876a460f
+```
+
+A közölt mérési eredmények összhangban vannak a review-csomaggal:
+
+| Mérőszám              | Eredmény   |
+| --------------------- | ---------- |
+| Vektorok              | 513        |
+| Követelmények         | 66         |
+| Natív esetek          | 296        |
+| Konformanciaeltérések | 0          |
+| Vektor-önteszt        | 52/52      |
+| Integritás-önteszt    | 31/31      |
+| Teljes tesztkészlet   | 943 passed |
+
+A futtatásokat nem ismételtem meg saját környezetben; a GitHub gate eredményét, a commitolt változásokat és a vektorfájl változatlanságát ellenőriztem függetlenül.
+
+## **5. Jóváhagyás**
+
+```
+repository: CentralInfraCore/cic-primitives
+pull_request: 51
+approved_head: 8ea25606c037f0a945a52add62e46096dcf5a0b6
+review: APPROVED
+findings:
+  F1: CLOSED
+  F2: CLOSED
+  new: 0
+merge: GO
+scope: profile_version_decision_and_isolated_evidence
+all_other_holds: UNCHANGED
+```
+
+A jóváhagyás kizárólag erre a SHA-ra érvényes.
+
+Az implementációs specifikáció, a CI-kapu módosítása, a normatív publikálás, az implementáció, a független harmadik implementáció és minden korábbi HOLD változatlan. Az időbizonyíték-döntés külön kezelendő.
+
+**A #51 mergelhető.**
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 18:43 — Claude
+
+~~~~~
+A review jóváhagyta a `8ea2560` fejet, és a merge-et „GO"-nak jelöli. A merge-et a megszokott módon te futtatod, mert nem kértél kifejezetten, hogy én mergeljek:
+
+```
+! gh pr merge 51 --repo CentralInfraCore/cic-primitives --merge --match-head-commit 8ea25606c037f0a945a52add62e46096dcf5a0b6
+```
+
+A `--match-head-commit` miatt elutasít, ha a fej közben elmozdult. Ha inkább azt szeretnéd, hogy én futtassam, szólj, és megteszem.
+
+A merge után ezeket végzem el:
+1. Post-merge gate a devel merge-commitján.
+2. Fa-egyezés ellenőrzése a jóváhagyott fejjel. Külön megnézem, hogy a vektorfájl SHA-256 értéke `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`-e a devel-en.
+3. Memória frissítése: #51 mergelve, a profilverzió-azonosító `1`, a lecke a pontos típusellenőrzésről (Python `True == 1`, `1.0 == 1`), és a következő mérföldkő, az implementációs specifikáció.
+4. Thread-napló újragenerálása helyi commitként, push nélkül.
+
+Az implementációs specifikáció, a CI-kapu módosítása, a normatív publikálás, az implementáció, a független harmadik implementáció és minden korábbi HOLD változatlan. Az időbizonyíték-döntés külön, hétfőre esedékes.
+~~~~~
+
+
+### 2026-11-22 18:43 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 51 --repo CentralInfraCore/cic-primitives --merge --match-head-commit 8ea25606c037f0a945a52add62e46096dcf5a0b6</bash-input>
+~~~~~
+
+
+### 2026-11-22 18:43 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 18:44 — Claude
 
 ~~~~~
 A merge megtörtént. A fa-egyezés stimmel, és a vektorfájl SHA-256 értéke a devel-en `e7ece43a…`. Megvárom a post-merge gate-et.
