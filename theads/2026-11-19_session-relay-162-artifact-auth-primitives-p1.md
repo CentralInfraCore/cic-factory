@@ -2,7 +2,7 @@
 
 **Utólag készült**, a session `.jsonl` transcriptjéből (`~/.claude-personal/projects/-home-sinkog-sync-claude-factory-CIC-workdir-jobs-relay-issue-queue-01-workspace/81f1ed93-1498-4a48-9550-a87d4d857869.jsonl`), nem menet közben vezetve. Az időpontok UTC-ben, a transcript időbélyegeiből. A napló a session 2026-11-19 14:55-i szakaszától indul (CIC_Relay #162 modul-artifact hitelesítés: Relay #215–#219, cic-primitives #36–#47, Forms #166–#168, P1 pattern-profil, O5 motorválasztás); a session korábbi, 2026-11-14 – 2026-11-16 közötti szakasza (a privát biztonsági lelet kezelése) szándékosan nincs benne.
 
-A napló csak transcript: a felhasználó üzenetei (a beillesztett külső review-kkal szó szerint, a `<bash-input>` parancsokkal együtt) és Claude szöveges válaszai, időrendben. Eszközhívás és eszközkimenet, rendszer-emlékeztető, task-notification és a kontextus-összegzések nem szerepelnek. A PR-ok és a git-történet marad a forrás; ez a napló az interakció nyoma. Állapot a naplózás végén: cic-primitives #46 mergelve (fe7e5ea); #47 (O5 motorválasztás, döntés-előkészítés) nyitva, gate zöld a d1e0b8c fejen, tartalmi review és SHA-hoz kötött merge-jóváhagyás vár; minden HOLD változatlan.
+A napló csak transcript: a felhasználó üzenetei (a beillesztett külső review-kkal szó szerint, a `<bash-input>` parancsokkal együtt) és Claude szöveges válaszai, időrendben. Eszközhívás és eszközkimenet, rendszer-emlékeztető, task-notification és a kontextus-összegzések nem szerepelnek. A PR-ok és a git-történet marad a forrás; ez a napló az interakció nyoma. Állapot a naplózás végén (2026-11-22): cic-primitives #46 mergelve (fe7e5ea); #47 (O5 motorválasztás) mergelve (55fee44, jóváhagyott fej 6fea578, post-merge gate sikeres), E1–E3 GO; a PR2 (O2/O3 döntés-előkészítés) indul; minden egyéb HOLD változatlan. A naplót a #47 lezárása után újragenerálta a `tools/session-transcript.py`; a korábban commitolt (522882b) rész változatlansága ellenőrizve.
 
 
 ### 2026-11-19 14:55 — Felhasználó
@@ -6262,4 +6262,643 @@ dokumentáld a munkánkat workdir/theads mintájában
 
 ~~~~~
 There's a transcript tool. Let me check how it works.
+~~~~~
+
+
+### 2026-11-22 00:01 — Claude
+
+~~~~~
+Generating the thread log from 2026-11-19 (the #162 artifact-authentication work) and scanning it for secrets before the local commit.
+~~~~~
+
+
+### 2026-11-22 00:01 — Claude
+
+~~~~~
+A session-napló elkészült és helyben commitolva (`522882b`, nincs pusholva): `workdir/theads/2026-11-19_session-relay-162-artifact-auth-primitives-p1.md`.
+
+- **Tartalom:** a 2026-11-19 14:55 UTC-től mostanáig tartó rész, a #162 modul-artifact hitelesítés munkája (Relay #215–#219, cic-primitives #36–#47, Forms #166–#168, a P1 pattern-profil és az O5 motorválasztás). Ez 160 felhasználói és 191 Claude-üzenet. A felhasználói üzenetek, a beillesztett review-k és a `<bash-input>` parancsok szó szerint szerepelnek.
+- **Készítés módja:** a `tools/session-transcript.py` állította elő a `.jsonl`-ból. A fejléc kimondja, hogy utólag készült, az eszközhívások és a rendszerüzenetek nincsenek benne.
+- **Titokellenőrzés:** a token-, kulcs- és e-mail-minták száma 0. A 103 `/home/...` elérési utat az eszköz maszkolta.
+- **Kihagyott rész:** a session 11-14 és 11-16 közötti szakasza nincs benne, mert ott a privát biztonsági lelet (#155) kezelése zajlott. A fejléc ezt is megjegyzi. Ha azt is naplózni kell, azt a privát-maszkolás beállításával külön futtatnám.
+- **Nyitott:** a `theads/2026-11-14_session-relay-ci-parity-pr01-212.md` korábbról követetlen maradt. A mostani commit az aktuális `feature/run-job-workspace-guard` ágra került, push csak kifejezett szóra történik.
+- **Napló frissítése:** a #47 lezárása után újragenerálom, hogy a merge és az O5 döntés is bekerüljön.
+~~~~~
+
+
+### 2026-11-22 08:22 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Jó reggelt, Gábor! :)
+
+A tegnapi munka után a következő lépés már a **mérési környezet előkészítése**, de előtte le kell zárnunk a cic-factory #82 döntés-előkészítő PR-ját.
+
+Most ellenőriztem a GitHubon: a [#82](https://github.com/CentralInfraCore/cic-factory/pull/82?utm_source=chatgpt.com) még nyitott, három commitot és 408 új sort tartalmaz.
+
+| Szakasz                                  | Állapot             |
+| ---------------------------------------- | ------------------- |
+| Biztonsági követelmények és specifikáció | ✅ Lezárva           |
+| 26 tételes mérési terv                   | ✅ Lezárva           |
+| Végrehajtási döntési csomag (#82)        | Re-review szükséges |
+| Tulajdonosi döntések (K1–K8)             | Hátravan            |
+| Izolált mérési környezet                 | HOLD                |
+| Feltáró mérések                          | HOLD                |
+| Eredmények értékelése                    | Hátravan            |
+| Relay-implementáció                      | HOLD                |
+
+**Ma javasolt sorrend:**
+
+1. \#82 tartalmi re-review (`93bdd507…`).
+2. Merge és post-merge gate.
+3. Tulajdonosi döntések meghozatala.
+4. Izolált scratch környezet előkészítése.
+5. A feltáró mérések első fázisának elindítása, külön GO után.
+
+Ma már jó eséllyel eljuthatunk a tényleges kísérleti eredményekig. A tervezési szakasz jelentős részén túl vagyunk.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 08:23 — Claude
+
+~~~~~
+Átnéztem a cic-factory #82-t tartalmilag. A bevezető táblázat állításai stimmelnek: a PR nyitva van, 3 commit és 408 új sor, a head `93bdd5070066fda9383a22baf827818af62328ab`, a `gate` zöld, és a PR mergelhető. A **merge-et nem javaslom**, mert van egy érdemi belső ellentmondás és egy kisebb hiány.
+
+**F1 (fontos): nincs PR-szerző az 1. fázishoz.** A csomag szerint az S1 (a tulajdonos admin identitása) soha nem PR-szerző (4.0 szakasz, O-3, R8). A két gépi fiók (A és B) viszont csak a G2 kapuhoz készül el. Az 5.2 tábla az 1. fázisba, G0 kapuval teszi a PR-t igénylő tételeket. Az M-A3 (1)–(3), az M-A4 és az M-B3 a #81 tervben PR-alapú (`exploratory-measurement-plan.md`, 96., 106. és 157. sor), és „tulajdonosi lépés nélkülinek" van sorolva. G0-nál tehát csak az S1 tudna PR-t nyitni.
+- Ha az S1 nyitja őket, az épp az R8 torzítás lép fel: az adminra vonatkozó védelmi szabályok és merge-állapotok eltérnek.
+- Ha nem az S1 nyitja őket, az A fiók már a G0-hoz kell, és a K-3 és az 5.1 kapusorrend nem áll.
+- Javítás: vagy az A fiók kerül a G0 előfeltételei közé, vagy az érintett tételek a G2-be mennek, a 0. fázis eredménye pedig ezek nélkül jelentendő.
+
+**F2 (közepes): az olvasási hitelesítés nincs tisztázva.**
+- A bevezető szerint „kulcs, token vagy titok nem kerül hozzám", az S6 pedig csak olvasó lekérdezést ígér.
+- A K-5 viszont húszmásodpercenként egy lekérdezéssel számol, ez óránként 180. Hitelesítés nélkül a GitHub korlátja óránként 60 kérés, ezért a K-5 „töredék" állítása csak hitelesített olvasásra igaz.
+- A csomagnak ki kell mondania, hogy ehhez milyen olvasó hitelesítést kapok (például a tulajdonos meglévő `gh` bejelentkezése). Ez a K-8 szerinti „nincs írási hitelesítő adat" és a bevezető mondatának a pontosítása.
+
+**Ami rendben van:**
+- A 218 futás az összegtáblából kijön (54+66+24+38+36).
+- A 26 tétel az 5.2 táblában teljes.
+- Az O-5 (a) és az O-2 (a) között nincs körkörös függés.
+- A becslések, olvasott és dokumentált állítások jelölése következetes.
+- A „mit nem állít" szakasz tiszta.
+
+**Nem ellenőriztem:** az aláírások érvényességét (a helyi verifier nem ismeri a `cic-tree-manifest/v4`-et), a platformra vonatkozó „dokumentált" állításokat, és a #81 többi tételét az F1-en túl.
+
+A K-1–K-8 döntések a tulajdonosé, a mérési környezet és a mérések HOLD-ban maradnak, a merge és a post-merge gate pedig csak SHA-hoz kötött jóváhagyás után jöhet. Az F1/F2 javítása után új head SHA lesz, arra kell újra review. Kérsz ehhez egy rövid, GitHubra szánt review-szöveget, vagy javítsam a csomagot egy külön ágon?
+~~~~~
+
+
+### 2026-11-22 08:24 — Felhasználó
+
+~~~~~
+bocsi rossz helyre ment előzős komment szortnó ne vedd figylembe
+~~~~~
+
+
+### 2026-11-22 08:24 — Claude
+
+~~~~~
+Rendben, az előző beillesztett szöveget (cic-factory #82) nem veszem figyelembe. Ahhoz nem nyúltam: GitHubra nem írtam semmit, nem módosítottam és nem mergeltem, és a review-t sem mentettem el sehová.
+
+Az eredeti munka változatlan:
+- **cic-primitives #47:** a gate zöld a `d1e0b8c630ee586e2b090ec25388b8b14a262564` fejen. Tartalmi review és SHA-hoz kötött merge-jóváhagyás kell rá, a PR2 (O2/O3) csak az O5 lezárása után indulhat.
+- **Thread-napló:** helyben commitolva (`522882b`), nincs pusholva. A #47 lezárása után frissítem.
+~~~~~
+
+
+### 2026-11-22 08:25 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Jó reggelt, Gábor! :)
+
+Ezen a szálon ma a **cic-primitives P1 lezárásával** kezdenék. Tegnap már megadtuk a GO-t a döntés-előkészítésre.
+
+A javasolt sorrend:
+
+1. **O5 – regexmotor kiválasztása.** A háromnyelvű szemantikai egyezés, az erőforrásigény és a lineáris futásidő vizsgálata.
+2. **O2/O3 – erőforráskorlátok és normatív hibakódok véglegesítése.**
+3. P1 implementációs specifikációja és elfogadási kritériumai.
+4. P1 implementáció, háromnyelvű vektorkészlet és CI-kapu.
+5. P4 – időbélyegek szemantikája.
+6. P2 – `must` kifejezések szemantikája.
+7. Forms #166 és #167 értékelési oldalának rendezése.
+
+**Mai reális cél:** a P1 normatív döntéseinek teljes lezárása, és megfelelő eredmények esetén az implementáció megkezdése.
+
+Elsőként az O5 mérési eredményeit kérném Claudétól. Erre a GO tegnap már megszületett, nem kell újra kiadni.
+
+Minden egyéb HOLD változatlan.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 08:25 — Claude
+
+~~~~~
+Az O5 mérési eredményei készen vannak, a cic-primitives **#47**-ben (`docs: P1 O5 engine selection`). A gate zöld az pontos `d1e0b8c630ee586e2b090ec25388b8b14a262564` fejen, a PR mergelhető, a bázis `devel`. Még nem mergelt: tartalmi review és SHA-hoz kötött jóváhagyás kell hozzá.
+
+**Háromnyelvű szemantikai egyezés**
+- Az 141 kézi eset mindhárom nyelvén (Python, Go, Rust) a hét motor mind egyezik.
+- 1500 generált mintán és 15000 fuzz-eseten (seed 20261121) a Python `nfa`, a google-re2, a pyre2, a Go és a Rust között 0 eltérés van.
+- 261 generált szöveget a classifier eleve elutasít.
+
+**Lineáris futásidő** (53 időzítési eset)
+
+| Motor | Eredmény |
+|---|---|
+| Python `re` | több mint 10 s 14 esetben |
+| `regex` | 1 eset több mint 10 s (`(a|aa)+$`@36 esetén 4,4 s) |
+| google-re2 | 2,5 ms |
+| pyre2 | 3,3 ms |
+| saját `nfa` | 25 ms (17 ms a 256 karakteres korlátnál) |
+| Go `regexp` | 1,7 ms |
+| Rust `regex` | 18,6 ms |
+
+- A saját `nfa` fordítása a 9 szerződésre 21–102 µs, a korlátoknál a legrosszabb eset 2,5 ms és 4,2 MB.
+
+**Függőségi és ellátási lánc kockázat**
+- A pyre2 alapértelmezetten csendben Python `re`-re esik vissza, és 5 olyan konstrukciót elfogad, amit az RE2 elutasít: lookahead, negatív lookahead, lookbehind, back-reference és possessive.
+- A PyPI-rekordok és a wheel sha256-ok rögzítve vannak a doksiban. A google-re2 utolsó kiadása 2025-11-05, a pyre2-é 2026-09-25, a `regex`-é 2026-11-18.
+- Az `nfa` 191 sor, és csak a classifier által elfogadott szöveget parse-olja.
+
+**Negatív kontrollok:** a harness 8 beültetett hibából 8-at észlelt, a kanári-ellenőrzésekkel és azok nélkül is.
+
+**Ajánlás (a döntés a tiéd):**
+- **E1:** a saját `nfa` legyen a normatív Python referencia-kiértékelő, a classifier mögött. Alternatíva: a google-re2 futásidejű kiértékelőként.
+- **E2:** a google-re2 opcionális CI-keresztellenőrzés.
+- **E3:** a kiértékelő verziója nem része a pinnek. A szemantikát az O1 pin köti, a megfelelőséget a gate méri.
+- A pyre2, a `re` és a `regex` nem kerül használatra.
+
+Az implementációt még **nem** kezdem el. A tegnapi GO csak döntés-előkészítésre szólt, az implementációra, a normatív vektorokra és a CI-kapura külön GO kell. A PR2 (O2 és O3) csak az O5 lezárása után indul. Ehhez az E1–E3 döntésed és a #47 mergelése kell, utána jöhet az O2/O3 mérés, a hibakód-javaslat és a P2/P4/#166 hatáselemzés.
+~~~~~
+
+
+### 2026-11-22 08:27 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+## **Review – cic-primitives #47**
+
+**Verdikt: REQUEST CHANGES – merge HOLD.**
+
+A saját Thompson-NFA irányát támogatom. A mérés azonban három ponton még pontosításra szorul, mielőtt az O5 döntést lezárjuk.
+
+### **Ellenőrzött GitHub-állapot**
+
+| Ellenőrzés | Eredmény                                                                                 |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| PR         | [#47](https://github.com/CentralInfraCore/cic-primitives/pull/47?utm_source=chatgpt.com) |
+| Head       | `d1e0b8c630ee586e2b090ec25388b8b14a262564`                                               |
+| Gate       | `44959396800` – SUCCESS                                                                  |
+| Változás   | +1405 sor, 25 fájl                                                                       |
+| Hatókör    | Dokumentáció és izolált mérés – megfelelő                                                |
+| Merge      | HOLD                                                                                     |
+
+### **F1 – Az NFA komplexitási állítása pontatlan**
+
+A `nfa_engine.py` minden állapothoz előre kiszámítja az epsilon-lezárást.
+
+Ez két következménnyel jár:
+
+- A fordítás memória- és időigénye az állapotok számának függvényében négyzetes is lehet.
+- A `nxt.update(cl[n])` miatt az egy bemeneti karakterre jutó feldolgozás sem garantáltan O(S).
+
+A bemeneti hosszra nézve, rögzített mintánál továbbra is lineáris a működés. A dokumentált O(S × N) állítás azonban ebben az implementációban nincs igazolva.
+
+Kérem a komplexitás pontosítását és a nagy epsilon-lezárásokat előidéző, szabályos minták mérését. Ez közvetlen bemenet lesz az O2 döntéshez.
+
+### **F2 – A negatív kontroll téves pozitív eredményt adhat**
+
+A `selftest_harness.py` bármilyen nem nulla kilépési kódot sikeresen detektált hibának minősít.
+
+Így akár egy hiányzó függőség, interpreterhiba vagy összeomlás is teljesítheti a 8/8 detektálási követelményt.
+
+Követelmény:
+
+- Módosítatlan pozitív kontroll ugyanabban a mérési környezetben.
+- A várt szemantikai eltérés vagy konkrét kanárihiba azonosítása.
+- Az infrastruktúrahiba ne számítson detektált mutánsnak.
+
+### **F3 – A paritás nem minden esetben igazolja a helyes eredményt**
+
+A `selection_probe.py` csak a 117 szemantikai esethez rendel független elvárt eredményt. A további 24 konstrukció és a fuzz-esetek esetében az egyezést vizsgálja.
+
+Ráadásul az összes motor közös `compile_error` eredménye is átmehet az egyezésvizsgálaton.
+
+Kérem:
+
+- A 24 konstrukció önálló elvárt verdiktjét.
+- Az elfogadott minták fordítási hibájának kötelező FAIL minősítését.
+- A differenciális egyezés és a független elvárt eredmény szerinti megfelelőség elkülönítését.
+
+## **E1–E3 döntési irány**
+
+| Döntés                                       | Ajánlás                                                                     |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| E1 – saját Thompson-NFA                      | Támogatom, F1–F3 lezárásával                                                |
+| E2 – opcionális google-re2 keresztellenőrzés | Támogatom                                                                   |
+| E3 – szemantikai verziópin                   | Támogatom, a futtatási evidence viszont azonosítsa a tényleges motorverziót |
+
+Az E3 különösen fontos: az implementáció változhat a szemantikai verzió módosítása nélkül, de a korábbi megfelelőségi bizonyíték nem örökölhető automatikusan.
+
+**GO kizárólag az F1–F3 javítására és a mérés megismétlésére.**
+
+Az architekturális irány megfelelő. Az O5 végleges lezárása, a merge, az O2/O3 és minden implementáció HOLD marad.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 08:31 — Claude
+
+~~~~~
+Status: the code changes (F1 engine, F2 exit codes and harness, F3 expectations) are written; now running the parity group to see whether they work.
+~~~~~
+
+
+### 2026-11-22 08:33 — Claude
+
+~~~~~
+Status: the full probe is running in the background (the notification is for the launcher shell, not the probe). Checking where it is.
+~~~~~
+
+
+### 2026-11-22 08:33 — Claude
+
+~~~~~
+Waiting for the probe to finish before touching the timing-sensitive steps; the document edits come after the numbers are final.
+~~~~~
+
+
+### 2026-11-22 08:40 — Claude
+
+~~~~~
+Waiting for that chain to complete (about 7–8 minutes); the document updates follow with the final numbers.
+~~~~~
+
+
+### 2026-11-22 08:49 — Claude
+
+~~~~~
+Waiting for the second chain to finish; then I'll re-check every number in the documents against the final result files before committing.
+~~~~~
+
+
+### 2026-11-22 08:56 — Claude
+
+~~~~~
+Status: all measurements and documents are final and consistent; committing locally (no AI trailer, per your rule) and then running the final checks.
+~~~~~
+
+
+### 2026-11-22 08:58 — Claude
+
+~~~~~
+Now the updated PR body and the push commands.
+~~~~~
+
+
+### 2026-11-22 08:59 — Claude
+
+~~~~~
+Szerintem az F1–F3 javítása kész: az új fej helyben commitolva, a push és a PR-leírás frissítése a te lépésed. A kód- és dokumentumváltozások csak `docs/`-ot érintenek, a teljes tesztkészlet 943 passed.
+
+Az új fej `8d6628a21bede3d7de3b1ac5bab306a118277d47`, Co-Authored-By nélkül, aláírva. Nem pusholtam, nem módosítottam a PR-t, nem mergeltem. Az összes mérést újrafuttattam. A dokumentumok számait a végső eredményfájlokhoz igazítottam.
+
+**F1 – komplexitás: a megállapítás igaz volt.**
+- Az első kiértékelő minden állapot epszilon-lezárását előre kiszámolta. A tábla az állapotok négyzetével nő: 2001 állapotnál 502 501 bejegyzés, 149 ms és 4,6 MB fordítás. A régi kód megmaradt összehasonlításnak (`nfa_closure_precomputed.py`).
+- Az új kiértékelő menet közben követi a lezárást, állapotonként egy látogatással lépésenként. A mért korlát O(P×N) idő és O(P) memória, P = állapotok, osztálytartományok és élek összege.
+- A lezárásnehéz mintákon a fordítás 10–100-szor olcsóbb, a verdiktek azonosak. Ára: a lapos 25×`[a-z]{255}` korlátesetnél a fordítás lassabb, 4,6 ms a korábbi 2,5 ms helyett. A számok a `results/closure.txt`-ben vannak.
+
+**F2 – negatív kontroll: a megállapítás igaz volt.** A korábbi harness minden nem nulla kilépést detektálásnak számolt. Hiányzó értelmezőre a régi probe 1-gyel lépett ki (`red-initial-f2-f3-against-d1e0b8c.txt`).
+- Típusos kilépési kódok vannak: az 1 mért hiba, a 3 bukott canary, a **2 infrastruktúra-hiba, ami soha nem detekció**, és az összeomlás is 2.
+- Van módosítatlan pozitív kontroll ugyanabban a környezetben: exit 0 canary-val és anélkül.
+- Tíz beültetett hibát mér, köztük a látogatás-jelölő hiányát és egy elfogadott mintát elutasító adaptert. Detekciónak csak az számít, ha mért hiba nevezi meg a beültetett motort. Mind a 10 detektált, canary-val és anélkül is.
+- Három infrastruktúra-kontroll van (hiányzó értelmező, összeomló adapter, hiányzó runner). Mindháromnak exit 2 a vége, és nem számít detekciónak.
+
+**F3 – paritás: a megállapítás igaz volt.** Az eredmény négy külön részre bomlik.
+- **A:** 165 kézzel írt eset független elvárással, a 24 szerkezet mindegyikéhez kézzel írt verdikttel és ellenpárral. Mind a 7 motor mind a 165-tel egyezik.
+- **B:** 15000 generált eset, 0 eltérés az öt lineáris motor között. Ez egyezés, nem bizonyított helyesség.
+- **C:** a stdlib `re` 2 s-ra korlátozott második véleményként a B eseteken: 15000 ellenőrizve, 0 időtúllépés, 0 eltérés.
+- **D:** egy elfogadott minta fordítási hibája önálló hiba. Ezt a szabályt minden motorra és mind a 165 + 15000 esetre ellenőriztem: 0 hiba.
+- Az F3-nak a „közös `compile_error` átmegy" része csak a döntési szabály újramásolásával látszik a RED-initial fájlban. A tényleges futásban nincs olyan mutáns, amely minden motorra egyszerre hatna, mert a Go és a Rust runner érintetlen marad.
+
+**E3:** a `results/versions.txt` azonosítja a ténylegesen futó motorokat (értelmező, csomagverziók, az `nfa_engine.py` sha256, a Rust `regex` crate és a Go, a lock-fájl hash-ek). A dokumentum kimondja, hogy korábbi megfelelőségi bizonyíték nem öröklődik.
+
+**Két dolog, amit tudnod kell:**
+- Az első dokumentumban a Rust legrosszabb illesztése a korlátnál „0,4 ms" volt, valójában 469 ns. Ez a dokumentum mértékegység-hibája volt, a mérésé nem. A dokumentum ezt kimondja.
+- A mérési idők futásról futásra legfeljebb kb. 1,5-szer ingadoznak. A Rust hideg legrosszabb esete három futásban 18,6, 26 és 18,8 ms volt.
+
+Az `nfa` 33 ms-ot mutat a 65536 karakteres értéken és 9,1 ms-ot a 256-os korlátnál. Ez szándékosan megtartott lassabb pont, az O2-höz bemenet.
+
+**Push és a PR-leírás frissítése** (a `gh pr edit` Projects-hibája miatt REST-tel):
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-engine-selection && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/47 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-engine-selection.md --jq .head.sha
+```
+
+A push után a gate-et az új fejre figyelem. Az O5 lezárása, a merge, az O2/O3 és minden implementáció HOLD marad. A thread-naplót a #47 lezárása után frissítem.
+~~~~~
+
+
+### 2026-11-22 10:27 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-engine-selection && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/47 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-engine-selection.md --jq .head.sha</bash-input>
+~~~~~
+
+
+### 2026-11-22 10:27 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-primitives.git
+   d1e0b8c..8d6628a  docs/grammar-pattern-engine-selection -&gt; docs/grammar-pattern-engine-selection
+d1e0b8c630ee586e2b090ec25388b8b14a262564</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 10:27 — Claude
+
+~~~~~
+A figyelmeztetés: a PATCH válaszában a `head.sha` még `d1e0b8c`, vagyis a régi fej. Lehet, hogy a GitHub csak késve frissült, ezért ellenőrzöm a PR állapotát.
+~~~~~
+
+
+### 2026-11-22 10:31 — Claude
+
+~~~~~
+A #47 gate-je zöld az új fejen.
+
+- **Fej:** `8d6628a21bede3d7de3b1ac5bab306a118277d47`. Ez egyezik a tesztelt committal (futás: 45012556193) és a helyi fejjel.
+- **Gate:** a `gate` futás `success`.
+- **PR:** `mergeable: true`, állapot `clean`.
+- **Leírás:** már az F1–F3 körös szöveg.
+
+A PATCH-válasz `d1e0b8c`-t mutatott, de az csak elavult pillanatkép volt. A PR tényleges fejét külön lekérdezve ellenőriztem.
+
+**Kérem:**
+1. Új tartalmi review az F1–F3 javításokra a `8d6628a` fején.
+2. A merge-hez külön, erre a SHA-ra kötött jóváhagyás. Merge-parancsot csak ezután adok.
+3. Az E1–E3 motor-döntés továbbra is a tiéd.
+
+Nem mergeltem, a PR2-t (O2/O3) nem indítottam, implementáció nincs. Az O5 lezárása, a merge és minden más HOLD marad. A memóriát és a thread-naplót a #47 lezárása után frissítem.
+~~~~~
+
+
+### 2026-11-22 10:35 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Re-review – cic-primitives #47
+Verdikt: REQUEST CHANGES – egy szűkített F1.1 javítás szükséges.
+
+Az NFA algoritmikus javítása megfelelő. Az F2 és F3 megállapításokat lezárom. A mérési eredmények dokumentálásában azonban maradt egy konkrét ellentmondás, amely az O2 döntést befolyásolná.
+Ellenőrzött GitHub-állapot
+Ellenőrzés    Eredmény
+PR    #47
+Head    8d6628a21bede3d7de3b1ac5bab306a118277d47
+Gate    45012556193 – SUCCESS
+Base    fe7e5ea83660619c5196ddd9562b9661d1fdce8e
+Változás    '+1963 sor, 32 fájl
+Hatókör    Megfelelő
+
+Korábbi megállapítások
+Finding    Állapot    Indoklás
+F1 – algoritmikus komplexitás    CLOSED    Lépésenkénti állapotjelölés, előre számított lezárások nélkül
+F2 – negatív kontroll    CLOSED    10/10 mutáns, 3/3 infrastruktúrakontroll, pozitív kontroll
+F3 – szemantikai paritás    CLOSED    165 független elvárt eredmény, 15 000 differenciális eset, kötelező fordítási siker
+F1.1 – erőforrásigény dokumentálása    OPEN    Ellentmondó maximumértékek
+
+F1.1 – Hibás maximum kerülne az O2 bemenetébe
+A results/closure.txt alapján az új NFA érvényes, 256 karakteres bemeneten a következő eredményeket produkálta:
+Eset    Régi NFA    Új NFA
+nested_opt_10x10x10    425,47 ms    38,45 ms
+nested_opt_4level    152,24 ms    21,77 ms
+opt_runs_x3    91,08 ms    23,22 ms
+alt_of_opts_255    43,77 ms    18,64 ms
+
+A javulás egyértelmű. Viszont a döntési dokumentum az O2 bemeneteként továbbra is 9,3 ms-ot nevez meg legrosszabb mért illeszkedési időként, miközben rendelkezésre áll a 38,45 ms-os mérés.
+
+Javítandó:
+- A mérési csoportonkénti és az összesített maximumok elkülönítése.
+- Az O2 bemeneteként a ténylegesen mért legrosszabb érték szerepeljen.
+- Ezek mért értékek, nem garantált futásidőkorlátok.
+Ehhez nem szükséges újabb teljes mérési kör.
+E1–E3 döntés
+Döntés    Verdikt
+E1 – saját Thompson-NFA    GO
+E2 – opcionális google-re2 CI-keresztellenőrzés    GO
+E3 – szemantikai verziópin, implementációazonosító az evidence-ben    GO
+
+Az NFA az elfogadott architekturális irány. A döntés nem jelenti a jelenlegi prototípus production-implementációként történő elfogadását.
+
+GO az F1.1 dokumentációs javítására. Utána új head, gate és SHA-hoz kötött merge-jóváhagyás szükséges.
+
+O2/O3, implementáció és minden korábbi HOLD változatlan.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 10:36 — Claude
+
+~~~~~
+Az F1.1 javítás kész, helyben commitoltam. Nem pusholtam, nem mergeltem.
+
+Az új fej `6fea578616b1d96dc144e9d027494cfb56631bd7`. A szülője a `8d6628a`, a commit csak két dokumentumfájlt érint, az EN-t és a HU-t. Mérés nincs újrafuttatva, a `results/` és a `SHA256SUMS` érintetlen, ahogy a review kérte.
+
+**Mi változott:**
+- A dokumentum 2.7 szakasza kapott egy maximum-táblát, amely mérési csoportonként külön adja az `nfa` legrosszabb értékeit:
+
+| Csoport | Legrosszabb illesztés |
+|---|---|
+| időmérés, 256-os korlátnál | 9,1 ms |
+| időmérés, 65536 karakternél | 33 ms |
+| bench (korlát-terhelések) | 9,3 ms |
+| lezárás-próba, 256 karakteren | **38,45 ms** (`nested_opt_10x10x10`) |
+| lezárás-próba, 65536 karakteren | 88,1 ms |
+
+- **O2 bemenete:** az összesített legrosszabb mért illesztés **38,45 ms a korlátnál**, ez szerepel az O2 bemenetének helyén. A 9,3 ms csak a bench-terhelések maximuma.
+- **Mért érték, nem garancia:** az 5. pont, a 3.4 szakasz és a magyar összefoglaló kimondja, hogy ezek egy gépen mért értékek, nem garantált futásidő-korlátok.
+- **A 33 ms-os állítás hatóköre:** a „minden nem-`re`/`regex` motor legfeljebb 33 ms" mondat csak az 53 eseten mért időmérési csoportra vonatkozik, és hivatkozik a lassabb lezárás-nehéz esetekre.
+- **PR-leírás:** a `PR-BODY-primitives-p1-engine-selection.md` frissítve, a push után a `gh api` PATCH-hel kell rátenni.
+
+Ellenőriztem, hogy a dokumentumokban nem maradt „9,3 ms" mint összesített maximum, és nincs U+2028 korrupció.
+
+**Egy pontosítás:** a lezárás-próba 256 karakteres bemenetű mérését a review állításából vettem át. A `closure.txt` fejléce ezt nem írja ki, a próbaprogramot nem nyitottam meg újra. A 65536-os oszlop viszont a fájlban külön szerepel.
+
+**Push és PR-leírás** (egy sor):
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-engine-selection && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/47 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-engine-selection.md --jq .number
+```
+
+A push után a gate-et az új fejen figyelem, és jelentek. Utána kell az SHA-hoz kötött merge-jóváhagyás. E1–E3 GO-t rögzítettem, de az NFA továbbra sem production-implementáció. O2/O3, a PR2 és minden implementáció HOLD marad.
+~~~~~
+
+
+### 2026-11-22 10:40 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-engine-selection && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/47 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-engine-selection.md --jq .number</bash-input>
+~~~~~
+
+
+### 2026-11-22 10:40 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-primitives.git
+   8d6628a..6fea578  docs/grammar-pattern-engine-selection -&gt; docs/grammar-pattern-engine-selection
+47</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 10:45 — Claude
+
+~~~~~
+A #47 gate-je zöld az új fejen.
+
+- **Fej:** `6fea578616b1d96dc144e9d027494cfb56631bd7`. Ez egyezik a tesztelt committal (gate-futás: 45013584956).
+- **Gate:** a `gate` `success`.
+- **PR:** `mergeable: true`, állapot `clean`.
+- **Leírás:** tartalmazza az F1.1 szöveget, vagyis a csoportonkénti maximumokat és a 38,45 ms-os összesített értéket.
+- **Hatókör:** a `8d6628a`-hoz képest csak az EN és a HU dokumentum változott, mérést nem futtattam újra.
+
+**Mi kell tőled:**
+1. Az F1.1 lezárásának megerősítése a `6fea578` fején.
+2. SHA-hoz kötött merge-jóváhagyás. Ezután a merge-parancsot adom: `! gh pr merge 47 --repo CentralInfraCore/cic-primitives --merge --match-head-commit 6fea578616b1d96dc144e9d027494cfb56631bd7`. Mergelni nem fogok.
+
+Merge után elvégzem a post-merge gate-et, a fa-egyezés ellenőrzést (devel és a jóváhagyott fej), a memória frissítését (#47 állapot, E1–E3 GO, a review tanulságai) és a thread-napló frissítését. Az O2/O3 és minden implementáció HOLD marad. A PR2 csak a merge után indulhat.
+~~~~~
+
+
+### 2026-11-22 11:02 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+Re-review – cic-primitives #47
+APPROVED – GO MERGE.
+
+A GitHubon ellenőriztem a tényleges diffet, a PR fejét és a gate eredményét.
+Ellenőrzés    Eredmény
+PR    #47
+Head    6fea578616b1d96dc144e9d027494cfb56631bd7
+Gate    45013584956 – SUCCESS
+Mergelhető    Igen
+Utolsó változás    Kizárólag EN/HU dokumentáció
+
+Review lezárása
+Finding    Állapot
+F1 – algoritmikus komplexitás    CLOSED
+F1.1 – mérési maximumok    CLOSED
+F2 – negatív kontrollok    CLOSED
+F3 – szemantikai paritás    CLOSED
+
+Az F1.1 javítása megfelelő. A 38,45 ms-os összesített maximum mindkét dokumentumban szerepel, elkülönítve a mérési csoportok eredményeitől és a garantált futásidőkorlátoktól.
+SHA-hoz kötött merge-jóváhagyás
+gh pr merge 47 \
+  --repo CentralInfraCore/cic-primitives \
+  --merge \
+  --match-head-commit 6fea578616b1d96dc144e9d027494cfb56631bd7
+
+
+E1, E2 és E3: GO, végleges architekturális döntés.
+
+A post-merge ellenőrzések sikeres lezárása után következhet az O2/O3 döntés-előkészítés.
+
+Az implementáció, a normatív vektorkészlet, a CI-kapu és minden egyéb HOLD változatlan.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 11:02 — Claude
+
+~~~~~
+Megvan a SHA-hoz kötött jóváhagyás a `6fea578616b1d96dc144e9d027494cfb56631bd7` fejre. A merge-et a megszokott módon te futtatod:
+
+```
+! gh pr merge 47 --repo CentralInfraCore/cic-primitives --merge --match-head-commit 6fea578616b1d96dc144e9d027494cfb56631bd7
+```
+
+A `--match-head-commit` miatt a parancs elutasít, ha a PR feje közben elmozdult.
+
+Szólj, ha lefutott. Utána:
+1. Post-merge gate a merge-commiton (devel).
+2. Fa-egyezés: a devel fája a jóváhagyott `6fea578` fájával, vagyis hogy a merge nem hozott be mást.
+3. Memória frissítése: #47 mergelve, E1–E3 GO és végleges, a review tanulságai (lezárás-előszámolás komplexitása, típusos kilépési kódú önteszt, független elvárás és egyezés szétválasztása, verziókötött evidence, csoportonkénti maximumok).
+4. Thread-napló frissítése, helyi commit, push nélkül.
+
+Ezek után indulhat az O2/O3 döntés-előkészítés (PR2), csak dokumentáció és izolált mérés, külön review-val. Az implementáció, a normatív vektorkészlet, a CI-kapu, a P2/P4, a Forms #166/#167 és minden más HOLD marad.
+~~~~~
+
+
+### 2026-11-22 11:02 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 47 --repo CentralInfraCore/cic-primitives --merge --match-head-commit 6fea578616b1d96dc144e9d027494cfb56631bd7</bash-input>
+~~~~~
+
+
+### 2026-11-22 11:02 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 11:03 — Claude
+
+~~~~~
+A merge megtörtént. A fa-egyezés is stimmel. Megvárom a post-merge gate-et.
+~~~~~
+
+
+### 2026-11-22 11:06 — Claude
+
+~~~~~
+Post-merge zöld. Frissítem a memóriát.
+~~~~~
+
+
+### 2026-11-22 11:06 — Claude
+
+~~~~~
+A #47 mergelve, a post-merge ellenőrzések rendben vannak.
+
+- **Merge:** `55fee448163f8155cac0717db6fccf49b6330ee6` a devel-en, 2026-11-22 11:02 UTC. A jóváhagyott fej `6fea578` volt.
+- **Post-merge gate:** a `55fee44`-en a gate `success` (futás: 45015348199).
+- **Fa-egyezés:** a devel fája (`e8670b8…`) megegyezik a jóváhagyott fej fájával. A merge nem hozott be mást.
+- **Memória:** frissítve (`MEMORY.md` és `project_162_artifact_auth_plan.md`): O5 lezárva, E1–E3 GO, a következő lépés, a review tanulságai és a 38,45 ms-os O2-bemenet.
+
+**Thread-napló:** nem frissítettem. A generáló `session-transcript.py` hívásának `--since`, `--title` és `--intro` argumentumait nem őriztem meg, és nem akartam tippelni, mert elcsúszhatna a már commitolt napló eleje. Ha jóváhagyod, megkeresem az eredeti hívást a `.jsonl`-ban, újragenerálom, és helyben commitolom, push nélkül.
+
+**Következő lépés:** a PR2, az O2 (korlátok), az O3 (normatív hibakódok), a producer/verifier felelősségek és a P2/P4/Forms #166 hatás. Csak dokumentáció és izolált mérés, külön review-val és SHA-hoz kötött merge-dzsel. Indítsam?
+
+Az implementáció, a normatív vektorkészlet, a CI-kapu, a P2/P4, a Forms #166/#167, a séma-véglegesítés és a Relay #162 implementáció HOLD marad. Az időbizonyíték-döntés külön, hétfőre.
+~~~~~
+
+
+### 2026-11-22 11:47 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**GO – indulhat a PR2, az O2/O3 döntés-előkészítése.**
+
+A #47 és az O5 lezárva.
+
+### **PR2 követelményei**
+
+- **O2:** mintahossz, bemenethossz, beágyazási mélység, ismétlésszám, teljes NFA-programméret és összesített erőforrásigény. A 38,45 ms mért maximum, nem garantált korlát.
+- **O3:** normatív hibakódok, determinisztikus hibaprecedencia, producer/verifier felelősségek.
+- P2, P4 és Forms #166/#167 hatáselemzése.
+- Határértékek vizsgálata és negatív kontrollok.
+- Minden normatív döntési javaslathoz visszakereshető mérési bizonyíték.
+
+### **Thread-napló**
+
+**GO** az eredeti generátorhívás visszakeresésére és a napló újragenerálására. A korábban commitolt naplórész változatlanságát ellenőrizd. Külön helyi commit, push nélkül.
+
+A PR2 kizárólag dokumentáció és izolált mérés. Külön review és SHA-hoz kötött merge-jóváhagyás szükséges.
+
+**Minden korábbi HOLD változatlan.**
+</pasted_content id="1732">
 ~~~~~
