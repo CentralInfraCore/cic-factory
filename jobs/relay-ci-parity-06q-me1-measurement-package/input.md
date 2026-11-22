@@ -23,6 +23,7 @@ A 0. fázis a mérőeszköz oldalán lezárt (#88, merge `48ec263`): G0 teljesü
 - NEM fogadható el: a workflow önbevallásának (a saját `context.json`) hiteles bizonyítékként kezelése; az önbevallás csak összevetett adat.
 - NEM fogadható el: az olvasó, amely nem tud bukni; a hamis, szintetikus aláírású és eltérő mezős bizonyítékot el kell utasítania.
 - NEM fogadható el: a PR-szerző befolyásolásának (P) eldöntése pull_request-futás bizonyítéka nélkül; az `INCONCLUSIVE`/`NOT-READ` marad.
+- NEM fogadható el: érvényes (le nem járt) OIDC-token nyilvános artifactban; a saját közönség ≠ hozzáférési korlát; a bizalmi gyökér (a kibocsátó kulcsai) a bizonyítékcsomagban; az önbevallás felülírhatja az aláírt bizonyítékot; a token megszerezhetetlenségéből `FAIL` következtetés (az `NOT-READ`).
 - NEM fogadható el: írási művelet az X repón vagy az éles szervezetben, futás indítása, bizonyíték letöltése; hitelesítő adat átadása nekem.
 
 ## Output
@@ -30,7 +31,7 @@ A 0. fázis a mérőeszköz oldalán lezárt (#88, merge `48ec263`): G0 teljesü
 - `output/me1-measurement-package.md` — leírás, az M-E1 a #81 szerint, a csomag, a tulajdonosi szállítás és futás lépései, K-5 előszámítás, a gyanús-workflow jelölés (P3) előre betervezve, claim-evidence tábla (`| Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat |`), mit nem állít
 - `output/payload/.github/workflows/me1-evidence.yml`
 - `output/check-me1-workflow.py` — fail-closed ellenőrző beültetett hibákkal
-- `output/harness/read-me1.py`, `output/harness/fetch-me1.sh`, `output/harness/test-fetch-me1.py` — az olvasó, a gyűjtő és a mockolt lánc-teszt
+- `output/harness/read-me1.py`, `output/harness/fetch-me1.sh`, `output/harness/fetch-jwks.sh`, `output/harness/test-fetch-me1.py`, `output/harness/test-me1-body.py` — az olvasó, a gyűjtő, a bizalmi gyökér külön letöltője, a mockolt lánc-teszt és a workflow-törzs szárazfutása
 
 ## Git
 

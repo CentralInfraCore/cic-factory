@@ -3,12 +3,14 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-  id-token: write
 jobs:
   me1-evidence:
     name: me1-evidence
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: me1 collect
         env:
@@ -23,8 +25,16 @@ jobs:
           set -euo pipefail
           mkdir me1
           jq -n --arg repository "$GH_REPOSITORY" --arg run_id "$GH_RUN_ID" --arg run_attempt "$GH_RUN_ATTEMPT" --arg sha "$GH_SHA" --arg ref "$GH_REF" --arg workflow_ref "$GH_WORKFLOW_REF" --arg event_name "$GH_EVENT_NAME" '{repository: $repository, run_id: $run_id, run_attempt: $run_attempt, sha: $sha, ref: $ref, workflow_ref: $workflow_ref, event_name: $event_name}' > me1/context.json
-          curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=me1-evidence" | jq -r .value > me1/oidc-token.jwt
-          test -s me1/oidc-token.jwt
+          TOKEN=$(curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=me1-evidence" | jq -er .value)
+          case "$TOKEN" in *.*.*) ;; *) echo "not a JWT" >&2; exit 1 ;; esac
+          P=$(printf '%s' "$TOKEN" | cut -d. -f2 | tr '_-' '/+')
+          EXP=$(printf '%s%s' "$P" "$(printf '%*s' $(( (4 - ${#P} % 4) % 4 )) '' | tr ' ' =)" | base64 -d | jq -er '.exp | select(type == "number") | floor')
+          NOW=$(date +%s)
+          WAIT=$((EXP + 120 - NOW))
+          if [ "$WAIT" -gt 720 ]; then echo "token expiry too far" >&2; exit 1; fi
+          if [ "$WAIT" -gt 0 ]; then sleep "$WAIT"; fi
+          if [ "$(date +%s)" -le $((EXP + 120)) ]; then echo "token not provably expired" >&2; exit 1; fi
+          printf '%s\n' "$TOKEN" > me1/oidc-token.jwt
       - name: me1 artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

@@ -5,8 +5,9 @@
 #   branch main, head SHA = APPROVED_HEAD_SHA, in $ORG/$X, and either attempt 1 with no earlier attempt
 #   or attempt 2 whose attempt 1 was held (completed / action_required, zero jobs). The run's CURRENT
 #   attempt must equal ATTEMPT before and after the fetch. The artifact is chosen by its unique id: the
-#   one created inside THIS attempt's time window. The issuer's public keys (JWKS) are fetched from the
-#   token issuer by THIS machine, so the token is verified without the run's cooperation.
+#   one created inside THIS attempt's time window. The issuer's public keys are NOT fetched here: they
+#   are the trust root and must stay apart from the evidence (fetch-jwks.sh, a separate file OUTSIDE
+#   OUTDIR, given to read-me1.py with --trusted-jwks).
 # read-only calls; writes only to OUTDIR.
 set -euo pipefail
 . ~/.cache/ci-lab/env.sh
@@ -18,7 +19,6 @@ HEAD=${3:?$U}
 ATT=${4:?$U}
 HERE=$(cd "$(dirname "$0")" && pwd)
 RM="python3 -I $HERE/read-me1.py"
-JWKS_URL=https://token.actions.githubusercontent.com/.well-known/jwks
 [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "refusing: run id is not numeric" >&2; exit 1; }
 [[ "$ATT" =~ ^[0-9]+$ ]] || { echo "refusing: attempt is not numeric" >&2; exit 1; }
 [ ! -e "$OUT" ] || { echo "refusing: $OUT already exists (use a new directory per run)" >&2; exit 1; }
@@ -43,7 +43,6 @@ ART_ID=$($RM --pick-artifact "$OUT/api/run.json" "$OUT/.arts.json" "$HEAD")
 gh api "repos/$ORG/$X/actions/artifacts/$ART_ID/zip" > "$OUT/.artifact.zip"
 ZIP_SHA=$(sha256sum "$OUT/.artifact.zip" | cut -d' ' -f1)
 python3 -I -m zipfile -e "$OUT/.artifact.zip" "$OUT/artifact"
-curl -sSf "$JWKS_URL" > "$OUT/jwks.json"
 
 CUR2=$(gh api "$API" --jq .run_attempt)
 UPD2=$(gh api "$API/attempts/$ATT" --jq .updated_at)

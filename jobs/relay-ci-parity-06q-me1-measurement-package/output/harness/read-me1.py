@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: CC-BY-NC-SA-4.0
 """Harness reader for the M-E1 evidence inventory (phase 1): which authentic run evidence exists.
 
-  read-me1.py DIR --expect-repo OWNER/REPO --expect-run-id ID --expect-attempt N --expect-head-sha SHA
+  read-me1.py DIR --trusted-jwks FILE --expect-repo OWNER/REPO --expect-run-id ID --expect-attempt N \
+                  --expect-head-sha SHA
   read-me1.py --pk                          positive control: the comparator on synthetic records
   read-me1.py --check-run RUN_JSON OWNER/REPO HEAD ATTEMPT PREV_JSON        (used by fetch-me1.sh)
   read-me1.py --pick-artifact RUN_JSON ARTIFACTS_JSON HEAD                  (used by fetch-me1.sh)
@@ -10,12 +11,19 @@
   read-me1.py --selftest                    stand-alone only
 
 DIR is produced by fetch-me1.sh (a NEW directory per run): manifest.json, api/run.json,
-api/jobs.json, jwks.json, artifact/context.json, artifact/oidc-token.jwt.
+api/jobs.json, artifact/context.json, artifact/oidc-token.jwt.
+
+TRUST ROOT (kept apart from the evidence): the issuer's public keys are NOT part of DIR. They are given
+with --trusted-jwks, a file the owner fetched DIRECTLY from the token issuer (fetch-jwks.sh) into a
+location OUTSIDE the evidence directory. A key file inside DIR is refused: a manifest digest cannot
+authenticate the origin of a key that sits in the same replaceable package. Trusted-fetch conditions:
+the owner's machine, TLS to the issuer, fetched after the run (key rotation), kept outside DIR.
 
 What is measured: whether the platform-signed OIDC token (verified here, offline, against the issuer's
 public keys, in pure Python) binds the (workflow path+ref, commit, identity, run, attempt) tuple the
 API reports for the run, and how it differs from the workflow's own self-report (context.json). The
-self-report is author-controlled, so it is never evidence on its own.
+self-report is author-controlled, so it is never evidence on its own, and a difference in it does not
+invalidate the signed evidence (it is reported as NOTE).
 
 The check "P (PR-author influence)" needs the evidence of a pull_request run: it is NOT READ in this
 package, so the strongest overall result is "EVIDENCE BOUND, P NOT READ"; the M-E1 verdict
@@ -37,8 +45,9 @@ WORKFLOW_PATH = ".github/workflows/me1-evidence.yml"
 ARTIFACT_NAME = "me1-evidence"
 ISS = "https://token.actions.githubusercontent.com"
 AUD = "me1-evidence"
-FETCHED = ["artifact/context.json", "artifact/oidc-token.jwt", "jwks.json",
-           "api/run.json", "api/jobs.json"]
+FETCHED = ["artifact/context.json", "artifact/oidc-token.jwt", "api/run.json", "api/jobs.json"]
+# the artifact must have been created (server time) this long after the token's exp (workflow waits 120 s)
+PUBLISH_MARGIN = 60
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 ISO = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
 HELD_ATTEMPT_1 = {"run_attempt": 1, "status": "completed", "conclusion": "action_required", "jobs": 0}
@@ -286,22 +295,47 @@ def check_manifest(d, expect_head, expect_repo, expect_run_id, expect_attempt):
 
 
 # ---------------------------------------------------------------- evaluation
-def evaluate(d, expect_head=None, expect_repo=None, expect_run_id=None, expect_attempt=None):
+def trusted_keys(d, path):
+    """The trust root, kept apart from the evidence. Returns (jwks, row)."""
+    name = "trusted JWKS (separate from the evidence)"
+    if path is None:
+        return None, (name, "NOT-READ", "--trusted-jwks not given")
+    real, base = os.path.realpath(path), os.path.realpath(d)
+    if real == base or real.startswith(base + os.sep):
+        return None, (name, "NOT-MET", "the key file is inside the evidence package: it cannot be a trust root")
+    try:
+        jwks = json.loads(read(path))
+    except (TypeError, ValueError):
+        return None, (name, "NOT-MET", "key file unreadable or not JSON")
+    if not isinstance(jwks, dict) or not isinstance(jwks.get("keys"), list) or not jwks["keys"]:
+        return None, (name, "NOT-MET", "key file has no keys")
+    return jwks, (name, "MET", "%d key(s), outside the evidence package; sha256 %s" % (len(jwks["keys"]), sha256_file(path)))
+
+
+def evaluate(d, expect_head=None, expect_repo=None, expect_run_id=None, expect_attempt=None, trusted_jwks=None):
     res, man = check_manifest(d, expect_head, expect_repo, expect_run_id, expect_attempt)
 
     def add(name, ok, note=""):
         res.append((name, "MET" if ok else "NOT-MET", note))
 
-    run = jwks = ctx = token = None
+    def note(name, text):
+        res.append((name, "NOTE", text))
+
+    jwks, jrow = trusted_keys(d, trusted_jwks)
+    res.append(jrow)
+    run = ctx = token = None
     try:
         run = json.loads(read(os.path.join(d, "api", "run.json")))
-        jwks = json.loads(read(os.path.join(d, "jwks.json")))
-        ctx = json.loads(read(os.path.join(d, "artifact", "context.json")))
     except (TypeError, ValueError):
         pass
+    try:
+        ctx = json.loads(read(os.path.join(d, "artifact", "context.json")))
+    except (TypeError, ValueError):
+        ctx = None
     token = read(os.path.join(d, "artifact", "oidc-token.jwt"))
-    if run is None or jwks is None or token is None:
-        res.append(("OIDC evidence", "NOT-READ", "api/run.json, jwks.json or the token missing or unreadable"))
+    if run is None or token is None or jwks is None:
+        res.append(("OIDC evidence", "NOT-READ" if jrow[1] != "NOT-MET" else "NOT-MET",
+                    "api/run.json or the token missing, or no usable trusted JWKS"))
         res.append(("P (PR-author influence)", "NOT-READ", "needs the evidence of a pull_request run (separate GO)"))
         return res
 
@@ -323,6 +357,14 @@ def evaluate(d, expect_head=None, expect_repo=None, expect_run_id=None, expect_a
     tok_ok = (wok and isinstance(iat, int) and isinstance(exp, int) and not isinstance(iat, bool)
               and w["start"] and to_epoch(w["start"]) - TOLERANCE <= iat <= to_epoch(w["end"]) + TOLERANCE and exp > iat)
     add("OIDC issued inside the attempt window", bool(tok_ok), "iat %r, window %s..%s" % (iat, w["start"], w["end"]))
+    art = (man or {}).get("artifact") or {}
+    try:
+        pub = to_epoch(art.get("created_at"))
+    except (TypeError, ValueError):
+        pub = None
+    add("OIDC provably expired before the artifact was created (server time)",
+        isinstance(exp, int) and not isinstance(exp, bool) and pub is not None and pub >= exp + PUBLISH_MARGIN,
+        "exp %r, artifact created_at %s (needs >= exp+%ds)" % (exp, art.get("created_at"), PUBLISH_MARGIN))
     cl = record_from_claims(claims)
     for f in FIELDS:
         exp_v = api[f]
@@ -330,11 +372,19 @@ def evaluate(d, expect_head=None, expect_repo=None, expect_run_id=None, expect_a
             exp_v = expect_repo
         add("OIDC binds %s" % f, cl[f] == exp_v and cl[f] is not None, "claim %r, API %r" % (cl[f], exp_v))
     repo = api["repository"]
-    add("OIDC binds job_workflow_ref (path+ref)", claims.get("job_workflow_ref") == api["workflow_ref"], "claim %r" % (claims.get("job_workflow_ref"),))
+    if claims.get("job_workflow_ref") is None:
+        note("OIDC job_workflow_ref", "claim absent: not mandatory (documented mainly for reusable workflows); not mistaken for a failed binding")
+    else:
+        add("OIDC binds job_workflow_ref (path+ref)", claims.get("job_workflow_ref") == api["workflow_ref"], "claim %r" % (claims.get("job_workflow_ref"),))
     add("OIDC binds ref and subject (identity)", claims.get("ref") == "refs/heads/main" and claims.get("sub") == "repo:%s:ref:refs/heads/main" % repo, "ref %r sub %r" % (claims.get("ref"), claims.get("sub")))
     # the self-report is author-controlled: it is only compared, never trusted
     diff = compare_records(record_from_context(ctx), cl)
-    add("self-report (context.json) agrees with the signed claims", diff == [], "differs in %s" % diff if diff else "identical (informational: author-controlled)")
+    if ctx is None:
+        note("self-report (context.json)", "unreadable; the signed evidence is judged on its own")
+    elif diff:
+        note("self-report (context.json) differs from the signed claims", "differs in %s (author-controlled; the signed claims decide)" % diff)
+    else:
+        note("self-report (context.json)", "identical to the signed claims (informational)")
     res.append(("P (PR-author influence)", "NOT-READ", "needs the evidence of a pull_request run (separate GO)"))
     return res
 
@@ -455,8 +505,9 @@ def write_manifest(d, repo, head, attempt, prev_json, artifacts_json, zip_sha):
 HEAD = "a1" * 20
 REPO = "o/r"
 RUN = 123456
-START, END = "2026-01-01T00:00:00Z", "2026-01-01T00:01:00Z"
-IAT = 1767225630  # 2026-01-01T00:00:30Z
+START, END = "2026-01-01T00:00:00Z", "2026-01-01T00:12:00Z"
+IAT = 1767225610  # 2026-01-01T00:00:10Z; the token's exp is IAT + 300 (00:05:10Z)
+ART_CREATED = "2026-01-01T00:07:20Z"  # exp + 130 s: the workflow publishes after exp + 120
 KID = "test-kid"
 DEL = object()
 
@@ -500,7 +551,7 @@ def good_claims(**over):
          "event_name": "workflow_dispatch",
          "workflow_ref": "%s/%s@refs/heads/main" % (REPO, WORKFLOW_PATH),
          "job_workflow_ref": "%s/%s@refs/heads/main" % (REPO, WORKFLOW_PATH),
-         "iat": IAT, "exp": IAT + 600}
+         "iat": IAT, "exp": IAT + 300}
     c.update(over)
     return c
 
@@ -515,10 +566,10 @@ def api_run(**over):
 
 
 ARTIFACT = {"id": 777, "name": ARTIFACT_NAME, "workflow_run_id": RUN, "head_sha": HEAD,
-            "created_at": "2026-01-01T00:00:30Z", "size_in_bytes": 200, "zip_sha256": "c" * 64}
+            "created_at": ART_CREATED, "size_in_bytes": 200, "zip_sha256": "c" * 64}
 
 
-def build_fixture(key, claims=None, ctx=None, run=None, jwks=None, token=None, manifest=None, extra=None):
+def build_fixture(key, claims=None, ctx=None, run=None, token=None, manifest=None, extra=None):
     d = tempfile.mkdtemp()
     os.makedirs(os.path.join(d, "artifact"))
     os.makedirs(os.path.join(d, "api"))
@@ -527,7 +578,6 @@ def build_fixture(key, claims=None, ctx=None, run=None, jwks=None, token=None, m
     open(os.path.join(d, "artifact", "context.json"), "w").write(json.dumps(ctx))
     open(os.path.join(d, "artifact", "oidc-token.jwt"), "w").write(
         token if token is not None else make_token(key, claims or good_claims()) + "\n")
-    open(os.path.join(d, "jwks.json"), "w").write(json.dumps(jwks if jwks is not None else {"keys": [key.jwk()]}))
     open(os.path.join(d, "api", "run.json"), "w").write(json.dumps(run))
     open(os.path.join(d, "api", "jobs.json"), "w").write(json.dumps({"jobs": [{"id": 55, "name": "me1-evidence"}]}))
     m = {"workflow_path": WORKFLOW_PATH, "event": "workflow_dispatch", "status": "completed",
@@ -556,9 +606,17 @@ def selftest():
         bad += 0 if ok else 1
 
     BOUND, NOT = "EVIDENCE BOUND, P NOT READ", "EVIDENCE NOT BOUND (NOT MET)"
+    tdir = tempfile.mkdtemp()  # the trust root lives OUTSIDE every evidence directory
+
+    def jwks_file(obj, raw=None):
+        pth = os.path.join(tdir, "jwks-%d.json" % len(os.listdir(tdir)))
+        open(pth, "w").write(raw if raw is not None else json.dumps(obj))
+        return pth
+
+    TJ = jwks_file({"keys": [key.jwk()]})
 
     def ev(d, **kw):
-        a = dict(expect_head=HEAD, expect_repo=REPO, expect_run_id=RUN, expect_attempt=1)
+        a = dict(expect_head=HEAD, expect_repo=REPO, expect_run_id=RUN, expect_attempt=1, trusted_jwks=TJ)
         a.update(kw)
         return overall(evaluate(d, **a))
 
@@ -604,19 +662,45 @@ def selftest():
     case("token alg HS256", ev(build_fixture(key, token=make_token(key, good_claims(), alg="HS256"))), NOT)
     case("token payload tampered after signing", ev(build_fixture(key, token=(lambda t: t.split(".")[0] + "." + b64e(json.dumps(good_claims(run_id="999")).encode()) + "." + t.split(".")[2])(make_token(key, good_claims())))), NOT)
     case("token not a JWT", ev(build_fixture(key, token="not a jwt\\n")), NOT)
-    case("JWKS without keys", ev(build_fixture(key, jwks={"keys": []})), NOT)
-    case("JWKS key of another type", ev(build_fixture(key, jwks={"keys": [dict(key.jwk(), kty="EC")]})), NOT)
-    case("JWKS has the kid twice", ev(build_fixture(key, jwks={"keys": [key.jwk(), key.jwk()]})), NOT)
-    # self-report differences: the signed claims win, the difference is reported
-    case("self-report differs from the signed claims", ev(build_fixture(key, ctx=dict(record_from_api(api_run()), sha="b2" * 20))), NOT)
-    case("self-report is not an object", ev(build_fixture(key, ctx=["x"])), NOT)
+    case("trusted JWKS without keys", ev(build_fixture(key), trusted_jwks=jwks_file({"keys": []})), NOT)
+    case("trusted JWKS key of another type", ev(build_fixture(key), trusted_jwks=jwks_file({"keys": [dict(key.jwk(), kty="EC")]})), NOT)
+    case("trusted JWKS has the kid twice", ev(build_fixture(key), trusted_jwks=jwks_file({"keys": [key.jwk(), key.jwk()]})), NOT)
+    case("trusted JWKS holds only another issuer's key", ev(build_fixture(key), trusted_jwks=jwks_file({"keys": [other.jwk()]})), NOT)
+    # F2: the trust root is separate from the evidence
+    case("F2: trusted JWKS not given -> INCOMPLETE", ev(build_fixture(key), trusted_jwks=None), "INCOMPLETE (not read)")
+    case("F2: trusted JWKS file does not exist", ev(build_fixture(key), trusted_jwks="/nonexistent/jwks.json"), NOT)
+    case("F2: trusted JWKS is not JSON", ev(build_fixture(key), trusted_jwks=jwks_file(None, raw="<html>")), NOT)
+    dj = build_fixture(key, extra=lambda d: open(os.path.join(d, "jwks.json"), "w").write(json.dumps({"keys": [key.jwk()]})))
+    case("F2: the key file inside the evidence package is refused as trust root", ev(dj, trusted_jwks=os.path.join(dj, "jwks.json")), NOT)
+    rows = evaluate(dj, HEAD, REPO, RUN, 1, os.path.join(dj, "jwks.json"))
+    case("F2: ... and that very row is the one that fails",
+         [r[1] for r in rows if r[0].startswith("trusted JWKS")], ["NOT-MET"])
+    # a complete, internally consistent substitution of token + key + manifest inside the package
+    da = build_fixture(other, token=make_token(other, good_claims()),
+                       extra=lambda d: open(os.path.join(d, "jwks.json"), "w").write(json.dumps({"keys": [other.jwk()]})))
+    case("F2: attacker replaces token, key and manifest inside the package (owner's trusted keys decide)", ev(da), NOT)
+    case("F2: ... even when the attacker's key file is offered as the trust root", ev(da, trusted_jwks=os.path.join(da, "jwks.json")), NOT)
+    # F3: the self-report never invalidates the signed evidence; it is a NOTE
+    case("F3: self-report differs, signed evidence stands", ev(build_fixture(key, ctx=dict(record_from_api(api_run()), sha="b2" * 20))), BOUND)
+    rows = evaluate(build_fixture(key, ctx=dict(record_from_api(api_run()), sha="b2" * 20)), HEAD, REPO, RUN, 1, TJ)
+    case("F3: ... and the difference is reported as a NOTE", [r[1] for r in rows if r[0].startswith("self-report")], ["NOTE"])
+    case("F3: self-report is not an object, signed evidence stands", ev(build_fixture(key, ctx=["x"])), BOUND)
+    # F4: job_workflow_ref is not mandatory, a wrong one is still a failure
+    case("F4: job_workflow_ref absent -> not a failed binding", ev(build_fixture(key, claims={k: v for k, v in good_claims().items() if k != "job_workflow_ref"})), BOUND)
+    rows = evaluate(build_fixture(key, claims={k: v for k, v in good_claims().items() if k != "job_workflow_ref"}), HEAD, REPO, RUN, 1, TJ)
+    case("F4: ... reported as a NOTE", [r[1] for r in rows if r[0] == "OIDC job_workflow_ref"], ["NOTE"])
+    # F1: the token must have expired, by SERVER time, before the artifact existed
+    case("F1: artifact created before the token expired", ev(build_fixture(key, manifest={"artifact": dict(ARTIFACT, created_at="2026-01-01T00:05:00Z")})), NOT)
+    case("F1: artifact created 30 s after exp (margin 60 s)", ev(build_fixture(key, manifest={"artifact": dict(ARTIFACT, created_at="2026-01-01T00:05:40Z")})), NOT)
+    case("F1: artifact created exactly at exp + 60 s", ev(build_fixture(key, manifest={"artifact": dict(ARTIFACT, created_at="2026-01-01T00:06:10Z")})), BOUND)
+    case("F1: token exp missing", ev(build_fixture(key, claims={k: v for k, v in good_claims().items() if k != "exp"})), NOT)
     # API side
     dd = build_fixture(key, run=api_run(head_sha="c3" * 20))
-    rows = evaluate(dd, HEAD, REPO, RUN, 1)
+    rows = evaluate(dd, HEAD, REPO, RUN, 1, TJ)
     case("API run JSON disagrees with the manifest (that very row fails)",
          [r[1] for r in rows if r[0].startswith("API metadata file agrees")], ["NOT-MET"])
     case("manifest missing", ev(build_fixture(key, extra=lambda d: os.remove(os.path.join(d, "manifest.json")))), NOT)
-    case("a file changed after the manifest (stale mix)", ev(build_fixture(key, extra=lambda d: open(os.path.join(d, "jwks.json"), "a").write(" "))), NOT)
+    case("a file changed after the manifest (stale mix)", ev(build_fixture(key, extra=lambda d: open(os.path.join(d, "artifact", "context.json"), "a").write(" "))), NOT)
     case("unlisted file in the directory", ev(build_fixture(key, extra=lambda d: open(os.path.join(d, "old.txt"), "w").write("x"))), NOT)
     case("token file missing", ev(build_fixture(key, extra=lambda d: os.remove(os.path.join(d, "artifact", "oidc-token.jwt")))), NOT)
     case("manifest: artifact created outside the window", ev(build_fixture(key, manifest={"artifact": dict(ARTIFACT, created_at="2025-01-01T00:00:00Z")})), NOT)
@@ -630,7 +714,7 @@ def selftest():
     case("--expect-attempt not given", ev(build_fixture(key), expect_attempt=None), "INCOMPLETE (not read)")
 
     # --- manifest writer ---
-    A_OK = {"artifacts": [{"id": 777, "name": ARTIFACT_NAME, "expired": False, "created_at": "2026-01-01T00:00:30Z",
+    A_OK = {"artifacts": [{"id": 777, "name": ARTIFACT_NAME, "expired": False, "created_at": ART_CREATED,
                            "size_in_bytes": 200, "workflow_run": {"id": RUN, "head_sha": HEAD}}]}
 
     def writer(run, att, prev, arts, zsha="c" * 64, head=HEAD):
@@ -662,13 +746,16 @@ def selftest():
         return p.returncode, p.stdout + p.stderr
 
     d = build_fixture(key)
-    base = [d, "--expect-repo", REPO, "--expect-run-id", RUN, "--expect-attempt", 1, "--expect-head-sha", HEAD]
+    base = [d, "--trusted-jwks", TJ, "--expect-repo", REPO, "--expect-run-id", RUN, "--expect-attempt", 1, "--expect-head-sha", HEAD]
     rc, out = cli(*base)
     case("CLI evaluate: bound evidence, exit 0", (rc, "OVERALL: EVIDENCE BOUND, P NOT READ" in out), (0, True))
-    case("CLI evaluate: wrong run id, exit 1", cli(d, "--expect-repo", REPO, "--expect-run-id", RUN + 1, "--expect-attempt", 1, "--expect-head-sha", HEAD)[0], 1)
+    case("CLI evaluate: wrong run id, exit 1", cli(d, "--trusted-jwks", TJ, "--expect-repo", REPO, "--expect-run-id", RUN + 1, "--expect-attempt", 1, "--expect-head-sha", HEAD)[0], 1)
+    case("CLI evaluate: no --trusted-jwks, INCOMPLETE exit 1", cli(d, "--expect-repo", REPO, "--expect-run-id", RUN, "--expect-attempt", 1, "--expect-head-sha", HEAD)[0], 1)
+    dj2 = build_fixture(key, extra=lambda dd_: open(os.path.join(dd_, "jwks.json"), "w").write(json.dumps({"keys": [key.jwk()]})))
+    case("CLI evaluate: key file inside the evidence package, exit 1", cli(dj2, "--trusted-jwks", os.path.join(dj2, "jwks.json"), "--expect-repo", REPO, "--expect-run-id", RUN, "--expect-attempt", 1, "--expect-head-sha", HEAD)[0], 1)
     case("CLI evaluate: flag without value, exit 2", cli(d, "--expect-repo")[0], 2)
     case("CLI evaluate: extra positional, exit 2", cli(*(base + ["extra"]))[0], 2)
-    case("CLI evaluate: missing flag, INCOMPLETE exit 1", cli(d, "--expect-repo", REPO, "--expect-run-id", RUN, "--expect-attempt", 1)[0], 1)
+    case("CLI evaluate: missing flag, INCOMPLETE exit 1", cli(d, "--trusted-jwks", TJ, "--expect-repo", REPO, "--expect-run-id", RUN, "--expect-attempt", 1)[0], 1)
     rc, out = cli("--pk")
     case("CLI --pk: exit 0", (rc, "NOT-MET" in out), (0, False))
     t = tempfile.mkdtemp()
@@ -710,7 +797,8 @@ def main(argv):
             return fn(*args[1:])
     opts = {}
     for flag, key in (("--expect-head-sha", "expect_head"), ("--expect-repo", "expect_repo"),
-                      ("--expect-run-id", "expect_run_id"), ("--expect-attempt", "expect_attempt")):
+                      ("--expect-run-id", "expect_run_id"), ("--expect-attempt", "expect_attempt"),
+                      ("--trusted-jwks", "trusted_jwks")):
         if flag in args:
             i = args.index(flag)
             if i + 1 >= len(args):
