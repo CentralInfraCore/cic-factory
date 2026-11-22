@@ -18,13 +18,20 @@ import yaml
 
 FILES = ["lab-gate-pr.yml", "pk-canary-channels.yml"]
 ACTION = "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
-PK_RUN_EXPECTED_MARKERS = [
-    'echo "$PK_UNMASKED"\n',
-    'echo "$PK_UNMASKED" >> "$GITHUB_STEP_SUMMARY"\n',
-    'echo "::notice title=pk::$PK_UNMASKED"\n',
-    'echo "$PK_UNMASKED" > pk-artifact.txt\n',
-    'echo "masked-test: $CANARY_UNRESTRICTED"\n',
-]
+PK_RUN_EXPECTED = (
+    "set -euo pipefail\n"
+    'echo "PK-MARK start"\n'
+    'echo "$PK_UNMASKED"\n'
+    'echo "$PK_UNMASKED" >> "$GITHUB_STEP_SUMMARY"\n'
+    'echo "::notice title=pk::$PK_UNMASKED"\n'
+    'echo "$PK_UNMASKED" > pk-artifact.txt\n'
+    'echo "masked-test: $CANARY_UNRESTRICTED"\n'
+    "printf 'PK-U length=%s sha256=%s\\n' \"${#CANARY_UNRESTRICTED}\" "
+    "\"$(printf %s \"$CANARY_UNRESTRICTED\" | sha256sum | cut -d' ' -f1)\"\n"
+    "printf 'PK-J visible-secret-names=%s\\n' "
+    "\"$(printf %s \"$ALL_SECRETS_JSON\" | jq -c 'keys')\"\n"
+    'echo "PK-MARK end"\n'
+)
 
 # Tokens that must not occur anywhere in any file (comments included).
 FORBIDDEN = [
@@ -87,7 +94,7 @@ EXPECTED = {
                      "PK_UNMASKED": "CANARY-212-PK-UNMASKED-00000000000000000000",
                      "CANARY_UNRESTRICTED": "${{ secrets.CANARY_UNRESTRICTED }}",
                      "ALL_SECRETS_JSON": "${{ toJSON(secrets) }}"},
-                 "run": None},  # compared separately
+                 "run": PK_RUN_EXPECTED},  # whole-text equality
                 {"name": "pk artifact", "uses": ACTION,
                  "with": {"name": "pk-channels", "path": "pk-artifact.txt",
                           "retention-days": 1, "if-no-files-found": "error"}},
@@ -97,10 +104,10 @@ EXPECTED = {
 }
 
 
-def check_file(name, text):
+def check_file(name, text, forbidden=None):
     errors = []
     low = text.lower()
-    for tok in FORBIDDEN:
+    for tok in (FORBIDDEN if forbidden is None else forbidden):
         if tok in low:
             errors.append("%s: forbidden token %r" % (name, tok))
     try:
@@ -108,41 +115,18 @@ def check_file(name, text):
     except yaml.YAMLError as exc:
         return errors + ["%s: yaml error: %s" % (name, exc)]
     exp = EXPECTED[name]
-    if name == "pk-canary-channels.yml":
-        try:
-            run = doc["jobs"]["pk-channels"]["steps"][0].pop("run")
-        except (KeyError, IndexError, TypeError, AttributeError):
-            return errors + ["%s: no run body" % name]
-        if not isinstance(run, str):
-            errors.append("%s: run body is not text" % name)
-        else:
-            if "${{" in run:
-                errors.append("%s: expression in run body" % name)
-            for m in PK_RUN_EXPECTED_MARKERS:
-                if m not in run:
-                    errors.append("%s: missing run line %r" % (name, m.strip()))
-            if not run.startswith("set -euo pipefail\n"):
-                errors.append("%s: run body must start with set -euo pipefail" % name)
-            for line in run.splitlines():
-                if re.search(r"\b(curl|wget|nc|ssh|scp|git push|gh )\b", line):
-                    errors.append("%s: network or write command: %r" % (name, line))
-        exp = {k: v for k, v in exp.items()}
-        e_steps = [dict(s) for s in exp["jobs"]["pk-channels"]["steps"]]
-        e_steps[0].pop("run")
-        exp = dict(exp)
-        exp["jobs"] = {"pk-channels": dict(exp["jobs"]["pk-channels"], steps=e_steps)}
     if doc != exp or repr(doc) != repr(exp):
         errors.append("%s: parsed document differs from the expected document" % name)
     return errors
 
 
-def check_dir(files):
+def check_dir(files, forbidden=None):
     errors = []
     if sorted(files) != sorted(FILES):
         errors.append("file set differs: %s" % sorted(files))
     for n in FILES:
         if n in files:
-            errors += check_file(n, files[n])
+            errors += check_file(n, files[n], forbidden)
     return errors
 
 
@@ -186,6 +170,16 @@ def mutants(files):
     yield "no set -e", with_("pk-canary-channels.yml", p.replace("          set -euo pipefail\n", ""))
     yield "missing PK line", with_("pk-canary-channels.yml", p.replace('          echo "::notice title=pk::$PK_UNMASKED"\n', ""))
     yield "longer retention", with_("pk-canary-channels.yml", p.replace("retention-days: 1", "retention-days: 90"))
+    yield "extra harmless instruction", with_("pk-canary-channels.yml", p.replace('echo "PK-MARK end"', 'echo "PK-MARK end"\n          echo done'))
+    yield "extra instruction before end", with_("pk-canary-channels.yml", p.replace('echo "PK-MARK end"', 'date\n          echo "PK-MARK end"'))
+    yield "changed length computation", with_("pk-canary-channels.yml", p.replace('"${#CANARY_UNRESTRICTED}"', '"${#PK_UNMASKED}"'))
+    yield "changed digest input", with_("pk-canary-channels.yml", p.replace('printf %s "$CANARY_UNRESTRICTED" | sha256sum', 'printf %s "$PK_UNMASKED" | sha256sum'))
+    yield "changed names filter", with_("pk-canary-channels.yml", p.replace("jq -c 'keys'", "jq -c '.'"))
+    yield "missing PK-J check", with_("pk-canary-channels.yml", p.replace("          printf 'PK-J visible-secret-names=%s\\n' \"$(printf %s \"$ALL_SECRETS_JSON\" | jq -c 'keys')\"\n", ""))
+    yield "missing PK-U check", with_("pk-canary-channels.yml", "\n".join(l for l in p.split("\n") if "PK-U" not in l))
+    yield "reordered run lines", with_("pk-canary-channels.yml", p.replace('          echo "PK-MARK start"\n          echo "$PK_UNMASKED"\n', '          echo "$PK_UNMASKED"\n          echo "PK-MARK start"\n'))
+    yield "masked test prints other var", with_("pk-canary-channels.yml", p.replace('echo "masked-test: $CANARY_UNRESTRICTED"', 'echo "masked-test: $PK_UNMASKED"'))
+    yield "trailing space in run line", with_("pk-canary-channels.yml", p.replace('echo "PK-MARK end"', 'echo "PK-MARK end" '))
     yield "empty file", with_("lab-gate-pr.yml", "")
     yield "not yaml", with_("lab-gate-pr.yml", "a: [\n")
 
@@ -213,7 +207,10 @@ def main(argv):
             if not check_dir(m):
                 print("SELFTEST FAIL: mutant %r was accepted" % label)
                 return 1
-        print("SELFTEST OK: %d mutants rejected" % n)
+            if not check_dir(m, forbidden=[]):
+                print("SELFTEST FAIL: mutant %r accepted by structure alone (token list off)" % label)
+                return 1
+        print("SELFTEST OK: %d mutants rejected, also by structure alone (token list off)" % n)
     return 0
 
 
