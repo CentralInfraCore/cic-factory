@@ -1,0 +1,34 @@
+name: pk-canary-channels
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pk-channels:
+    name: pk-channels
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: pk channels
+        env:
+          PK_UNMASKED: CANARY-212-PK-UNMASKED-00000000000000000000
+          CANARY_UNRESTRICTED: ${{ secrets.CANARY_UNRESTRICTED }}
+          ALL_SECRETS_JSON: ${{ toJSON(secrets) }}
+        run: |
+          set -euo pipefail
+          echo "PK-MARK start"
+          echo "$PK_UNMASKED"
+          echo "$PK_UNMASKED" >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=pk::$PK_UNMASKED"
+          echo "$PK_UNMASKED" > pk-artifact.txt
+          echo "masked-test: $CANARY_UNRESTRICTED"
+          printf 'PK-U length=%s sha256=%s\n' "${#CANARY_UNRESTRICTED}" "$(printf %s "$CANARY_UNRESTRICTED" | sha256sum | cut -d' ' -f1)"
+          printf 'PK-J visible-secret-names=%s\n' "$(printf %s "$ALL_SECRETS_JSON" | jq -c 'keys')"
+          echo "PK-MARK end"
+      - name: pk artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pk-channels
+          path: pk-artifact.txt
+          retention-days: 1
+          if-no-files-found: error
