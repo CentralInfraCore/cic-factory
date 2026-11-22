@@ -6,7 +6,7 @@
 
 A futás: 45063800073, `workflow_dispatch`, `headSha` `4d432f5e8250948af83ff909a7314eeddadb1c29`, 1. kísérlet, `completed / success`; a GitHub **nem tartotta vissza** (a PK-workflow-tól eltérően). Az `me1 collect` lépés 19:59:13Z–20:06:14Z (≈ 7 perc), az artifact (14770618752) létrehozása 20:06:16Z. A bizonyíték a tulajdonos gépén (`~/.cache/ci-lab/me1-raw/45063800073`), a bizalmi gyökér külön (`~/.cache/ci-lab/me1-trust/jwks-45063800073.json`, SHA-256 `5f8164c9…`).
 
-**Az első kiolvasás (a 06q olvasójával): `EVIDENCE NOT BOUND (NOT MET)`**, 22 sor `MET`, 1 `NOT-MET`, 1 `NOTE`, 1 `NOT-READ`. A `NOT-MET` sor: „OIDC binds ref and subject (identity)": a `ref` `refs/heads/main`, a `sub` `repo:CIC-Security-Lab@359862858/ci-adversarial-lab@1467589211:ref:refs/heads/main`, az olvasó viszont `repo:CIC-Security-Lab/ci-adversarial-lab:ref:refs/heads/main`-t várt. Ez az olvasat és az indoka a jelentésben megőrzendő.
+**Az első kiolvasás (a 06q olvasójával): `EVIDENCE NOT BOUND (NOT MET)`**, 21 sor `MET`, 1 `NOT-MET`, 1 `NOTE`, 1 `NOT-READ` (összesen 24 sor; a dokumentum eredetileg tévesen 22 `MET`-et írt, javítva a 06s jelentésben, errata). A `NOT-MET` sor: „OIDC binds ref and subject (identity)": a `ref` `refs/heads/main`, a `sub` `repo:CIC-Security-Lab@359862858/ci-adversarial-lab@1467589211:ref:refs/heads/main`, az olvasó viszont `repo:CIC-Security-Lab/ci-adversarial-lab:ref:refs/heads/main`-t várt. Ez az olvasat és az indoka a jelentésben megőrzendő.
 
 **A valódi token (mért; a fejléc `alg` `RS256`; az `actor`, `actor_id`, `jti` értékét nem rögzítem):**
 
