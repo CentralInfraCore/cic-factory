@@ -2,7 +2,7 @@
 
 **Utólag készült**, a session `.jsonl` transcriptjéből (`~/.claude-personal/projects/-home-sinkog-sync-claude-factory-CIC-workdir-jobs-relay-issue-queue-01-workspace/81f1ed93-1498-4a48-9550-a87d4d857869.jsonl`), nem menet közben vezetve. Az időpontok UTC-ben, a transcript időbélyegeiből. A napló a session 2026-11-19 14:55-i szakaszától indul (CIC_Relay #162 modul-artifact hitelesítés: Relay #215–#219, cic-primitives #36–#47, Forms #166–#168, P1 pattern-profil, O5 motorválasztás); a session korábbi, 2026-11-14 – 2026-11-16 közötti szakasza (a privát biztonsági lelet kezelése) szándékosan nincs benne.
 
-A napló csak transcript: a felhasználó üzenetei (a beillesztett külső review-kkal szó szerint, a `<bash-input>` parancsokkal együtt) és Claude szöveges válaszai, időrendben. Eszközhívás és eszközkimenet, rendszer-emlékeztető, task-notification és a kontextus-összegzések nem szerepelnek. A PR-ok és a git-történet marad a forrás; ez a napló az interakció nyoma. Állapot a naplózás végén (2026-11-22): cic-primitives #46 mergelve (fe7e5ea); #47 (O5 motorválasztás) mergelve (55fee44), E1-E3 GO; #48 (O2 méretszabály Pi<=2048, O3 hibakódok és precedencia) mergelve (865ed47, jóváhagyott fej 43c3f6c, post-merge gate sikeres), O2/O3 GO; minden egyéb HOLD változatlan (implementáció, normatív vektorok, CI-kapu, P2, P4, Forms #166/#167, séma-véglegesítés, Relay #162). A naplót a lezárások után újragenerálta a `tools/session-transcript.py`; a korábban commitolt részek változatlansága ellenőrizve.
+A napló csak transcript: a felhasználó üzenetei (a beillesztett külső review-kkal szó szerint, a `<bash-input>` parancsokkal együtt) és Claude szöveges válaszai, időrendben. Eszközhívás és eszközkimenet, rendszer-emlékeztető, task-notification és a kontextus-összegzések nem szerepelnek. A PR-ok és a git-történet marad a forrás; ez a napló az interakció nyoma. Állapot a naplózás végén (2026-11-22): cic-primitives #46 mergelve (fe7e5ea); #47 (O5 motorválasztás) mergelve (55fee44), E1-E3 GO; #48 (O2 méretszabály Pi<=2048, O3 hibakódok és precedencia) mergelve (865ed47), O2/O3 GO; #49 (a pattern-profil normatív vektorkészletének vázlata: 509 vektor, 65 követelmény) mergelve (9fe89b1, jóváhagyott fej 315c3d2, post-merge gate sikeres); minden egyéb HOLD változatlan (CI-kapu, implementáció, publikálás, P2, P4, Forms #166/#167, séma-véglegesítés, Relay #162). A naplót a lezárások után újragenerálta a `tools/session-transcript.py`; a korábban commitolt részek változatlansága ellenőrizve.
 
 
 ### 2026-11-19 14:55 — Felhasználó
@@ -7402,4 +7402,431 @@ A review O2/O3 ajánlása GO. A döntéseket a merge és a te kifejezett szavad 
 
 ~~~~~
 A merge megtörtént, a fa-egyezés stimmel: a devel fája (`ecaea90…`) megegyezik a jóváhagyott fej fájával, és nincs különbség köztük. Megvárom a post-merge gate-et.
+~~~~~
+
+
+### 2026-11-22 14:47 — Claude
+
+~~~~~
+Post-merge zöld. Frissítem a memóriát és a thread-naplót.
+~~~~~
+
+
+### 2026-11-22 14:47 — Claude
+
+~~~~~
+A #48 mergelve, a post-merge ellenőrzések rendben vannak.
+
+- **Merge:** `865ed47f6f6b89927426f31771c768898ea19f1a` a devel-en, 2026-11-22 14:42 UTC. A jóváhagyott fej `43c3f6c` volt.
+- **Post-merge gate:** a `865ed47`-en a gate `success` (futás: 45034293502).
+- **Fa-egyezés:** a devel fája (`ecaea90…`) megegyezik a jóváhagyott fej fájával, nincs különbség.
+- **Memória:** frissítve (`MEMORY.md` és `project_162_artifact_auth_plan.md`). Rögzítettem az O2/O3 döntéseket, a leleteket és a review későbbi implementációs megjegyzését (a verifier költségkerete nem alapulhat csak a Π × értékhosszon).
+- **Thread-napló:** újragenerálva a `7d8b51c` helyi commitban (nincs pusholva). A korábban commitolt rész változatlan, a titokkeresés 0 találat.
+
+**Rögzített döntések (GO):**
+- Π ≤ 2048, a többi korlát változatlan.
+- A Π a profilverzió része.
+- 25 kifejezés-kód és 3 érték-kód.
+- Explicit precedencia.
+- A producer és a verifier egymástól függetlenül ellenőriz.
+
+**Állapot:** a P1 O5 és O2/O3 döntés-előkészítés lezárult, nincs nyitott PR. A következő, de még nem jóváhagyott lépések:
+- a normatív vektorkészlet és a CI-kapu (HOLD);
+- a harmadik, csak a szövegből, más nyelven készülő implementáció (HOLD);
+- az időbizonyíték-döntés (a lánc 2026-12-31-én lejár), amely külön, hétfőre esedékes.
+
+Az implementáció, a normatív vektorok, a CI-kapu, a P2, a P4, a Forms #166/#167, a séma-véglegesítés és a Relay #162 implementáció HOLD marad. Új lépést csak kifejezett GO-ra indítok.
+~~~~~
+
+
+### 2026-11-22 15:41 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+**A #48 lezárva. A P1 valamennyi O1–O6 tervezési döntése megszületett.**
+
+Következő lépésként a normatív vektorkészlet elkészítésére adnék GO-t.
+
+Hatókör:
+
+- Az elfogadott szemantika és korlátok leképezése tesztvektorokra.
+- Pozitív, negatív és határértékes esetek.
+- Hibakódok és hibaprecedencia.
+- Elvárt eredmények meghatározása a specifikációból, nem a meglévő prototípusból.
+- Követelmény–vektor megfeleltetés.
+- Külön PR és tartalmi review.
+
+**A CI-kapu és az implementáció még HOLD.** Először rögzítsük, hogy minek kell megfelelniük.
+
+Nem bővítjük a Primitives funkcionalitását. A már elfogadott feldolgozási paraméter szemantikáját tesszük ellenőrizhetővé.
+
+Az időbizonyíték-döntés marad hétfőre.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 15:41 — Claude
+
+~~~~~
+GO a normatív vektorkészletre (PR3). Először a repo meglévő vektor-konvencióját és azt nézem meg, mely ellenőrzések érintik az új fájlokat.
+~~~~~
+
+
+### 2026-11-22 15:52 — Claude
+
+~~~~~
+Az EN dokumentum javítva (a `\u0041` most helyesen szerepel, nincs nem-ASCII bájt). Jön a HU összefoglaló, a README, a `SHA256SUMS`, a tesztkészlet és a commit.
+~~~~~
+
+
+### 2026-11-22 15:55 — Claude
+
+~~~~~
+A PR3 helyben kész és commitolva, de még nincs pusholva.
+
+- **Ág:** `docs/grammar-pattern-vectors`, a devel `865ed47`-ről.
+- **Commit:** `d093ec826dbac261f64e54ef2d13cddb27002cf6`, 13 fájl, csak `docs/`. Meglévő fájlhoz nem nyúltam.
+- **Tesztek:** a teljes készlet 943 passed. A `sha256sum -c` tiszta mindkét evidence-könyvtárra.
+- **PR-leírás:** a `PR-BODY-primitives-p1-vectors.md` megvan.
+
+**A vektorkészlet** (`docs/design/pattern-profile-vectors/pattern-profile.yaml`):
+- 509 vektor, 65 követelmény, 31 kód:
+  - 278 kifejezés-vektor: 92 elfogadott, kézzel levezetett Π-vel, és 186 elutasított, pontosan egy kóddal.
+  - 215 értékvektor: egyezés, eltérés, túl hosszú, nem szkalár érték.
+  - 16 sémavektor: pin-állapotok, dokumentum-sorrend, nincs részleges elfogadás.
+- Minden korláthoz van pozitív, negatív és határérték-eset.
+- Minden kódhoz és minden követelményhez van vektor. A fájlellenőrzés ezt kikényszeríti, a követelmény–vektor mátrix a `results/check_vectors.txt`-ben van.
+- A kilenc meglévő contract 85 értékkel szerepel. A csak alakot ellenőrző esetek (például a 13. hónap) szándékosan egyezések, a P4 nyitva marad.
+- A fájl a `docs/design/` alatt van, nem a `proposals/` alatt. A `proposals/` alá helyezés a publikációs listát és a `project.yaml`-t érintené, az külön döntés és HOLD.
+- Négy követelmény verdikttel nem tesztelhető (időzítés, producer/verifier függetlenség, verziókötött evidence, verifier-költségkeret). Ezeket a fájl felsorolja, és megnevezi, hol tesztelendők.
+
+**Készítési szabály:** minden elvárást kézzel írtam a specifikáció szövegéből, nem implementáció kimenetéből. Az implementációkat utólag futtattam, az eltérést naplózni kellett volna.
+
+**Eredmények:**
+- **Konformancia:** a prototípus, a szövegből írt második implementáció, a **Go és a Rust** együtt 509 vektoron és 296 natív eseten **0 eltérést** adott.
+- **RED-initial:** a régi olvasat (Python `re.search`) a 204 egyezés/eltérés vektorból 28-on eltér, köztük a meglévő contractok minden záró-soremelés vektorán.
+- **Az eszköz tud bukni** (27/27 ellenőrzés):
+  - 10 beültetett hiba a vektorfájl másolatában;
+  - 10 az implementációkban;
+  - 2 a Go-runner másolatában (az egyiket a runner kanárija fogja, exit 3, a másikat csak a vektorok);
+  - 3 infrastruktúra-kontroll, ezek exit 2, nem detekció.
+
+**Készítési napló:**
+- **Saját hibák:** az első futás előtt, a szöveggel újraolvasva magam javítottam három Π-értéket. A `(a{0,255}){0,4}` alakú vektorok a szorzatszabályt sértették (1020 > 1000), ezeket 250-nel építettem újra.
+- **Escape-korrupció:** a `\u0041` escape-et egy eszközhiba sima `A`-vá alakította a fájlban és a dokumentumokban. Javítottam, és a kódolás-ellenőrzés mostantól csak nyomtatható ASCII-t enged.
+- **Törölt vektor:** egy vektort töröltem, mert a szöveg nem dönti el.
+- **Első futás:** az első konformancia-futás nulla eltérést talált. A javítások egyike sem futtatásból jött.
+
+**Nyitott pontok** (nem döntöttem el, a dokumentum 5. szakasza):
+- két azonos pin-deklaráció;
+- a dokumentum-sorrend a beágyazott contractokra;
+- a Π=0 programok (`a{0}`) elfogadottak, és csak az üres értékre illeszkednek;
+- a verziószám (`1`) és a pin-hibák pontos szövege a pin-döntéshez tartozik.
+
+**Egy korlát, amit a dokumentum kimond:** ugyanaz a szerző írta a szöveget, a vektorokat és a prototípusokat, ezért a 0 eltérés egy közös félreolvasásnál is ez lenne. Az igazi próba egy harmadik, más szerzőtől és nyelven készülő implementáció a szövegből és a vektorokból, ez a kapuval együtt HOLD.
+
+**Push és PR-nyitás (egy sor):**
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push -u origin docs/grammar-pattern-vectors && gh pr create --repo CentralInfraCore/cic-primitives --base devel --head docs/grammar-pattern-vectors --title "docs(pattern): P1 draft normative vector set with requirement traceability" --body-file [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-vectors.md
+```
+
+A push után a gate-et az új fejen figyelem. Utána kell külön tartalmi review és SHA-hoz kötött merge-jóváhagyás. Mergelni nem fogok. A CI-kapu, az implementáció, a P2/P4, a Forms #166/#167, a séma-véglegesítés és a Relay #162 implementáció HOLD marad. Az időbizonyíték-döntés külön, hétfőre.
+~~~~~
+
+
+### 2026-11-22 16:02 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push -u origin docs/grammar-pattern-vectors && gh pr create --repo CentralInfraCore/cic-primitives --base devel --head docs/grammar-pattern-vectors --title "docs(pattern): P1 draft normative vector set with requirement traceability" --body-file [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-vectors.md</bash-input>
+~~~~~
+
+
+### 2026-11-22 16:02 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'docs/grammar-pattern-vectors' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-primitives/pull/new/docs/grammar-pattern-vectors        
+remote: 
+To github.com:CentralInfraCore/cic-primitives.git
+ * [new branch]      docs/grammar-pattern-vectors -&gt; docs/grammar-pattern-vectors
+branch 'docs/grammar-pattern-vectors' set up to track 'origin/docs/grammar-pattern-vectors'.
+https://github.com/CentralInfraCore/cic-primitives/pull/49</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 16:05 — Claude
+
+~~~~~
+A PR3 megnyílt, és a gate zöld.
+
+- **PR:** #49, base `devel`, https://github.com/CentralInfraCore/cic-primitives/pull/49
+- **Fej:** `d093ec826dbac261f64e54ef2d13cddb27002cf6`. Ez egyezik a tesztelt committal (gate-futás: 45041607657).
+- **Gate:** `success`.
+- **PR:** `mergeable: true`, állapot `clean`.
+- **Hatókör:** csak `docs/`, a leírás a végleges szöveg.
+
+**Kérem:**
+1. Tartalmi review a #49-re. Három pontot érdemes külön nézni:
+   - A **készítési szabályt**: az elvárások kézzel, a szövegből készültek, az implementációkat utólag futtattam.
+   - Az **5. szakasz nyitott pontjait**: az azonos pin-deklaráció, a dokumentum-sorrend a beágyazott contractokra és a Π=0 programok.
+   - A **független szerző hiányát**: ugyanaz a szerző írta a szöveget, a vektorokat és a prototípusokat.
+2. SHA-hoz kötött merge-jóváhagyás a `d093ec8` fejre, ha rendben van. Mergelni nem fogok.
+3. Dönts az 5. szakasz nyitott pontjairól, vagy mondd meg, hogy a pin-döntésre vagy az implementációs specifikációra várjanak.
+
+A CI-kapu, az implementáció, a vektorfájl publikálása, a P2/P4, a Forms #166/#167, a séma-véglegesítés és a Relay #162 implementáció HOLD marad. A thread-naplót és a memóriát a #49 lezárása után frissítem. Az időbizonyíték-döntés külön, hétfőre esedékes.
+~~~~~
+
+
+### 2026-11-22 16:13 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+## **Review – cic-primitives #49**
+
+**Verdikt: REQUEST CHANGES – két szűk körű ellenőrzési javítás szükséges.** A vektorkészlet tartalmi és architekturális irányát elfogadom.
+
+A GitHubon ellenőriztem a commitot, a vektorfájlt, az ellenőrző programokat és a mérési eredményeket.
+
+| Ellenőrzés                  | Eredmény                                                                                                                    |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| PR                          | [#49](https://github.com/CentralInfraCore/cic-primitives/pull/49?utm_source=chatgpt.com)                                    |
+| Head                        | `d093ec826dbac261f64e54ef2d13cddb27002cf6`                                                                                  |
+| Gate                        | [45041607657](https://github.com/CentralInfraCore/cic-primitives/actions/runs/45041607657?utm_source=chatgpt.com) – SUCCESS |
+| Vektorok                    | 509                                                                                                                         |
+| Követelmények               | 65                                                                                                                          |
+| Hibakódok                   | 31                                                                                                                          |
+| Változás                    | +1415 sor, 13 fájl                                                                                                          |
+| Architekturális illeszkedés | PASS                                                                                                                        |
+
+### **F1 – A schema-vektor pozícióellenőrzése megkerülhető**
+
+A `conform.py` `p_schema()` függvényében:
+
+```
+check("P.schema", sc["id"],      (verdict, code, at if sc.get("at") is not None else None),      want)
+```
+
+Amennyiben a vektorból hiányzik az `at`, az ellenőrző eldobja a tényleges pozíciót. A `check_vectors.py` pedig nem követeli meg annak jelenlétét.
+
+**Javítás:** kifejezéshiba esetén legyen kötelező az `at`, pinhiba esetén ne legyen megengedett. A teljes eredményhármast maszkolás nélkül kell összehasonlítani. Ehhez negatív kontroll is szükséges.
+
+### **F2 – A vektorfájl normatív metaadatai nincsenek ellenőrizve**
+
+A YAML deklarálja a profilverziót és a hét erőforráskorlátot, de az ellenőrzők nem vetik össze ezeket az elfogadott O2 döntésekkel.
+
+Például a `pi_max: 2048` átírható `4096`-ra anélkül, hogy a jelenlegi ellenőrzések ezt szükségszerűen észlelnék.
+
+Kérem a rögzített korlátok ellenőrzését és legalább egy metaadat-módosító negatív kontrollt. A profilverzió egyelőre maradhat munkahipotézis.
+
+## **Tulajdonosi döntési ajánlás az 5. szakaszhoz**
+
+| Nyitott kérdés                           | Döntés                                                                           |
+| ---------------------------------------- | -------------------------------------------------------------------------------- |
+| Két azonos pin-deklaráció                | Elfogadható, ha különálló deklarációkból származnak. Nem szemantikai konfliktus. |
+| Két eltérő pin                           | Elutasítandó                                                                     |
+| Azonos YAML-kulcs többször               | A dokumentumolvasó felelőssége                                                   |
+| Beágyazott contractok bejárási sorrendje | Implementációs specifikációra vár                                                |
+| Π = 0                                    | **GO – megengedett**                                                             |
+| Profilverzió konkrét azonosítója         | Pin-döntésre vár                                                                 |
+| Elérhetetlen anchor-ágak                 | Nem részei a normatív szemantikának                                              |
+
+A Π=0 tiltására nincs indok. Az üres értéket elfogadó reguláris kifejezés érvényes feldolgozási szabály. Nem vezetünk be mesterséges megszorítást.
+
+A dokumentumszintű bejárási sorrendet pedig nem szabad a `pattern` primitív saját felelősségévé tenni.
+
+## **Függetlenség**
+
+A készítési eljárást elfogadom. A szerzői függetlenség hiányának dokumentálása korrekt.
+
+A harmadik implementáció legyen később valóban független: a fejlesztő csak a specifikációt és a vektorokat kapja meg, a prototípusokat ne.
+
+**Merge: HOLD az F1–F2 javításáig.**
+
+Az összes korábbi implementációs és publikációs HOLD változatlan.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 16:13 — Claude
+
+~~~~~
+Elfogadom a review-t, és javítom az F1–F2-t. A pozíció összehasonlítása maszkolás nélkül lesz, és kötelező kifejezéshibánál, tiltott pinhibánál. A metaadatokat a döntött értékekhez és a vektorok határpontjaihoz kötöm, mindkettőhöz negatív kontrollal.
+~~~~~
+
+
+### 2026-11-22 16:18 — Claude
+
+~~~~~
+Az F1–F2 javítása kész és commitolva, de még nincs pusholva.
+
+- **Új fej:** `315c3d28f66ec25269d19122988eada5517fc248`, a szülője a `d093ec8`.
+- **Hatókör:** csak `docs/`, meglévő fájlhoz nem nyúltam.
+- **Tesztek:** a teljes készlet 943 passed. A `sha256sum -c` tiszta.
+- **Vektorfájl:** a `pattern-profile.yaml` nem változott, tehát a 509 vektor és az elvárások ugyanazok.
+
+**F1 – a schema-vektor pozíciója:**
+- Az `at` kifejezéshibás schema-elutasításnál kötelező (1-től a contractok számáig). Pinhibánál és elfogadott schemánál tilos.
+- A `conform.py` az egész hármast (verdikt, kód, pozíció) maszkolás nélkül veti össze.
+- Negatív kontrollok:
+  - hiányzó pozíció, pinhibán lévő pozíció és a schemán kívüli pozíció (a vektorfájl másolatában);
+  - hibás pozíciójú vektorfájl a konformancia-futáson;
+  - két beültetett hiba a schema-szabályban: az utolsó elutasított contract jelentése, illetve a pin ellenőrzése a kifejezések után.
+
+**F2 – a normatív metaadatok:**
+- A hét korlátot, a 25+3+3 kódot és a profilnevet a `check_vectors.py` a fájltól függetlenül tartja, és minden eltérést elutasít.
+- A deklarált `pi_max`, `length` és `value_code_points` értéket a vektorok saját határpontjaihoz köti: kell egy elfogadott vektor a határon és egy elutasított egy fölötte.
+- Az ismert pin-verziót a profilverzióhoz köti.
+- A konformancia a deklarált korlátokat az implementáció konstansaival veti össze.
+- A profilverzió munkahipotézis marad (bármely pozitív egész, a fájlon belül konzisztens).
+- Negatív kontrollok: a `pi_max` 4096-ra, a hosszkorlát 255-re, a profilnév, a kódlista vagy a pin-verzió átírása, valamint minden Π-határvektor eltolása. Mind észlelve.
+
+**Önteszt:** 40/40 (volt 27): 19 beültetett hiba a vektorfájl másolatában, 12 az implementációkban, 2 hibás vektorfájl, 2 a Go-runnerben és 3 infrastruktúra-kontroll (exit 2).
+
+**Önkritika:** az első önteszt egy kontrollja nem bukott, mert a Π-határnak több vektora van (2048-nál három alakban), és csak egy eltolása nem elég. A kontrollt úgy erősítettem, hogy minden határvektort eltol, így az már észleli.
+
+**Nyitott pontok** (a dokumentum 5. szakasza, a review ajánlásával): a döntés a tiéd.
+- **Két azonos pin-deklaráció:** a review szerint elfogadható, ha külön deklarációkból jön. Vektor csak a döntés után kerül fel.
+- **Két eltérő pin:** elutasítandó (`S-004`, `S-007`).
+- **Azonos YAML-kulcs többször:** a dokumentumolvasó felelőssége.
+- **Beágyazott contractok bejárási sorrendje:** az implementációs specifikációra vár.
+- **Π = 0:** megengedett, a vektorok már ezt rögzítik.
+- **A profilverzió azonosítója:** a pin-döntésre vár.
+- **Az elérhetetlen anchor-ágak:** nem részei a normatív szemantikának.
+
+**Push és PR-leírás frissítése (a #49 ugyanaz marad):**
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-vectors && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/49 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-vectors.md --jq .number
+```
+
+A push után a gate-et az új fejen figyelem. Utána kell új tartalmi review és SHA-hoz kötött merge-jóváhagyás. Mergelni nem fogok. A CI-kapu, az implementáció, a vektorfájl publikálása, a P2/P4, a Forms #166/#167, a séma-véglegesítés és a Relay #162 implementáció HOLD marad. Az időbizonyíték-döntés külön, hétfőre esedékes.
+~~~~~
+
+
+### 2026-11-22 16:18 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-vectors && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/49 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-vectors.md --jq .number</bash-input>
+~~~~~
+
+
+### 2026-11-22 16:18 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-primitives.git
+   d093ec8..315c3d2  docs/grammar-pattern-vectors -&gt; docs/grammar-pattern-vectors
+49</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 16:22 — Claude
+
+~~~~~
+A #49 gate-je zöld az új fejen.
+
+- **Fej:** `315c3d28f66ec25269d19122988eada5517fc248`. Ez egyezik a tesztelt committal (gate-futás: 45043069279).
+- **Gate:** `success`.
+- **PR:** `mergeable: true`, állapot `clean`.
+- **Leírás:** tartalmazza a „Review round 1" részt az F1–F2 válaszokkal.
+- **Hatókör:** a `d093ec8`-hoz képest csak az ellenőrző eszközök, az eredmények és a dokumentumok változtak. A vektorfájl és az elvárások változatlanok.
+
+**Kérem:**
+1. Új tartalmi review az F1–F2 javításokra a `315c3d2` fején.
+2. SHA-hoz kötött merge-jóváhagyás, ha rendben van. Mergelni nem fogok.
+3. Az 5. szakasz nyitott pontjairól tulajdonosi döntés. A review ajánlása a dokumentumban szerepel. Vektor csak a döntött pontokhoz kerül, a két azonos pin-deklaráció egyelőre nem.
+
+A CI-kapu, az implementáció, a vektorfájl publikálása, a P2/P4, a Forms #166/#167, a séma-véglegesítés és a Relay #162 implementáció HOLD marad. A thread-naplót és a memóriát a #49 lezárása után frissítem. Az időbizonyíték-döntés külön, hétfőre esedékes.
+~~~~~
+
+
+### 2026-11-22 16:26 — Felhasználó
+
+~~~~~
+<pasted_content id="1732">
+## **Review – cic-primitives #49, második kör**
+
+**Verdikt: APPROVE – F1 és F2 lezárható.**
+
+| Ellenőrzés       | Eredmény                                                                                                                    |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Head             | `315c3d28f66ec25269d19122988eada5517fc248`                                                                                  |
+| Gate             | [45043069279](https://github.com/CentralInfraCore/cic-primitives/actions/runs/45043069279?utm_source=chatgpt.com) – SUCCESS |
+| PR teljes mérete | +1509 sor, 13 fájl                                                                                                          |
+| Vektorkészlet    | 509, változatlan                                                                                                            |
+| Önteszt          | 40/40                                                                                                                       |
+| Hatókör          | PASS                                                                                                                        |
+
+### **Tartalmi ellenőrzés**
+
+- **F1 – PASS:** a teljes eredményhármas összehasonlítása maszkolás nélkül történik. A pozíció kötelező, illetve tiltott jelenlétét külön ellenőrzések biztosítják. A negatív kontrollok megfelelőek.
+- **F2 – PASS:** mind a hét korlátot, a profilnevet és a hibakódokat a vektorfájltól függetlenül ellenőrzik. A deklarált korlátok és az implementációs konstansok eltérése is kimutatható.
+
+### **Döntések**
+
+| Kérdés                                                     | Verdikt                           |
+| ---------------------------------------------------------- | --------------------------------- |
+| V1 – az 509 vektor mint megfelelőségi referencia tervezete | GO                                |
+| Azonos pin különálló deklarációkban                        | GO – elfogadható                  |
+| Eltérő pin-deklarációk                                     | GO – elutasítandók                |
+| Duplikált YAML-kulcs                                       | Dokumentumolvasó felelőssége      |
+| Π = 0                                                      | GO – megengedett                  |
+| Beágyazott contractok sorrendje                            | Implementációs specifikációra vár |
+| Konkrét profilverzió                                       | Pin-döntésre vár                  |
+| Elérhetetlen anchor-ágak kizárása                          | GO                                |
+
+Az azonos pin-deklarációhoz tartozó vektor a következő csomagban kerüljön be, ne módosítsuk miatta a már ellenőrzött fejet.
+
+**SHA-hoz kötött szakmai merge-jóváhagyás: APPROVE.**
+
+```
+gh pr merge 49 --repo CentralInfraCore/cic-primitives --merge \
+  --match-head-commit 315c3d28f66ec25269d19122988eada5517fc248
+```
+
+Minden korábbi HOLD változatlan. Az architekturális határokat a PR betartja.
+</pasted_content id="1732">
+~~~~~
+
+
+### 2026-11-22 16:26 — Claude
+
+~~~~~
+A review jóváhagyta a `315c3d2` fejet, és az 5. szakasz pontjaira is adott verdiktet. A review szerint a tényleges merge tulajdonosi jóváhagyást kér, ezért nem mergelek magam. Ha ez a tulajdonosi GO, te futtatod:
+
+```
+! gh pr merge 49 --repo CentralInfraCore/cic-primitives --merge --match-head-commit 315c3d28f66ec25269d19122988eada5517fc248
+```
+
+A review kérésének megfelelően az azonos pin-deklarációhoz tartozó vektor **nem kerül fel ebbe a fejbe**, azt a következő csomagban viszem be.
+
+A merge után ezeket végzem el:
+1. Post-merge gate a devel merge-commitján.
+2. Fa-egyezés ellenőrzése a jóváhagyott fejjel.
+3. Memória frissítése: #49 mergelve, a döntések rögzítve (V1 GO, azonos pin külön deklarációkból elfogadható, eltérő pin elutasítandó, Π=0 megengedett, a bejárási sorrend az implementációs specifikációra vár, a profilverzió a pin-döntésre, az anchor-ágak kizárva), a következő csomag teendői.
+4. Thread-napló újragenerálása helyi commitként, push nélkül.
+
+A CI-kapu, az implementáció, a vektorfájl publikálása, a P2/P4, a Forms #166/#167, a séma-véglegesítés és a Relay #162 implementáció HOLD marad. Az időbizonyíték-döntés külön, hétfőre esedékes.
+~~~~~
+
+
+### 2026-11-22 16:26 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 49 --repo CentralInfraCore/cic-primitives --merge --match-head-commit 315c3d28f66ec25269d19122988eada5517fc248</bash-input>
+~~~~~
+
+
+### 2026-11-22 16:26 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-22 16:27 — Claude
+
+~~~~~
+A merge megtörtént, a fa-egyezés stimmel (a devel fája `ba76c3d…`, nincs különbség a jóváhagyott fejhez képest). Megvárom a post-merge gate-et.
 ~~~~~
