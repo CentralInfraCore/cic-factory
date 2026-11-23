@@ -53,6 +53,14 @@ def selftest():
     def rows(d, pol):
         return mc.evaluate_dir(d, pol, jf)
 
+    def policy_file(obj, raw=None):
+        p = os.path.join(tempfile.mkdtemp(), "policy.json")
+        open(p, "w").write(raw if raw is not None else json.dumps(obj))
+        return p
+    def cli(*argv):
+        p = subprocess.run([sys.executable, "-I", os.path.join(HERE, "read-me1.py")] + [str(a) for a in argv], capture_output=True, text=True,
+                           env=dict(os.environ, ME1_SELFTEST_CHILD="1"))
+        return p.returncode, p.stdout + p.stderr
     pinA = mc.policy_from_main
     # ---------------------------------------------------------------- V2: selection
     a2, b2 = A((55, 56)), B((55, 56))
@@ -88,7 +96,14 @@ def selftest():
     a8 = A((55,))
     drop_listing(a8)
     check("V2 discovery required, the listing is unavailable: incomplete, NO fallback to the pin", ev(a8, pinA(a8)), INC)
-    check("V2 discovery optional, the listing is unavailable: the pin alone decides (reported as a note)", ev(a8, dict(pinA(a8), discovery="optional")), BOUND)
+    # F1: there is NO optional discovery in the P-c/V profile: the policy that asks for it is refused at load,
+    # so a missing listing can never yield EVIDENCE BOUND through the policy mode
+    popt = policy_file_obj = None
+    check("F1 a policy with discovery=optional is refused at load (no P-c/V profile without discovery)", rm.load_policy(policy_file(dict(pinA(a8), discovery="optional")))[0], None)
+    check("F1 ... the error says discovery must be required", "must be required" in (rm.load_policy(policy_file(dict(pinA(a8), discovery="optional")))[1] or ""), True)
+    check("F1 CLI: the optional policy is refused (exit 2), so the missing listing is never tolerated",
+          cli(a8, "--trusted-jwks", jf, "--policy", policy_file(dict(pinA(a8), discovery="optional")))[0], 2)
+    check("F1 discovery=required stated explicitly is accepted", rm.load_policy(policy_file(dict(pinA(a8), discovery="required")))[1], None)
     for label, per, want in (("the pinned check-run concluded failure", {"conclusion": "failure"}, NOT),
                              ("the pinned check-run is still in progress", {"status": "in_progress", "conclusion": None}, NOT),
                              ("the pinned check-run belongs to another app", {"app": {"slug": "evil-app"}}, NOT),
@@ -165,10 +180,6 @@ def selftest():
     check("V3 job_workflow_ref absent: not mandatory", ev(mutated(drop=("job_workflow_ref",)), pol0), BOUND)
 
     # ---------------------------------------------------------------- V1: suppression, fail-closed
-    def policy_file(obj, raw=None):
-        p = os.path.join(tempfile.mkdtemp(), "policy.json")
-        open(p, "w").write(raw if raw is not None else json.dumps(obj))
-        return p
     for label, mut in (("unknown key", lambda p: dict(p, extra=1)),
                        ("missing repository", lambda p: {k: v for k, v in p.items() if k != "repository"}),
                        ("repository_id as a string", lambda p: dict(p, repository_id="1")),
@@ -239,10 +250,6 @@ def selftest():
     check("V4 two artifacts in the window: not picked (ambiguous)", rec is None and aerr is not None, True)
 
     # ---------------------------------------------------------------- command line
-    def cli(*argv):
-        p = subprocess.run([sys.executable, "-I", os.path.join(HERE, "read-me1.py")] + [str(a) for a in argv], capture_output=True, text=True,
-                           env=dict(os.environ, ME1_SELFTEST_CHILD="1"))
-        return p.returncode, p.stdout + p.stderr
     pf = policy_file(pol0)
     rc, out = cli(base, "--trusted-jwks", jf, "--policy", pf)
     check("CLI --policy: bound evidence, exit 0", (rc, "OVERALL: EVIDENCE BOUND, P NOT READ" in out), (0, True))
@@ -274,8 +281,10 @@ MUTATIONS = [
      [('len(hit) == 1 and hit[0].get("status") == "completed" and hit[0].get("conclusion") == "success",', 'True,')]),
     ("an ambiguous selection picks the candidate that matches (no exactly-one rule)",
      [('if len(cands) == 1:', 'if len(cands) >= 1:')]),
-    ("a missing listing is tolerated (fallback to the pin)",
-     [('"NOT-READ" if required else "NOTE"', '"NOTE"')]),
+    ("a missing listing is tolerated (the missing-listing row is only a NOTE)",
+     [('rows.append(("POLICY discovery: candidate runs", "NOT-READ",', 'rows.append(("POLICY discovery: candidate runs", "NOTE",')]),
+    ("F1: the policy may ask for an optional discovery (the P-c/V profile has no such mode)",
+     [('    if pol.get("discovery", "required") != "required":', '    if False:')]),
     ("a truncated listing is tolerated (the first page is taken as complete)",
      [('    if isinstance(total, int) and not isinstance(total, bool) and total > len(lst):\n        return None',
        '    if False:\n        return None')]),
@@ -298,13 +307,25 @@ MUTATIONS = [
     ("the policy's workflow_sha is not bound",
      [('add("binds %s (the approved workflow file commit)" % cname, claims.get(cname) == pol["workflow_sha"],',
        'add("binds %s (the approved workflow file commit)" % cname, True,')]),
+    # F2: the PR-collection path (covered by test-fetch-me1.py)
+    ("F2: the PR object's head.sha is not compared with the approved PR head",
+     [('    if h.get("sha") != approved_head:', '    if False:')], ("test-fetch-me1.py",)),
+    ("F2: the PR object's head.ref is not checked",
+     [('    if h.get("ref") != probe_ref:', '    if False:')], ("test-fetch-me1.py",)),
+    ("F2: a merged probe PR is accepted",
+     [('    if pr.get("merged") is not False:', '    if False:')], ("test-fetch-me1.py",)),
+    ("F2: the run's head_sha is assumed equal to the PR head again (the observation is turned back into a premise)",
+     [('want = {"event": "pull_request", "status": "completed", "conclusion": "success", "run_attempt": attempt}',
+       'want = {"event": "pull_request", "status": "completed", "conclusion": "success", "run_attempt": attempt, "head_sha": head}')], ("test-fetch-me1.py",)),
 ]
 
 
 def mutations():
     src = open(os.path.join(HERE, "read-me1.py")).read()
     failed = 0
-    for name, repls in MUTATIONS:
+    for entry in MUTATIONS:
+        name, repls = entry[0], entry[1]
+        scripts = entry[2] if len(entry) > 2 else ("test-pcv.py", "me1-controls.py")
         mutated_src = src
         for old, new in repls:
             if mutated_src.count(old) != 1:
@@ -312,12 +333,13 @@ def mutations():
                 return 2
             mutated_src = mutated_src.replace(old, new)
         tmp = tempfile.mkdtemp()
-        for f in ("read-me1.py", "me1-controls.py", "test-pcv.py"):
+        for f in ("read-me1.py", "me1-controls.py", "test-pcv.py", "test-fetch-me1.py", "fetch-me1.sh", "fetch-jwks.sh"):
             shutil.copy(os.path.join(HERE, f), tmp)
         open(os.path.join(tmp, "read-me1.py"), "w").write(mutated_src)
         n = 0
-        for script in ("test-pcv.py", "me1-controls.py"):
-            p = subprocess.run([sys.executable, "-I", os.path.join(tmp, script), "--selftest"], capture_output=True, text=True)
+        for script in scripts:
+            args = [] if script == "test-fetch-me1.py" else ["--selftest"]
+            p = subprocess.run([sys.executable, "-I", os.path.join(tmp, script)] + args, capture_output=True, text=True)
             n += sum(1 for l in p.stdout.splitlines() if l.startswith("FAIL"))
         print("%-4s mutation %-86s %d failing check(s)" % ("ok" if n else "FAIL", name, n))
         failed += 0 if n else 1

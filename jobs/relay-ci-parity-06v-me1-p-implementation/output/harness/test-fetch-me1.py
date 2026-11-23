@@ -51,12 +51,26 @@ def art(id_=777, created=rm.ART_CREATED, head=HEAD, run=RUN, expired=False):
 
 
 PR_HEAD = "d4" * 20
+MERGE_SHA = "e5" * 20
+
+
+def pr_obj(**over):
+    o = {"number": 7, "state": "open", "merged": False, "merge_commit_sha": MERGE_SHA,
+         "head": {"sha": PR_HEAD, "ref": "p-probe"}, "base": {"ref": "main"}}
+    for k, v in over.items():
+        if k in ("head", "base") and isinstance(v, dict):
+            o[k] = dict(o[k], **v)
+        else:
+            o[k] = v
+    return o
 PR_OVER = {"event": "pull_request", "head_branch": "p-probe", "head_sha": PR_HEAD,
            "path": ".github/workflows/me1-evidence.yml"}
 
 
-def build(key, att, prev_jobs=0, artifacts=None, latest=None, claims=None, tweak=None, run_over=None, head=HEAD, listing=True):
+def build(key, att, prev_jobs=0, artifacts=None, latest=None, claims=None, tweak=None, run_over=None, head=HEAD, listing=True, pr=None):
     mock = tempfile.mkdtemp()
+    if pr is not None:
+        j("repos/o/r/pulls/7", pr, mock)
     latest = att if latest is None else latest
     ro = run_over or {}
     j(API, run_obj(latest, **ro), mock)
@@ -81,7 +95,7 @@ def build(key, att, prev_jobs=0, artifacts=None, latest=None, claims=None, tweak
     return mock
 
 
-def run_fetch(mock, att, pre_existing_out=False, profile=None, head=HEAD):
+def run_fetch(mock, att, pre_existing_out=False, profile=None, head=HEAD, pr=None):
     home = tempfile.mkdtemp()
     os.makedirs(os.path.join(home, ".cache", "ci-lab"))
     open(os.path.join(home, ".cache", "ci-lab", "env.sh"), "w").write("ORG=o\nX=r\nY=y\nexport ORG X Y\n")
@@ -94,7 +108,7 @@ def run_fetch(mock, att, pre_existing_out=False, profile=None, head=HEAD):
     if pre_existing_out:
         os.makedirs(out)
     env = dict(os.environ, HOME=home, MOCK=mock, PATH=bindir + ":" + os.environ["PATH"])
-    cmd = ["bash", os.path.join(HERE, "fetch-me1.sh"), str(RUN), out, head, str(att)] + ([profile] if profile else [])
+    cmd = ["bash", os.path.join(HERE, "fetch-me1.sh"), str(RUN), out, head, str(att)] + ([profile] if profile else []) + ([str(pr)] if pr is not None else [])
     p = subprocess.run(cmd, env=env, capture_output=True, text=True)
     return p.returncode, out, p.stderr.strip().splitlines()[-1:]
 
@@ -133,15 +147,27 @@ def main():
            "discovery": "required", "pin": {"run_id": RUN, "run_attempt": 1, "check_run_id": JOB}}
     res = rm.overall(rm.evaluate(out, trusted_jwks=jf, policy=pol)) if rc == 0 else "fetch failed"
     check("end to end: the fetched package is accepted by the policy-mode verifier (pinned, discovery required)", res == "EVIDENCE BOUND, P NOT READ", res)
-    # --- the pr profile: a pull_request run of the probe PR (the shapes are recorded, not asserted)
-    mockp = build(key, 1, run_over=PR_OVER, head=PR_HEAD)
-    rc, out, err = run_fetch(mockp, 1, profile="pr", head=PR_HEAD)
+    # --- the pr profile: AUTHORIZATION of the PR head (PR object) kept apart from the OBSERVATION of the run's SHA fields
+    mockp = build(key, 1, run_over=PR_OVER, head=PR_HEAD, pr=pr_obj())
+    rc, out, err = run_fetch(mockp, 1, profile="pr", head=PR_HEAD, pr=7)
     manp = json.load(open(os.path.join(out, "manifest.json"))) if rc == 0 else {}
     check("pr profile: a pull_request run is fetched, the manifest records profile, observed path and head_branch",
           rc == 0 and manp.get("profile") == "pr" and manp.get("head_branch") == "p-probe" and manp.get("workflow_path") == PR_OVER["path"] and manp.get("event") == "pull_request", " ".join(err))
-    check("pr profile: the checks-API listing of the PR head is fetched", rc == 0 and os.path.exists(os.path.join(out, "api", "check-runs.json")))
-    mockp2 = build(key, 1, run_over=dict(PR_OVER, path=".github/workflows/me1-evidence.yml@refs/pull/7/merge"), head=PR_HEAD)
-    rc, out, err = run_fetch(mockp2, 1, profile="pr", head=PR_HEAD)
+    check("pr profile: the PR object is fetched and digest-listed (the authorization source)", rc == 0 and "api/pr.json" in manp.get("files", {}))
+    check("pr profile: the observed relations are RECORDED (run head equals the PR head here, recorded not assumed)",
+          rc == 0 and manp.get("observed", {}).get("run_head_sha_equals_pr_head") is True and manp["observed"].get("pr_number") == 7, str(manp.get("observed")))
+    check("pr profile: the checks-API listing of the run's commit is fetched", rc == 0 and os.path.exists(os.path.join(out, "api", "check-runs.json")))
+    # F2: the run's head_sha DIFFERS from the PR head (e.g. the merge commit). The measurement must be able to
+    # OBSERVE exactly this deviation instead of failing on it: collected, the relation recorded as False.
+    mockd = build(key, 1, run_over=dict(PR_OVER, head_sha=MERGE_SHA), head=MERGE_SHA, pr=pr_obj())
+    rc, out, err = run_fetch(mockd, 1, profile="pr", head=PR_HEAD, pr=7)
+    mand = json.load(open(os.path.join(out, "manifest.json"))) if rc == 0 else {}
+    check("F2 the run's head_sha differs from the approved PR head: COLLECTED, the deviation is observed, not refused", rc == 0, " ".join(err))
+    check("F2 ... the manifest records run_head_sha_equals_pr_head=False and equals_pr_merge_commit=True",
+          rc == 0 and mand["observed"]["run_head_sha_equals_pr_head"] is False and mand["observed"]["run_head_sha_equals_pr_merge_commit"] is True, str(mand.get("observed")))
+    check("F2 ... and the artifact and the listing are bound to the run's OWN head_sha (the manifest head_sha is the observed one)", rc == 0 and mand["head_sha"] == MERGE_SHA)
+    mockp2 = build(key, 1, run_over=dict(PR_OVER, path=".github/workflows/me1-evidence.yml@refs/pull/7/merge"), head=PR_HEAD, pr=pr_obj())
+    rc, out, err = run_fetch(mockp2, 1, profile="pr", head=PR_HEAD, pr=7)
     check("pr profile: a path with an @ref suffix is recorded verbatim (H7 is not asserted)", rc == 0 and json.load(open(os.path.join(out, "manifest.json")))["workflow_path"].endswith("@refs/pull/7/merge"))
 
     def refuse(label, mock, att, pre=False, **kw):
@@ -149,10 +175,18 @@ def main():
         check("refused: " + label, rc != 0 and not os.path.exists(os.path.join(out, "manifest.json")),
               "rc=%d %s" % (rc, " ".join(err)[:70]))
 
-    refuse("pr profile: the run is a workflow_dispatch run", build(key, 1, head=PR_HEAD, run_over=dict(PR_OVER, event="workflow_dispatch")), 1, profile="pr", head=PR_HEAD)
-    refuse("pr profile: the run comes from main (not a probe branch)", build(key, 1, head=PR_HEAD, run_over=dict(PR_OVER, head_branch="main")), 1, profile="pr", head=PR_HEAD)
-    refuse("pr profile: the run failed", build(key, 1, head=PR_HEAD, run_over=dict(PR_OVER, conclusion="failure")), 1, profile="pr", head=PR_HEAD)
-    refuse("pr profile: the run is of another head than the approved PR head", build(key, 1, head=PR_HEAD, run_over=dict(PR_OVER, head_sha="a9" * 20)), 1, profile="pr", head=PR_HEAD)
+    refuse("pr profile: the run is a workflow_dispatch run", build(key, 1, head=PR_HEAD, run_over=dict(PR_OVER, event="workflow_dispatch"), pr=pr_obj()), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("pr profile: the run comes from main (not a probe branch)", build(key, 1, head=PR_HEAD, run_over=dict(PR_OVER, head_branch="main"), pr=pr_obj()), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("pr profile: the run failed", build(key, 1, head=PR_HEAD, run_over=dict(PR_OVER, conclusion="failure"), pr=pr_obj()), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("F2 authorization: the PR object's head.sha is not the approved PR head", build(key, 1, head=PR_HEAD, run_over=PR_OVER, pr=pr_obj(head={"sha": "a9" * 20})), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("F2 authorization: the PR's head.ref is not the probe branch", build(key, 1, head=PR_HEAD, run_over=PR_OVER, pr=pr_obj(head={"ref": "feature"})), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("F2 authorization: the PR's base is not main", build(key, 1, head=PR_HEAD, run_over=PR_OVER, pr=pr_obj(base={"ref": "dev"})), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("F2 authorization: the probe PR was merged", build(key, 1, head=PR_HEAD, run_over=PR_OVER, pr=pr_obj(merged=True)), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("F2 authorization: the PR object cannot be read", build(key, 1, head=PR_HEAD, run_over=PR_OVER), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("F2 authorization: the PR object has no number", build(key, 1, head=PR_HEAD, run_over=PR_OVER, pr={k: v for k, v in pr_obj().items() if k != "number"}), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("pr profile: the PR number is missing", build(key, 1, head=PR_HEAD, run_over=PR_OVER, pr=pr_obj()), 1, profile="pr", head=PR_HEAD)
+    refuse("pr profile: the PR number is not numeric", build(key, 1, head=PR_HEAD, run_over=PR_OVER, pr=pr_obj()), 1, profile="pr", head=PR_HEAD, pr="x")
+    refuse("main profile: a PR number is given (it belongs to the pr profile only)", build(key, 1), 1, profile="main", pr=7)
     refuse("main profile: a pull_request run is presented", build(key, 1, run_over=PR_OVER, head=HEAD), 1)
     refuse("unknown profile", build(key, 1), 1, profile="weird")
     refuse("the checks-API listing cannot be read (no silent skip)", build(key, 1, listing=False), 1)

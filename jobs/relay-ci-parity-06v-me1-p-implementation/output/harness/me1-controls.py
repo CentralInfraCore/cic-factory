@@ -247,9 +247,26 @@ def describe_pr(main_dir, pr_dir, jwks_path):
     is_pull = pr_ref.startswith("refs/pull/") and pr_ref.endswith("/merge") and pr_wref.endswith("@" + pr_ref)
     out.append(("H2 ref and workflow_ref carry refs/pull/N/merge", "CONFIRMED" if is_pull else ("REFUTED" if pr_ref == mc.get("ref") else "RECORDED"),
                 "ref %r, workflow_ref ref-part %r" % (pr_ref, pr_wref.split("@")[-1])))
-    out.append(("H3 sha is the merge commit, not the main head", "CONFIRMED" if pc.get("sha") != mc.get("sha") else "REFUTED",
-                "claim sha %s main sha; API head_sha %s the claim sha" % ("differs from" if pc.get("sha") != mc.get("sha") else "equals",
-                                                                       "equals" if run.get("head_sha") == pc.get("sha") else "differs from")))
+    out.append(("H3 sha is not the main head", "CONFIRMED" if pc.get("sha") != mc.get("sha") else "REFUTED",
+                "claim sha %s main sha" % ("differs from" if pc.get("sha") != mc.get("sha") else "equals")))
+    # the SHA relations are OBSERVED from their authoritative sources and never assumed (review F2)
+    pr_obj = None
+    try:
+        pr_obj = json.load(open(os.path.join(pr_dir, "api", "pr.json")))
+    except (OSError, ValueError):
+        pass
+    if isinstance(pr_obj, dict):
+        merge, head = pr_obj.get("merge_commit_sha"), (pr_obj.get("head") or {}).get("sha")
+        out.append(("H3a the token sha is the PR merge commit (source: the PR object)", "CONFIRMED" if merge and pc.get("sha") == merge else
+                    ("REFUTED" if pc.get("sha") in (mc.get("sha"), head) and pc.get("sha") != merge else "RECORDED"),
+                    "token sha %s; PR merge_commit_sha %s; PR head.sha %s" % (pc.get("sha"), merge, head)))
+        out.append(("H3b the run's head_sha relation (source: the run API object)", "RECORDED",
+                    "run.head_sha %s the PR head, %s the PR merge commit, %s the token sha" % (
+                        "equals" if run.get("head_sha") == head else "differs from",
+                        "equals" if merge and run.get("head_sha") == merge else "differs from",
+                        "equals" if run.get("head_sha") == pc.get("sha") else "differs from")))
+    else:
+        out.append(("H3a/H3b the SHA relations", "NOT-OBSERVABLE", "api/pr.json is missing: the PR object is the authoritative source and was not collected"))
     out.append(("H4 the subject is a pull_request subject", "REFUTED" if pc.get("sub") == mc.get("sub") else
                 ("CONFIRMED" if str(pc.get("sub", "")).endswith(":pull_request") else "RECORDED"), "sub %r" % (pc.get("sub"),)))
     out.append(("H5 head_ref and base_ref are filled", "CONFIRMED" if pc.get("head_ref") and pc.get("base_ref") else "REFUTED",
@@ -296,7 +313,7 @@ PR_HEAD = "d4" * 20
 MERGE = "e5" * 20
 
 
-def synth_pr(key, run_id, check_id, path=".github/workflows/me1-evidence.yml", wname="me1-evidence", sub_shape="pull_request"):
+def synth_pr(key, run_id, check_id, path=".github/workflows/me1-evidence.yml", wname="me1-evidence", sub_shape="pull_request", merge_sha=MERGE):
     sub = ("repo:o@%d/r@%d:pull_request" % (rm.OWNER_ID, rm.REPO_ID)) if sub_shape == "pull_request" else \
           ("repo:o@%d/r@%d:ref:refs/pull/7/merge" % (rm.OWNER_ID, rm.REPO_ID))
     wref = "%s/%s@refs/pull/7/merge" % (rm.REPO, path.split("@")[0])
@@ -312,9 +329,12 @@ def synth_pr(key, run_id, check_id, path=".github/workflows/me1-evidence.yml", w
                                    "artifact": dict(rm.ARTIFACT, workflow_run_id=run_id, head_sha=PR_HEAD)})
     json.dump({"jobs": [{"id": check_id, "name": "me1-evidence"}]}, open(os.path.join(d, "api", "jobs.json"), "w"))
     json.dump(_listing([check_id]), open(os.path.join(d, "api", "check-runs.json"), "w"))
+    json.dump({"number": 7, "merged": False, "merge_commit_sha": merge_sha, "head": {"sha": PR_HEAD, "ref": "p-probe"},
+               "base": {"ref": "main"}}, open(os.path.join(d, "api", "pr.json"), "w"))
     mp = os.path.join(d, "manifest.json")
     m = json.load(open(mp))
     m["files"]["api/check-runs.json"] = rm.sha256_file(os.path.join(d, "api", "check-runs.json"))
+    m["files"]["api/pr.json"] = rm.sha256_file(os.path.join(d, "api", "pr.json"))
     json.dump(m, open(mp, "w"))
     restamp(d)
     return d
@@ -376,14 +396,32 @@ def selftest():
     finally:
         rm.evaluate = real
     # --- describe-pr: hypotheses confirmed, refuted, recorded
-    rows = {r[0][:2]: r for r in describe_pr(A, P1, jf)}
+    rows = {r[0].split()[0]: r for r in describe_pr(A, P1, jf)}
     check("describe-pr: H1-H5 confirmed on the hypothesised shapes", all(rows[h][1] == "CONFIRMED" for h in ("H1", "H2", "H3", "H4", "H5", "H8")), str({h: rows[h][1] for h in sorted(rows)}))
+    check("describe-pr (F2): the SHA relations are read from the PR object: H3a confirmed, H3b recorded", rows["H3"][1] == "CONFIRMED" and any(r[0].startswith("H3a") and r[1] == "CONFIRMED" for r in describe_pr(A, P1, jf))
+          and any(r[0].startswith("H3b") and r[1] == "RECORDED" for r in describe_pr(A, P1, jf)))
+    # a PR run whose token sha is NOT the merge commit: the hypothesis is refuted, and the run is still described
+    P3 = synth_pr(key, rm.RUN + 8, 83)
+    c3 = claims_of(P3)
+    o3 = json.load(open(os.path.join(P3, "api", "pr.json")))
+    o3["merge_commit_sha"] = "9f" * 20
+    json.dump(o3, open(os.path.join(P3, "api", "pr.json"), "w"))
+    restamp(P3)
+    h3 = {r[0].split()[0]: r for r in describe_pr(A, P3, jf)}
+    check("describe-pr (F2): the token sha differs from the PR merge commit -> H3a is not confirmed (recorded, not forced)", h3["H3a"][1] in ("RECORDED", "REFUTED"), h3["H3a"][2][:80])
+    nopr = synth_pr(key, rm.RUN + 9, 84)
+    os.remove(os.path.join(nopr, "api", "pr.json"))
+    mpn = os.path.join(nopr, "manifest.json")
+    mn = json.load(open(mpn))
+    mn["files"].pop("api/pr.json")
+    json.dump(mn, open(mpn, "w"))
+    check("describe-pr (F2): without the PR object the SHA relations are NOT-OBSERVABLE (no assumption)", any(r[0].startswith("H3a/H3b") and r[1] == "NOT-OBSERVABLE" for r in describe_pr(A, nopr, jf)))
     check("describe-pr: H6 is not confirmed for a P1 workflow of the same name only when names differ", True)
-    rows2 = {r[0][:2]: r for r in describe_pr(A, P2, jf)}
+    rows2 = {r[0].split()[0]: r for r in describe_pr(A, P2, jf)}
     check("describe-pr: H6 confirmed for the twin (same workflow name claim as the protected workflow)", rows2["H6"][1] == "CONFIRMED", rows2["H6"][2])
     # a PR token that looks like a main token refutes the hypotheses instead of being explained away
     fake = synth_main(key, rm.RUN + 6, 81, [81])
-    rows3 = {r[0][:2]: r for r in describe_pr(A, fake, jf)}
+    rows3 = {r[0].split()[0]: r for r in describe_pr(A, fake, jf)}
     check("describe-pr: a pull_request-looking run whose claims equal the main run REFUTES H1, H2, H3 and H4",
           all(rows3[h][1] == "REFUTED" for h in ("H1", "H2", "H3", "H4")), str({h: rows3[h][1] for h in ("H1", "H2", "H3", "H4")}))
     check("describe-pr: the influence surface lists the differing claims", "event_name" in dict((r[0], r[2]) for r in describe_pr(A, P1, jf))["influence surface"])

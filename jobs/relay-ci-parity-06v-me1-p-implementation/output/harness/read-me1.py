@@ -7,6 +7,8 @@
   read-me1.py --pk                          positive control: the comparator on synthetic records
   read-me1.py DIR --trusted-jwks FILE --policy FILE        policy mode: the decision policy is fixed in advance
                                                            (see load_policy); the checks API only discovers
+  read-me1.py --check-pr PR_JSON APPROVED_PR_HEAD          (used by fetch-me1.sh) authorize the PR head against the
+                                                           PR object; the run's SHA fields are only OBSERVED
   read-me1.py --check-run RUN_JSON OWNER/REPO HEAD ATTEMPT PREV_JSON [main|pr]  (used by fetch-me1.sh)
   read-me1.py --pick-artifact RUN_JSON ARTIFACTS_JSON HEAD                  (used by fetch-me1.sh)
   read-me1.py --write-manifest DIR OWNER/REPO HEAD ATTEMPT PREV_JSON ARTIFACTS_JSON ZIP_SHA256 [main|pr]
@@ -54,7 +56,7 @@ ISS = "https://token.actions.githubusercontent.com"
 AUD = "me1-evidence"
 FETCHED = ["artifact/context.json", "artifact/oidc-token.jwt", "api/run.json", "api/jobs.json"]
 # the checks-API listing of the approved commit (discovery and cross-check only, never the decision policy)
-OPTIONAL_FILES = ["api/check-runs.json"]
+OPTIONAL_FILES = ["api/check-runs.json", "api/pr.json"]
 # the artifact must have been created (server time) this long after the token's exp (workflow waits 120 s)
 PUBLISH_MARGIN = 60
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -277,7 +279,7 @@ def check_manifest(d, expect_head, expect_repo, expect_run_id, expect_attempt):
     if not isinstance(m.get("head_sha"), str) or not SHA_RE.match(m["head_sha"]):
         problems.append("head_sha")
     files = m.get("files")
-    if not isinstance(files, dict) or sorted(files) not in (sorted(FETCHED), sorted(FETCHED + OPTIONAL_FILES)):
+    if not isinstance(files, dict) or not set(FETCHED) <= set(files) or not set(files) - set(FETCHED) <= set(OPTIONAL_FILES):
         problems.append("files set")
         files = {}
     for rel, dig in files.items():
@@ -477,10 +479,11 @@ def check_run(run_json, repo, head, attempt, prev_json, profile="main"):
            "conclusion": run.get("conclusion"), "head_branch": run.get("head_branch"),
            "run_attempt": run.get("run_attempt"), "head_sha": run.get("head_sha")}
     if profile == "pr":
-        # a pull_request run of the throwaway probe PR: the path and head_branch shapes are RECORDED (H7),
-        # not asserted; the run must still be complete, successful and of the approved head (the PR head)
-        want = {"event": "pull_request", "status": "completed", "conclusion": "success",
-                "run_attempt": attempt, "head_sha": head}
+        # a pull_request run of the throwaway probe PR. The run's own SHA fields, path and head_branch are
+        # OBSERVED and RECORDED (H3, H7), never asserted: whether run.head_sha equals the PR head is a
+        # hypothesis the measurement may refute. The authorization of the PR head is a separate check against
+        # the PR object (check_pr); here the run must only be a complete, successful pull_request run.
+        want = {"event": "pull_request", "status": "completed", "conclusion": "success", "run_attempt": attempt}
     elif profile == "main":
         want = {"workflow_path": WORKFLOW_PATH, "event": "workflow_dispatch", "status": "completed",
                 "conclusion": "success", "head_branch": "main", "run_attempt": attempt, "head_sha": head}
@@ -498,6 +501,43 @@ def check_run(run_json, repo, head, attempt, prev_json, profile="main"):
         return None, None, "the run is not the approved one: " + "; ".join(bad)
     got["previous_attempts"] = prev
     return run, got, None
+
+
+def check_pr(pr_json, approved_head, probe_ref="p-probe", base_ref="main"):
+    """AUTHORIZATION of the PR head, bound to its authoritative source (the PR object of the API), kept apart
+    from the OBSERVATION of the run's SHA fields. Returns (observed-dict, error-or-None)."""
+    try:
+        pr = json.loads(read(pr_json))
+    except (TypeError, ValueError):
+        return None, "PR object unreadable or not JSON"
+    if not isinstance(pr, dict):
+        return None, "PR object is not an object"
+    if not SHA_RE.match(approved_head or ""):
+        return None, "approved PR head is not a 40-hex SHA"
+    h, b = pr.get("head") or {}, pr.get("base") or {}
+    bad = []
+    if h.get("sha") != approved_head:
+        bad.append("head.sha=%r (approved %r)" % (h.get("sha"), approved_head))
+    if h.get("ref") != probe_ref:
+        bad.append("head.ref=%r (want %r)" % (h.get("ref"), probe_ref))
+    if b.get("ref") != base_ref:
+        bad.append("base.ref=%r (want %r)" % (b.get("ref"), base_ref))
+    if pr.get("merged") is not False:
+        bad.append("merged=%r (a probe PR is never merged)" % (pr.get("merged"),))
+    if not isinstance(pr.get("number"), int) or isinstance(pr.get("number"), bool):
+        bad.append("number")
+    if bad:
+        return None, "the PR is not the approved probe PR: " + "; ".join(bad)
+    return {"pr_number": pr["number"], "pr_head_sha": h["sha"], "pr_merge_commit_sha": pr.get("merge_commit_sha")}, None
+
+
+def check_pr_main(pr_json, approved_head):
+    _, err = check_pr(pr_json, approved_head)
+    if err:
+        print("refusing: " + err, file=sys.stderr)
+        return 1
+    print("the PR head is the approved one")
+    return 0
 
 
 def check_run_main(run_json, repo, head, attempt, prev_json, profile="main"):
@@ -534,7 +574,17 @@ def write_manifest(d, repo, head, attempt, prev_json, artifacts_json, zip_sha, p
     except (TypeError, ValueError):
         print("refusing: artifact JSON unreadable", file=sys.stderr)
         return 1
-    rec, aerr = pick_artifact(run, arts, head)
+    obs = None
+    art_head = head
+    if profile == "pr":
+        # authorization: the PR head against the PR object; observation: the run's own SHA fields
+        obs, perr = check_pr(os.path.join(d, "api", "pr.json"), head)
+        if perr:
+            print("refusing: " + perr, file=sys.stderr)
+            return 1
+        art_head = run.get("head_sha")   # the artifact must belong to THIS run: bound to the run's own head_sha
+        got["head_sha"] = art_head
+    rec, aerr = pick_artifact(run, arts, art_head)
     if aerr:
         print("refusing: " + aerr, file=sys.stderr)
         return 1
@@ -552,6 +602,10 @@ def write_manifest(d, repo, head, attempt, prev_json, artifacts_json, zip_sha, p
         return 1
     if profile != "main":
         m["profile"] = profile
+        # OBSERVED relations, recorded with their sources and NOT assumed (H3): none of them is an accepted premise
+        m["observed"] = dict(obs, run_head_sha=run.get("head_sha"),
+                             run_head_sha_equals_pr_head=(run.get("head_sha") == obs["pr_head_sha"]),
+                             run_head_sha_equals_pr_merge_commit=(run.get("head_sha") == obs["pr_merge_commit_sha"] if obs["pr_merge_commit_sha"] else None))
     with open(os.path.join(d, "manifest.json"), "w", encoding="utf-8") as fh:
         json.dump(m, fh, indent=2, sort_keys=True)
     print("manifest written for run %s (attempt %s, head %s)" % (m["run_id"], m["run_attempt"], head))
@@ -608,8 +662,8 @@ def load_policy(path):
         return None, "workflow_sha must be a 40-hex commit or absent"
     if pol.get("job_name", "me1-evidence") != "me1-evidence":
         return None, "job_name must be me1-evidence"
-    if pol.get("discovery", "required") not in ("required", "optional"):
-        return None, "discovery must be required or optional"
+    if pol.get("discovery", "required") != "required":
+        return None, "discovery must be required: the P-c/V profile has no optional discovery (a missing checks-API listing is never tolerated)"
     pin = pol.get("pin")
     if pin is not None:
         if not (isinstance(pin, dict) and set(pin) == {"run_id", "run_attempt", "check_run_id"}
@@ -691,9 +745,8 @@ def policy_rows(d, man, policy, jwks):
         except (TypeError, ValueError):
             listing = None
     cands = candidates_of(listing, pol) if listing is not None else None
-    required = pol.get("discovery", "required") == "required"
     if cands is None:
-        rows.append(("POLICY discovery: candidate runs", "NOT-READ" if required else "NOTE",
+        rows.append(("POLICY discovery: candidate runs", "NOT-READ",
                      "the checks-API listing is missing or unreadable; there is NO fallback to an author- or reader-supplied identifier"))
     else:
         ids = [c.get("id") for c in cands]
@@ -1081,7 +1134,7 @@ def main(argv):
         report(rows)
         return 0 if all(r[1] == "MET" for r in rows) else 1
     for flag, n, fn in (("--write-manifest", (8, 9), write_manifest), ("--check-run", (6, 7), check_run_main),
-                        ("--pick-artifact", (4,), pick_artifact_main)):
+                        ("--check-pr", (3,), check_pr_main), ("--pick-artifact", (4,), pick_artifact_main)):
         if args and args[0] == flag:
             if len(args) not in n:
                 print(__doc__, file=sys.stderr)

@@ -1,10 +1,13 @@
 #!/bin/bash
 # Fetch the M-E1 evidence for ONE approved ATTEMPT of ONE run of me1-evidence.yml.
-# usage: fetch-me1.sh RUN_ID OUTDIR APPROVED_HEAD_SHA ATTEMPT [PROFILE]
-#   PROFILE main (default): the protected workflow_dispatch run on main. PROFILE pr: a pull_request run of
-#   the throwaway probe PR (the path and head_branch shapes are recorded, not asserted; APPROVED_HEAD_SHA is
-#   then the PR head the run belongs to). Both profiles also fetch the checks-API listing of that commit
-#   into api/check-runs.json: DISCOVERY and cross-check only, never the decision policy.
+# usage: fetch-me1.sh RUN_ID OUTDIR APPROVED_HEAD_SHA ATTEMPT [PROFILE [PR_NUMBER]]
+#   PROFILE main (default): the protected workflow_dispatch run on main. PROFILE pr (PR_NUMBER required): a
+#   pull_request run of the throwaway probe PR. APPROVED_HEAD_SHA is then the approved PR HEAD COMMIT, and it
+#   is AUTHORIZED against the PR object of the API (api/pr.json: head.sha, head.ref p-probe, base.ref main, not
+#   merged). The run's own SHA fields, path and head_branch are only OBSERVED and recorded (hypotheses H3, H7:
+#   whether run.head_sha equals the PR head is NOT assumed); the artifact is bound to THIS run's own head_sha.
+#   Both profiles also fetch the checks-API listing of the run's commit into api/check-runs.json: DISCOVERY and
+#   cross-check only, never the decision policy.
 #   OUTDIR must NOT exist. The attempt must be: this workflow, workflow_dispatch, completed/success,
 #   branch main, head SHA = APPROVED_HEAD_SHA, in $ORG/$X, and either attempt 1 with no earlier attempt
 #   or attempt 2 whose attempt 1 was held (completed / action_required, zero jobs). The run's CURRENT
@@ -16,13 +19,19 @@
 set -euo pipefail
 . ~/.cache/ci-lab/env.sh
 : "${ORG:?}" "${X:?}" "${Y:?}"
-U="usage: fetch-me1.sh RUN_ID OUTDIR APPROVED_HEAD_SHA ATTEMPT [main|pr]"
+U="usage: fetch-me1.sh RUN_ID OUTDIR APPROVED_HEAD_SHA ATTEMPT [main | pr PR_NUMBER]"
 RUN_ID=${1:?$U}
 OUT=${2:?$U}
 HEAD=${3:?$U}
 ATT=${4:?$U}
 PROFILE=${5:-main}
+PR_NUMBER=${6:-}
 [ "$PROFILE" = main ] || [ "$PROFILE" = pr ] || { echo "refusing: profile must be main or pr" >&2; exit 1; }
+if [ "$PROFILE" = pr ]; then
+  [[ "$PR_NUMBER" =~ ^[0-9]+$ ]] || { echo "refusing: the pr profile needs the numeric PR number" >&2; exit 1; }
+elif [ -n "$PR_NUMBER" ]; then
+  echo "refusing: a PR number belongs to the pr profile only" >&2; exit 1
+fi
 HERE=$(cd "$(dirname "$0")" && pwd)
 RM="python3 -I $HERE/read-me1.py"
 [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "refusing: run id is not numeric" >&2; exit 1; }
@@ -44,10 +53,21 @@ done
 $RM --check-run "$OUT/api/run.json" "$ORG/$X" "$HEAD" "$ATT" "$OUT/.prev.json" "$PROFILE"
 
 gh api "$API/attempts/$ATT/jobs" > "$OUT/api/jobs.json"
+LIST_HEAD=$HEAD
+ART_HEAD=$HEAD
+if [ "$PROFILE" = pr ]; then
+  # AUTHORIZATION: the approved PR head against the PR object (an authoritative source), before anything else
+  gh api "repos/$ORG/$X/pulls/$PR_NUMBER" > "$OUT/api/pr.json"
+  $RM --check-pr "$OUT/api/pr.json" "$HEAD"
+  # OBSERVATION: the run's own head_sha (not assumed equal to the PR head) binds the listing and the artifact
+  LIST_HEAD=$(jq -r .head_sha "$OUT/api/run.json")
+  ART_HEAD=$LIST_HEAD
+  [[ "$LIST_HEAD" =~ ^[0-9a-f]{40}$ ]] || { echo "refusing: the run's head_sha is not a 40-hex SHA" >&2; exit 1; }
+fi
 # discovery and cross-check source: the check-runs of the commit this run belongs to (never the decision policy)
-gh api "repos/$ORG/$X/commits/$HEAD/check-runs?per_page=100" > "$OUT/api/check-runs.json"
+gh api "repos/$ORG/$X/commits/$LIST_HEAD/check-runs?per_page=100" > "$OUT/api/check-runs.json"
 gh api "$API/artifacts" > "$OUT/.arts.json"
-ART_ID=$($RM --pick-artifact "$OUT/api/run.json" "$OUT/.arts.json" "$HEAD")
+ART_ID=$($RM --pick-artifact "$OUT/api/run.json" "$OUT/.arts.json" "$ART_HEAD")
 gh api "repos/$ORG/$X/actions/artifacts/$ART_ID/zip" > "$OUT/.artifact.zip"
 ZIP_SHA=$(sha256sum "$OUT/.artifact.zip" | cut -d' ' -f1)
 python3 -I -m zipfile -e "$OUT/.artifact.zip" "$OUT/artifact"

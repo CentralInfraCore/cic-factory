@@ -23,7 +23,7 @@
 | **P2** | `payload/p2/.github/workflows/me1-evidence-twin.yml` (blob `35e27ba42a45cb1fec18c66ec7a519c5c16a2790`) | **új** workflow, **azonos `name:` és job-névvel**, csak `pull_request` triggerrel, azonos törzzsel |
 | P-ellenőrző | `check-me1-p-workflows.py` | pontosan a két fájl, teljes dokumentum- és `run`-test-egyezés, 81 beültetett eltérés |
 | Olvasó | `harness/read-me1.py` | az #90-es olvasó + **döntési politika mód** (`--policy`), a felderítés és keresztellenőrzés, az állításosztályok |
-| Gyűjtő | `harness/fetch-me1.sh` | + `pr` profil, + a checks-API lista (`api/check-runs.json`) a manifestben |
+| Gyűjtő | `harness/fetch-me1.sh` | + `pr` profil (a **PR-fej jogosultsága** a PR API-objektumához kötve, `api/pr.json`; a futás SHA-mezői csak **megfigyelve**), + a checks-API lista (`api/check-runs.json`) a manifestben |
 | Kontrollok | `harness/me1-controls.py` | hamisítási, keresztezési és visszajátszási kontrollok (valódi bizonyítékra is ráengedhetők, offline), a `describe-pr` hipotézis-értékelő, a `--attach-listing` |
 | Tesztek | `harness/test-pcv.py`, `test-fetch-me1.py`, `test-me1-body.py` | a P-c/V mátrix és a mutációs ellenőrzés, a gyűjtő lánc, a törzs szárazfutása |
 | Tulajdonosi szkriptek | `owner/deliver-p-probe.sh`, `owner/open-p-probe-pr.sh`, `owner/test-owner-scripts.py` | a mérési ág helyi előkészítése (nem pushol), a PR megnyitása (**ez maga a mérés indítása**) |
@@ -31,7 +31,7 @@
 ## 3. A hipotézisek kezelése (a `pull_request` állításalakjai nem mértek)
 
 - **A tervek H1–H8 hipotézisei** (`event_name`, `ref`/`workflow_ref`, `sha`, `sub`, `head_ref`/`base_ref`, a `workflow` név, a `path`/`head_branch` alakja, a token kérhetősége) **nem lettek mértként kódolva**. A `describe-pr` ezeket **CONFIRMED / REFUTED / RECORDED / NOT-OBSERVABLE** állapotba értékeli a megfigyelt bizonyíték alapján; egy főági állításokat hordozó „pull_request-nek látszó" futás a H1–H4-et **megcáfolja**, nem magyarázza el (tesztelt).
-- **A `pr` profil gyűjtése csak rögzít** (a `path` és a `head_branch` alakját nem állítja, csak azt kéri, hogy a futás `pull_request`, kész, sikeres, a PR-fejhez tartozó, és nem a `main`-ről jött); egy `@ref` utótagos `path`-t szó szerint rögzít (H7).
+- **A `pr` profil gyűjtése a jogosultságot és a megfigyelést szétválasztja (review F2).** *Jogosultság:* a jóváhagyott PR-fej commitja a **PR API-objektumához** (`api/pr.json`, hiteles forrás) kötött: `head.sha` = a jóváhagyott fej, `head.ref` = `p-probe`, `base.ref` = `main`, nem mergelt; ez fail-closed. *Megfigyelés:* a futás **saját** `head_sha`, `path`, `head_branch` mezője **csak rögzített**, az egyenlőségét a PR fejével **nem feltételezzük** (H3, H7): a manifest `observed` blokkja rögzíti, hogy a futás `head_sha`-ja egyenlő-e a PR fejével, illetve a PR merge-commitjával. Az artifact és a lista a **futás saját `head_sha`-jához** kötött. Így a mérés **egyszerre fail-closed és képes megfigyelni az eltérést**, amelynek megfigyelése a célja (tesztelt: a futás `head_sha`-ja eltér a PR fejétől, a gyűjtés mégis megtörténik, az eltérés rögzítve).
 - **Az olvasó politika módja kizárólag a főági profilt támogatja** (esemény `workflow_dispatch`, ref `refs/heads/main`, a védett workflow útvonala; más érték a politika betöltésekor hiba). **PR-profilú elfogadási politika nincs megvalósítva**: a PR-futás bizonyítékát ebben a csomagban kizárólag **negatív kontrollként** vetjük a főági politika elé; a saját elfogadási profilja csak mért értékekre épülhet, külön csomagban.
 - **A `workflow_sha` és a `job_workflow_sha` elvárt értéke külön politika-mező**, nem a `sha`-ból levezetett (a #93 review megjegyzése): a főági profilban a mért alak az, hogy mindhárom a futás head-je, de **a politika nem feltételezi**; ha a mező hiányzik, a sor `NOTE` („nem kötött"), nem hallgatólagos egyenlőség.
 - **A szintetikus PR-fixtúrák a hipotézis-alakot jelölik** (a tesztkimenet „hypothesised pull_request shapes" címkével), és **két alternatív alakra** is lefutnak (a `sub` más alakja, a `path` `@ref` utótaggal): a kontrollok az alakváltozatra is tartanak.
@@ -46,7 +46,7 @@
 | A pin | `POLICY pin: run_id`, `run_attempt`, `check_run_id`; a `check_run_id` egyezik az API job-azonosítójával is |
 | **Nincs „legfrissebb" szabály** | rögzítés nélkül több jelölt → `NOT-READ` („a verifier nem választ"), a listasorrendtől és az indítási időtől függetlenül |
 | A checks API **felderít és keresztellenőriz** | a rögzített check-run jelölt, `completed`/`success`, github-actions app; a rögzítés **utáni** új futás **tájékoztató riasztás**, nem váltás |
-| A felderítés elérhetetlensége | `discovery: required` mellett `NOT-READ`, **nincs visszaesés** a pinre vagy az olvasó bemenetére |
+| A felderítés elérhetetlensége | `NOT-READ`, **nincs visszaesés** a pinre vagy az olvasó bemenetére; **a P-c/V profilban nincs opcionális felderítés** (review F1): a politika `discovery: optional` értéke a **betöltéskor hiba**, így hiányzó lista mellett a politika módban `EVIDENCE BOUND` sosem adódhat |
 | Csonkolt lista (`total_count` > az oldal) | `NOT-READ`: egy csonkolt első oldal nem adhat hamis „egyetlen jelöltet" (a saját átnézésem találta) |
 | Régi csomag lista nélkül | a `me1-controls.py --attach-listing` a listát **másolathoz** csatolja (az eredeti érintetlen, a manifest jelöli); a valódi A-futás (45063800073) csomagja így használható, mert az **artifactja lejárt, újragyűjtés nem lehetséges** |
 
@@ -91,15 +91,16 @@ A kontrollok **bizonyíték-könyvtárakból** építik a PR-szerző lehetséges
 | `check-me1-p-workflows.py --selftest` | **81 beültetett eltérés**, mind elutasítva, a tiltott-token lista nélkül is (köztük: `pull_request_target`, a szűrő kiszélesítése, a P2 `workflow_dispatch`-e, a P1 triggerének elvesztése, a P2 nevének és job-nevének eltérése, az `id-token` workflow-szinten, titok-hivatkozás, a token naplóba írása három módon, `gh` visszaküldés, a lejárat-kapu bármely elemének hiánya) |
 | `test-me1-body.py` a P1-re és a P2-re | **23 + 23** ellenőrzés (hamis `curl`/`date`/`sleep`, szimulált óra) |
 | `read-me1.py --selftest` | **120** ellenőrzés (a meglévő olvasó változatlanul zöld, az új logika csak `--policy` mellett fut) |
-| `me1-controls.py --selftest` | **47** ellenőrzés (kiinduló elfogadás, a kontrollok P1-re és P2-re, két alternatív PR-alak, a keretrendszer bukása, `describe-pr`, `--attach-listing`, parancssor) |
-| `test-pcv.py --selftest` | **103** ellenőrzés (a V1–V5 mátrix, a politika-betöltés, a parancssor) |
-| `test-fetch-me1.py` | **41** ellenőrzés (a lánc, a lista a manifestben, a `pr` profil és elutasításai, végpontok közti elfogadás) |
+| `me1-controls.py --selftest` | **50** ellenőrzés (kiinduló elfogadás, a kontrollok P1-re és P2-re, két alternatív PR-alak, a keretrendszer bukása, `describe-pr`, `--attach-listing`, parancssor) |
+| `test-pcv.py --selftest` | **106** ellenőrzés (a V1–V5 mátrix, a politika-betöltés, az F1 negatív tesztek, a parancssor) |
+| `test-fetch-me1.py` | **54** ellenőrzés (a lánc, a lista a manifestben, a `pr` profil: a PR-fej jogosultsága és az **eltérő futás-SHA megfigyelése**, az elutasítások, végpontok közti elfogadás) |
 | `owner/test-owner-scripts.py` | **21** ellenőrzés (helyi bare repó és hamis `gh`: 7 elutasítási eset a szállításnál, 9 a megnyitásnál, és az egyszeri megnyitás) |
-| **Összesen** | **459 ellenőrzés** |
-| `test-pcv.py --mutations` | **12 beültetett olvasó-hiba, mind elbukik** |
+| **Összesen** | **478 ellenőrzés** (81 + 46 + 120 + 50 + 106 + 54 + 21) |
+| `test-pcv.py --mutations` | **17 beültetett olvasó-hiba, mind elbukik** (a PR-gyűjtő mutációit a `test-fetch-me1.py` fogja) |
 
 **A mutációs ellenőrzés tanulságai (a „kapu vakfolt" elve szerint, nem sikertörténetként):**
 - Az **első futásban 4 mutáns túlélt.** A kivizsgálás: (a) **valódi hiány**: a `check_run_id` ↔ API job-azonosító keresztellenőrzésére nem volt izolált teszt (egy másik sor elfedte): **izolált teszt pótolva**; (b) **redundáns rétegek** (`workflow_ref`, `repository_id`, a pin `run_id`): az egyrétegű mutációt a régi olvasó független sora elfogta, ezért ezekre **mindkét réteget együtt** mutálom; (c) a kombinált pin-mutáció is túlélt, mert a `check_run_id`-pin elfedte: **két újabb izolált teszt** (csak a `run_id` tér el; csak a `run_attempt` tér el). Végül 11/11, majd a csonkolt lista felvételével **12/12**.
+- **Review-kör 1 (d5406f3):** **F1** a `discovery: optional` mód megszűnt a P-c/V profilban (betöltéskor hiba; negatív tesztek, mutáció: 4 bukás); **F2** a PR-gyűjtő a PR-fej jogosultságát és a futás SHA-mezőinek megfigyelését szétválasztotta (a PR API-objektum a jogosultság forrása, az eltérés megfigyelhető; 4 új mutáció, mind elbukik). Az új mutációk 17-re emelték a listát.
 - Az olvasó-javítás, amelyet a kontrollok átnézése hozott: érvénytelen aláírás után a régi sorok **még kiértékelték** az (nem hiteles) állításokat; most `NOTE`.
 - A saját átnézésem hozta a csonkolt lista védelmét.
 - A mutációk **nem fedik** a PR-profil elfogadási logikáját (az nincs megvalósítva), a `describe-pr` ítéleteit és a tulajdonosi szkripteket (azokat a mockolt tesztek).
@@ -113,7 +114,7 @@ A kontrollok **bizonyíték-könyvtárakból** építik a PR-szerző lehetséges
 | 3 | az ág pusholása | 0 | ír az X repóba; **nem indít futást** |
 | 4 | **`open-p-probe-pr.sh` (a mérés indítása)**: `ME1_I_HAVE_THE_GO=yes`, egyszeri, `.state` védett, a `main` és az ág ellenőrzött | 3 (lab-gate-pr, P1, P2), a visszatartással ≤ 5 | PR az X repón; **nem mergelendő** |
 | 5 | visszatartott futás jóváhagyása a weben | a 2. kísérlet | a tulajdonos döntése |
-| 6 | `fetch-me1.sh … pr` futásonként; `me1-controls.py --controls/--describe-pr` | 0 | csak olvasó |
+| 6 | `fetch-me1.sh … pr PR_SZÁM` futásonként (a PR API-objektummal); `me1-controls.py --controls/--describe-pr` | 0 | csak olvasó |
 | 7 | a második főági futás (D6) és az `--attach-listing` az A-ra | +1 (≤ 2) | futás |
 | 8 | az R2 lejárt-artifact lekérdezés (D-c4) | 0 | csak olvasó |
 | 9 | az opcionális újraindítás (R4, D-c3) | +1 (≤ 2) | futás |
@@ -135,10 +136,11 @@ A kontrollok **bizonyíték-könyvtárakból** építik a PR-szerző lehetséges
 | Állítás | Státusz | Bizonyíték | Verifikációs módszer | Kockázat |
 |---|---|---|---|---|
 | A P1/P2 fájlok pontosan a jóváhagyott szövegek, érvényes token nem publikálható bennük | mért (helyi, szintetikus) | 81 beültetett eltérés elutasítva; a törzs-szárazfutás 2×23 | `check-me1-p-workflows.py`, `test-me1-body.py` | a GitHub elfogadása és futtatása nem mért (a visszatartás lehetséges) |
-| A verifier a döntési politikához köt, nincs „legfrissebb" szabály, a rögzítés utáni új futás csak riasztás | mért (helyi, szintetikus) | `test-pcv.py` 103; a mutációk 12/12 | `--selftest`, `--mutations` | a döntéshozói szerep a mérésben a tulajdonosé |
+| A verifier a döntési politikához köt, nincs „legfrissebb" szabály, a rögzítés utáni új futás csak riasztás | mért (helyi, szintetikus) | `test-pcv.py` 106; a mutációk 17/17 | `--selftest`, `--mutations` | a döntéshozói szerep a mérésben a tulajdonosé |
 | A verifier fail-closed az elnyomás szintetikus eseteire | mért (helyi, szintetikus) | V1 esetek | `test-pcv.py` | a valódi lejárt artifact lekérdezése nem történt meg (D-c4, külön GO) |
-| A kontrollok a megfelelő fajta indokkal utasítanak el, és a keretrendszer bukni tud | mért (helyi, szintetikus) | `me1-controls.py` 47; a hamisítható verifier detektálva | `--selftest` | a PR-alakok hipotézisek |
-| A `describe-pr` a hipotéziseket megerősíti vagy megcáfolja | mért (helyi, szintetikus) | CONFIRMED/REFUTED esetek | `--selftest` | a valódi PR-futás alakja ismeretlen |
+| A kontrollok a megfelelő fajta indokkal utasítanak el, és a keretrendszer bukni tud | mért (helyi, szintetikus) | `me1-controls.py` 50; a hamisítható verifier detektálva | `--selftest` | a PR-alakok hipotézisek |
+| A `describe-pr` a hipotéziseket megerősíti vagy megcáfolja; az SHA-viszonyokat a PR-objektumból és a futás-objektumból olvassa, nem feltételezi | mért (helyi, szintetikus) | CONFIRMED/REFUTED/RECORDED/NOT-OBSERVABLE esetek, a H3a/H3b | `--selftest` | a valódi PR-futás alakja ismeretlen |
+| A PR-gyűjtő a PR-fej jogosultságát a PR API-objektumához köti, és a futás SHA-mezőinek eltérését megfigyeli, nem utasítja el | mért (mockolt) | 14 PR-profil eset a `test-fetch-me1.py`-ban; 4 mutáció | `test-fetch-me1.py`, `--mutations` | a valódi API-objektumok mezőalakja nem mért |
 | A tulajdonosi szkriptek fail-closed és a megnyitás egyszeri | mért (mockolt) | `owner/test-owner-scripts.py` 21 | helyi bare repó és hamis `gh` | a valódi `gh` és GitHub viselkedés nem mért |
 | A P-a/P-b és a P-c/V részeredményt adhat | tervezett | a #92/#93 kritériumai | a mérés utáni jelentés | a teljes M-E1 PASS a P-c/F nélkül nem mondható ki |
 | A P-c teljesül, a teljes M-E1 PASS | **nem állítom** | — | a P-c/F mérése (B sor) | — |
