@@ -1,6 +1,6 @@
 # #212 — Az M-E1 P-c mérési terve, 1. fázis (06u)
 
-**Státusz: terv (concept), nem végrehajtás.** Nem készült workflow-fájl, szkript vagy kód; nem indult futás; az X repón nem történt írás; bizonyíték letöltése nem történt. A terv két forrásból merít mért tényt: a tulajdonos gépén már meglévő bizonyítékból (futás 45063800073) és nyilvános, csak olvasó metaadat-lekérdezésekből (2. szakasz). A szerző képességei (megszakítás, törlés, újraindítás, szöveg-választás) **dokumentált, nem mért** feltételezések (3. szakasz). A terv megléte ≠ működik, a terv elfogadása ≠ sikeres mérés. **Az M-E1 ítélete nyitott, előzetesen `INCONCLUSIVE`**; ez a dokumentum nem mondja ki. **A D1–D8 és a D-c1–D-c5 döntések a tulajdonosnál nyitottak**; a terv a #81 teljes P-követelményével (D8) mint munkafeltevéssel dolgozik. A megvalósítás és a mérés külön GO. **Érvényes token semmilyen csatornán nem publikálható** (5. szakasz). K-5: 8/300.
+**Státusz: terv (concept), nem végrehajtás.** Nem készült workflow-fájl, szkript vagy kód; nem indult futás; az X repón nem történt írás; bizonyíték letöltése nem történt. A terv két forrásból merít mért tényt: a tulajdonos gépén már meglévő bizonyítékból (futás 45063800073) és nyilvános, csak olvasó metaadat-lekérdezésekből (2. szakasz). A szerző képességei (megszakítás, törlés, újraindítás, szöveg-választás) **dokumentált, nem mért** feltételezések (3. szakasz). A terv megléte ≠ működik, a terv elfogadása ≠ sikeres mérés. **Az M-E1 ítélete nyitott, előzetesen `INCONCLUSIVE`**; ez a dokumentum nem mondja ki. **A D1–D8 és a D-c1–D-c6 döntések a tulajdonosnál nyitottak**; a terv a #81 teljes P-követelményével (D8) mint munkafeltevéssel dolgozik. A megvalósítás és a mérés külön GO. **Érvényes token semmilyen csatornán nem publikálható** (5. szakasz). K-5: 8/300.
 
 ## 1. Mi a P-c, és mit lehet belőle mérni
 
@@ -10,7 +10,7 @@ A #92 1.1 szakasza szerint a **P-c** a bizonyíték előállításának, kivála
 
 > **P-c teljesül**, ha a feltételezett (legrosszabb) szerzői képességek mellett **semmilyen szerzői cselekmény nem vezet ahhoz, hogy a verifier (i) olyan bizonyítékot fogad el, amely nem a döntés szempontjából releváns futáshoz tartozik, vagy (ii) a bizonyíték hiányát elfogadja**; és a szerző által választott szövegek (`workflow`, `actor`, `head_ref`) **nem kötőek**; és a publikálás időzítése nem tesz közzé érvényes tokent.
 
-**Amit ez nem állít:** hogy a szerző nem tudja a bizonyítékot elnyomni (tudja); csak azt, hogy az elnyomás **fail-closed** (`NOT-READ`/`NOT-MET`), sosem elfogadás. Ha a tulajdonos a #81 szövegét úgy értelmezi, hogy az **elérhetőségre** is nulla befolyást követel, akkor **egyetlen mérés sem adhat PASS-t**, és az M-E1 `INCONCLUSIVE`/`FAIL`-hez vezet (D-c1 elutasítása).
+**Amit ez nem állít:** hogy a szerző nem tudja a bizonyítékot elnyomni (tudja); csak azt, hogy az elnyomás **fail-closed** (`NOT-READ`/`NOT-MET`), sosem elfogadás. **A terv a verifier igazolt működését (P-c/V) méri; a teljes, valós szerzői viselkedés melletti igazolás (P-c/F) nincs benne**, és a #81 teljes követelménye nem válik automatikusan teljesítetté a D-c1 értelmezés elfogadásától (8. szakasz). Ha a tulajdonos a #81 szövegét úgy értelmezi, hogy az **elérhetőségre** is nulla befolyást követel, akkor **egyetlen mérés sem adhat PASS-t**, és az M-E1 `INCONCLUSIVE`/`FAIL`-hez vezet (D-c1 elutasítása).
 
 ## 2. Mért tények (olvasott, 2026-11-23; csak olvasó lekérdezések, a labor X repó, nem általánosíthatók)
 
@@ -47,40 +47,61 @@ A **verifier** a `read-me1.py` (és a megvalósítási csomagban bővített vál
 
 | Kontroll | Valódi vagy szintetikus | Elvárt |
 |---|---|---|
-| **R2: a lejárt artifact** — a 14770618752 az `expires_at` (2026-11-23T20:06:16Z) után, **új kimeneti könyvtárba** letöltve | **valódi, természetes, ingyenes** (csak olvasó API, K-5-be nem számít) | a gyűjtő megtagadja (`0 artifact(s) qualify`, az `expired` `true`), a verifier **nem** `EVIDENCE BOUND`; a már letöltött helyi másolat ettől független; **a meglévő (06r) `fetch-me1.sh`-val is elvégezhető**, megvalósítás nélkül |
+| **R2: a lejárt artifact** — a 14770618752 az `expires_at` (2026-11-23T20:06:16Z) után, **új kimeneti könyvtárba** letöltve | **valódi, természetes, ingyenes** (csak olvasó API, K-5-be nem számít) | a gyűjtő megtagadja (`0 artifact(s) qualify`, az `expired` `true`), a verifier **nem** `EVIDENCE BOUND`; **hatóköre szűk (review F4):** csak azt mutatja, hogy **ez az artifact ebben az időpontban a vizsgált gyűjtési úton nem szerezhető be**; **nem** bizonyítja, hogy a korábban letöltött bizonyíték érvénytelen, és nem zárja ki, hogy ugyanaz a bizonyíték más forrásból rendelkezésre áll; **a meglévő (06r) `fetch-me1.sh`-val is elvégezhető**, megvalósítás nélkül |
 | hiányzó artifact; törölt artifact; üres artifact; hiányzó token; hiányzó jegyzék-fájl | szintetikus | a gyűjtő/olvasó megtagadja vagy `INCOMPLETE (not read)`; sosem `BOUND` |
 | megszakított, sikertelen, kihagyott, visszatartott futás | szintetikus (a visszatartott 1. kísérlet valódi adata a PK-futásból ismert) | a gyűjtő `check-run` ellenőrzése megtagadja (`conclusion` ≠ `success`, `status` ≠ `completed`) |
 | a futás nem fejeződik be a várakozási időn belül | szintetikus | a szkript nem tölt le; nem fogad el |
 | a bizalmi gyökér nem elérhető | a meglévő `fetch-jwks.sh` tesztek | az olvasó `INCOMPLETE` |
 
-### V2 — Kiválasztás: a döntés szempontjából releváns futás platform-oldali forrásból
+### V2 — Kiválasztás: előre rögzített döntési politika, a checks API csak felderítési forrás (review F1)
 
-**A releváns futást nem a szerző vagy az olvasó bemenete határozza meg, hanem a platform checks API-ja** (D-c2): adott repó, commit és check-név (`me1-evidence`) alapján a checks API a releváns check-runt adja; a bizonyítéknak **hordoznia kell a `check_run_id` állítást, amely egyezik ezzel** (F1), és a `run_id`/`run_attempt` állításokat, amelyek a check-run futásához tartoznak.
+**A futás felderítése és a döntési jogosultság két külön dolog.** A checks API alkalmas a futások **felderítésére és keresztellenőrzésére** (melyik check-run, melyik futás, melyik kísérlet létezik egy commithoz), de **nem határozza meg, hogy melyik futás bizonyítéka jogosít fel egy adott döntésre**. A szerző további futásokat indíthat (A3, A4), ezért a „legfrissebb check-run" szabály **nem lehet döntési politika**: a szerző a számára kedvező futást a futásindítás sorrendjével választathatná ki, vagy új futással elnyomhatna egy kedvezőtlen eredményt.
+
+**A döntési politika (DP) előre, a bizonyítéktól és a publikálójától függetlenül rögzített** (D-c2), a következő elemekkel:
+
+| DP-elem | Tartalom | Honnan jön |
+|---|---|---|
+| **Tárgy** | repó, a **jóváhagyott workflow azonossága** (útvonal és ref), esemény, a jóváhagyott commit | a döntéshozó előzetes rögzítése, **nem** a bizonyíték, **nem** a token |
+| **Rögzítés (pin)** | a döntés **egy konkrét futásra** hivatkozik: `run_id`, `run_attempt`, `check_run_id` | a döntéshozó, a bizonyíték publikálásától függetlenül (a mérésben a tulajdonos független `--expect-*` bemenetei) |
+| **Szabály rögzítés nélkül** | **pontosan egy jogosult futás** a tárgyhoz (azonos commit, workflow, ref, esemény); **két vagy több jelölt esetén fail-closed** (`NOT-READ`, „ambiguus"), a verifier **nem választ** | a politika, nem a „legfrissebb” |
+
+**A checks API szerepe:** felderít (milyen futások léteznek a tárgyhoz), keresztellenőriz (a rögzített futás `check_run_id`-ja a platform szerint az adott commit check-runja-e), és **jelzi a rögzítés után megjelenő további futásokat** (tájékoztató riasztás, **nem** vált át rájuk). Az F1 mért tény (a token `check_run_id`-ja egyezik a job-azonosítóval és a checks API check-runjával) ezt a keresztellenőrzést alapozza meg.
+
+**Hatókör:** a mérésben a döntéshozó a tulajdonos (a független `--expect-*` bemenetek a rögzítés). Egy éles CI-kapuban a döntéshozó a szervező/orchestrator volna: **ennek megvalósítása nem része a tervnek**, és a PASS hatóköre ezt kimondja.
 
 | Kontroll | Valódi vagy szintetikus | Elvárt |
 |---|---|---|
-| **R1: az A futás levezetése** — a checks API-ból a `4d432f5e…` commithoz és az `me1-evidence` névhez levezetett `check_run_id` egyezik a token állításával (F1, F2) | **valódi, ingyenes, csak olvasó** | `MET`: a levezetett és az aláírt `check_run_id` egyezik |
-| **R3: két futás ugyanazon a commiton** — a D6 szerinti második főági futás (B) után a commithoz **két** `me1-evidence` check-run tartozik: a checks API `filter=latest` viselkedése **mérendő**; az A bizonyítéka a legfrissebbre elvárva → elutasítva (`check_run_id`, `run_id`); a B bizonyítéka → `BOUND`; fordítva, ha a döntés az A-ra hivatkozik | **valódi** (a D6 futása, **a #92 keretében már számolt**, ezért P-c-ként 0 további kísérlet) | az elutasítás indokai között a `check_run_id`/`run_id`/`run_attempt` szerepel |
-| több jelölt check-run, nincs egyértelmű „legfrissebb" szabály | szintetikus (hamis checks API) | **fail-closed**: a verifier **nem választ**, `NOT-READ`/`NOT-MET` |
-| a levezetés forrása nem elérhető (a checks API hibája) | szintetikus | `INCOMPLETE`; nem esik vissza a szerző/olvasó által megadott azonosítóra |
-| **R4 (opcionális, D-c3): újraindítás** — az A (vagy B) futás újraindítása után az új kísérlet új check-runt és `run_attempt` 2-t ad: az 1. kísérlet bizonyítéka a 2.-ra elvárva → elutasítva | **valódi**, +1 kísérlet (≤ 2 visszatartással), külön GO | az elutasítás indokai között a `run_attempt`/`check_run_id` szerepel |
+| **R1: az A futás keresztellenőrzése** — a checks API-ból a `4d432f5e…` commithoz és az `me1-evidence` névhez talált check-run azonosítója egyezik a token `check_run_id` állításával és a rögzítéssel (F1, F2) | **valódi, ingyenes, csak olvasó** | `MET` |
+| **R3a: két futás ugyanazon a commiton, a rögzítés az A** — a D6 szerinti második főági futás (B) után a commithoz **két** `me1-evidence` check-run tartozik; a rögzítés az A; a B a **frissebb** | **valódi** (a D6 futása, **a #92-ben számolt**, 0 további kísérlet) | az **A bizonyítéka elfogadva** annak ellenére, hogy a B a „legfrissebb”; a B bizonyítéka az A rögzítésére **elutasítva** (`check_run_id`, `run_id`) |
+| **R3b: a rögzítés a B** | **valódi** (ugyanazok a futások) | a B elfogadva, az A elutasítva |
+| **R3c: sorrendváltozás** — a `filter=latest` viselkedésének **mérése** (melyik a „legfrissebb” az A és B között); a verifier eredménye **nem függ** tőle | **valódi** (mért), a verifier szintetikus párja | a verdikt a rögzítéstől függ, a „legfrissebb” sorrendtől nem |
+| **A rögzítés utáni új futás** (a szerző a rögzítés után újabb futást indít) | szintetikus (hamis checks API, harmadik jelölt) | a rögzített futás bizonyítéka **változatlanul elfogadott**, az új futás **tájékoztató riasztás**, nem váltás |
+| nincs rögzítés, **két vagy több jelölt** | szintetikus | **fail-closed**: a verifier nem választ (`NOT-READ`/ambiguus), akkor sem, ha az egyik „legfrissebb” |
+| nincs rögzítés, pontosan egy jelölt | szintetikus | elfogadható, ha a jelölt minden kötő állítása egyezik a politikával |
+| a felderítés forrása nem elérhető (a checks API hibája) | szintetikus | `INCOMPLETE`; **nem esik vissza** a szerző/olvasó által megadott azonosítóra |
+| **R4 (opcionális, D-c3): újraindítás** — az újabb kísérlet új check-runt és `run_attempt` 2-t ad; a rögzítés az 1. kísérlet | **valódi**, +1 kísérlet (≤ 2 visszatartással), külön GO | az 1. kísérlet elfogadva a rögzítésre, a 2. elutasítva (`run_attempt`, `check_run_id`); a „legfrissebb” kísérlet nem írja felül |
 
-**Korlát (kimondott):** a `check_run_id` állítás jelenléte **egy workflow_dispatch futáson mért**; pull_request-futásnál **hipotézis**. A levezetés forrása (a checks API) **ugyanaz a platform**, mint a kibocsátó: a bizalmi gyökér nem bővül, de a kötés nem független a GitHubtól.
+**Korlát (kimondott):** a `check_run_id` állítás jelenléte **egy workflow_dispatch futáson mért**; pull_request-futásnál **hipotézis**. A felderítés és a keresztellenőrzés forrása **ugyanaz a platform**, mint a kibocsátó: a bizalmi gyökér nem bővül.
 
-### V3 — A szerző által választott szövegek nem kötőek
+### V3 — Az állítások osztályai: mihez kötjük, mit nem használunk (review F2)
 
-A tokenállítások három osztálya (a #91 3. szakaszának mért állításnevei alapján):
+**Négy osztály** (a #91 3. szakaszának mért állításnevei alapján):
 
-| Osztály | Állítások | Szabály |
+| Osztály | Állítások | Mihez kötjük / szabály |
 |---|---|---|
-| **kötő** | `repository`, `repository_id`, `repository_owner_id`, `sub`, `ref`, `sha`, `workflow_sha`, `job_workflow_sha`, `workflow_ref`, `event_name`, `run_id`, `run_attempt`, `check_run_id` | eltérésük `NOT-MET` |
-| **szerző-választott, nem kötő** | `workflow` (a workflow neve), `actor`, `actor_id`, `head_ref`, `base_ref` | a verifier **nem használja**; változtatásuk **nem** változtatja a verdiktet |
-| **futásonként változó, informatív** | `jti`, `run_number`, `iat`, `exp`, `nbf` | az `iat`/`exp`/`nbf` csak az időablak- és lejárat-ellenőrzésben szerepel |
+| **K — kötelezően kötött (a döntésben)** | `repository`, `repository_id`, `repository_owner_id` | a politika **tárgyához** (a jóváhagyott repó, és az API azonosítói) |
+| | `workflow_ref`, `job_workflow_ref` (ha jelen van), `event_name`, `ref`, `sub` | a politika **jóváhagyott workflow-azonosságához** (útvonal és ref) és eseményéhez |
+| | `sha`, `workflow_sha`, `job_workflow_sha` | a politika **jóváhagyott commitjához** (a várt fej, **a politikából**, nem a tokenből); a tokenen belüli `workflow_sha == sha` egyezés **nem helyettesíti** a jóváhagyott workflow-azonosságot, csak kiegészítő ellenőrzés |
+| | `run_id`, `run_attempt`, `check_run_id` | a **rögzítéshez** (pin), és az API-hoz |
+| | `iss`, `aud`, aláírás, `iat`/`exp`/`nbf` | a bizalmi gyökérhez (kibocsátó, kulcsok), a mérés közönségéhez, az időablakhoz |
+| **P — platform által igazolt, a döntéshez nem használt** | `actor`, `actor_id` (a futást indító azonosító; **a szerző befolyásolja, melyik jogosult identitással indul a futás**), `ref_type`, `ref_protected`, `repository_visibility`, `runner_environment`, `run_number`, `jti` | **jelentve, nem ítélve**; csak akkor kötő, ha a politika kifejezetten felsorolja (pl. engedélyezett indítók listája), ami **nincs a tervben** |
+| **S — a szerző által megválasztható érték** | `workflow` (a workflow neve), `head_ref`, `base_ref` (a szerző-választott ágnevek platform által igazolt visszhangja) | a verifier **nem használja**; változtatásuk **nem** változtatja a verdiktet |
 
 | Kontroll | Valódi vagy szintetikus | Elvárt |
 |---|---|---|
-| minden **szerző-választott** állítás megváltoztatása (újra aláírt szintetikus tokenekkel) | szintetikus | a verdikt **változatlan** (`EVIDENCE BOUND, …`): a verifier érzéketlen rájuk |
-| minden **kötő** állítás megváltoztatása | szintetikus | `NOT-MET` az adott soron: a verifier érzékeny rájuk |
+| minden **K** állítás megváltoztatása (újra aláírt szintetikus tokenekkel) | szintetikus | `NOT-MET` az adott soron: a verifier érzékeny rájuk |
+| a **K** állítások várt értéke a **politikából** jön: ha a politika más jóváhagyott commitot/workflow-t ír elő, a (belsőleg konzisztens) token elutasított | szintetikus | `NOT-MET`: a tokenen belüli egyezés nem elég |
+| minden **P** és **S** állítás megváltoztatása | szintetikus | a verdikt **változatlan** |
 | a névhamisítás valódi esete: a P2 (azonos nevű másik workflow) | valódi, a #92 mérésében | a `workflow` név azonossága nem ad hamis megerősítést |
 
 ### V4 — Az időzítés: érvényes token nem kerül közzé
@@ -104,7 +125,7 @@ A másolt, lejárt (publikus) token egy másik futás artifactjában (A7): a ver
 
 1. **A P-c-ben nincs új token-kiadás.** A V2 valódi kontrolljai a **meglévő, review-zott `me1-evidence.yml`** futásait használják (R1 a meglévőt olvassa, R3 a D6 futása, R4 az újraindítás): a lejárat-kapus publikálás változatlan (`exp + 121 s`, szigorú óra-ellenőrzés, fail-closed, szerveridős olvasó-sor).
 2. **A támadói viselkedés (korai/más csatornás publikálás) nem fut**; szintetikus tokenekkel modellezett (V4).
-3. **A levezetés csak nyilvános metaadatot olvas** (checks API); a verifier nem ír ki tokent; a bizonyíték a tulajdonos gépén marad.
+3. **A felderítés és a keresztellenőrzés csak nyilvános metaadatot olvas** (checks API); a verifier nem ír ki tokent; a bizonyíték a tulajdonos gépén marad.
 4. **A természetes kísérlet (R2) nem tölt le érvényes tokent**: az artifact lejárt, a lejárt token pedig a publikálás idején is lejárt volt.
 
 ## 6. Mérési protokoll (a megvalósítás után, külön GO-kkal)
@@ -112,16 +133,16 @@ A másolt, lejárt (publikus) token egy másik futás artifactjában (A7): a ver
 | Lépés | Mi | K-5 | GO |
 |---|---|---|---|
 | 1 | a megvalósítási csomag (7. szakasz) szintetikus tesztjei és mutációs ellenőrzései | 0 | külön |
-| 2 | **R1:** levezetés az A futásra (csak olvasó, ingyenes) | 0 | külön |
+| 2 | **R1:** az A futás keresztellenőrzése a checks API-val (csak olvasó, ingyenes) | 0 | külön |
 | 3 | **R2:** a lejárt artifact letöltési kísérlete az `expires_at` (2026-11-23T20:06:16Z) után; ha a megvalósítás addig nem kész, az artifact **már lejárt**, és a természetes kísérlet a lejárat utáni lekérdezéssel is elvégezhető (a lejárat tény marad) | 0 | külön |
-| 4 | **R3:** a D6 szerinti második főági futás (a #92 szerint), a checks API `filter=latest` mérése, az A/B bizonyítékok keresztezése | **0 további** (a #92-ben számolt) | a #92 D6-hoz kötött |
+| 4 | **R3a–R3c:** a D6 szerinti második főági futás (a #92 szerint); a checks API `filter=latest` mérése; a rögzítés az A, majd a B; az A/B bizonyítékok keresztezése | **0 további** (a #92-ben számolt) | a #92 D6-hoz kötött |
 | 5 | **R4 (opcionális, D-c3):** egy futás újraindítása | +1 (≤ +2 visszatartással) | külön |
 
 ## 7. A megvalósítási csomag tartalma (külön GO, külön review; ebben a PR-ban NINCS megvalósítás)
 
-1. **A levezető modul** (a checks API olvasása commit + check-név szerint; fail-closed a több jelöltnél és az elérhetetlenségnél; mockolt tesztekkel és hamis API-val).
-2. **Az olvasó bővítése:** a `check_run_id` mint kötelező kötés a levezetett azonosítóra (a szerző/olvasó bemenete **nem** írhatja felül); az állítások három osztálya kódban (kötő / szerző-választott nem kötő / informatív).
-3. **A V1–V5 szintetikus kontrollok** és a **mutációs ellenőrzések**: a levezetés kikapcsolása, a `check_run_id` kötés kikapcsolása, egy szerző-választott állítás bekötése, a „legfrissebb" szabály kikapcsolása mind bukást ad.
+1. **A felderítő és keresztellenőrző modul** (a checks API olvasása commit + check-név szerint; a rögzített futás keresztellenőrzése; a rögzítés utáni új futás jelzése; fail-closed a több jelöltnél rögzítés nélkül és az elérhetetlenségnél; **nincs „legfrissebb” szabály**; mockolt tesztekkel és hamis API-val). A **döntési politika** (tárgy, jóváhagyott workflow-azonosság és commit, rögzítés) **bemenet**, nem a tokenből levezetett érték.
+2. **Az olvasó bővítése:** a `check_run_id` mint kötelező kötés a **rögzítésre** és a keresztellenőrzött check-runra; a K állítások várt értéke a **politikából** jön; az állítások négy osztálya kódban (K kötött / P igazolt, nem használt / S szerző-választott / a kötő időablak-állítások).
+3. **A V1–V5 szintetikus kontrollok** és a **mutációs ellenőrzések**: a rögzítés kikapcsolása, a `check_run_id` kötés kikapcsolása, egy P/S állítás bekötése, a K várt értékének a tokenből való levezetése, a „legfrissebb” szabályra váltás mind bukást ad.
 4. **A tulajdonosi szkriptek:** az R2 természetes kísérlet új könyvtárba, az R3 keresztezése, az R4 (ha D-c3 igen); egyik sem indít automatikusan futást.
 5. **A tesztek:** mockolt checks API, szimulált óra, parancssori belépési pontok alfolyamat-hívással.
 
@@ -129,18 +150,24 @@ A másolt, lejárt (publikus) token egy másik futás artifactjában (A7): a ver
 
 | Feltétel | Teljesül, ha | Nem teljesül / következmény |
 |---|---|---|
-| **C-c1 — elnyomás (V1)** | a szintetikus mátrix mind fail-closed, **és** az R2 valódi lejárt-artifact kísérlet megtagadva | bármely elfogadás → a P-c **bukott** |
-| **C-c2 — kiválasztás (V2)** | az R1 `MET`, **és** az R3 (két futás ugyanazon a commiton) a levezetett legfrissebb futásra kötött, az elavult bizonyíték elutasítva a `check_run_id`/`run_id` indokkal; a több jelöltes eset fail-closed | az R3 hiánya (D6 nélkül) → részleges; a legfrissebb szabály nem egyértelmű és a verifier mégis választ → bukott |
-| **C-c3 — szövegek (V3)** | a szerző-választott állítások megváltoztatása nem változtat a verdiktet, a kötőké igen | bármely szerző-választott állításra érzékeny verifier → a P-c bukott |
+| **C-c1 — elnyomás (V1)** | a szintetikus mátrix mind fail-closed, **és** az R2 valódi lejárt-artifact kísérlet megtagadva (**hatóköre: az adott artifact az adott időpontban a vizsgált úton nem szerezhető be**; nem bizonyítja a korábban letöltött bizonyíték érvénytelenségét, sem azt, hogy más forrásból nem állhat rendelkezésre) | bármely elfogadás → a P-c **bukott** |
+| **C-c2 — kiválasztás (V2)** | a **döntési politika előre rögzített** (tárgy, jóváhagyott workflow-azonosság és commit, rögzítés vagy a „pontosan egy jelölt" szabály), az R1 `MET`, az R3a/R3b/R3c valódi kontrollok a rögzítésre kötöttek (a frissebb futás **nem** írja felül a rögzítést; az elutasítás indokai a `check_run_id`/`run_id`), a rögzítés utáni új futás tájékoztató, a több jelöltes eset fail-closed, a felderítés elérhetetlensége `INCOMPLETE` | az R3 hiánya (D6 nélkül) → részleges; ha a verifier a „legfrissebb” szabályra vált, vagy ambiguus esetben választ → a P-c **bukott** |
+| **C-c3 — állítás-osztályok (V3)** | a **K** állítások változtatása `NOT-MET`, a várt értékek a **politikából** jönnek (a tokenen belüli egyezés nem elég), a **P** és **S** állítások változtatása nem változtat a verdiktet | bármely P/S állításra érzékeny, vagy a K-t a tokenből levezető verifier → a P-c bukott |
 | **C-c4 — időzítés és csere (V4, V5)** | a korai publikálás, az időablakon kívüli, a kettős és a másolt-token esetek mind elutasítva | bármely elfogadás → bukott |
-| **C-c5 — hatókör** | a jelentés kimondja, hogy a szerzői képességek feltételezettek (D-c5), a levezetés forrása a GitHub, és a mérés egy szervezetre, egy futástípusra szól | enélkül a PASS nem mondható ki |
+| **C-c5 — hatókör** | a jelentés kimondja, hogy a szerzői képességek feltételezettek (D-c5), a felderítés és a keresztellenőrzés forrása a GitHub, a döntéshozó szerepét a mérésben a tulajdonos tölti be, és a mérés egy szervezetre, egy futástípusra szól | enélkül a PASS nem mondható ki |
+
+**Két külön eredményszint (review F3):**
+- **P-c/V — a verifier igazolt fail-closed működése** a feltételezett szerzői képességek (A1–A8) mellett: ezt a V1–V5 kontrollok és C-c1–C-c5 adják. **Mért tárgy: a verifier viselkedése.**
+- **P-c/F — a teljes, valós szerzői viselkedés mellett igazolt P-c:** a szerzői képességek tényleges mérése (írási jogú, nem admin azonosítóval, B sor). **Ezt a terv nem tartalmazza** (D-c5).
+
+**A P-c/V teljesülése nem teljesíti automatikusan a #81 teljes követelményét.** A D-c1 értelmezés elfogadása sem. A jelentésnek a két szintet **külön, kimondva** kell rögzítenie.
 
 **Az M-E1 ítélete (a mérés utáni jelentésben):**
-- **PASS:** a #92 C1–C5 teljesül (a P-a/P-b, S, R, az attesztáció döntése), **és** C-c1–C-c5 teljesül, **és** a tulajdonos jóváhagyta a D-c1 értelmezést (a P-c a biztonságos hibaállapot), **és** a D8 a teljes követelmény. A PASS kimondása a hatókört viseli: same-repo PR, a vizsgált modell, egy szervezet; **az elnyomás lehetősége megmarad, csak fail-closed**.
-- **FAIL:** a verifier bármely P-c kontrollban elfogad olyan bizonyítékot, amely nem a releváns futáshoz tartozik, vagy a hiányt elfogadja.
-- **INCONCLUSIVE:** minden más eset (R3 hiánya, a levezetés forrása ambiguus vagy nem elérhető, a D-c1 elutasítva, a C-c5 hiányzik, a #92 feltételei nem teljesülnek).
+- **PASS:** a #92 C1–C5 teljesül (a P-a/P-b, S, R, az attesztáció döntése), **és** C-c1–C-c5 teljesül (P-c/V), **és** a tulajdonos **kifejezetten jóváhagyta** (a) a D-c1 értelmezést (a P-c a biztonságos hibaállapot), **és** (b) hogy a P-c/V a #81 követelmény teljesítéséhez elegendő, a P-c/F mérése nélkül (**D-c6**), **és** a D8 a teljes követelmény. A PASS kimondása a hatókört viseli: same-repo PR, a vizsgált modell, egy szervezet, a döntéshozó szerepét a tulajdonos tölti be; **az elnyomás lehetősége megmarad, csak fail-closed**; a P-c/F nem mért.
+- **FAIL:** a verifier bármely P-c kontrollban elfogad olyan bizonyítékot, amely nem a rögzített (jogosult) futáshoz tartozik, vagy a hiányt elfogadja, vagy a „legfrissebb” szabályra vált.
+- **INCONCLUSIVE:** minden más eset (R3 hiánya, a felderítés forrása ambiguus vagy nem elérhető, a politika nincs előre rögzítve, a D-c1 vagy a **D-c6 hiányzik vagy elutasított**, a C-c5 hiányzik, a #92 feltételei nem teljesülnek). **A P-c/V zöldje a D-c6 nélkül az M-E1-et `INCONCLUSIVE`-on hagyja.**
 
-**Nem következtethető:** hogy a szerző nem tud bizonyítékot elnyomni; fork-PR-ra; más szervezetre, a Relay-re vagy a production-re; a platform szerzői képességeinek mért ismerete.
+**Nem következtethető:** hogy a szerző nem tud bizonyítékot elnyomni; a P-c/F-re; fork-PR-ra; más szervezetre, a Relay-re vagy a production-re; a platform szerzői képességeinek mért ismerete.
 
 ## 9. K-5 keretigény (becslés, nem mért; kísérletenként)
 
@@ -159,7 +186,8 @@ A másolt, lejárt (publikus) token egy másik futás artifactjában (A7): a ver
 | # | Döntés | Ajánlás |
 |---|---|---|
 | **D-c1** | A P-c értelmezése: a **biztonságos hibaállapot** (a szerző elnyomhat, de a verifier fail-closed, és nem fogad el nem releváns bizonyítékot), vagy az elérhetőségre is nulla befolyás | **biztonságos hibaállapot**; a második értelmezésben egyetlen mérés sem adhat PASS-t |
-| **D-c2** | A döntés szempontjából releváns futás forrása | a **platform checks API-ja** (commit + check-név), nem a szerző/olvasó bemenete; a „legfrissebb" szabályt az R3 méri |
+| **D-c2** | A döntési jogosultság forrása | **előre rögzített döntési politika** (tárgy, jóváhagyott workflow-azonosság és commit, a konkrét futás rögzítése, vagy rögzítés nélkül a „pontosan egy jogosult futás” szabály, több jelöltnél fail-closed); a **checks API csak felderítési és keresztellenőrzési forrás**; a **„legfrissebb” szabály nem döntési politika** |
+| **D-c6** | A P-c/V (a verifier igazolt fail-closed működése) elegendő-e a #81 követelmény teljesítéséhez a P-c/F (valós szerzői viselkedés) mérése nélkül | **döntés kell**; ha nem elegendő, a P-c/F csak második azonosítóval (B sor) mérhető, és az M-E1 addig `INCONCLUSIVE` marad; **D-c6 nélkül a P-c/V zöldje sem ad PASS-t** |
 | **D-c3** | Az opcionális újraindítás (R4) a valódi kísérletválasztáshoz | **igen**, ha a #92 D6 megvan (+1 kísérlet); elhagyható a szintetikus fedezettel, a jelentés kimondja a korlátot |
 | **D-c4** | Az R2 természetes kísérlet (lejárt artifact) | **igen**: ingyenes, csak olvasó, és az artifact ma 20:06:16Z-kor lejár |
 | **D-c5** | A szerzői képességek mérése | **nem most**: második (írási, nem admin) azonosító kell (B sor); a képességek feltételezettek; a PASS hatóköre ezt kimondja |
@@ -170,10 +198,11 @@ A másolt, lejárt (publikus) token egy másik futás artifactjában (A7): a ver
 
 | Kockázat | Védelem |
 |---|---|
-| Érvényes token kitettsége | 5. szakasz: nincs új token-kiadás; a támadói viselkedés nem fut; a levezetés csak nyilvános metaadatot olvas |
+| Érvényes token kitettsége | 5. szakasz: nincs új token-kiadás; a támadói viselkedés nem fut; a felderítés és a keresztellenőrzés csak nyilvános metaadatot olvas |
 | A `check_run_id` állítás csak egy futástípuson mért | a korlát kimondva; pull_request-futásnál hipotézis, a #92 P1/P2 mérése adja az első adatot |
-| A „legfrissebb check-run" szabály nem egyértelmű vagy platform-oldalon változó | az R3 méri; ambiguus esetben a verifier fail-closed; a viselkedés időbeli stabilitása nem mért |
-| A levezetés forrása ugyanaz a platform | a bizalmi gyökér nem bővül; kimondva (C-c5) |
+| A szerző a „legfrissebb” futás sorrendjével választatna ki számára kedvező bizonyítékot | a „legfrissebb” **nem döntési politika**; előre rögzített politika és pin; az R3a–R3c valódi kontrollok; ambiguus esetben fail-closed; a `filter=latest` viselkedése csak mért (R3c), nem döntő |
+| A döntéshozó szerepe a mérésben a tulajdonosé, éles kapuban az orchestratoré | a hatókör kimondva (C-c5); az orchestrator megvalósítása nem része a tervnek |
+| A felderítés és a keresztellenőrzés forrása ugyanaz a platform | a bizalmi gyökér nem bővül; kimondva (C-c5) |
 | A természetes kísérlet (R2) elmaradása | az artifact lejárta tény; a lekérdezés a lejárat után is elvégezhető |
 | A szerzői képességek mérésének hiánya | feltételezett legrosszabb eset; a hatókör kimondott (D-c5) |
 | A PASS félreértése az elnyomás lehetőségének hiányaként | a D-c1 szövege és a „nem következtethető" lista kimondja |
@@ -184,10 +213,13 @@ A másolt, lejárt (publikus) token egy másik futás artifactjában (A7): a ver
 |---|---|---|---|---|
 | A token `check_run_id` állítása egyezik a job-azonosítóval és a checks API check-run azonosítójával | **mért (labor, egy futás)** | F1, F2 | a tulajdonos gépén lévő bizonyíték és a checks API olvasása | pull_request-futásnál nem mért |
 | Az artifact lejárata 2026-11-23T20:06:16Z | **mért** | F4 | `GET runs/ID/artifacts` | — |
-| A `filter=latest` több futásnál a legfrissebbet adja | **dokumentált, nem mért** | F3 (egy futás) | az R3 | a viselkedés változhat |
+| A `filter=latest` több futásnál a legfrissebbet adja | **dokumentált, nem mért**; **a verifier eredménye nem függ tőle** | F3 (egy futás) | az R3c (mérés), a verdikt a rögzítéstől függ | a viselkedés változhat; döntési politikaként nem használt |
+| A döntési jogosultságot előre rögzített politika és pin adja, a checks API csak felderít | tervezett követelmény | V2 | az R3a–R3c, a szintetikus rögzítés utáni új futás, mutáció | a döntéshozó szerepe a mérésben a tulajdonosé |
+| A K állítások várt értéke a politikából jön, a tokenen belüli egyezés nem elég | tervezett követelmény | V3 | szintetikus kontroll, mutáció | — |
+| A P-c/V a #81 teljes követelményét teljesíti | **nem állítom**; D-c6 kell | 8. szakasz | a tulajdonos döntése | a D-c6 nélkül INCONCLUSIVE |
 | A szerző képességei (A1–A8) | **dokumentált, nem mért** | 3. szakasz | második azonosító (B sor) | a legrosszabb eset feltételezett |
 | A verifier fail-closed az elnyomásra | tervezett követelmény; a szintetikus tesztek a #91–#92 láncban részben léteznek | V1 | a megvalósítás mátrixa, az R2 | az R2 a lejárat után mérhető |
-| A szerző-választott szövegek nem kötőek | tervezett követelmény | V3 | szintetikus mutáció | — |
+| A P és S osztályú állítások (platform által igazolt, nem használt; szerző-választott) nem kötőek, a K osztályúak igen | tervezett követelmény | V3 | szintetikus mutáció | — |
 | A P-c teljesül | **nem állítom** | — | a mérés (külön GO) | — |
 | Az elnyomás lehetősége megszűnik | **nem állítom; az ellenkezője feltételezett** | 1. szakasz | — | — |
 | Az M-E1 ítélete | **nem állítom; előzetesen INCONCLUSIVE** | — | a mérés utáni jelentés | — |
