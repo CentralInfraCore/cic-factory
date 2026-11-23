@@ -3,8 +3,9 @@
 # usage: fetch-me1.sh RUN_ID OUTDIR APPROVED_HEAD_SHA ATTEMPT [PROFILE [PR_NUMBER]]
 #   PROFILE main (default): the protected workflow_dispatch run on main. PROFILE pr (PR_NUMBER required): a
 #   pull_request run of the throwaway probe PR. APPROVED_HEAD_SHA is then the approved PR HEAD COMMIT, and it
-#   is AUTHORIZED against the PR object of the API (api/pr.json: head.sha, head.ref p-probe, base.ref main, not
-#   merged). The run's own SHA fields, path and head_branch are only OBSERVED and recorded (hypotheses H3, H7:
+#   is AUTHORIZED against the PR object of the API (api/pr.json: number = PR_NUMBER, head.sha, head.ref p-probe,
+#   base.ref main, not merged), and the RUN must be tied to THAT PR by its own pull_requests metadata (exactly one
+#   associated PR, the approved one; a missing, empty, other or ambiguous association is refused). The run's own SHA fields, path and head_branch are only OBSERVED and recorded (hypotheses H3, H7:
 #   whether run.head_sha equals the PR head is NOT assumed); the artifact is bound to THIS run's own head_sha.
 #   Both profiles also fetch the checks-API listing of the run's commit into api/check-runs.json: DISCOVERY and
 #   cross-check only, never the decision policy.
@@ -58,7 +59,9 @@ ART_HEAD=$HEAD
 if [ "$PROFILE" = pr ]; then
   # AUTHORIZATION: the approved PR head against the PR object (an authoritative source), before anything else
   gh api "repos/$ORG/$X/pulls/$PR_NUMBER" > "$OUT/api/pr.json"
-  $RM --check-pr "$OUT/api/pr.json" "$HEAD"
+  $RM --check-pr "$OUT/api/pr.json" "$HEAD" "$PR_NUMBER"
+  # the RUN must be tied to THAT PR by the API's own metadata of the run (pull_requests): no assumption
+  $RM --check-run-pr "$OUT/api/run.json" "$PR_NUMBER"
   # OBSERVATION: the run's own head_sha (not assumed equal to the PR head) binds the listing and the artifact
   LIST_HEAD=$(jq -r .head_sha "$OUT/api/run.json")
   ART_HEAD=$LIST_HEAD
@@ -76,6 +79,6 @@ CUR2=$(gh api "$API" --jq .run_attempt)
 UPD2=$(gh api "$API/attempts/$ATT" --jq .updated_at)
 [ "$CUR2" = "$ATT" ] && [ "$UPD2" = "$UPD" ] || { echo "refusing: the run changed while fetching (attempt $CUR2, updated_at $UPD2 vs $UPD)" >&2; exit 1; }
 
-$RM --write-manifest "$OUT" "$ORG/$X" "$HEAD" "$ATT" "$OUT/.prev.json" "$OUT/.arts.json" "$ZIP_SHA" "$PROFILE"
+$RM --write-manifest "$OUT" "$ORG/$X" "$HEAD" "$ATT" "$OUT/.prev.json" "$OUT/.arts.json" "$ZIP_SHA" "$PROFILE" $PR_NUMBER
 rm -f "$OUT/.prev.json" "$OUT/.prev.tmp" "$OUT/.arts.json" "$OUT/.artifact.zip"
 echo "fetched run $RUN_ID attempt $ATT artifact $ART_ID into $OUT"

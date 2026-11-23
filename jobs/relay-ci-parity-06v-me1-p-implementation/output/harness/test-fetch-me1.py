@@ -63,8 +63,12 @@ def pr_obj(**over):
         else:
             o[k] = v
     return o
+def pr_entry(number=7, head_ref="p-probe", base_ref="main", head_sha=None):
+    return {"number": number, "head": {"ref": head_ref, "sha": head_sha or PR_HEAD}, "base": {"ref": base_ref, "sha": HEAD}}
+
+
 PR_OVER = {"event": "pull_request", "head_branch": "p-probe", "head_sha": PR_HEAD,
-           "path": ".github/workflows/me1-evidence.yml"}
+           "path": ".github/workflows/me1-evidence.yml", "pull_requests": [pr_entry()]}
 
 
 def build(key, att, prev_jobs=0, artifacts=None, latest=None, claims=None, tweak=None, run_over=None, head=HEAD, listing=True, pr=None):
@@ -156,6 +160,8 @@ def main():
     check("pr profile: the PR object is fetched and digest-listed (the authorization source)", rc == 0 and "api/pr.json" in manp.get("files", {}))
     check("pr profile: the observed relations are RECORDED (run head equals the PR head here, recorded not assumed)",
           rc == 0 and manp.get("observed", {}).get("run_head_sha_equals_pr_head") is True and manp["observed"].get("pr_number") == 7, str(manp.get("observed")))
+    check("F3 the run's PR link is recorded in the manifest (number, refs; the SHA inside is recorded, not asserted)",
+          rc == 0 and manp.get("observed", {}).get("run_pull_requests", [{}])[0].get("number") == 7, str(manp.get("observed")))
     check("pr profile: the checks-API listing of the run's commit is fetched", rc == 0 and os.path.exists(os.path.join(out, "api", "check-runs.json")))
     # F2: the run's head_sha DIFFERS from the PR head (e.g. the merge commit). The measurement must be able to
     # OBSERVE exactly this deviation instead of failing on it: collected, the relation recorded as False.
@@ -187,6 +193,17 @@ def main():
     refuse("pr profile: the PR number is missing", build(key, 1, head=PR_HEAD, run_over=PR_OVER, pr=pr_obj()), 1, profile="pr", head=PR_HEAD)
     refuse("pr profile: the PR number is not numeric", build(key, 1, head=PR_HEAD, run_over=PR_OVER, pr=pr_obj()), 1, profile="pr", head=PR_HEAD, pr="x")
     refuse("main profile: a PR number is given (it belongs to the pr profile only)", build(key, 1), 1, profile="main", pr=7)
+    # F3: the RUN must be tied to the approved PR by the API's own metadata of the run, and the PR object read
+    # back must be THE PR that was asked for
+    refuse("F3 the PR object read back has another number than the one asked for (PR 7 asked, object says 8)", build(key, 1, head=PR_HEAD, run_over=PR_OVER, pr=pr_obj(number=8)), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("F3 the run belongs to ANOTHER pull request (approved PR 7, the run's pull_requests names 9)", build(key, 1, head=PR_HEAD, run_over=dict(PR_OVER, pull_requests=[pr_entry(number=9)]), pr=pr_obj()), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("F3 the run carries NO pull_requests (empty list): the link is not established, fail-closed", build(key, 1, head=PR_HEAD, run_over=dict(PR_OVER, pull_requests=[]), pr=pr_obj()), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("F3 the run has no pull_requests key at all: fail-closed", build(key, 1, head=PR_HEAD, run_over={k: v for k, v in PR_OVER.items() if k != "pull_requests"}, pr=pr_obj()), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("F3 the pull_requests value is not a list: fail-closed", build(key, 1, head=PR_HEAD, run_over=dict(PR_OVER, pull_requests={"number": 7}), pr=pr_obj()), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("F3 the run is associated with two pull requests (the approved one and another): ambiguous, fail-closed", build(key, 1, head=PR_HEAD, run_over=dict(PR_OVER, pull_requests=[pr_entry(7), pr_entry(9)]), pr=pr_obj()), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("F3 the run's pull_requests entry has no numeric number", build(key, 1, head=PR_HEAD, run_over=dict(PR_OVER, pull_requests=[{"head": {"ref": "p-probe"}, "base": {"ref": "main"}}]), pr=pr_obj()), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("F3 the run's PR entry names another head branch", build(key, 1, head=PR_HEAD, run_over=dict(PR_OVER, pull_requests=[pr_entry(head_ref="feature")]), pr=pr_obj()), 1, profile="pr", head=PR_HEAD, pr=7)
+    refuse("F3 the run's PR entry names another base branch", build(key, 1, head=PR_HEAD, run_over=dict(PR_OVER, pull_requests=[pr_entry(base_ref="dev")]), pr=pr_obj()), 1, profile="pr", head=PR_HEAD, pr=7)
     refuse("main profile: a pull_request run is presented", build(key, 1, run_over=PR_OVER, head=HEAD), 1)
     refuse("unknown profile", build(key, 1), 1, profile="weird")
     refuse("the checks-API listing cannot be read (no silent skip)", build(key, 1, listing=False), 1)

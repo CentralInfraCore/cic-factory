@@ -7,11 +7,13 @@
   read-me1.py --pk                          positive control: the comparator on synthetic records
   read-me1.py DIR --trusted-jwks FILE --policy FILE        policy mode: the decision policy is fixed in advance
                                                            (see load_policy); the checks API only discovers
-  read-me1.py --check-pr PR_JSON APPROVED_PR_HEAD          (used by fetch-me1.sh) authorize the PR head against the
-                                                           PR object; the run's SHA fields are only OBSERVED
+  read-me1.py --check-pr PR_JSON APPROVED_PR_HEAD PR_NUMBER   (used by fetch-me1.sh) authorize the PR head against
+                                                           the PR object of THAT number; SHA fields only OBSERVED
+  read-me1.py --check-run-pr RUN_JSON PR_NUMBER            (used by fetch-me1.sh) the run must be tied to that PR
+                                                           by its own pull_requests metadata (else fail-closed)
   read-me1.py --check-run RUN_JSON OWNER/REPO HEAD ATTEMPT PREV_JSON [main|pr]  (used by fetch-me1.sh)
   read-me1.py --pick-artifact RUN_JSON ARTIFACTS_JSON HEAD                  (used by fetch-me1.sh)
-  read-me1.py --write-manifest DIR OWNER/REPO HEAD ATTEMPT PREV_JSON ARTIFACTS_JSON ZIP_SHA256 [main|pr]
+  read-me1.py --write-manifest DIR OWNER/REPO HEAD ATTEMPT PREV_JSON ARTIFACTS_JSON ZIP_SHA256 [main | pr PR_NUMBER]
   read-me1.py --selftest                    stand-alone only
 
 DIR is produced by fetch-me1.sh (a NEW directory per run): manifest.json, api/run.json,
@@ -503,9 +505,10 @@ def check_run(run_json, repo, head, attempt, prev_json, profile="main"):
     return run, got, None
 
 
-def check_pr(pr_json, approved_head, probe_ref="p-probe", base_ref="main"):
+def check_pr(pr_json, approved_head, expected_number, probe_ref="p-probe", base_ref="main"):
     """AUTHORIZATION of the PR head, bound to its authoritative source (the PR object of the API), kept apart
-    from the OBSERVATION of the run's SHA fields. Returns (observed-dict, error-or-None)."""
+    from the OBSERVATION of the run's SHA fields. The object read back must be THE PR that was asked for
+    (its number equals the expected one). Returns (observed-dict, error-or-None)."""
     try:
         pr = json.loads(read(pr_json))
     except (TypeError, ValueError):
@@ -526,13 +529,56 @@ def check_pr(pr_json, approved_head, probe_ref="p-probe", base_ref="main"):
         bad.append("merged=%r (a probe PR is never merged)" % (pr.get("merged"),))
     if not isinstance(pr.get("number"), int) or isinstance(pr.get("number"), bool):
         bad.append("number")
+    elif not re.match(r"^[0-9]+$", str(expected_number)) or pr["number"] != int(expected_number):
+        bad.append("number=%r (the PR that was asked for is %r)" % (pr.get("number"), expected_number))
     if bad:
         return None, "the PR is not the approved probe PR: " + "; ".join(bad)
     return {"pr_number": pr["number"], "pr_head_sha": h["sha"], "pr_merge_commit_sha": pr.get("merge_commit_sha")}, None
 
 
-def check_pr_main(pr_json, approved_head):
-    _, err = check_pr(pr_json, approved_head)
+def check_run_pr_link(run, expected_number, probe_ref="p-probe", base_ref="main"):
+    """The run must be TIED to the approved PR by the API's own metadata of the run (its pull_requests list):
+    exactly one associated PR, and it is the approved one. A missing, empty, other or ambiguous association is an
+    error (fail-closed); the SHA fields inside the entry are only RECORDED, never assumed. Returns
+    (summary-list, error-or-None)."""
+    prs = run.get("pull_requests") if isinstance(run, dict) else None
+    if not isinstance(prs, list) or not prs:
+        return None, "the run carries no pull_requests: its link to the approved PR is not established by the API (no assumption, fail-closed)"
+    if len(prs) != 1:
+        return None, "the run is associated with %d pull requests %r: the link is ambiguous" % (
+            len(prs), [(p or {}).get("number") if isinstance(p, dict) else None for p in prs])
+    e = prs[0]
+    if not isinstance(e, dict) or not isinstance(e.get("number"), int) or isinstance(e.get("number"), bool):
+        return None, "the run's pull_requests entry has no numeric number"
+    if not re.match(r"^[0-9]+$", str(expected_number)) or e["number"] != int(expected_number):
+        return None, "the run belongs to PR %r, not to the approved PR %r" % (e.get("number"), expected_number)
+    h, b = e.get("head") or {}, e.get("base") or {}
+    bad = []
+    if h.get("ref") != probe_ref:
+        bad.append("head.ref=%r (want %r)" % (h.get("ref"), probe_ref))
+    if b.get("ref") != base_ref:
+        bad.append("base.ref=%r (want %r)" % (b.get("ref"), base_ref))
+    if bad:
+        return None, "the run's PR entry is not the probe PR: " + "; ".join(bad)
+    return [{"number": e["number"], "head_ref": h.get("ref"), "head_sha": h.get("sha"), "base_ref": b.get("ref")}], None
+
+
+def check_run_pr_main(run_json, expected_number):
+    try:
+        run = json.loads(read(run_json))
+    except (TypeError, ValueError):
+        print("refusing: run JSON unreadable", file=sys.stderr)
+        return 1
+    _, err = check_run_pr_link(run, expected_number)
+    if err:
+        print("refusing: " + err, file=sys.stderr)
+        return 1
+    print("the run is tied to the approved PR")
+    return 0
+
+
+def check_pr_main(pr_json, approved_head, expected_number):
+    _, err = check_pr(pr_json, approved_head, expected_number)
     if err:
         print("refusing: " + err, file=sys.stderr)
         return 1
@@ -563,7 +609,7 @@ def pick_artifact_main(run_json, artifacts_json, head):
     return 0
 
 
-def write_manifest(d, repo, head, attempt, prev_json, artifacts_json, zip_sha, profile="main"):
+def write_manifest(d, repo, head, attempt, prev_json, artifacts_json, zip_sha, profile="main", pr_number=None):
     run_json = os.path.join(d, "api", "run.json")
     run, got, err = check_run(run_json, repo, head, attempt, prev_json, profile)
     if err:
@@ -578,9 +624,13 @@ def write_manifest(d, repo, head, attempt, prev_json, artifacts_json, zip_sha, p
     art_head = head
     if profile == "pr":
         # authorization: the PR head against the PR object; observation: the run's own SHA fields
-        obs, perr = check_pr(os.path.join(d, "api", "pr.json"), head)
+        obs, perr = check_pr(os.path.join(d, "api", "pr.json"), head, pr_number)
         if perr:
             print("refusing: " + perr, file=sys.stderr)
+            return 1
+        link, lerr = check_run_pr_link(run, pr_number)
+        if lerr:
+            print("refusing: " + lerr, file=sys.stderr)
             return 1
         art_head = run.get("head_sha")   # the artifact must belong to THIS run: bound to the run's own head_sha
         got["head_sha"] = art_head
@@ -603,7 +653,7 @@ def write_manifest(d, repo, head, attempt, prev_json, artifacts_json, zip_sha, p
     if profile != "main":
         m["profile"] = profile
         # OBSERVED relations, recorded with their sources and NOT assumed (H3): none of them is an accepted premise
-        m["observed"] = dict(obs, run_head_sha=run.get("head_sha"),
+        m["observed"] = dict(obs, run_pull_requests=link, run_head_sha=run.get("head_sha"),
                              run_head_sha_equals_pr_head=(run.get("head_sha") == obs["pr_head_sha"]),
                              run_head_sha_equals_pr_merge_commit=(run.get("head_sha") == obs["pr_merge_commit_sha"] if obs["pr_merge_commit_sha"] else None))
     with open(os.path.join(d, "manifest.json"), "w", encoding="utf-8") as fh:
@@ -1133,8 +1183,9 @@ def main(argv):
         rows = pk_rows()
         report(rows)
         return 0 if all(r[1] == "MET" for r in rows) else 1
-    for flag, n, fn in (("--write-manifest", (8, 9), write_manifest), ("--check-run", (6, 7), check_run_main),
-                        ("--check-pr", (3,), check_pr_main), ("--pick-artifact", (4,), pick_artifact_main)):
+    for flag, n, fn in (("--write-manifest", (8, 9, 10), write_manifest), ("--check-run", (6, 7), check_run_main),
+                        ("--check-pr", (4,), check_pr_main), ("--check-run-pr", (3,), check_run_pr_main),
+                        ("--pick-artifact", (4,), pick_artifact_main)):
         if args and args[0] == flag:
             if len(args) not in n:
                 print(__doc__, file=sys.stderr)
