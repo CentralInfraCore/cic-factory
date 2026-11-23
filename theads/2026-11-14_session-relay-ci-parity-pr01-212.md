@@ -17331,3 +17331,1146 @@ GO – az M-E1 részjelentés elkészítése külön PR-ban, a rögzített ható
 ### 2026-11-22 20:46 — Claude
 
 A GO megvan. A részjelentést külön ágon és job alatt készítem el. Előtte a számokat újraszámoltam a két olvasat tényleges kimenetéből, és **hibát találtam a saját korábbi közléseimben**: az első olvasat 21 `MET` sort adott (nem 22-t), a második 26-ot (nem 28-at). A 22-es szám a már mergelt #90 két fájljában is szerepel. A jelentésben ezt külön errata-ként rögzítem, és a két fájlban javítom.
+
+### 2026-11-22 20:47 — Claude
+
+Az errata-javítás a két mergelt fájlban megvan. Most a részjelentés job-leírása és a jelentés.
+
+### 2026-11-22 20:52 — Claude
+
+Az M-E1 részjelentés elkészült egy aláírt commitban: `e2354c9`, a `feature/relay-ci-parity-06s-me1-partial-report` ágon. Nincs push, ezt te futtatod:
+
+```
+! bash ~/.cache/relay-ci-parity-04/push-212-me1-report.sh
+```
+
+Utána megnyitom a PR-t (a body kész), és lefuttatom a gate-et.
+
+**Saját hiba, amit a jelentés készítése közben találtam, és nem hallgatok el.** Az olvasatok számait újraszámoltam a két kimenetből. A korábbi közléseimben téves számok szerepeltek:
+- Az első olvasat **21** `MET` sort adott, nem 22-t (összesen 24 sor). A 22-es szám a már mergelt #90 két fájljába is bekerült: a 06r `input.md`-be és a `sub-claim-fix.md`-be. A jelentés PR-jában mindkettőt javítottam, az errata a jelentés 6. szakaszában is szerepel.
+- A második olvasat **26** `MET` sort adott (29 sor), nem 28-at. Ez csak a közlésemben szerepelt, fájlban nem.
+
+**A jelentés felépítése** (`output/m-e1-partial-report.md`):
+- **Azonosítók:** az X PR #2, a futás 45063800073 lépésenként, az artifact, a külön bizalmi gyökér (SHA-256 `5f8164c9…`), a #89–#90 merge-ek és a post-merge gate-ek.
+- **A két olvasat külön:** az első `NOT MET` a 06q olvasóval, a `sub` dokumentációra épülő elvárása miatt, és a javított `EVIDENCE BOUND, P NOT READ` a 06r olvasóval. Az elsőt nem írtam át.
+- **A valódi token szerkezete:** 31 állításnév, élettartam 300 s, azonosítós `sub`. Az `actor`, `actor_id` és `jti` értékét nem rögzítettem.
+- **Megfigyelések O1–O6, mindegyik korlátjával:** a futást a GitHub nem tartotta vissza, a lejárat-kapu a várt időrendben működött, a `job_workflow_ref` nem újrahasznosítható workflow-ban is jelen van. Kifejezett tilalom az általánosításra: egy futás, egy szervezet, egy pillanatkép.
+- **Bizalmi határ:** az eredmény független a futás kódjától, de **nem független a GitHubtól**. A token és az API-metaadat ugyanattól a platformtól jön. Feltételek: a kulcsok külön fájlban, a tulajdonosi gép és a TLS, az órák, a GitHub őszintesége.
+- **A mérőcsomag története és a saját hibák:** az F1 (érvényes token nyilvános artifactban), az F5 határérték, a 600 s-os korlát, a `sub`-elvárás. A csomag a javítások előtt nem futott, tehát nem keletkezett kitettség.
+- **Az M-E1 állapota:** az aláírás, a futás- és kísérletkötés, a commit- és workflow-kötés, az identitás és a lejárat-kapu `MET`. A P `NOT-READ`, az S/R és az artifact-attestáció nyitott. **Az ítélet nyitott, előzetesen `INCONCLUSIVE`.** A `FAIL` nem indokolt, mert van hiteles, aláírt bizonyíték. A `PASS` nem mondható ki, mert a P nem vizsgált.
+- **K-5:** 8/300, kísérletenként, a futások listájával; 292 maradék. A következő csomag becslése nagyságrendileg legfeljebb ≈ 7 kísérlet, de ez saját tervezést igényel.
+- **Nyitott kérdések, a P és S/R csomag belépési feltételei, claim-evidence tábla.**
+
+A `validate-spec`, a `validate-output` és a `verify-signatures` GO. A commitba csak explicit fájllistával került fájl: a három új fájl és a két errata-javítás.
+
+A merge, a P és S/R mérőcsomag, új futás, H1/H2, M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-22 20:53 — Felhasználó
+
+~~~~~
+<bash-input> bash ~/.cache/relay-ci-parity-04/push-212-me1-report.sh</bash-input>
+~~~~~
+
+### 2026-11-22 20:53 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'feature/relay-ci-parity-06s-me1-partial-report' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-factory/pull/new/feature/relay-ci-parity-06s-me1-partial-report        
+remote: 
+To github.com:CentralInfraCore/cic-factory.git
+ * [new branch]      feature/relay-ci-parity-06s-me1-partial-report -&gt; feature/relay-ci-parity-06s-me1-partial-report</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 20:56 — Claude
+
+Az M-E1 részjelentés PR-ja nyitva: https://github.com/CentralInfraCore/cic-factory/pull/91, a `main` ágra.
+
+A gate zöld: futás 45068993345, `headSha` `e2354c93d2696db3dedb2bf4959e7016c70901fe`, `completed / success`. A távoli ág feje is ez, egyezik a helyi HEAD-del.
+
+Tartalmi review-ra vár. A review-ban ezt kérem megnézni:
+- **Előminősítés és általánosítás:** nincs-e. Az `EVIDENCE BOUND` nem `PASS`, a `FAIL` sem indokolt, az M-E1 ítélete nyitott.
+- **A megfigyelések szétválasztása:** O1–O6 mért / korlát / ismeretlen helyes-e.
+- **A számok és azonosítók:** egyeznek-e az olvasott állapottal. Az errata (21, nem 22 `MET` az első olvasatnál; a 06r két fájlja javítva) helyes-e.
+- **A bizalmi határ:** a jelentés kimondja, hogy az eredmény nem független a GitHubtól.
+
+A merge, a P és S/R mérőcsomag, új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-22 20:58 — Felhasználó
+
+~~~~~
+<pasted_content id="873f">
+## **Review – cic-factory #91**
+
+**Döntés: REQUEST CHANGES – egy tartalmi pontosítás szükséges a merge előtt.**
+
+Ellenőrzött commit: [`e2354c93d2696db3dedb2bf4959e7016c70901fe`](https://github.com/CentralInfraCore/cic-factory/commit/e2354c93d2696db3dedb2bf4959e7016c70901fe?utm_source=chatgpt.com)
+
+A GitHubon ellenőrzött gate: `45068993345` — **SUCCESS**.
+
+### **F1 – Medium: A bizalmi határ túl erős megfogalmazása**
+
+Az 5. szakaszban:
+
+> Az eredmény független a futás kódjától és szerzőjétől.
+
+Ez jelenleg túl erős állítás, mert éppen a PR-szerző befolyásának vizsgálata maradt nyitott (`P NOT-READ`).
+
+A kriptográfiai ellenőrzés függetlensége és a bizonyíték előállításának befolyásolhatatlansága két külön tulajdonság.
+
+Javasolt szöveg:
+
+> Az aláírás ellenőrzése a futás kódjától és szerzőjétől függetlenül végezhető el. Ez nem igazolja a bizonyíték előállításának, kiválasztásának vagy publikálásának szerzői befolyástól való mentességét. Ez utóbbi a P vizsgálat nyitott kérdése. Az ellenőrzés bizalmi gyökere továbbra is a GitHub.
+
+### **A többi ellenőrzési pont**
+
+| Vizsgálat                         | Eredmény  |
+| --------------------------------- | --------- |
+| Előminősítés elkerülése           | Megfelelő |
+| EVIDENCE BOUND ≠ PASS             | Megfelelő |
+| M-E1 ítélet nyitva tartása        | Megfelelő |
+| O1–O6 megfigyelések és korlátok   | Megfelelő |
+| Általánosítás tilalma             | Megfelelő |
+| Első olvasat megőrzése            | Megfelelő |
+| 06r két fájljának errata-javítása | Megfelelő |
+| GitHub mint bizalmi gyökér        | Megfelelő |
+| K-5 számlálás                     | Megfelelő |
+| Hatókörtartás                     | Megfelelő |
+
+### **Számszerű ellenőrzés**
+
+A #90 olvasójának tényleges kódja alapján a javított sorok száma konzisztens.
+
+| Eredmény | 06q | 06r |
+| -------- | --- | --- |
+| MET      | 21  | 26  |
+| NOT-MET  | 1   | 0   |
+| NOTE     | 1   | 2   |
+| NOT-READ | 1   | 1   |
+| Összesen | 24  | 29  |
+
+A második olvasatnál korábban közölt 28 helyett tehát a 26 `MET` helyes. A nyers bizonyítékot nem olvastam újra; ezt a kód szerkezete alapján ellenőriztem.
+
+Az időadatok is konzisztensek:
+
+- Token lejárata: 20:04:13 UTC.
+- Artifact létrehozása: 20:06:16 UTC.
+- Különbség: 123 másodperc.
+- Előírt minimum: 60 másodperc.
+
+A lejárati feltétel a dokumentált adatok szerint teljesült.
+
+### **F2 – Low: A változtatások hiányának bizonyítása**
+
+A claim-evidence táblában a `git log` önmagában nem bizonyítja, hogy az X repóban vagy az éles szervezetben nem történt külső művelet.
+
+Ezt végrehajtási naplóra alapozott állításként érdemes megjelölni. Nem blokkoló észrevétel.
+
+## **Összesítés**
+
+- HIGH: 0
+- MEDIUM: 1
+- LOW: 1
+
+A részjelentés szakmailag egyébként megfelelő, különösen a két olvasat megőrzése és a saját hibák dokumentálása.
+
+**F1 javítása után új, SHA-hoz kötött review szükséges.**
+
+A merge és valamennyi korábbi HOLD változatlan. K-5: **8/300**.
+</pasted_content id="873f">
+~~~~~
+
+### 2026-11-22 20:58 — Claude
+
+A pontosítás jogos: a kriptográfiai ellenőrzés függetlensége és a bizonyíték előállításának befolyásolhatatlansága két külön tulajdonság, és az utóbbi éppen a nyitott P. Javítom az F1-et és az F2-t.
+
+### 2026-11-22 20:58 — Claude
+
+Az F1–F2 javítása kész egy új, aláírt commitban: `2ca54bf`. Nincs push, ezt te futtatod:
+
+```
+! bash ~/.cache/relay-ci-parity-04/push-212-me1-report.sh
+```
+
+Utána lefuttatom a gate-et, és egyeztetem a headSha-t.
+
+**Javítások (csak dokumentáció, nincs új mérés):**
+- **F1:** az 5. szakasz a javasolt szerkezetben szól. Az aláírás ellenőrzése a futás kódjától és szerzőjétől függetlenül végezhető el, de ez **nem igazolja a bizonyíték előállításának, kiválasztásának vagy publikálásának szerzői befolyástól való mentességét**. Ez a P, `NOT-READ`. A kriptográfiai ellenőrzés függetlensége és a bizonyíték befolyásolhatatlansága két külön tulajdonság, és az ellenőrzés bizalmi gyökere továbbra is a GitHub. A jelentés többi része nem tartalmazott hasonló túlzó mondatot: a függetlenségről szóló sorok a "nem állítja" listában és az ítélet-definícióban szerepelnek.
+- **F2:** a "nem módosult az X repó vagy az éles szervezet" állítás **végrehajtási naplóra alapozottként** jelölt. A `git log` ezt nem bizonyítja. A sor kimondja, hogy az X repón írást kizárólag a tulajdonos végzett, a saját parancsaim naplója szerint, és hogy a tulajdonosi műveletek naplója az övé.
+- A `validate-output` és a `verify-signatures` GO. A commitba csak a jelentés fájlja került, explicit fájllistával. A PR-leírás frissítve.
+
+A számszerű ellenőrzést a review a kód alapján elvégezte, és egyezik: 21/1/1/1 (24 sor) és 26/0/2/1 (29 sor). A token lejárata és az artifact létrehozása közti 123 s is egyezik az `exp + 60 s` feltétellel.
+
+A merge, a P és S/R mérőcsomag, új futás, H1/H2, M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-22 20:58 — Felhasználó
+
+~~~~~
+<bash-input> bash ~/.cache/relay-ci-parity-04/push-212-me1-report.sh</bash-input>
+~~~~~
+
+### 2026-11-22 20:58 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-factory.git
+   e2354c9..2ca54bf  feature/relay-ci-parity-06s-me1-partial-report -&gt; feature/relay-ci-parity-06s-me1-partial-report</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 21:01 — Claude
+
+A push megtörtént: a `2ca54bfefdedc8d02168c27edaa5b2d931f495e3` a távoli ág feje, és egyezik a helyi HEAD-del.
+
+A gate zöld: futás 45069448584, `headSha` `2ca54bfefdedc8d02168c27edaa5b2d931f495e3`, `completed / success`.
+
+Az F1–F2 javítás tartalmi re-review-ra vár (PR #91). A merge, a P és S/R mérőcsomag, új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-22 21:03 — Felhasználó
+
+~~~~~
+<pasted_content id="873f">
+## **Re-review – cic-factory #91**
+
+**Döntés: APPROVE – szakmai GO a merge-re.**
+
+Ellenőrzött fej: [`2ca54bfefdedc8d02168c27edaa5b2d931f495e3`](https://github.com/CentralInfraCore/cic-factory/commit/2ca54bfefdedc8d02168c27edaa5b2d931f495e3?utm_source=chatgpt.com)
+
+Gate: `45069448584` — **SUCCESS**, GitHubon ellenőrizve.
+
+| Észrevétel  | Ellenőrzés                                                                                              | Állapot |
+| ----------- | ------------------------------------------------------------------------------------------------------- | ------- |
+| F1 – Medium | A kriptográfiai ellenőrzés függetlensége és a bizonyíték befolyásolhatatlansága egyértelműen elkülönül. | CLOSED  |
+| F2 – Low    | A műveletek hiányának állítása a végrehajtási naplóra épül, annak korlátait is rögzíti.                 | CLOSED  |
+
+A diff kizárólag a két kért dokumentációs pontosítást tartalmazza. Új észrevétel nincs.
+
+### **Megmaradó döntési határok**
+
+- M-E1: előzetesen `INCONCLUSIVE`.
+- EVIDENCE BOUND ≠ PASS.
+- P: `NOT-READ`.
+- S/R negatívok és artifact-attestáció: nyitott.
+- K-5: **8/300**.
+
+### **SHA-hoz kötött jóváhagyás**
+
+```
+gh pr merge 91 \
+  --repo CentralInfraCore/cic-factory \
+  --merge \
+  --match-head-commit 2ca54bfefdedc8d02168c27edaa5b2d931f495e3
+```
+
+Ez szakmai merge-jóváhagyás, nem végrehajtási engedély a következő mérési fázisra.
+
+**HIGH: 0 · MEDIUM: 0 · LOW: 0**
+
+Minden korábbi HOLD változatlan.
+</pasted_content id="873f">
+~~~~~
+
+### 2026-11-22 21:03 — Claude
+
+A #91 jóváhagyva: a szakmai GO a `2ca54bfefdedc8d02168c27edaa5b2d931f495e3` fejre szól. A merge a tiéd, ezt futtasd:
+
+```
+! gh pr merge 91 --repo CentralInfraCore/cic-factory --merge --match-head-commit 2ca54bfefdedc8d02168c27edaa5b2d931f495e3
+```
+
+Ha megvan, jelezd. Utána ellenőrzöm a faegyezést és a post-merge gate-et. Ha a kimenet üres, azt is jelezd, mert korábban ilyenkor a parancs nem mindig hatott érvénybe.
+
+A merge után a részjelentés lezárt, és a thread-napló lokálisan frissíthető (push nélkül). A P és S/R mérőcsomag, a K-4 (3) olvasása és a B sor külön, kimondott GO-t igényel. Az M-E1 előzetesen `INCONCLUSIVE`, az `EVIDENCE BOUND` nem `PASS`, a P `NOT-READ`. Új futás, H1/H2, M-A…M-D, valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-22 21:03 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 91 --repo CentralInfraCore/cic-factory --merge --match-head-commit 2ca54bfefdedc8d02168c27edaa5b2d931f495e3</bash-input>
+~~~~~
+
+### 2026-11-22 21:03 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 21:05 — Claude
+
+A #91 mergelve, az ellenőrzések rendben vannak.
+
+- **Merge commit:** `a79f2a199801046682b984526c8104d16084b594`, 2026-11-22 21:03:18Z. A jóváhagyott fej `2ca54bfefdedc8d02168c27edaa5b2d931f495e3` volt.
+- **Faegyezés:** a merge commit fája `fa00de08ce53bf45af3bb80f3571c132cd12cf57`, ugyanez a jóváhagyott fejé. `origin/main` a merge commit.
+- **Post-merge gate:** futás 45069885703, `push`, `headSha` a merge commit, `completed / success`.
+
+Az M-E1 első mérési részlépése és a részjelentés lezárt. Az M-E1 végső ítélete **nyitott, előzetesen `INCONCLUSIVE`**: az `EVIDENCE BOUND` nem `PASS`, a P `NOT-READ`, az S/R negatívok és az artifact-attestáció nyitott. A K-5 számláló 8/300, 292 maradék.
+
+**Mi vár döntésre tőled** (mind külön, kimondott GO):
+- **A P és S/R mérőcsomag tervezése.** A P-nél a PR szerzője kontrollálja a workflow-t, ezért a token-kérés és -publikálás szabályait előre, review-val kell rögzíteni, a #89 F1 tanulságával: érvényes token sehol sem publikálható. Ez tervezési tétel, a tényleges mérés külön GO.
+- **A K-4 (3) olvasása** a Relay felületén (`Settings → Actions → General → Fork pull request workflows`), és a Relay alapértelmezett `write` workflow-jogosultsága, valamint a régi szervezet 2FA-ja mint külön biztonsági tételek.
+- **A B sor** (Y repó, két App kulcs nélkül, gépi fiókok, kanári-pár).
+- **Thread-napló:** a #91 lezárása után lokálisan frissíthető és commitolható, a push csak a te kifejezett szavadra.
+- **Memória-bejegyzés:** a `#212` állapotról szóló bejegyzésem elavult (2026-11-20-i állapotot ír). Frissíthetem a lezárt 0. fázissal, az M-E1 részeredménnyel és a nyitott pontokkal. Mondd, ha kéred.
+
+Új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD.
+
+### 2026-11-22 21:13 — Felhasználó
+
+~~~~~
+<pasted_content id="873f">
+A #91 lezárási csomagja konzisztens. Az M-E1 első mérési részlépése lezárható.
+
+A következő lépések szakmai prioritása szerintem:
+
+| Sorrend | Feladat                                       | Ajánlás                |
+| ------- | --------------------------------------------- | ---------------------- |
+| 1.      | Memória és thread-napló frissítése            | GO, lokálisan          |
+| 2.      | P és S/R mérőcsomag tervezése                 | GO, kizárólag tervezés |
+| 3.      | K-4 (3) és biztonsági beállítások ellenőrzése | GO, kizárólag olvasás  |
+| 4.      | B sor előkészítése                            | HOLD                   |
+
+A P vizsgálat a kritikus következő lépés. A platform által aláírt bizonyíték ellenőrizhetősége már igazolt a vizsgált laborfutásban. Most a bizonyíték előállításának támadhatóságát kell vizsgálni.
+
+**M-E1: INCONCLUSIVE. K-5: 8/300 — 97,33% keret rendelkezésre áll.**
+
+A tényleges végrehajtáshoz külön tulajdonosi GO szükséges. Minden korábbi HOLD változatlan.
+</pasted_content id="873f">
+~~~~~
+
+### 2026-11-22 21:13 — Claude
+
+Ez ismét javasolt sorrend, nem kimondott GO, ezért a P és S/R tervezést nem kezdem el. Két saját, lokális házimunkát viszont elvégzek: a memória-bejegyzést (az enyém) és a thread-naplót (a repó állandó szabálya szerint lezárt PR után, push nélkül).
+
+### 2026-11-22 21:14 — Claude
+
+Két lokális házimunkát elvégeztem, külső hatás nélkül.
+
+- **Thread-napló:** commitolva, `7a597d1`, a live `workdir` jelenlegi ágán, aláírva, nincs push. A napló a #91 lezárásáig tartalmazza az eseményeket, 58 új bejegyzéssel. A rendszer-jelzést (`[Request interrupted by user]`) kivettem. A titokszűrés tiszta: a 64 hexás találatok a nyilvános JWKS-fájl digestjei és a saját szűrés-leírásom, nem titkok. A push csak a te kifejezett szavadra történik.
+- **Memória:** a #212 állapot bejegyzését átírtam a mai állapotra. Tartalma: a 0. fázis lezárva (`PK MET` 20/20), az M-E1 első futás kiolvasva, az ítélet nyitott (előzetesen `INCONCLUSIVE`), K-5 8/300 kísérletenként, a HOLD-lista, a nyitott tulajdonosi tételek, és a munkaszabályok, amelyek ebben a szálban bukkantak elő. Köztük a legfontosabb: a szakmai "GO" nem a te GO-d, a push és a merge a tiéd, az üres bash-kimenet nem jelent végrehajtást, és csak explicit fájllistával commitolok.
+
+**A P és S/R tervezésre és a K-4 (3) olvasására nem kaptam kimondott GO-t**, ezért nem kezdtem el egyiket sem. Ha kéred, egy mondat elég, pl.: "GO – a P és S/R mérőcsomag tervezése, kizárólag tervezés." A tervezés a PR-szerző által kontrollált workflow token-szabályaival kezdődne, a #89 F1 tanulságával: érvényes token sehol sem publikálható. A K-4 (3)-at te olvasod a Relay felületén (`Settings → Actions → General → Fork pull request workflows`), és közlöd.
+
+Új futás, H1/H2, M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A B sor külön GO. A K-5 számláló 8/300.
+
+### 2026-11-22 21:17 — Felhasználó
+
+~~~~~
+GO – a P és S/R mérőcsomag tervezése, kizárólag tervezés. A mérési protokoll, a bizalmi határok, a negatív kontrollok, az elfogadási kritériumok és a K-5 keretigény előzetes rögzítésével. Érvényes token semmilyen csatornán nem publikálható. A végrehajtás külön GO-t igényel.
+~~~~~
+
+### 2026-11-22 21:18 — Claude
+
+A GO megvan, kizárólag tervezésre. Előbb a #81 P/S/R-szövegét és a mostani olvasó szerkezetét nézem át, hogy a terv a tényleges eszközre épüljön, nem emlékezetből.
+
+### 2026-11-22 21:19 — Claude
+
+A job-leírás validálva. Most a terv maga.
+
+### 2026-11-22 21:21 — Claude
+
+A P és S/R mérőcsomag terve elkészült egy aláírt commitban: `b84adca`, a `feature/relay-ci-parity-06t-me1-p-sr-design` ágon. Csak terv, nincs benne workflow, szkript vagy kód, és nem indult futás. Nincs push, ezt te futtatod:
+
+```
+! bash ~/.cache/relay-ci-parity-04/push-212-p-sr-design.sh
+```
+
+Utána megnyitom a PR-t (a body kész), és lefuttatom a gate-et.
+
+**A terv lényege** (`output/me1-p-sr-design.md`):
+- **Fenyegetési modell:** a PR-szerző kontrollálja a workflow-fájlt, a bizalmi gyökér továbbra is a GitHub. A pull_request-esemény állításalakjai (H1–H8) **dokumentált, nem mért hipotézisek**, és a terv a megcáfolásukat is előírja. Az egyik legfontosabb: a `workflow` állítás (a workflow neve) a szerző által választott szöveg, ezért a verifier nem köthet rá.
+- **Protokoll:** egyetlen eldobható, **nem mergelendő** PR az X repón, két mérő workflow-val. A P1 a védett `me1-evidence.yml` módosítása a helyén, a P2 egy azonos nevű másik workflow. Az ajánlott S-valódi egy második főági dispatch. A PR megnyitása a mérés indítása, `.state` védelemmel.
+- **Érvényes token sehol nem publikálható:** a lejárat-kapus publikálás (a #89/#91 mechanizmusa) a PR-futásokra is él. A támadó **workflow-viselkedését nem mérjük**, mert egy valódi ilyen futás maga lenne a token-kitettség. Helyette offline hamisítási kontrollok (F-a…F-e) futnak a valódi PR-tokenekkel. A terv kimondja ennek az árát: azt mérjük, mit fogad el a **verifier**, nem azt, mit tehetne a támadó.
+- **Negatív kontrollok:** ugyanaz a közönség (`me1-evidence`) minden futásban, hogy a kontrollt ne a közönség eltérése „teljesítse". Az elutasítás indokai között legalább egy kötő állításnak kell lennie (`workflow_ref`, `ref`, `sha`, `event_name`, `sub`).
+- **Elfogadási kritériumok és ítélet:** C1–C5. PASS csak a same-repo PR hatókörre szűkítve. FAIL, ha egy támadó-variáns bizonyítéka a főági verifierrel elfogadott. Minden más INCONCLUSIVE.
+- **K-5 keretigény (becslés, nem mért):** alap 4 kísérlet, legfeljebb 7 a visszatartásokkal, vagyis **12/300, legfeljebb 15/300**. Az opcionális tiszta R legfeljebb +4.
+
+**Egy korlát, amit a terv kimond:** a tiszta S valódi adaton csak a második főági futással kapható, a tiszta R pedig csak új főági commit után. Enélkül az S és az R részleges, és a jelentésnek ezt jeleznie kell.
+
+**Döntéseid (D1–D7), ajánlással:**
+- **D1:** same-repo PR; a fork-PR külön, a B sor után.
+- **D2:** lejárat-kapus teljes token (bevált). Tartalék: csak dekódolt állítások.
+- **D3:** P1 és P2 együtt, egy PR-ban.
+- **D4:** a PR lezárása a tiéd. Az ág törlése külön, írási művelet.
+- **D5:** az artifact-attestáció külön csomag vagy kifejezett kizárás. Döntés nélkül az M-E1 `INCONCLUSIVE` marad.
+- **D6:** a második főági dispatch igen (≤ 2 kísérlet).
+- **D7:** a tiszta R elhagyható, ha az R1–R2 és a szintetikus `sha`-teszt elég.
+
+A `validate-spec`, a `validate-output` és a `verify-signatures` GO. A commitba csak explicit fájllistával került fájl.
+
+A merge, a megvalósítás, a PR megnyitása az X repón, új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-22 21:21 — Felhasználó
+
+~~~~~
+<bash-input> bash ~/.cache/relay-ci-parity-04/push-212-p-sr-design.sh</bash-input>
+~~~~~
+
+### 2026-11-22 21:21 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'feature/relay-ci-parity-06t-me1-p-sr-design' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-factory/pull/new/feature/relay-ci-parity-06t-me1-p-sr-design        
+remote: 
+To github.com:CentralInfraCore/cic-factory.git
+ * [new branch]      feature/relay-ci-parity-06t-me1-p-sr-design -&gt; feature/relay-ci-parity-06t-me1-p-sr-design</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 21:24 — Claude
+
+A P és S/R mérőcsomag tervének PR-ja nyitva: https://github.com/CentralInfraCore/cic-factory/pull/92, a `main` ágra.
+
+A gate zöld: futás 45071681108, `headSha` `b84adcab218c98e067232827eba4fb5ba4c66cd9`, `completed / success`. A távoli ág feje is ez, egyezik a helyi HEAD-del.
+
+Tartalmi review-ra vár. A review-ban ezt kérem megnézni:
+- **A fenyegetési modell és a hipotézisek:** a H1–H8 helyesen jelöltek-e dokumentált, nem mért állításként, és teljes-e a lista arról, mit kontrollál a PR-szerző.
+- **A token-kezelés:** elfogadható-e, hogy a támadó workflow-viselkedését offline hamisítási kontrollok modellezik, a valódi viselkedés nem mért.
+- **A kontrollok érvényessége:** azonos közönség, és a kötő állításoknak kötelezően szerepelniük kell az elutasítás indokai között.
+- **Az elfogadási kritériumok:** a PASS hatóköre (same-repo PR), a tiszta S és R korlátai.
+- **A K-5 előszámítás és a D1–D7 ajánlások.**
+
+A merge, a megvalósítás, a PR megnyitása az X repón, új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-22 21:25 — Felhasználó
+
+~~~~~
+<pasted_content id="873f">
+## **Review – cic-factory #92**
+
+**Döntés: REQUEST CHANGES.**
+
+Ellenőrzött fej: [`b84adcab218c98e067232827eba4fb5ba4c66cd9`](https://github.com/CentralInfraCore/cic-factory/commit/b84adcab218c98e067232827eba4fb5ba4c66cd9?utm_source=chatgpt.com)
+
+Gate: `45071681108` — **SUCCESS**, GitHubon ellenőrizve.
+
+A mérési terv alapvetően jó irányba halad, de a mérés bizonyítóereje és a tervezett végső ítélet között maradt néhány eltérés.
+
+### **F1 – HIGH: A C2 nem elegendő a P teljes igazolásához**
+
+A terv helyesen kimondja:
+
+> A támadó workflow-viselkedését nem mérjük, csak azt, hogy a verifier mit fogad el.
+
+A C2 teljesüléséből azonban már lehetővé teszi az M-E1 `PASS` ítéletét.
+
+A tervezett kontrollok három különböző tulajdonság közül elsősorban az elsőt vizsgálják:
+
+| Tulajdonság                                                                               | Lefedettség                           |
+| ----------------------------------------------------------------------------------------- | ------------------------------------- |
+| Másik futás hiteles tokenjének elfogadtathatósága                                         | Vizsgált                              |
+| Aláírt állítások hamisíthatósága                                                          | Vizsgált, meghatározott kontrollokkal |
+| A bizonyíték előállításának, kiválasztásának és publikálásának szerzői befolyásolhatósága | Nem teljesen vizsgált                 |
+
+A PR-szerző a bizonyítékot elnyomhatja, lecserélheti vagy szelektíven publikálhatja. Ezek egy része nem vezet hamis elfogadáshoz, de a fenyegetési modellben külön kezelendő.
+
+Az offline kontrollokat elfogadom. Nem szükséges valódi tokenkitettséget előidéző mérést végezni.
+
+**A PASS hatókörét viszont nemcsak a same-repo PR-ra, hanem a ténylegesen vizsgált elfogadási és támadási modellre is korlátozni kell.** Ha a #81 ennél erősebb P tulajdonságot követel, az M-E1 maradjon `INCONCLUSIVE`.
+
+### **F2 – MEDIUM: A tiszta S és R definíciója pontatlan**
+
+Két külön futás tokenje nem kizárólag a `run_id` tekintetében különbözik. Eltérhet többek között az `iat`, `exp`, `jti`, `run_number` és `check_run_id` is.
+
+Hasonlóképpen, egy új commiton végrehajtott futás szükségszerűen új futás is. A valódi R ezért nem lesz szó szerinti értelemben egyváltozós mérés.
+
+Javasolt megkülönböztetés:
+
+- S: azonos commit, workflow és ref, különböző futás.
+- R: azonos workflow és ref, különböző commit és futás.
+- Izolált egyváltozós kontroll: szintetikus teszt.
+
+A valódi és a szintetikus kontroll együttes alkalmazása megfelelő megoldás.
+
+### **F3 – MEDIUM: A titokhoz való hozzáférés túl erős állítás**
+
+A 2. szakasz szerint:
+
+> A PR-futás nem fér titokhoz.
+
+A review-zott workflow titokhivatkozásainak tiltása nem azonos a platform által kikényszerített hozzáférési tilalommal.
+
+A helyes állítás: a mérési workflow nem használ titkot. A same-repo PR jogosultsági modellje ettől még külön biztonsági kérdés marad.
+
+### **F4 – MEDIUM: Ellentmondás a negatív kontrollok elfogadási feltételeiben**
+
+Az F-e kontroll szándékosan érvénytelen aláírást állít elő.
+
+Az általános elfogadási feltétel ugyanakkor minden elutasításnál kötő állításra vonatkozó indokot követel meg.
+
+Érvénytelen aláírás esetén a claim-ek nem tekinthetők hitelesnek. Ilyenkor az aláíráshiba önmagában elegendő elutasítási ok.
+
+Az F-e és az S2 digest-integritási kontroll számára külön elfogadási kritérium szükséges.
+
+### **F5 – LOW: K-5 felső becslés**
+
+A 4–7 kísérletes becslés számtanilag helyes, de a `lab-gate-pr` visszatartásának kizárása korábbi megfigyelésen alapul.
+
+A 7 kísérlet ezért feltételes felső becslés, nem garantált maximum.
+
+### **F6 – LOW: Szakaszhivatkozások**
+
+Több helyen a 6. szakaszra hivatkozik a hamisítási kontrollok kapcsán, miközben azok az 5. szakaszban találhatók.
+
+## **D1–D7 szakmai ajánlások**
+
+| Döntés                                  | Ajánlás                      |
+| --------------------------------------- | ---------------------------- |
+| D1 – Same-repo hatókör                  | GO, F1 pontosításával        |
+| D2 – Lejárat-kapus teljes token         | GO                           |
+| D3 – P1 és P2 együttes vizsgálata       | GO                           |
+| D4 – PR lezárása, ág megtartása         | GO                           |
+| D5 – Artifact-attestáció külön kezelése | GO                           |
+| D6 – Második főági futás                | GO                           |
+| D7 – Új főági commit                    | HOLD, egyelőre nem szükséges |
+
+Ezek tervezési ajánlások, nem végrehajtási engedélyek.
+
+## **Összesítés**
+
+- HIGH: 1
+- MEDIUM: 3
+- LOW: 2
+
+A terv mérési módszertana megfelelő. A fő probléma nem a tervezett kísérletekkel van, hanem azzal, hogy **milyen erősségű állításokat engedünk majd meg a kísérleti eredmények alapján.**
+
+Javítás után új, SHA-hoz kötött review szükséges.
+
+**K-5: 8/300. M-E1: INCONCLUSIVE. Minden korábbi HOLD változatlan.**
+</pasted_content id="873f">
+~~~~~
+
+### 2026-11-22 21:26 — Claude
+
+A review pontjai jogosak. Az F1 a legfontosabb: a P-nak három különböző tulajdonsága van, és a tervnek ki kell mondania, hogy a PASS melyiket fedi. Először a hivatkozásokat nézem át, majd mind a hat pontot javítom.
+
+### 2026-11-22 21:27 — Claude
+
+A Python-szkript szintaxishibán állt meg (a magyar idézőjel záró ASCII `"` jele törte el a sztringet), ezért semmi nem íródott ki. Újrafuttatom a javított idézőjelekkel.
+
+### 2026-11-22 21:28 — Claude
+
+Az F1–F6 javítása kész egy új, aláírt commitban: `33a8a82`. Nincs push, ezt te futtatod:
+
+```
+! bash ~/.cache/relay-ci-parity-04/push-212-p-sr-design.sh
+```
+
+Utána lefuttatom a gate-et, és egyeztetem a headSha-t.
+
+A review fő megállapítása helyes: a terv mérési módszertana jó, de a későbbi ítélet erősebb állítást engedett volna, mint amit a kísérletek fednek.
+
+| Pont | Javítás |
+|---|---|
+| **F1 (HIGH)** | Új 1.1 szakasz: a P három külön tulajdonságra bontva. **P-a** elfogadtathatóság (vizsgált), **P-b** módosíthatóság (korlátozottan vizsgált, offline), **P-c** előállítás, kiválasztás, elnyomás, publikálás (**nem vizsgált**). A PASS hatóköre nemcsak a same-repo PR-ra, hanem a ténylegesen vizsgált P-a/P-b modellre szűkített. Új D8 döntés: ha a #81 P-feltétele a P-c-t is követeli, az M-E1 `INCONCLUSIVE` marad. Új C2c sor a kritériumok között, és megjegyzés arról, hogy az írási jogú PR-szerző a főági workflow-t is elindíthatja. |
+| **F2** | Az S és az R újradefiniálva. S: azonos commit, workflow és ref, különböző futás. R: azonos workflow és ref, különböző commit és futás. A valódi adaton a különbség nem egyváltozós (`iat`, `exp`, `jti`, `run_number`, `check_run_id` is eltér), az izolált kontroll a szintetikus selftest. A D7 HOLD. |
+| **F3** | A "PR-futás nem fér titokhoz" helyett: a mérési workflow nem használ titkot. A platform hozzáférési tilalmat nem kényszerít ki, a same-repo PR jogosultsági modellje külön biztonsági kérdés. |
+| **F4** | A kontrollok elfogadása három szintű. Kötő-állításos kontrollok: kötő állítás kötelező indok. Aláírás-kontroll (F-e): az érvénytelen aláírás önmagában elegendő, mert az állítások nem hitelesek. Integritás-kontroll (S2): a digest-sor elutasítása elég. |
+| **F5** | A 7 kísérlet feltételes felső becslés, mert a `lab-gate-pr` visszatartásának kizárása korábbi megfigyelésen alapul. Visszatartásával 8 kísérlet, 16/300. |
+| **F6** | A szakaszhivatkozások javítva: a hamisítási kontrollok az 5. szakaszban vannak. |
+
+Az F1-gyel összefüggésben saját észrevételem is bekerült: az API `head_sha`-ja PR-futásnál várhatóan a PR feje, a token `sha`-ja pedig a merge-commit. Ez egy újabb eltérés, amelyet a mérés rögzít, és az olvasó profilja ebből épül, nem a dokumentációból. A H3 sora ezt kimondja.
+
+A `validate-output` és a `verify-signatures` GO. A commitba csak a terv fájlja került, explicit fájllistával. A PR-leírás frissítve.
+
+**A tulajdonosi döntéseid most D1–D8**, ajánlással: D1 same-repo, D2 lejárat-kapus teljes token, D3 P1 és P2 együtt, D4 a PR lezárása a tiéd és az ág törlése külön, D5 az artifact-attestáció külön, D6 a második főági futás igen, D7 HOLD, D8 a P-a/P-b értelmezés. Ezek a review szakmai ajánlásaival egyeznek, de a döntés a tiéd.
+
+A merge, a megvalósítás, a PR megnyitása az X repón, új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. Az M-E1 előzetesen `INCONCLUSIVE`. A K-5 számláló 8/300.
+
+### 2026-11-22 21:28 — Felhasználó
+
+~~~~~
+<bash-input> bash ~/.cache/relay-ci-parity-04/push-212-p-sr-design.sh</bash-input>
+~~~~~
+
+### 2026-11-22 21:28 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-factory.git
+   b84adca..33a8a82  feature/relay-ci-parity-06t-me1-p-sr-design -&gt; feature/relay-ci-parity-06t-me1-p-sr-design</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 21:31 — Claude
+
+A push megtörtént: a `33a8a820b1ac6345ff612c649063b12f7cd084f8` a távoli ág feje, és egyezik a helyi HEAD-del.
+
+A gate zöld: futás 45072311416, `headSha` `33a8a820b1ac6345ff612c649063b12f7cd084f8`, `completed / success`.
+
+Az F1–F6 javítás tartalmi re-review-ra vár (PR #92). A merge, a megvalósítás, a PR megnyitása az X repón, új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. Az M-E1 előzetesen `INCONCLUSIVE`. A K-5 számláló 8/300.
+
+### 2026-11-22 21:32 — Felhasználó
+
+~~~~~
+<pasted_content id="873f">
+## **Re-review – cic-factory #92**
+
+**Döntés: APPROVE – szakmai GO a tervezési dokumentum merge-ére.**
+
+Ellenőrzött fej: [`33a8a820b1ac6345ff612c649063b12f7cd084f8`](https://github.com/CentralInfraCore/cic-factory/commit/33a8a820b1ac6345ff612c649063b12f7cd084f8?utm_source=chatgpt.com)
+
+Gate: `45072311416` — **SUCCESS**, GitHubon ellenőrizve.
+
+### **F1–F6 ellenőrzése**
+
+| Észrevétel  | Javítás                                                           | Állapot |
+| ----------- | ----------------------------------------------------------------- | ------- |
+| F1 – HIGH   | P-a, P-b és P-c elkülönítése, C2c és D8 bevezetése                | CLOSED  |
+| F2 – MEDIUM | Valódi S/R és izolált szintetikus kontrollok elkülönítése         | CLOSED  |
+| F3 – MEDIUM | Titokhasználat és hozzáférési jogosultság szétválasztása          | CLOSED  |
+| F4 – MEDIUM | Kötési, aláírási és integritási kontrollok külön kritériumai      | CLOSED  |
+| F5 – LOW    | Feltételes felső becslés és további visszatartás figyelembevétele | CLOSED  |
+| F6 – LOW    | Szakaszhivatkozások javítása                                      | CLOSED  |
+
+### **D8 – Új tulajdonosi döntés**
+
+A D8 bevezetése indokolt.
+
+Szakmai ajánlásom a **P-a/P-b vizsgálati hatókör elfogadása**, a P-c külön vizsgálati tételként történő megtartása.
+
+Ez azonban nem jelentheti az eredeti #81 követelmény hallgatólagos gyengítését. A szűkített hatókört a tulajdonosnak kifejezetten jóvá kell hagynia.
+
+### **K-5 ellenőrzése**
+
+| Forgatókönyv              | Összes felhasznált kísérlet |
+| ------------------------- | --------------------------- |
+| Jelenlegi                 | 8/300                       |
+| Alapforgatókönyv D6-tal   | 12/300                      |
+| Feltételes felső becslés  | 15/300                      |
+| Lab-gate visszatartásával | 16/300                      |
+
+### **SHA-hoz kötött merge-jóváhagyás**
+
+```
+gh pr merge 92 \
+  --repo CentralInfraCore/cic-factory \
+  --merge \
+  --match-head-commit 33a8a820b1ac6345ff612c649063b12f7cd084f8
+```
+
+**HIGH: 0 · MEDIUM: 0 · LOW: 0**
+
+A jóváhagyás kizárólag a tervre vonatkozik. A D1–D8 tulajdonosi döntések és a megvalósítás külön GO-t igényelnek.
+
+M-E1: `INCONCLUSIVE`. K-5: **8/300**. Minden korábbi HOLD változatlan.
+</pasted_content id="873f">
+~~~~~
+
+### 2026-11-22 21:32 — Claude
+
+A #92 jóváhagyva: a szakmai GO a `33a8a820b1ac6345ff612c649063b12f7cd084f8` fejre szól. A merge a tiéd, ezt futtasd:
+
+```
+! gh pr merge 92 --repo CentralInfraCore/cic-factory --merge --match-head-commit 33a8a820b1ac6345ff612c649063b12f7cd084f8
+```
+
+Ha megvan, jelezd. Utána ellenőrzöm a faegyezést és a post-merge gate-et. Ha a kimenet üres, azt is jelezd, mert korábban ilyenkor a parancs nem mindig hatott érvénybe.
+
+**A D1–D8 döntések a tieid, ezeket nem tekintem eldöntöttnek.** A review kiemeli a D8-at: a P-a/P-b hatókör elfogadása nem jelenthet hallgatólagos gyengítést a #81 követelményéhez képest, ezért a szűkítést neked kell kifejezetten jóváhagynod. A terv ajánlásai: D1 same-repo, D2 lejárat-kapus teljes token, D3 P1 és P2 együtt, D4 a PR lezárása a tiéd és az ág törlése külön, D5 az artifact-attestáció külön, D6 a második főági futás, D7 HOLD, D8 a P-a/P-b értelmezés. Az, hogy a #92 mergelve van, nem jelent döntést ezekről.
+
+A merge után a megvalósítási csomag (P1/P2 workflow-k és ellenőrzőjük, az olvasó `--profile pr` bővítése, a hamisítási kontrollok, a tulajdonosi szkriptek, tesztek) külön GO-t igényel. A PR megnyitása az X repón a mérés indítása, és szintén külön GO.
+
+Az M-E1 előzetesen `INCONCLUSIVE`. Új futás, H1/H2, M-A…M-D, valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-22 21:32 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 92 --repo CentralInfraCore/cic-factory --merge --match-head-commit 33a8a820b1ac6345ff612c649063b12f7cd084f8</bash-input>
+~~~~~
+
+### 2026-11-22 21:32 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-22 21:35 — Claude
+
+A #92 mergelve, az ellenőrzések rendben vannak.
+
+- **Merge commit:** `5ba9f5c3541e404ecdb51eb5442651def28c356c`, 2026-11-22 21:32:54Z. A jóváhagyott fej `33a8a820b1ac6345ff612c649063b12f7cd084f8` volt.
+- **Faegyezés:** a merge commit fája `1035d980c823a8ed1cb8e8da99ec6aa782db831b`, ugyanez a jóváhagyott fejé. `origin/main` a merge commit.
+- **Post-merge gate:** futás 45072710352, `push`, `headSha` a merge commit, `completed / success`.
+
+A P és S/R mérőcsomag **terve** mergelve és lezárt. Ez nem jelent döntést a D1–D8-ról, és nem indít semmit: nincs megvalósítás, nincs workflow-fájl, nincs futás, az X repón nem történt írás.
+
+**Mi vár döntésre tőled** (mind külön, kimondott GO vagy döntés):
+- **A D1–D8 döntések.** Ezek határozzák meg a megvalósítási csomag tartalmát. A legfontosabb a **D8**: a #81 "a PR szerzője nem módosíthatja" feltételét a P-a/P-b modellre értjük-e, vagy a P-c-t is megköveteljük. A review szerint a szűkített hatókör nem jelenthet hallgatólagos gyengítést, ezért kifejezett jóváhagyás kell. Ha a P-c is kötelező, az M-E1 `INCONCLUSIVE` marad.
+- **A megvalósítási csomag:** a P1 és P2 workflow-k és ellenőrzőjük, az olvasó `--profile pr` bővítése, a hamisítási kontrollok automatizálása, a tulajdonosi szkriptek, a tesztek. Külön GO, külön review, és csak szintetikus adaton tesztelve.
+- **A PR megnyitása az X repón, vagyis a mérés indítása:** a megvalósítás merge-e után, külön GO-val.
+- **A K-4 (3) olvasása** a Relay felületén, és a **B sor**.
+- **Thread-napló** lokális frissítése a #92 lezárása után. A push csak a te kifejezett szavadra.
+
+Az M-E1 előzetesen `INCONCLUSIVE`. Új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300, a megvalósítás szerinti becslés: alap 12/300, feltételes felső 15/300.
+
+### 2026-11-23 06:05 — Felhasználó
+
+~~~~~
+<pasted_content id="873f">
+A #92 lezárásával a **P és S/R mérési terv jóváhagyott állapotba került**, de a megvalósítás még nem indult el.
+
+A következő lépés szerintem a **D1–D8 tulajdonosi döntések rögzítése**, különös tekintettel a D8-ra.
+
+A D8-nál az eredeti #81 követelmény megtartását javaslom: a P-a/P-b vizsgálat adhat részleges, pontosan körülhatárolt pozitív eredményt, de **a P-c igazolása nélkül az eredeti, teljes M-E1 követelményt nem tekinteném PASS-nak**.
+
+Ez megakadályozza, hogy a mérés hatókörének szűkítése észrevétlenül a biztonsági követelmény enyhítésévé váljon.
+
+A jelenlegi állapot:
+
+| Elem                       | Státusz                                    |
+| -------------------------- | ------------------------------------------ |
+| Repository                 | `CentralInfraCore/cic-factory`             |
+| Branch                     | `main`                                     |
+| Merge SHA                  | `5ba9f5c3541e404ecdb51eb5442651def28c356c` |
+| P és S/R mérési terv       | Lezárt                                     |
+| D1–D8 tulajdonosi döntések | Nyitott                                    |
+| M-E1                       | INCONCLUSIVE                               |
+| K-5                        | 8/300                                      |
+| Megvalósítás és mérések    | HOLD                                       |
+
+**A megvalósítási csomag előkészítését csak a D1–D8 döntések után indítanám.** A valódi App-kulcsok, a Relay-implementáció és a többi mérési fázis továbbra is HOLD.
+</pasted_content id="873f">
+~~~~~
+
+### 2026-11-23 06:05 — Claude
+
+Ez a D1–D8 rögzítésének javaslata, de nem a te döntéseid, ezért egyiket sem tekintem eldöntöttnek. A megvalósítást nem kezdem el. Egy dolgot külön jelzek: a javaslat **ellentétes a mergelt terv D8 ajánlásával**.
+
+**A D8 ellentmondása:**
+- **A mergelt terv ajánlása:** a #81 "a PR szerzője nem módosíthatja" feltételét a P-a/P-b modellre értjük, a P-c külön tétel. Ezt a review is "szakmai ajánlásként" fogadta el, de kifejezett tulajdonosi jóváhagyást kért a szűkítéshez.
+- **A mostani javaslat:** az eredeti #81 követelmény marad. A P-a/P-b részleges, pontosan körülhatárolt pozitív eredményt adhat, de **a P-c igazolása nélkül nem lehet PASS**.
+- **Következmény, ha az utóbbit választod:** a tervben a P-c nincs mérve, és ma nincs rá mérési terv sem. Az M-E1 `PASS` így addig nem érhető el, amíg a P-c-re nincs külön, review-zott terv és mérés (a szerzői kiválasztás, elnyomás, időzítés, publikálás befolyása). A P-a/P-b mérés ettől még értékes: a jelentés részeredményként rögzítené. A K-5 és a megvalósítás terjedelme a P-c tervétől függ, amit nem becsültem.
+- **Következmény, ha a szűkítést választod:** a `PASS` kimondható a P-a/P-b-re, de a jelentésnek kifejezetten ki kell mondania, hogy a P-c nem vizsgált, és hogy ez a #81 szűkítése, amelyet te hagytál jóvá.
+
+**Döntési lap D1–D8 (a mergelt terv ajánlásaival, a D8 kivételével nincs eltérés):**
+
+| # | Döntés | A terv ajánlása | Ha eltérsz |
+|---|---|---|---|
+| D1 | A P hatóköre | same-repo PR; fork-PR külön, a B sor után | a fork-PR külső identitást (B sor) igényel |
+| D2 | A PR-futások publikálási módja | lejárat-kapus teljes token | tartalék: csak dekódolt állítások, de a PR-token aláírása nem ellenőrizhető offline |
+| D3 | P1 és P2 együtt | együtt, egy PR-ban | csak P1: a név-hamisítás (H6) nem látszik |
+| D4 | A PR és az ág sorsa | a PR lezárása a tiéd, az ág törlése külön | — |
+| D5 | Artifact-attestáció | külön csomag vagy kifejezett kizárás | döntés nélkül az M-E1 `INCONCLUSIVE` marad |
+| D6 | Második főági futás (S) | igen, ≤ 2 kísérlet | nélküle az S részleges |
+| D7 | Új főági commit (valódi R) | HOLD | a jelentés kimondja, hogy a valódi R nem egyváltozós |
+| **D8** | A #81 P-feltételének értelmezése | **P-a/P-b** (a mergelt terv) | **javaslat: a teljes követelmény marad, a PASS a P-c-hez kötött** |
+
+Egy üzenetben megadhatod a döntéseket, pl.: "D1–D7 az ajánlás szerint, D8: a teljes #81 követelmény marad." Ha D8-nál a teljes követelményt választod, utána két külön, kimondott GO következik: a P-c mérési tervezése, és (az eredménytől függően) a P-a/P-b megvalósítása. A megvalósítás nem indul el a döntések előtt.
+
+Az M-E1 `INCONCLUSIVE`. Új futás, H1/H2, M-A…M-D, valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-23 06:08 — Felhasználó
+
+~~~~~
+<pasted_content id="873f">
+A D8 ellentmondását helyesen azonosítottad. A korábbi szakmai ajánlásomat pontosítom.
+
+**Végleges szakmai álláspontom: D1–D7 a mergelt terv ajánlása szerint, D8-nál pedig a teljes #81 követelmény maradjon érvényben.**
+
+Ennek indoka, hogy a P-a/P-b részleges sikeréből nem következik a P-c teljesülése. A mérési eredmény hatókörét lehet szűkíteni, de ettől az eredeti biztonsági követelmény nem változhat meg.
+
+A következő munkasorrendet javaslom: először a P-c külön mérési tervének kidolgozása, majd annak szakmai review-ja. A P-a/P-b megvalósítása ettől függetlenül értékes, de az eredménye csak részleges igazolásként kezelhető.
+
+**Ez szakmai ajánlás, nem tulajdonosi GO.** A D1–D8 döntéseket továbbra is a tulajdonosnak kell kifejezetten jóváhagynia. Nem adok felhatalmazást a megvalósítás vagy a mérés indítására.
+
+M-E1: `INCONCLUSIVE` · K-5: `8/300` · minden végrehajtási HOLD változatlan.
+</pasted_content id="873f">
+~~~~~
+
+### 2026-11-23 06:09 — Claude
+
+Ez a végleges szakmai álláspont, de a D1–D8 döntések a tieid, és nem tekintem őket rögzítettnek, amíg egyetlen üzenetben ki nem mondod. Nem kezdek el semmit: sem a P-c tervezést, sem a megvalósítást.
+
+Az álláspont lényege: D1–D7 a mergelt terv ajánlása szerint, a D8-nál a teljes #81 követelmény marad. A P-a/P-b mérés részleges igazolásként értékes marad, a PASS a P-c-hez kötött.
+
+Egy mondat elég a döntésekhez és a következő lépéshez, pl.:
+
+> D1–D7 a mergelt terv ajánlása szerint. D8: a teljes #81 követelmény marad, a PASS a P-c-hez kötött. GO – a P-c külön mérési tervének kidolgozása, kizárólag tervezés.
+
+Ha ezt kimondod, a P-c terv ugyanazzal a módszerrel készül, mint a #92:
+- **Külön job, külön PR**, aláírt commit, review, SHA-hoz kötött merge.
+- **Tartalma:** a P-c fenyegetési modellje (a szerző előállítási, kiválasztási, elnyomási és publikálási befolyása), a mérési protokoll, a bizalmi határok, a negatív kontrollok, az elfogadási kritériumok és a K-5 keretigény előzetes rögzítése, hipotézisek megjelölve mint dokumentált, nem mért.
+- **Alapvető kérdés, amit a tervnek el kell döntenie:** a P-c-nél mit jelent a "nem befolyásolható". Például a verifier meghatározott futást kér-e (futás, kísérlet, commit), és mi történik, ha az szerző által elnyomott vagy késleltetett (fail-closed), hogyan zárható ki a kedvező futás kiválasztása, és a szerző által választott szövegek (`workflow` név, ágnév) miért nem lehetnek kötők.
+- **Érvényes token semmilyen csatornán nem publikálható**, a P-c tervében sem.
+
+A P-a/P-b megvalósítása és a mérés indítása a döntések rögzítése után is külön GO. Az M-E1 `INCONCLUSIVE`. Új futás, H1/H2, M-A…M-D, valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-23 06:09 — Felhasználó
+
+~~~~~
+GO – a P-c külön mérési tervének kidolgozása, kizárólag tervezés.
+~~~~~
+
+### 2026-11-23 06:10 — Claude
+
+A GO megvan, kizárólag tervezésre. Munkafeltevés: a D8-nál a teljes #81 követelmény marad (ezért kéred a P-c tervet). A D1–D8 formális rögzítését nem kérem számon rajtad most, de a terv ezt kimondja. Előbb néhány tényt olvasok ki a már meglévő adatból és a nyilvános metaadatokból (írás nélkül), hogy a P-c hipotézisei ne találgatásra épüljenek.
+
+### 2026-11-23 06:13 — Claude
+
+A P-c mérési terve elkészült egy aláírt commitban: `56e7d5e`, a `feature/relay-ci-parity-06u-me1-p-c-design` ágon. Csak terv, nincs benne workflow, szkript vagy kód, és nem indult futás. Nincs push, ezt te futtatod:
+
+```
+! bash ~/.cache/relay-ci-parity-04/push-212-p-c-design.sh
+```
+
+Utána megnyitom a PR-t (a body kész), és lefuttatom a gate-et.
+
+**A terv legfontosabb állítása, amit neked kell jóváhagynod (D-c1).** A P-c "nulla szerzői befolyása" az elérhetőségre nem érhető el: egy írási jogú szerző a platformon megszakíthat vagy újraindíthat futást, törölhet artifactot, elindíthatja a főági workflow-t. A tesztelhető követelmény ezért a **biztonságos hibaállapot**: semmilyen szerzői cselekmény nem vezet ahhoz, hogy a verifier nem releváns bizonyítékot vagy a bizonyíték hiányát fogadja el. Ez a #81 szövegének értelmezése. Ha az elérhetőségre is nulla befolyást követelsz, egyetlen mérés sem adhat PASS-t.
+
+**Mért tények, amelyeket a terv előtt olvasással ellenőriztem** (labor, egy futás, nem általánosítható):
+- A token `check_run_id` állítása, a job-azonosító és a checks API check-run azonosítója mind **137335381530**.
+- A checks API a commithoz két check-runt listáz, és ismeri a `filter=latest` kapcsolót. Több futásnál a viselkedése nem mért.
+- Az artifact lejárata **2026-11-23T20:06:16Z**, vagyis a mai napon. Ez ingyenes természetes kísérlet a fail-closed viselkedésre, és a meglévő eszközzel is elvégezhető.
+
+**A terv szerkezete** (`output/me1-p-c-design.md`):
+- **Fenyegetési modell:** a szerzői képességek A1–A8, mind dokumentált, nem mért feltételezés, mert a méréshez második, alacsonyabb jogú azonosító kell (B sor).
+- **Verifier-tulajdonságok V1–V6:**
+  - Az elnyomás fail-closed.
+  - A releváns futást a platform checks API-ja adja (commit és check-név alapján), nem a szerző vagy az olvasó bemenete, és a `check_run_id` kötött.
+  - A szerző által választott szövegek (`workflow`, `actor`, `head_ref`) nem kötőek.
+  - Az időzítés és a tartalom cseréje elutasítva.
+- **Elfogadási kritériumok C-c1…C-c5.** A PASS csak a D-c1 jóváhagyásával és a #92 feltételeivel együtt adható. Az elnyomás lehetősége megmarad, csak fail-closed.
+- **K-5 (becslés):** a P-c önmagában 0 kísérlet, mert a valódi kontrollok a #92 második főági futására és ingyenes olvasásokra épülnek. Az opcionális újraindítás +1 (≤ +2). Összesen 13/300, feltételes felső 17/300.
+
+**A korlátok, amelyeket a terv kimond:** a `check_run_id` állítás egy workflow_dispatch futáson mért, pull_request-futásnál hipotézis. A levezetés forrása ugyanaz a platform, mint a kibocsátó, ezért a bizalmi gyökér nem bővül. A PASS egy szervezetre és a vizsgált modellre szól.
+
+**Döntéseid:** D-c1 (a biztonságos hibaállapot), D-c2 (a checks API mint döntés-forrás), D-c3 (az opcionális újraindítás), D-c4 (a lejárt artifact kísérlete), D-c5 (a szerzői képességek mérése nem most). A #92-ből a D1–D8 formális rögzítése is nyitott. Ezeket nem tekintem eldöntöttnek.
+
+A `validate-spec`, a `validate-output` és a `verify-signatures` GO. A commitba csak explicit fájllistával került fájl.
+
+A merge, a megvalósítás, új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. Az M-E1 előzetesen `INCONCLUSIVE`. A K-5 számláló 8/300.
+
+### 2026-11-23 06:14 — Felhasználó
+
+~~~~~
+<bash-input> bash ~/.cache/relay-ci-parity-04/push-212-p-c-design.sh</bash-input>
+~~~~~
+
+### 2026-11-23 06:14 — Felhasználó
+
+~~~~~
+<bash-stdout>remote: 
+remote: Create a pull request for 'feature/relay-ci-parity-06u-me1-p-c-design' on GitHub by visiting:        
+remote:      https://github.com/CentralInfraCore/cic-factory/pull/new/feature/relay-ci-parity-06u-me1-p-c-design        
+remote: 
+To github.com:CentralInfraCore/cic-factory.git
+ * [new branch]      feature/relay-ci-parity-06u-me1-p-c-design -&gt; feature/relay-ci-parity-06u-me1-p-c-design</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-23 06:17 — Claude
+
+A P-c mérési tervének PR-ja nyitva: https://github.com/CentralInfraCore/cic-factory/pull/93, a `main` ágra.
+
+A gate zöld: futás 45122766617, `headSha` `56e7d5ecd0f938f8cf154fb5582574809af099f9`, `completed / success`. A távoli ág feje is ez, egyezik a helyi HEAD-del.
+
+Tartalmi review-ra vár. A review-ban ezt kérem megnézni:
+- **A P-c értelmezése:** a "biztonságos hibaállapot" elfogadható-e, és világos-e, hogy a PASS nem jelenti az elnyomás lehetetlenségét.
+- **A V2 levezetési modell:** a checks API mint döntés-forrás, és a korlátai (egy futástípus, ugyanaz a platform).
+- **A V3 állításosztályozás:** kötő, szerző-választott, informatív.
+- **A szerzői képességek:** a feltételezések teljessége, és a mérésük hiányának kezelése.
+- **Az elfogadási kritériumok és a K-5 előszámítás.**
+
+**Időzítés:** az artifact 14770618752 ma 2026-11-23T20:06:16Z-kor lejár. A lejárt artifact fail-closed kísérlete csak olvasó lekérdezés, és a meglévő eszközzel elvégezhető a lejárat után. Ehhez külön GO kell, de a lejárat tény marad, ezért a kísérlet nem sürgős.
+
+A merge, a megvalósítás, új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. Az M-E1 előzetesen `INCONCLUSIVE`. A K-5 számláló 8/300.
+
+### 2026-11-23 06:19 — Felhasználó
+
+~~~~~
+<pasted_content id="873f">
+## **Tartalmi review – cic-factory #93**
+
+**Döntés: REQUEST CHANGES.** A P-c mérési tervében maradt egy lényeges bizalmi határprobléma: a GitHub checks API-ja alkalmas a futások azonosítására, de önmagában nem határozza meg, melyik futás bizonyítéka jogosít fel egy adott döntésre.
+
+Vizsgált PR: [#93](https://github.com/CentralInfraCore/cic-factory/pull/93?utm_source=chatgpt.com) · Head: `56e7d5ecd0f938f8cf154fb5582574809af099f9` · Gate: `45122766617` — SUCCESS, ellenőrizve.
+
+A terv a P-c-t helyesen a **biztonságos hibaállapot** szempontjából közelíti meg. Nem állítja, hogy a PR-szerző képtelen elnyomni a bizonyítékot, és a szerző képességeit is dokumentált, nem mért feltételezésként kezeli.
+
+A döntő kérdés azonban az, hogy a verifier honnan tudja, **melyik futást kellett volna ellenőriznie**, nem csupán azt, hogy egy GitHub által hitelesített futás bizonyítéka érvényes-e.
+
+### **F1 – HIGH: A V2 összekeveri a futás felderítését a döntési jogosultsággal**
+
+**Érintett:** `output/me1-p-c-design.md`, 4. szakasz, V2; 8. szakasz, C-c2.
+
+A terv szerint a releváns futást a checks API határozza meg a repository, commit és check-név alapján.
+
+Ez önmagában nem elegendő. A szerző által kezdeményezett további futások is megjelenhetnek ugyanott. A „legfrissebb” check-run lehet hiteles GitHub-adat, de ettől még nem feltétlenül az a futás, amelyre az eredeti döntésnek támaszkodnia kell.
+
+**Javasolt javítás:** a döntési szabálynak előzetesen, a bizonyítéktól és annak publikálójától függetlenül kell meghatároznia az elfogadható futást vagy a kiválasztás szabályát. A checks API ennek ellenőrzött felderítési forrása legyen, ne maga a döntési politika.
+
+Az R3 kontrollnak a többfutásos és sorrendváltozási esetekben is ellenőriznie kell, hogy a szerző nem tudja a számára kedvező futást jogosulatlanul kiválasztatni.
+
+### **F2 – MEDIUM: A V3 állításosztályozás pontosítandó**
+
+A három osztály használható, de néhány mező besorolása félreérthető.
+
+Az `actor_id` például nem egyszerűen a szerző által szabadon választott szöveg, hanem platform által kiadott identitásadat. Más kérdés, hogy a szerző befolyásolhatja, melyik jogosult identitással indul a futás.
+
+Érdemes különválasztani:
+
+- A platform által igazolt, biztonsági döntésben kötelezően kötendő mezőket.
+- A platform által igazolt, de a döntéshez nem használt mezőket.
+- A szerző által megválasztható értékeket.
+
+A `workflow_sha` és `job_workflow_sha` kötő szerepénél azt is egyértelművé kell tenni, hogy **mihez kötjük őket**. A tokenen belüli egyezés nem helyettesíti a várt, jóváhagyott workflow-azonosságot.
+
+### **F3 – MEDIUM: A PASS hatóköre még mindig lehet túl erős**
+
+A D-c1 szerinti biztonságos hibaállapot elfogadható értelmezés.
+
+Az viszont, hogy a szerzői képességeket legrosszabb esetként feltételezzük, nem azonos azok platformszintű igazolásával. A V1–V5 elsősorban a verifier viselkedését mérik.
+
+A végső ítéletnek ezért világosan különbséget kell tennie a **verifier igazolt fail-closed működése** és a **teljes, valós szerzői viselkedés mellett igazolt P-c** között.
+
+A #81 teljes követelménye nem válhat automatikusan teljesítetté pusztán attól, hogy a D-c1 értelmezését elfogadtuk.
+
+### **F4 – LOW: Az R2 természetes kontroll hatóköre**
+
+A lejárt artifact letöltésének elutasítása jó, költségmentes kontroll. Viszont csak azt bizonyítja, hogy az adott lejárt artifact az adott időpontban nem szerezhető be a vizsgált gyűjtési úton.
+
+Nem bizonyítja, hogy a korábban letöltött bizonyíték érvénytelen, vagy hogy más forrásból nem állhat rendelkezésre ugyanaz a bizonyíték.
+
+A terv ezt részben már elismeri; a C-c1-ben is célszerű pontosítani.
+
+### **Amit elfogadok**
+
+A szerzői képességek A1–A8 feltételezett státusza megfelelően jelölt, a tényleges képességmérés hiánya nem rejtett. Az érvényes token publikálásának tilalma következetes, a korai tokenkitettség szintetikus vizsgálata indokolt.
+
+A K-5 számtana is konzisztens a terv feltételeivel.
+
+| Forgatókönyv                     | K-5         |
+| -------------------------------- | ----------- |
+| Jelenlegi állapot                | 8/300       |
+| #92 + P-c R4 nélkül              | 12/300 alap |
+| #92 + P-c R4-gyel                | 13/300 alap |
+| Feltételes felső becslés R4-gyel | 17/300      |
+| Lab-gate visszatartásával        | 18/300      |
+
+A feltételes felső becslések nem garantált futásszám-korlátok.
+
+### **Összesítés**
+
+| Súlyosság | Darab |
+| --------- | ----- |
+| HIGH      | 1     |
+| MEDIUM    | 2     |
+| LOW       | 1     |
+
+**Merge: HOLD.** Az F1 javítása nélkül a P-c vizsgálat olyan bizonyítékot is elfogadhatna döntésre relevánsnak, amely ugyan valódi GitHub-futáshoz tartozik, de nem az előre meghatározott döntési kötelezettséget teljesíti.
+
+F1–F4 javítás után új, SHA-hoz kötött review szükséges. Az artifact lejárata miatt nem kell sürgetni a merge-et vagy a végrehajtást.
+
+**M-E1: INCONCLUSIVE · K-5: 8/300.** Valamennyi korábbi végrehajtási HOLD változatlan.
+</pasted_content id="873f">
+~~~~~
+
+### 2026-11-23 06:20 — Claude
+
+Az F1 a lényegi: a checks API **felderítési forrás**, nem **döntési politika**, és egy „legfrissebb" szabály éppen a szerző által manipulálható (új futás indításával, újraindítással). A V2-t ezért az alapjaitól átírom: a döntési politikát előre, a bizonyítéktól és publikálójától függetlenül kell rögzíteni. Először megnézem a pontos jelenlegi szöveget.
+
+### 2026-11-23 06:21 — Claude
+
+Ugyanaz a hiba: a magyar nyitó idézőjel mellé ASCII záró jel került a Python-sztringbe. A szkriptben javítom a záró jeleket, és a harmadik implementációs pontot külön kezelem.
+
+### 2026-11-23 06:23 — Claude
+
+Az F1–F4 javítása kész egy új, aláírt commitban: `af2a86f`. Nincs push, ezt te futtatod:
+
+```
+! bash ~/.cache/relay-ci-parity-04/push-212-p-c-design.sh
+```
+
+Utána lefuttatom a gate-et, és egyeztetem a headSha-t.
+
+A review fő észrevétele jogos: a futás **felderítése** és a **döntési jogosultság** két külön dolog. A "legfrissebb check-run" szabály ráadásul pont a szerző által manipulálható, mert új futás indításával vagy újraindítással ő választathatná ki a számára kedvező bizonyítékot.
+
+| Pont | Javítás |
+|---|---|
+| **F1 (HIGH)** | A checks API csak felderít és keresztellenőriz. A döntési jogosultságot **előre rögzített döntési politika** adja, a bizonyítéktól és publikálójától függetlenül: tárgy, jóváhagyott workflow-azonosság és commit, a konkrét futás rögzítése (`run_id`, `run_attempt`, `check_run_id`), vagy rögzítés nélkül a "pontosan egy jogosult futás" szabály. Két vagy több jelöltnél a verifier fail-closed, és nem választ. A "legfrissebb" szabály nem döntési politika. Új valódi kontrollok a két főági futással: R3a (a rögzítés az A, a frissebb B nem írja felül), R3b (a rögzítés a B), R3c (a `filter=latest` sorrendjét megmérjük, de a verdikt nem függ tőle). Szintetikus kontroll a rögzítés utáni új futásra: a rögzített bizonyíték változatlanul elfogadott, az új futás csak tájékoztató riasztás. |
+| **F2** | Az állítások négy osztálya. **K:** kötelezően kötött. **P:** platform által igazolt, de a döntéshez nem használt (köztük az `actor_id`, mert a szerző befolyásolja, melyik identitással indul a futás). **S:** a szerző által megválasztható érték (`workflow`, `head_ref`, `base_ref`). A K állítások várt értéke a **politikából** jön, a tokenen belüli `workflow_sha == sha` egyezés nem helyettesíti a jóváhagyott workflow-azonosságot. |
+| **F3** | Két külön eredményszint. **P-c/V:** a verifier igazolt fail-closed működése. **P-c/F:** a valós szerzői viselkedés melletti igazolás, ez nincs a tervben. A P-c/V zöldje **nem teljesíti automatikusan** a #81 teljes követelményét, a D-c1 elfogadása sem. |
+| **F4** | Az R2 természetes kísérlet hatóköre szűkítve: csak azt mutatja, hogy az adott artifact az adott időpontban a vizsgált úton nem szerezhető be. Nem bizonyítja a korábban letöltött bizonyíték érvénytelenségét. |
+
+**Egy új döntés, amit az F3 hozott: D-c6.** Neked kell kifejezetten eldöntened, hogy a P-c/V (a verifier igazolt fail-closed működése) elegendő-e a #81 követelmény teljesítéséhez a P-c/F nélkül. D-c6 nélkül a P-c/V zöldje sem ad PASS-t, az M-E1 `INCONCLUSIVE` marad. A P-c/F csak második, alacsonyabb jogú azonosítóval mérhető (B sor).
+
+**Korlát, amit a terv kimond:** a döntéshozó szerepét a mérésben te töltöd be (a független `--expect-*` bemenetek a rögzítés). Egy éles CI-kapuban ez az orchestrator volna, de ennek megvalósítása nem része a tervnek.
+
+A `validate-output` és a `verify-signatures` GO. A commitba csak a terv fájlja került, explicit fájllistával. A PR-leírás frissítve. A K-5 számtana változatlan: a P-c önmagában 0 kísérlet, R4-gyel 13/300, feltételes felső 17/300.
+
+A merge, a megvalósítás, új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. Az M-E1 előzetesen `INCONCLUSIVE`. A K-5 számláló 8/300.
+
+### 2026-11-23 06:24 — Felhasználó
+
+~~~~~
+<bash-input> bash ~/.cache/relay-ci-parity-04/push-212-p-c-design.sh</bash-input>
+~~~~~
+
+### 2026-11-23 06:24 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-factory.git
+   56e7d5e..af2a86f  feature/relay-ci-parity-06u-me1-p-c-design -&gt; feature/relay-ci-parity-06u-me1-p-c-design</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-23 06:26 — Claude
+
+A push megtörtént: az `af2a86f96ff6732997a2c054633b94302160cc61` a távoli ág feje, és egyezik a helyi HEAD-del.
+
+A gate zöld: futás 45123850275, `headSha` `af2a86f96ff6732997a2c054633b94302160cc61`, `completed / success`.
+
+Az F1–F4 javítás tartalmi re-review-ra vár (PR #93). A merge, a megvalósítás, új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. Az M-E1 előzetesen `INCONCLUSIVE`. A K-5 számláló 8/300.
+
+### 2026-11-23 06:33 — Felhasználó
+
+~~~~~
+<pasted_content id="873f">
+## **Re-review – cic-factory #93**
+
+**Döntés: APPROVE – szakmai GO a tervezési dokumentum merge-ére.**
+
+Ellenőrzött commit: [`af2a86f96ff6732997a2c054633b94302160cc61`](https://github.com/CentralInfraCore/cic-factory/commit/af2a86f96ff6732997a2c054633b94302160cc61?utm_source=chatgpt.com)
+
+Gate: `45123850275` — **completed / success**, GitHubon ellenőrizve.
+
+### **F1–F4 ellenőrzése**
+
+| Észrevétel  | Javítás                                                                                                                         | Állapot |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| F1 – HIGH   | A döntési politika és a checks API szerepe elkülönült. A legfrissebb futás nem döntési szabály; R3a–R3c ellenőrzések bevezetve. | CLOSED  |
+| F2 – MEDIUM | Az állítások K/P/S osztályozása pontosabb, a kötő értékek külső politikához rendeltek.                                          | CLOSED  |
+| F3 – MEDIUM | P-c/V és P-c/F külön eredményszint; D-c6 kötelező döntési pont.                                                                 | CLOSED  |
+| F4 – LOW    | A lejárt artifact R2 kontrolljának bizonyítóereje pontosan korlátozott.                                                         | CLOSED  |
+
+### **A legfontosabb változás**
+
+Az új V2 már nem azt kérdezi, hogy *melyik a GitHub szerint legfrissebb futás*, hanem azt, hogy:
+
+**A bizonyíték ahhoz a futáshoz tartozik-e, amelyet a döntési politika előzetesen meghatározott?**
+
+Ez a megfelelő bizalmi határ.
+
+A D-c6 bevezetése szintén szükséges. Így a verifier sikeres szintetikus és valós kontrolljai nem eredményeznek automatikusan teljes M-E1 PASS-t, miközben a tényleges szerzői képességek vizsgálata továbbra is hiányzik.
+
+Egy nem blokkoló megvalósítási megjegyzés: a `workflow_sha` és `job_workflow_sha` elvárt értékét az adott esemény és workflow-típus tényleges szemantikája alapján kell ellenőrizni. Nem feltételezhető általánosan, hogy valamennyi SHA-mező a döntés tárgyát képező commit SHA-jával azonos.
+
+### **Összesítés**
+
+**HIGH: 0 · MEDIUM: 0 · LOW: 0**
+
+A #93 dokumentációs PR merge-re szakmailag jóváhagyható, kizárólag az ellenőrzött SHA-n.
+
+A D-c1–D-c6 döntések ettől nem válnak automatikusan jóváhagyottá. A megvalósítás, az új futások és a korábbi végrehajtási HOLD-ok változatlanok.
+
+**M-E1: INCONCLUSIVE · K-5: 8/300.**
+</pasted_content id="873f">
+~~~~~
+
+### 2026-11-23 06:33 — Claude
+
+A #93 jóváhagyva: a szakmai GO az `af2a86f96ff6732997a2c054633b94302160cc61` fejre szól. A merge a tiéd, ezt futtasd:
+
+```
+! gh pr merge 93 --repo CentralInfraCore/cic-factory --merge --match-head-commit af2a86f96ff6732997a2c054633b94302160cc61
+```
+
+Ha megvan, jelezd. Utána ellenőrzöm a faegyezést és a post-merge gate-et. Ha a kimenet üres, azt is jelezd, mert korábban ilyenkor a parancs nem mindig hatott érvénybe.
+
+A review nem blokkoló megvalósítási megjegyzése helyes, ezt rögzítem a megvalósítási csomag jegyzékébe: a `workflow_sha` és a `job_workflow_sha` várt értékét az adott esemény és workflow-típus tényleges szemantikája alapján kell ellenőrizni, nem feltételezhető, hogy minden SHA-mező a döntés tárgyát képező commit SHA-ja. A #92 szerint ez a pull_request-futásnál várhatóan eltér (a merge-commit és a PR feje), ezért a profilt a mért értékekből kell építeni.
+
+**A D-c1–D-c6 és a D1–D8 döntések a tieid, ezek a merge-től nem válnak eldöntötté.** A megvalósítási csomag tartalma ezektől függ, különösen a D8 (a teljes #81 követelmény), a D-c1 (a P-c mint biztonságos hibaállapot) és a D-c6 (elegendő-e a P-c/V a P-c/F nélkül).
+
+Az artifact 14770618752 ma 20:06:16Z-kor lejár. A lejárt artifact fail-closed kísérlete külön GO-t igénylő, csak olvasó lekérdezés, és a lejárat után is elvégezhető, ezért nem sürgős.
+
+Az M-E1 `INCONCLUSIVE`. Új futás, H1/H2, M-A…M-D, valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-23 06:34 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 93 --repo CentralInfraCore/cic-factory --merge --match-head-commit af2a86f96ff6732997a2c054633b94302160cc61</bash-input>
+~~~~~
+
+### 2026-11-23 06:34 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+### 2026-11-23 06:37 — Claude
+
+A #93 mergelve, az ellenőrzések rendben vannak.
+
+- **Merge commit:** `3116a7db865e8d56c2dd8273ccf592ac141d8c89`, 2026-11-23 06:34:37Z. A jóváhagyott fej `af2a86f96ff6732997a2c054633b94302160cc61` volt.
+- **Faegyezés:** a merge commit fája `3b341ad34e2b05e5ada1302b47ef926de3e9e13b`, ugyanez a jóváhagyott fejé. `origin/main` a merge commit.
+- **Post-merge gate:** futás 45125026038, `push`, `headSha` a merge commit, `completed / success`.
+
+A P-c mérési terve mergelve és lezárt. Ez nem jelent döntést a D-c1–D-c6-ról és a D1–D8-ról, és nem indít semmit: nincs megvalósítás, nincs workflow-fájl, nincs futás, az X repón nem történt írás.
+
+**Az M-E1 mérési tervei most mind lezártak:** a P és S/R terv (#92) és a P-c terv (#93). Az M-E1 ítélete **nyitott, előzetesen `INCONCLUSIVE`**, mert a mérés egyik része sem futott le, és a PASS több tulajdonosi döntéstől függ.
+
+**Mi vár döntésre tőled** (mind külön, kimondott döntés vagy GO):
+- **A döntések rögzítése.** D1–D8 a #92-ből, D-c1–D-c6 a #93-ból. A legnagyobb hatásúak:
+  - **D8:** a teljes #81 követelmény marad-e, vagy a P-a/P-b szűkítés.
+  - **D-c1:** a P-c mint biztonságos hibaállapot, vagy az elérhetőségre is nulla befolyás (utóbbiban semmilyen mérés nem adhat PASS-t).
+  - **D-c6:** elegendő-e a P-c/V (a verifier igazolt fail-closed működése) a P-c/F nélkül.
+  - **D6:** a második főági futás, amelyre a #92 és a #93 valódi kontrolljai is épülnek.
+- **A megvalósítási csomag**, ha a döntések megvannak. Tartalma: a P1/P2 workflow-k és ellenőrzőjük, az olvasó `--profile pr` bővítése, a felderítő és keresztellenőrző modul, a hamisítási és szintetikus kontrollok mutációs ellenőrzéssel, a tulajdonosi szkriptek. A `workflow_sha` és a `job_workflow_sha` várt értékét az esemény- és workflow-típus mért szemantikája alapján kell építeni. Csak szintetikus adaton tesztelt, külön review.
+- **A lejárt artifact kísérlete** (csak olvasó, ingyenes): az artifact ma 20:06:16Z-kor lejár. A lejárat után a meglévő eszközzel elvégezhető, külön GO-val.
+- **A B sor** (második, alacsonyabb jogú azonosító, ami a P-c/F-hez is kell) és a **K-4 (3) olvasása** a Relay felületén.
+- **Thread-napló:** a #93 lezárása után lokálisan frissíthető. A push csak a te kifejezett szavadra.
+
+Új futás, a H1/H2, az M-A…M-D, a valódi App-kulcsok és a Relay-implementáció HOLD. A K-5 számláló 8/300.
+
+### 2026-11-23 06:38 — Felhasználó
+
+~~~~~
+thread-napló frissítése lokálisan
+~~~~~
+
+### 2026-11-23 06:38 — Claude
+
+A napló frissítéséhez előbb megnézem, melyik átiratfájl tartalmazza az utolsó rögzített bejegyzés utáni eseményeket, mert a munkamenet azonosítója közben megváltozott.
+
+### 2026-11-23 06:39 — Felhasználó
+
+~~~~~
+A #93 lezárását elfogadom a közölt merge-, faegyezési és gate-adatok alapján. A P-c terv elkészült; most a követelmények értelmezését kell rögzíteni.
+
+**Az alábbi D1–D8 és D-c1–D-c6 döntéseket kifejezetten rögzítem.** Ezek nem jelentenek végrehajtási GO-t.
+
+### **D1–D8 – a #92 döntései**
+
+| Pont | Döntés                                                                                         |
+| ---- | ---------------------------------------------------------------------------------------------- |
+| D1   | Same-repo PR; fork-PR külön, a B sor után                                                      |
+| D2   | Lejárat-kapus teljes token, érvényes token nem publikálható                                    |
+| D3   | P1 és P2 együtt                                                                                |
+| D4   | A mérési PR lezárása tulajdonosi művelet; ágtörlés külön döntés                                |
+| D5   | Artifact-attestáció külön vizsgálati csomagban; nem tekinthető teljesítettnek                  |
+| D6   | Második főági futás szükséges a valódi S és P-c kontrollokhoz; a futtatás külön GO             |
+| D7   | HOLD – új főági commit                                                                         |
+| D8   | **A teljes #81 követelmény változatlan.** A P-a/P-b részleges eredmény önmagában nem M-E1 PASS |
+
+### **D-c1–D-c6 – a #93 döntései**
+
+| Pont | Döntés                                                                                                                                          |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| D-c1 | **GO – biztonságos hibaállapot** mint a P-c biztonsági követelménye. Az elnyomás lehetősége megmaradhat, de nem eredményezhet elfogadást        |
+| D-c2 | **GO – előre rögzített döntési politika és konkrét futásazonosság.** A checks API kizárólag felderítésre és keresztellenőrzésre szolgál         |
+| D-c3 | Az R4 kontroll szerepeljen a mérési csomagban; tényleges újraindítás külön GO                                                                   |
+| D-c4 | Az R2 lejárt-artifact kontroll elfogadva; a lekérdezés külön GO                                                                                 |
+| D-c5 | A szerzői képességek tényleges mérése egyelőre HOLD, a B sorhoz kötve                                                                           |
+| D-c6 | **NEM – a P-c/V önmagában nem elegendő a teljes #81 követelmény igazolásához.** A P-c/F vizsgálata továbbra is szükséges a teljes M-E1 PASS-hoz |
+
+### **Miért ez a D-c6 döntés?**
+
+Azt szeretném, hogy a CIC két különböző eredményt tudjon kimondani:
+
+**P-c/V PASS:** a verifier a vizsgált támadási feltételek mellett helyesen utasítja el a hiányzó, nem releváns vagy nem megfelelő bizonyítékot.
+
+**P-c/F PASS:** a teljesebb, valós szerzői jogosultsági modell vizsgálata is alátámasztja az eredeti követelményt.
+
+Az első eredmény önmagában is értékes és lezárható részeredményként. Nem nevezném azonban a teljes biztonsági követelmény teljesülésének.
+
+### **Következő lépés**
+
+**GO – a D1–D8 és D-c1–D-c6 döntések dokumentálása és a #93 lezárása utáni thread-napló lokális frissítése, kizárólag helyben.** A commit explicit fájllistával történhet; push nincs engedélyezve.
+
+A megvalósítási csomagra, a B sorra és az R2 tényleges lekérdezésére most nem adok végrehajtási GO-t. Ezek következhetnek külön döntéssel. A P-c/V megvalósítása előkészíthető a P-c/F későbbi vizsgálatától függetlenül, az eredményhatárok megtartásával.
+
+**M-E1: INCONCLUSIVE · K-5: 8/300.** Az új futások, H1/H2, M-A…M-D, valódi App-kulcsok és Relay-implementáció HOLD állapota változatlan.
+~~~~~
