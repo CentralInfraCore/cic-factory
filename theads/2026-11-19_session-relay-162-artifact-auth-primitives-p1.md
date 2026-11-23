@@ -1,8 +1,8 @@
-# Thread-napló — 2026-11-19 – 2026-11-22 (CIC_Relay #162 artifact-hitelesítés, cic-primitives P1 pattern-profil, O5 motorválasztás)
+# Thread-napló — 2026-11-19 – 2026-11-23 (CIC_Relay #162 artifact-hitelesítés, cic-primitives P1 pattern-profil, O5 motorválasztás)
 
 **Utólag készült**, a session `.jsonl` transcriptjéből (`~/.claude-personal/projects/-home-sinkog-sync-claude-factory-CIC-workdir-jobs-relay-issue-queue-01-workspace/81f1ed93-1498-4a48-9550-a87d4d857869.jsonl`), nem menet közben vezetve. Az időpontok UTC-ben, a transcript időbélyegeiből. A napló a session 2026-11-19 14:55-i szakaszától indul (CIC_Relay #162 modul-artifact hitelesítés: Relay #215–#219, cic-primitives #36–#47, Forms #166–#168, P1 pattern-profil, O5 motorválasztás); a session korábbi, 2026-11-14 – 2026-11-16 közötti szakasza (a privát biztonsági lelet kezelése) szándékosan nincs benne.
 
-A napló csak transcript: a felhasználó üzenetei (a beillesztett külső review-kkal szó szerint, a `<bash-input>` parancsokkal együtt) és Claude szöveges válaszai, időrendben. Eszközhívás és eszközkimenet, rendszer-emlékeztető, task-notification és a kontextus-összegzések nem szerepelnek. A PR-ok és a git-történet marad a forrás; ez a napló az interakció nyoma. Állapot a naplózás végén (2026-11-22): cic-primitives #46-#52 mergelve (O5 motorválasztás, O2/O3, a normatív vektorkészlet vázlata, az eszközlánc-integritás, a profilverzió azonosítója: 1, az implementációs specifikáció); #54 (az implementációs terv: 11 egység, 14 kapu, 7 mérföldkő, OP-1 előfeltétel, a lefedettség három szintje) mergelve (0414a7e, jóváhagyott fej 075ba8f, post-merge gate 45073002975 sikeres); #53 (a 47 bővítő eset review-csomagja) nyitva review-ra; a D1-D6 és az OP-1-OP-4 tulajdonosi megerősítése vár; minden egyéb HOLD változatlan (implementáció, CI-kapu módosítása, normatív publikálás, független harmadik implementáció, D7, D8, P2, P4, Forms #166/#167, séma-véglegesítés, Relay #162). A naplót a lezárások után újragenerálta a `tools/session-transcript.py`; a korábban commitolt részek változatlansága ellenőrizve.
+A napló csak transcript: a felhasználó üzenetei (a beillesztett külső review-kkal szó szerint, a `<bash-input>` parancsokkal együtt) és Claude szöveges válaszai, időrendben. Eszközhívás és eszközkimenet, rendszer-emlékeztető, task-notification és a kontextus-összegzések nem szerepelnek. A PR-ok és a git-történet marad a forrás; ez a napló az interakció nyoma. Állapot a naplózás végén (2026-11-23): cic-primitives #46-#52 mergelve (O5 motorválasztás, O2/O3, a normatív vektorkészlet vázlata, az eszközlánc-integritás, a profilverzió azonosítója: 1, az implementációs specifikáció); #54 (az implementációs terv: 11 egység, 14 kapu, 7 mérföldkő, OP-1 előfeltétel, a lefedettség három szintje) mergelve (0414a7e, jóváhagyott fej 075ba8f, post-merge gate 45073002975 sikeres); #53 (a 47 bővítő eset review-csomagja, NEM normatív elfogadás) mergelve (cc6b614, jóváhagyott fej bbad13f, post-merge gate 45123634363 sikeres); a D1-D6 és az OP-1-OP-4 tulajdonosi megerősítése vár; minden egyéb HOLD változatlan (implementáció, CI-kapu módosítása, normatív publikálás, független harmadik implementáció, D7, D8, P2, P4, Forms #166/#167, séma-véglegesítés, Relay #162). A naplót a lezárások után újragenerálta a `tools/session-transcript.py`; a korábban commitolt részek változatlansága ellenőrizve.
 
 
 ### 2026-11-19 14:55 — Felhasználó
@@ -10887,4 +10887,417 @@ A merge megtörtént. A fa-egyezés stimmel, és a vektorfájl SHA-256 értéke 
 
 ~~~~~
 Post-merge zöld. Frissítem a memóriát és a thread-naplót.
+~~~~~
+
+
+### 2026-11-22 21:39 — Claude
+
+~~~~~
+A #54 (a P1 implementációs terv) mergelve van. A lezárási lépések mind megvannak, és a thread-napló helyben commitolva van, push nélkül.
+
+**Merge:**
+- A merge-commit `0414a7e5a0952319c5b8d7e98aa672ec8614e861`, a jóváhagyott fej `075ba8ffe3018d7d2b4f2abe266659f8cc10ef9e`.
+- A devel fája (`b172224…`) megegyezik a jóváhagyott fej fájával.
+- A vektorfájl SHA-256 változatlan: `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`.
+- A post-merge gate (45073002975) a merge-commiton `success`.
+
+**Memória és napló:**
+- A `MEMORY.md` és a `project_162_artifact_auth_plan.md` frissítve, benne a review két végrehajtási megjegyzése.
+- A thread-napló újragenerálva a két session transcriptjéből (554 blokk). A korábban commitolt rész byte-azonos, és a titokminta-keresés 0 találatot adott.
+- A napló helyi commitja: `615928f`, nincs benne Co-Authored-By sor, mert a globális utasításod ezt tiltja, és az felülírja a rendszer-emlékeztetőt.
+- A push-ra a megszokott szabály vonatkozik: kifejezett szó kell, előtte tartalom- és mintaellenőrzés.
+
+**Nyitott:**
+- **#53 (a 47 bővítő eset):** a fej `ede34fe`, review-ra vár.
+- **Tulajdonosi megerősítések:** D1–D6 és OP-1–OP-4. Ezeket nem tekintem megerősítettnek, amíg ki nem mondod őket.
+- **Végrehajtási szakasz:** a tartalék-tesztek végrehajtása kötelező az érintett kapuk lezárásakor, ha a bővítő eseteket nem fogadják el. Az OP-3 számlálási definíciója és a `c` konstans az elfogadási mérés előtt rögzítendő.
+- **HOLD, változatlanul:** az implementáció (külön tulajdonosi GO kell), a CI-kapu módosítása, a normatív publikálás, a független harmadik implementáció, a D7, a D8 és minden korábbi HOLD.
+- **Időbizonyíték:** a döntés külön, hétfőre esedékes. A lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-23 06:05 — Felhasználó
+
+~~~~~
+<pasted_content id="39a1">
+A **cic-primitives #54 lezárását** a jelentett post-merge bizonyítékok alapján elfogadom.
+
+| Ellenőrzés                    | Állapot                                    |
+| ----------------------------- | ------------------------------------------ |
+| Merge commit                  | `0414a7e5a0952319c5b8d7e98aa672ec8614e861` |
+| Célág                         | `devel`                                    |
+| Faegyezés                     | PASS                                       |
+| Post-merge gate `45073002975` | SUCCESS                                    |
+| Elfogadott 513 vektor         | Változatlan                                |
+| F1–F4                         | CLOSED                                     |
+| Implementációs terv           | Elfogadva                                  |
+| Tényleges implementáció       | HOLD                                       |
+
+## **Következő lépés**
+
+A **#53 tartalmi review-ja** következzen, mert a 47 bővítő eset sorsát az implementáció megkezdése előtt célszerű eldönteni.
+
+A D1–D6 és OP-1–OP-4 tulajdonosi megerősítése továbbra is nyitott. A #54 merge-je nem helyettesíti ezeket a döntéseket.
+
+A mostani állapot egyik fontos eredménye, hogy már rendelkezésre áll:
+
+- A P1 implementációs specifikációja.
+- A 27 kötelezettségre épülő végrehajtási terv.
+- A 11 implementációs egység és 14 elfogadási kapu.
+- A változatlan 513 vektorból álló megfelelőségi referencia.
+- A külön elbírálásra váró 47 kiegészítő eset.
+
+**A következő technikai feladat már nem a P1 architektúrájának megtervezése, hanem a megtervezett szerződés megvalósítása lesz.**
+
+Egyelőre nem adok új végrehajtási GO-t. A #53 review-ja, az időbizonyíték-döntés és a többi HOLD külön marad.
+</pasted_content id="39a1">
+~~~~~
+
+
+### 2026-11-23 06:05 — Claude
+
+~~~~~
+Rendben, a #54 lezárását elfogadtad, és új végrehajtási GO nincs. Nem indítok semmit.
+
+A #53 tartalmi review-ja a te oldaladon következik. Ha a review változtatást kér, azt helyben, csak dokumentációban javítom, push nélkül, és a push-parancsot neked adom oda.
+
+A thread-napló commitja (`615928f`) helyi, push nélkül marad, amíg ki nem mondod.
+
+A memória már tükrözi az állapotot:
+- A #54 mergelve.
+- A #53 review-ra vár.
+- A D1–D6 és az OP-1–OP-4 tulajdonosi megerősítése nyitott.
+- Az időbizonyíték-döntés külön, mára esedékes: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+
+Minden korábbi HOLD változatlan:
+- az implementáció, a CI-kapu módosítása és a normatív publikálás;
+- a független harmadik implementáció;
+- a D7 és a D8.
+~~~~~
+
+
+### 2026-11-23 06:08 — Felhasználó
+
+~~~~~
+<pasted_content id="39a1">
+## **cic-primitives #53 – tartalmi review**
+
+A [#53 PR](https://github.com/CentralInfraCore/cic-primitives/pull/53?utm_source=chatgpt.com) fejét és diffjét lekértem a GitHubról.
+
+| Ellenőrzés          | Eredmény                                   |
+| ------------------- | ------------------------------------------ |
+| Vizsgált HEAD       | `ede34feaa0fe084847141eb64fbebb76a7086c10` |
+| PR állapot          | OPEN                                       |
+| Eredeti base        | `7446f1f57e2bc3c9fe17e9ee7d986386903d61bc` |
+| Módosítás           | 9 új fájl, +432 / −0 sor                   |
+| Elfogadott vektorok | A PR nem módosítja őket                    |
+| Javasolt esetek     | 47                                         |
+
+A csomag helyesen választja el a **47 javasolt eset szakmai felülvizsgálatát** azok normatív elfogadásától. A review-dokumentum, az esetenkénti levezetések és a futtatható ellenőrzés együtt érdemi bizonyítékot adnak, de nem jelentenek független implementációt.
+
+### **1. Tartalmi megállapítások**
+
+A 47 esetet a forrásban áttekintve a várt eredmények összhangban vannak a #52-ben rögzített alapelvekkel:
+
+- **E-PIN (34):** a típusérzékeny pin-azonosság, a konfliktus elsőbbsége és a reader hibahatára megfelelően elkülönül.
+- **E-TRV (7):** a forrássorrendű bejárás és az első elutasított contract kiválasztása következetes.
+- **E-RDR (6):** a dokumentumolvasó hibái helyesen megelőzik a pattern-validátort.
+
+A különösen fontos `1` / `true` / `1.0`, `0.0` / `-0.0`, NaN és beágyazott mapping esetek is szerepelnek.
+
+A fejen a **45070417169 gate SUCCESS**. A csomag által közölt 14/14 öntesztet a commitolt evidence-ben látom; azt nem futtattam külön újra.
+
+### **2. Review findingok**
+
+**F1 – MEDIUM: a követelményhivatkozások pontossága**
+
+Az E-PIN-29 és E-PIN-34 `R-PIN-UNKNOWN` követelményre hivatkoznak, miközben a ténylegesen ellenőrzött eredmény rendre `duplicate_key` és `non_scalar_key` reader error.
+
+Ez kapcsolódik az O-RD-04 kötelezettséghez, tehát nem feltétlenül hibás a követelményhez rendelés. Viszont **nem bizonyítja a&#x20;**`pattern_profile_unknown`**&#x20;verdikt helyességét**.
+
+Kérem, hogy a követelmény–eset mátrix különböztesse meg a követelményhez való strukturális kapcsolódást a ténylegesen ellenőrzött állítástól. Ez fontos lesz a későbbi konformancia-lefedettség számításánál.
+
+**F2 – MEDIUM: a döntésfüggések teljessége**
+
+A `check_extension_review.py` ellenőrzi, hogy a felsorolt függőségek D1–D6 közé és a megfelelő csoportba tartoznak. Azt viszont nem bizonyítja, hogy minden szükséges döntés fel van sorolva.
+
+Javaslom egy célzott negatív teszttel bizonyítani, hogy például egy D1-től függő esetből a D1 eltávolítása nem maradhat észrevétlen. Ha ez csak külön szakmai review-val biztosítható, a checker határát ennek megfelelően kell dokumentálni.
+
+**F3 – MERGE BLOCKER: a #54 utáni ágállapot**
+
+A GitHub alapján a #53 és a már mergelt #54 közös őse `7446f1f...`.
+
+A #53 ága jelenleg:
+
+- 1 committal előrébb;
+- 3 committal lemaradva;
+- a GitHub szerint `mergeable: false`.
+
+Ez nem a 47 eset szemantikai hibája, de a korábbi gate nem igazolja a két PR egyesített állapotát. A #53 merge-je előtt az új `devel` alapján újra kell ellenőrizni a kompatibilitást és a gate-et.
+
+### **3. Szakmai review-ítélet**
+
+REQUEST CHANGES – MERGE HOLD
+
+```
+repository: CentralInfraCore/cic-primitives
+pull_request: 53
+reviewed_head: ede34feaa0fe084847141eb64fbebb76a7086c10
+review: REQUEST_CHANGES
+findings:
+  F1: MEDIUM
+  F2: MEDIUM
+  F3: MERGE_BLOCKER
+merge: HOLD
+approved_vectors: UNCHANGED
+extension_cases: PROPOSED
+implementation: HOLD
+```
+
+A 47 esetre **nem találtam olyan szemantikai ellentmondást, amely a P1 specifikációjának újranyitását indokolná**. Az F1–F2 a bizonyítékok és a lefedettségi állítások pontosságáról szól, az F3 pedig a merge előfeltétele.
+
+A helyi dokumentációs javítások szakmailag indokoltak. Push-ra, merge-re vagy implementációra nem adok engedélyt.
+
+A D1–D6 és OP-1–OP-4 tulajdonosi döntéseit továbbra sem tekintem meghozottnak. A 47 eset normatív elfogadása is külön döntés marad.
+
+Az időbizonyíték kérdését ettől külön kell kezelni; a rögzített lejárat **2026. december 31., 13:22:39 UTC**.
+</pasted_content id="39a1">
+~~~~~
+
+
+### 2026-11-23 06:10 — Claude
+
+~~~~~
+A #53 review F1–F3-on dolgozom: a követelmény-mátrix és a döntésfüggés-ellenőrzés kész az ellenőrzőben, most a dokumentumot és az önteszteket igazítom hozzá.
+~~~~~
+
+
+### 2026-11-23 06:13 — Claude
+
+~~~~~
+Kész az F1–F3 javítás és a teljes tesztkészlet is lefutott (943 passed). Most commitolok és frissítem a PR-leírást.
+~~~~~
+
+
+### 2026-11-23 06:13 — Claude
+
+~~~~~
+A #53 review F1–F3 megállapításait javítottam. Helyben commitoltam, de még nincs pusholva. A PR-leírás frissítve.
+
+- **Új fej:** `bbad13f24dc5a0673d9fddb755912f5a841e45d3`.
+- **Commit-lánc:** a `ede34fe` aláírt commit érintetlen, rá jön a devel-merge (`b86607b`), majd a javítás.
+- **Hatókör:** a `devel`-hez képest ugyanaz a 9 új fájl, +577 sor, a `docs/`-on kívül 0 fájl.
+- **Érintetlen fájlok:** a vektorfájl (`e7ece43a…`), az `extension-cases.yaml` és az `obligations.yaml` nem változott.
+- **Tesztek:** a teljes készlet 943 passed. Az integritás-elfogadási futás, a `check_spec_trace.py` és a `check_impl_plan.py` exit 0.
+- **Commit-üzenet:** nincs benne Co-Authored-By sor.
+
+**F1 – verifikál vs. csak kapcsolódik:**
+- **Hiba:** az `E-PIN-29` és az `E-PIN-34` az `R-PIN-UNKNOWN`-ra hivatkozik, de reader error az eredményük.
+- **Javítás:** minden eset `verifies` és `related` listára bomlik. A két lista az eset által hivatkozott követelmények partíciója.
+- **Szabály, amelyet az ellenőrző kikényszerít:**
+  - Csak olyan kimenet verifikálhat egy követelményt, amit az állít.
+  - A reader error soha nem verifikál pattern-verdiktet.
+  - Ami verifikálható, az nem maradhat csak „kapcsolódó".
+  - A lefedettség csak a verifikáló eseteket számolja.
+- **Mérés:**
+  - 45 verifikáló és 12 csak kapcsolódó hivatkozás van.
+  - **10 eset egyetlen követelményt sem verifikál:** a kilenc reader-error eset és az `E-TRV-07`.
+  - **Az `R-SCHEMA-WHOLE`-t egyetlen eset verifikálja** (`E-TRV-05`). Ez a reviewben nem szerepelt, a mátrix hozta ki.
+- **Dokumentum:** a követelmény-mátrix az adatokból renderelve kerül be a dokumentum 3.1 szakaszába, és az ellenőrző összeveti egy friss rendereléssel.
+
+**F2 – döntésfüggések teljessége:**
+- Minden D1–D6 döntéshez jellemző-szabály tartozik, és az az eset bukik, amely egy szükséges döntést nem sorol fel.
+- **Korlát, a dokumentumban is kimondva:** ez alsó korlát jellemzők szerint, nem teljességi bizonyíték. A szabályokat ugyanaz a szerző írta, mint a függéseket, ezért a jelenlegi adaton pontosan reprodukálják őket (egy eset sem sorol fel többet az alsó korlátnál). Az ellenőrző azt bizonyítja, hogy egy függés nem tűnhet el észrevétlenül, azt nem, hogy nem maradt ki egy. Amit egyik szabály sem lát, azt csak review találhatja meg.
+- **Negatív tesztek:** egy-egy eltávolított D1, D2, D3, D4, D5 és D6, mindegyiket elkapja az ellenőrző.
+
+**F3 – ágállapot:**
+- **Megoldás:** a #54 utáni `devel` (`0414a7e`) be van merge-elve az ágba, rebase nélkül. A merge ütközésmentes volt, mert a két PR fájljai diszjunktak, és az `ede34fe` aláírása érintetlen.
+- **Nem reprodukált állítás:** a GitHub a merge előtt is `MERGEABLE`/`CLEAN` állapotot mutatott, tehát a review „mergeable: false" állítását nem tudtam reprodukálni. A lemaradást (3 commit) viszont igaznak találtam, és ezt javítottam.
+- **Gate:** az egyesített állapoton a push után fut le. Addig a gate-et nem tudom a `bbad13f`-re vonatkozóan állítani.
+
+**Önteszt:** 24/24 (volt 14). A tíz új negatív teszt: egy reader-error eset, amely pattern-verdiktet állít verifikálni, egy verifikálható eset csak kapcsolódóként, egy követelmény egyik listában sem, kézzel szerkesztett mátrix, és a hat eltávolított döntés.
+
+**Önkritika:**
+- A #54-ben mergelt terv a lefedettséget még az `req` listákkal, tehát a „tervezett" szinten számolja. Az F1 után ezek strukturális kapcsolatok. A terv következő frissítésénél csak a verifikáló esetek számítsanak. Ezt itt nem érintettem, mert a #54 már mergelve van.
+- Az első verzióban a követelmény-hivatkozást összemostam a bizonyítással.
+
+**Push és a PR-leírás frissítése (te futtatod, a #53 ugyanaz marad):**
+
+```
+! git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-extension-cases-review && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/53 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-extension-cases-review.md --jq .number
+```
+
+A push után a gate-et az új fejen figyelem, és összeállítom az új SHA-hoz kötött review-csomagot. Mergelni nem fogok.
+
+**Állapot:** a 47 eset normatív elfogadása, a D1–D6 és az OP-1–OP-4 megerősítése, az implementáció, a CI-kapu módosítása, a normatív publikálás, a független harmadik implementáció, a D7, a D8 és minden korábbi HOLD változatlan. Az időbizonyíték-döntés külön: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-23 06:13 — Felhasználó
+
+~~~~~
+<bash-input> git -C [MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/wt-prim-contract push origin docs/grammar-pattern-extension-cases-review && gh api -X PATCH repos/CentralInfraCore/cic-primitives/pulls/53 -F body=@[MASKED:home-path]/.local/state/work-runtime/runtimes/task-relay-issue-queue-01/private/review/PR-BODY-primitives-p1-extension-cases-review.md --jq .number</bash-input>
+~~~~~
+
+
+### 2026-11-23 06:14 — Felhasználó
+
+~~~~~
+<bash-stdout>To github.com:CentralInfraCore/cic-primitives.git
+   ede34fe..bbad13f  docs/grammar-pattern-extension-cases-review -&gt; docs/grammar-pattern-extension-cases-review
+53</bash-stdout><bash-stderr></bash-stderr>
+~~~~~
+
+
+### 2026-11-23 06:19 — Claude
+
+~~~~~
+A #53 gate-je zöld az új fejen, az egyesített állapoton. A SHA-hoz kötött review-csomag lent van.
+
+## Review-csomag: cic-primitives #53, második kör (a 47 bővítő eset)
+
+| Ellenőrzés | Eredmény |
+|---|---|
+| Fej | `bbad13f24dc5a0673d9fddb755912f5a841e45d3` |
+| Gate | 45122733115, `success`, a `headSha` egyezik a fejjel |
+| Mergelhető | igen, állapot `clean` |
+| Lemaradás a `devel`-hez képest | 0 commit (előrébb 3: `ede34fe`, a devel-merge, a javítás) |
+| Méret | 9 fájl, +577 / −0 sor |
+| Hatókör | csak új fájlok `docs/` alatt, törlés 0 |
+| Teljes tesztkészlet | 943 passed |
+| PR-leírás | frissítve, tartalmazza a „Review round 1 of #53" részt |
+
+**Ami változatlan:**
+- A vektorfájl SHA-256 `e7ece43a9486187c16a482a96a86d22cf82407711be940920155f4e3abe277e0`.
+- Az `extension-cases.yaml` és az `obligations.yaml` nem változott.
+- A `ede34fe` aláírt commit érintetlen, nem volt rebase.
+
+**A review kérései:**
+- **F1:** az esetek `verifies` és `related` listára bomlanak.
+  - Az ellenőrző kikényszeríti, hogy a reader error nem verifikál pattern-verdiktet, és a lefedettség csak a verifikáló eseteket számolja.
+  - A mátrix a dokumentum 3.1 szakaszában az adatokból renderelve szerepel.
+  - Mérés: 45 verifikáló és 12 csak kapcsolódó hivatkozás.
+  - 10 eset nem verifikál követelményt, és az `R-SCHEMA-WHOLE`-t egyetlen eset verifikálja (`E-TRV-05`).
+- **F2:** a D1–D6 döntésekhez jellemző-szabály tartozik, és az az eset bukik, amely egy szükséges döntést nem sorol fel.
+  - A korlát a dokumentumban is ki van mondva: alsó korlát, nem teljességi bizonyíték, és a szabályokat ugyanaz a szerző írta.
+- **F3:** a `devel` (`0414a7e`) be van merge-elve az ágba. A merge ütközésmentes volt, és a GitHub is `clean` állapotot mutat.
+
+**Reprodukálható futtatások** (a `docs/evidence/pattern-extension-review/` könyvtárból):
+- `python3 check_extension_review.py` → exit 0, 0 eltérés a 47 esetre.
+- `python3 selftest_extension_review.py` → 24/24. Ebből tíz új: egy reader-error eset, amely verifikálást állít, egy verifikálható eset csak kapcsolódóként, egy követelmény egyik listában sem, kézzel szerkesztett mátrix, és a hat eltávolított döntés.
+- `python3 check_extension_review.py --render` kiírja az esettáblát és a követelmény-mátrixot.
+
+**A PR nem helyettesíti a tulajdonosi döntéseket:**
+- D1–D6 megerősítése.
+- A 47 eset normatív elfogadása: külön döntés, és csak a megerősített döntésektől függő esetekre.
+- Az OP-2 szerint elfogadott, elutasított vagy halasztott esetek sorsa.
+
+**Kérem:**
+1. Új tartalmi review a #53-ra az F1–F3 javításokkal.
+2. SHA-hoz kötött merge-jóváhagyás a `bbad13f` fejre, ha rendben van. Mergelni nem fogok.
+
+Az F1 után a mergelt #54 tervének lefedettségi számai az `req` listákra épülnek, ezért következő frissítésénél csak a verifikáló eseteket kell számolni. Ezt itt nem érintettem.
+
+A merge a 47 esetet csak review-csomagként fogadja el, a vektorfájlhoz nem ad hozzá egyet sem. Az implementáció, a CI-kapu módosítása, a normatív publikálás, a független harmadik implementáció, a D7, a D8 és minden korábbi HOLD változatlan. Az időbizonyíték-döntés külön: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-23 06:21 — Felhasználó
+
+~~~~~
+<pasted_content id="39a1">
+cic-primitives #53 – második kör, végleges review
+APPROVE – MERGE GO
+
+A #53 PR bbad13f24dc5a0673d9fddb755912f5a841e45d3 fején ellenőriztem az F1–F3 javításait, a kódolt ellenőrzési szabályokat és a GitHub-állapotot.
+1. Findingok
+Finding    Döntés    Indoklás
+F1 – Verifies / related    CLOSED    Elkülönített hivatkozások, ellenőrzött partíció, renderelt mátrix
+F2 – D1–D6 függőségek    CLOSED    Jellemzőalapú ellenőrzés, hat negatív teszt, dokumentált korlát
+F3 – Base eltérés    CLOSED    Az új head 3 committal előrébb, 0 committal lemaradva
+
+Az F1 javításának legfontosabb eredménye, hogy a reader-hibát már nem lehet a pattern-verdikt igazolásaként beszámítani.
+45
+Verifikáló kapcsolat
+
+12
+Csak kapcsolódó
+
+24/24
+Önteszt, jelentett
+
+
+A 10 olyan eset, amely nem verifikál jóváhagyott követelményt, továbbra is értékes reader- vagy bejárási ellenőrzés lehet. Ezeket azonban nem szabad a követelmény-lefedettség számlálójába tenni.
+2. Nem blokkoló megjegyzés
+A may_verify() a várt eredmény típusát és hibakódját vizsgálja, nem a követelmény teljes szemantikai levezetését. Ez megfelel az itt vállalt strukturális ellenőrzési szintnek, de nem független konformanciabizonyítás.
+
+A már mergelt #54 tervének lefedettségi elszámolását később hozzá kell igazítani a verifies mezőhöz. Ez követő feladat, nem a #53 merge-blokkolója.
+3. SHA-hoz kötött jóváhagyás
+Merge approval
+APPROVED
+
+Repository
+
+CentralInfraCore/cic-primitives
+
+Jóváhagyott HEAD
+
+bbad13f24dc5a0673d9fddb755912f5a841e45d3
+
+Gate #45122733115
+
+SUCCESS
+
+Mergeable
+
+TRUE
+
+Implementáció
+HOLD
+
+
+Szakmailag jóváhagyom a #53 mergelését pontosan ezen a SHA-n, kizárólag a 47 bővítő eset review-csomagjaként.
+
+Ez nem jelenti a 47 eset normatív elfogadását, nem változtatja meg az eredeti 513 vektor referenciáját, és nem helyettesíti a D1–D6 tulajdonosi megerősítését vagy az OP-2 döntést.
+
+Nem indítottam push-t vagy merge-et. Az implementáció, a CI-módosítás, a független implementáció és a többi HOLD változatlan.
+</pasted_content id="39a1">
+~~~~~
+
+
+### 2026-11-23 06:21 — Claude
+
+~~~~~
+A review jóváhagyta a `bbad13f` fejet, F1–F3 lezárva. Mergelni nem fogok, mert a tulajdonosi megerősítés külön. Ha ez a tulajdonosi GO, a merge-et a megszokott módon te futtatod:
+
+```
+! gh pr merge 53 --repo CentralInfraCore/cic-primitives --merge --match-head-commit bbad13f24dc5a0673d9fddb755912f5a841e45d3
+```
+
+A `--match-head-commit` miatt elutasít, ha a fej közben elmozdult. Ha inkább azt szeretnéd, hogy én futtassam, szólj. A merge a 47 esetet csak review-csomagként fogadja el: a vektorfájl változatlan, az esetek nem normatívak, és a D1–D6 és az OP-2 döntés külön marad.
+
+**A review két nem blokkoló megjegyzése** a memóriába kerül a merge után:
+- A `may_verify()` a várt eredmény típusát és hibakódját vizsgálja, nem a követelmény teljes szemantikai levezetését. Ez strukturális szint, nem független konformanciabizonyítás.
+- A mergelt #54 terv lefedettségi elszámolását később a `verifies` mezőhöz kell igazítani (követő feladat).
+
+A merge után ezeket végzem el:
+1. Post-merge gate a devel merge-commitján.
+2. Fa-egyezés ellenőrzése a jóváhagyott fejjel, és a vektorfájl SHA-256 `e7ece43a…` változatlanságának ellenőrzése.
+3. Memória és thread-napló frissítése, helyi commit, push nélkül.
+
+**Állapot:** a #53 a merge-re vár, minden más változatlan. Az implementáció, a CI-kapu módosítása, a normatív publikálás, a független harmadik implementáció, a D7, a D8 és minden korábbi HOLD ugyanúgy marad. Az időbizonyíték-döntés külön: a lánc 2026-12-31 13:22:39 UTC-kor lejár.
+~~~~~
+
+
+### 2026-11-23 06:22 — Felhasználó
+
+~~~~~
+<bash-input> gh pr merge 53 --repo CentralInfraCore/cic-primitives --merge --match-head-commit bbad13f24dc5a0673d9fddb755912f5a841e45d3</bash-input>
+~~~~~
+
+
+### 2026-11-23 06:22 — Felhasználó
+
+~~~~~
+<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>
 ~~~~~
