@@ -638,6 +638,38 @@ class FreshnessOfAHead(unittest.TestCase):
                 self.assertEqual(code, 1, (value, allow, lines))
                 self.assertIn("no usable behind_by", lines[-1])
 
+    def test_merge_and_land_refuse_a_comparison_without_a_usable_behind_by(self):
+        """The same inputs as fresh(): absent, null, false, 0.0, "0", negative, true and 1.5 are no count; they are never "0 behind"."""
+        class NoCount(LandFake):
+            def __init__(self, value, **kw):
+                super().__init__(**kw)
+                self.value = value
+
+            def __call__(self, path):
+                if path.startswith("repos/o/r/compare/"):
+                    return {} if self.value == "absent" else {"behind_by": self.value}
+                return super().__call__(path)
+
+        for value in ("absent", None, False, 0.0, "0", -1, True, 1.5):
+            f = NoCount(value, reviews=[approved()])
+            gh = Gh(f)
+            lines = []
+            code = cg.merge(f, R, N, H, REQ, {"owner"}, gh=gh, say=lines.append)
+            self.assertEqual((code, gh.calls), (1, []), (value, lines))
+            self.assertIn("no usable behind_by", lines[-1])
+            f = NoCount(value, reviews=[approved()])
+            code, gh, lines = land(f)
+            self.assertEqual((code, gh.calls), (1, []), (value, lines))
+            self.assertIn("no usable behind_by", lines[-1])
+
+    def test_two_identical_unusable_readings_are_not_a_stable_green(self):
+        """The two reads of merge() agree on a missing count; that agreement must not turn it into an accepted 0."""
+        class Absent(Fake):
+            def __call__(self, path):
+                return {} if path.startswith("repos/o/r/compare/") else super().__call__(path)
+
+        self.assertIsNone(cg.read(Absent(), R, N, H, REQ)["behind"])
+
     def test_it_asks_how_far_behind_only_for_the_head_it_was_given(self):
         f = Fake(head=H2)
         self.fresh(f)
