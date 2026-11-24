@@ -112,6 +112,15 @@ def load_options(path):
     return opts
 
 
+def behind_of(get, repo, base, head):
+    """How many commits `head` is behind `base`, or None when the comparison gives no usable count. A merge guard fails closed: a missing,
+    null, boolean, non-integer or negative behind_by is no answer, it is not "0 behind"; every caller must refuse on None."""
+    behind = get("repos/%s/compare/%s...%s" % (repo, base, head)).get("behind_by")
+    if not isinstance(behind, int) or isinstance(behind, bool) or behind < 0:
+        return None
+    return behind
+
+
 def read(get, repo, n, head, required, advisory=()):
     """What the PR is right now, as far as this head is concerned."""
     pr = get("repos/%s/pulls/%d" % (repo, n))
@@ -120,7 +129,7 @@ def read(get, repo, n, head, required, advisory=()):
            "mergeable": {True: "yes", False: "no", None: "unknown"}[pr.get("mergeable")],
            "base_sha": get("repos/%s/git/ref/heads/%s" % (repo, pr["base"]["ref"]))["object"]["sha"]}
     # how far the head is behind its base: a CI that ran on a stale base says nothing about the merge result
-    out["behind"] = get("repos/%s/compare/%s...%s" % (repo, pr["base"]["ref"], now)).get("behind_by", 0)
+    out["behind"] = behind_of(get, repo, pr["base"]["ref"], now)  # None: no usable count, merge() and land() refuse
     if now != head:
         out["verdict"] = "HEAD-MOVED"
         return out
@@ -184,9 +193,9 @@ def fresh(get, repo, n, head, allow_behind=False, say=print):
     if pr.get("mergeable") is not True:
         say("REFUSED: GitHub says #%d is not mergeable (mergeable=%s)" % (n, pr.get("mergeable")))
         return 1
-    behind = get("repos/%s/compare/%s...%s" % (repo, pr["base"]["ref"], now)).get("behind_by")
-    if not isinstance(behind, int) or isinstance(behind, bool) or behind < 0:
-        # a merge guard fails closed: a comparison without a usable behind_by is not "0 behind", it is no answer at all, and --allow-behind does not cover it
+    behind = behind_of(get, repo, pr["base"]["ref"], now)
+    if behind is None:
+        # a comparison without a usable behind_by is not "0 behind", it is no answer at all, and --allow-behind does not cover it
         say("REFUSED: the comparison of #%d with %s has no usable behind_by (%r); the freshness cannot be shown" % (n, pr["base"]["ref"], behind))
         return 1
     if behind and not allow_behind:
@@ -283,6 +292,9 @@ def merge(get, repo, n, head, required, approvers, dry_run=False, gh=run_gh, say
     if r["mergeable"] != "yes":
         say("REFUSED: GitHub says mergeable=%s" % r["mergeable"])
         return 1
+    if r["behind"] is None:
+        say("REFUSED: the comparison of #%d with %s has no usable behind_by; the freshness cannot be shown" % (n, r["base"]))
+        return 1
     if r["behind"]:
         say("REFUSED: the head is %d commit(s) behind %s; its CI does not describe the merge result" % (r["behind"], r["base"]))
         return 1
@@ -366,7 +378,10 @@ def land(get, repo, n, required, approvers, after=(), keep_current=False, post_m
         if pr.get("mergeable") is False:
             say("STOPPED: GitHub cannot merge %s into %s (conflict): resolve it, then land again" % (head[:12], base))
             return 1
-        behind = get("repos/%s/compare/%s...%s" % (repo, base, head)).get("behind_by", 0)  # also read() and merge() look at it
+        behind = behind_of(get, repo, base, head)  # read() and merge() use the same strict count
+        if behind is None:
+            say("REFUSED: the comparison of #%d with %s has no usable behind_by; the freshness cannot be shown" % (n, base))
+            return 1
         if behind and not pending_dep:
             if not keep_current:
                 say("REFUSED: the head %s is %d commit(s) behind %s; its CI does not describe the merge result (use --keep-current)" % (head[:12], behind, base))
