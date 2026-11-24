@@ -1,0 +1,36 @@
+## E2 claim classification of the REAL tokens (contract table #93 V3)
+A   31 claims: K=16 K-time=3 P=9 S=3 UNCLASSIFIED=[]
+B   31 claims: K=16 K-time=3 P=9 S=3 UNCLASSIFIED=[]
+P1  31 claims: K=16 K-time=3 P=9 S=3 UNCLASSIFIED=[]
+P2  31 claims: K=16 K-time=3 P=9 S=3 UNCLASSIFIED=[]
+E2 result: MET
+
+## E3 base B / policy B: real claim set of the run (31 claims), re-signed with a throwaway key, evidence COPY
+real evidence, real JWKS: EVIDENCE BOUND, P NOT READ
+E3a baseline (real claims, test key): EVIDENCE BOUND, P NOT READ
+
+## E3 base A2 / policy A: real claim set of the run (31 claims), re-signed with a throwaway key, evidence COPY
+real evidence, real JWKS: EVIDENCE BOUND, P NOT READ
+E3a baseline (real claims, test key): EVIDENCE BOUND, P NOT READ
+
+## E4 which P/S claim VALUES differ between the real tokens of A and B (observation; K also differs, so NOT an isolated invariance proof)
+actor                    P   same
+actor_id                 P   same
+ref_type                 P   same
+ref_protected            P   same
+repository_visibility    P   same
+runner_environment       P   same
+run_number               P   DIFFERS  A='1' B='3'
+jti                      P   DIFFERS
+repository_owner         P   same
+workflow                 S   same
+head_ref                 S   same
+base_ref                 S   same
+
+## counts
+E2               MET        1
+E3a              MET        2
+E3b              MET        32
+E3c              MET        26
+E3t              MET        22
+E4               RECORDED   12

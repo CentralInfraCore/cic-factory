@@ -1,0 +1,95 @@
+E2               claim names of the real tokens               MET          | unclassified: none
+E3a              B / policy B                                 MET          | EVIDENCE BOUND, P NOT READ
+E3b              B / policy B: repository                     MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds repository', 'POLICY binds repository'] (all NOT-MET rows: 2)
+E3b              B / policy B: repository_id                  MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds repository_id (API repository.id)', 'POLICY binds repository_id'] (all NOT-MET rows: 2)
+E3b              B / policy B: repository_owner_id            MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds repository_owner_id (API owner.id)', 'POLICY binds repository_owner_id'] (all NOT-MET rows: 2)
+E3b              B / policy B: workflow_ref                   MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds workflow_ref', 'POLICY binds workflow_ref (the approved workflow identity)'] (all NOT-MET rows: 2)
+E3b              B / policy B: job_workflow_ref               MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds job_workflow_ref (path+ref)', 'POLICY binds job_workflow_ref'] (all NOT-MET rows: 2)
+E3b              B / policy B: event_name                     MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds event_name', 'POLICY binds event_name'] (all NOT-MET rows: 2)
+E3b              B / policy B: ref                            MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds ref and subject (identity, IDs from the API)', 'POLICY binds ref'] (all NOT-MET rows: 2)
+E3b              B / policy B: sub                            MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds ref and subject (identity, IDs from the API)', 'POLICY binds sub (identity, ids from the policy)'] (all NOT-MET rows: 2)
+E3b              B / policy B: sha                            MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds sha', 'POLICY binds sha (the approved commit)'] (all NOT-MET rows: 2)
+E3b              B / policy B: workflow_sha                   MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ["OIDC binds workflow_sha (the workflow file's commit)", 'POLICY binds workflow_sha (the approved workflow file commit)'] (all NOT-MET rows: 2)
+E3b              B / policy B: job_workflow_sha               MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ["OIDC binds job_workflow_sha (the workflow file's commit)", 'POLICY binds job_workflow_sha (the approved workflow file commit)'] (all NOT-MET rows: 2)
+E3b              B / policy B: run_id                         MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds run_id', 'POLICY pin: run_id'] (all NOT-MET rows: 2)
+E3b              B / policy B: run_attempt                    MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds run_attempt', 'POLICY pin: run_attempt'] (all NOT-MET rows: 2)
+E3b              B / policy B: check_run_id                   MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['POLICY pin: check_run_id'] (all NOT-MET rows: 1)
+E3b              B / policy B: iss                            MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC issuer', 'POLICY binds iss'] (all NOT-MET rows: 2)
+E3b              B / policy B: aud                            MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ["OIDC audience (the measurement's own)", 'POLICY binds aud'] (all NOT-MET rows: 2)
+E3t              B / policy B: iat far outside the attempt window MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC issued inside the attempt window'] (all: 1)
+E3t              B / policy B: exp so late that the artifact is not 60 s after it MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC provably expired before the artifact was created (server time)'] (all: 1)
+E3t              B / policy B: exp = iat                      MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC issued inside the attempt window'] (all: 1)
+E3t              B / policy B: nbf far above iat+60           MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)
+E3t              B / policy B: nbf = iat+61                   MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)
+E3t              B / policy B: nbf = iat+60 (boundary, permitted) MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3t              B / policy B: nbf = iat (permitted)          MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3t              B / policy B: nbf = iat-10000 (permitted range: changed, still accepted) MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3t              B / policy B: nbf missing                    MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)
+E3t              B / policy B: nbf a string                   MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)
+E3t              B / policy B: nbf a fraction                 MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)
+E3c              B / policy B: actor (P)                      MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              B / policy B: actor_id (P)                   MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              B / policy B: ref_type (P)                   MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              B / policy B: ref_protected (P)              MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              B / policy B: repository_visibility (P)      MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              B / policy B: runner_environment (P)         MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              B / policy B: run_number (P)                 MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              B / policy B: jti (P)                        MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              B / policy B: repository_owner (P)           MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              B / policy B: workflow (S)                   MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              B / policy B: head_ref (S)                   MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              B / policy B: base_ref (S)                   MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              B / policy B: ALL 12 P/S claims together     MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3a              A2 / policy A                                MET          | EVIDENCE BOUND, P NOT READ
+E3b              A2 / policy A: repository                    MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds repository', 'POLICY binds repository'] (all NOT-MET rows: 2)
+E3b              A2 / policy A: repository_id                 MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds repository_id (API repository.id)', 'POLICY binds repository_id'] (all NOT-MET rows: 2)
+E3b              A2 / policy A: repository_owner_id           MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds repository_owner_id (API owner.id)', 'POLICY binds repository_owner_id'] (all NOT-MET rows: 2)
+E3b              A2 / policy A: workflow_ref                  MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds workflow_ref', 'POLICY binds workflow_ref (the approved workflow identity)'] (all NOT-MET rows: 2)
+E3b              A2 / policy A: job_workflow_ref              MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds job_workflow_ref (path+ref)', 'POLICY binds job_workflow_ref'] (all NOT-MET rows: 2)
+E3b              A2 / policy A: event_name                    MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds event_name', 'POLICY binds event_name'] (all NOT-MET rows: 2)
+E3b              A2 / policy A: ref                           MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds ref and subject (identity, IDs from the API)', 'POLICY binds ref'] (all NOT-MET rows: 2)
+E3b              A2 / policy A: sub                           MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds ref and subject (identity, IDs from the API)', 'POLICY binds sub (identity, ids from the policy)'] (all NOT-MET rows: 2)
+E3b              A2 / policy A: sha                           MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds sha', 'POLICY binds sha (the approved commit)'] (all NOT-MET rows: 2)
+E3b              A2 / policy A: workflow_sha                  MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ["OIDC binds workflow_sha (the workflow file's commit)", 'POLICY binds workflow_sha (the approved workflow file commit)'] (all NOT-MET rows: 2)
+E3b              A2 / policy A: job_workflow_sha              MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ["OIDC binds job_workflow_sha (the workflow file's commit)", 'POLICY binds job_workflow_sha (the approved workflow file commit)'] (all NOT-MET rows: 2)
+E3b              A2 / policy A: run_id                        MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds run_id', 'POLICY pin: run_id'] (all NOT-MET rows: 2)
+E3b              A2 / policy A: run_attempt                   MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds run_attempt', 'POLICY pin: run_attempt'] (all NOT-MET rows: 2)
+E3b              A2 / policy A: check_run_id                  MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['POLICY pin: check_run_id'] (all NOT-MET rows: 1)
+E3b              A2 / policy A: iss                           MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC issuer', 'POLICY binds iss'] (all NOT-MET rows: 2)
+E3b              A2 / policy A: aud                           MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ["OIDC audience (the measurement's own)", 'POLICY binds aud'] (all NOT-MET rows: 2)
+E3t              A2 / policy A: iat far outside the attempt window MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC issued inside the attempt window'] (all: 1)
+E3t              A2 / policy A: exp so late that the artifact is not 60 s after it MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC provably expired before the artifact was created (server time)'] (all: 1)
+E3t              A2 / policy A: exp = iat                     MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC issued inside the attempt window'] (all: 1)
+E3t              A2 / policy A: nbf far above iat+60          MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)
+E3t              A2 / policy A: nbf = iat+61                  MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)
+E3t              A2 / policy A: nbf = iat+60 (boundary, permitted) MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3t              A2 / policy A: nbf = iat (permitted)         MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3t              A2 / policy A: nbf = iat-10000 (permitted range: changed, still accepted) MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3t              A2 / policy A: nbf missing                   MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)
+E3t              A2 / policy A: nbf a string                  MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)
+E3t              A2 / policy A: nbf a fraction                MET          | EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)
+E3c              A2 / policy A: actor (P)                     MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              A2 / policy A: actor_id (P)                  MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              A2 / policy A: ref_type (P)                  MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              A2 / policy A: ref_protected (P)             MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              A2 / policy A: repository_visibility (P)     MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              A2 / policy A: runner_environment (P)        MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              A2 / policy A: run_number (P)                MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              A2 / policy A: jti (P)                       MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              A2 / policy A: repository_owner (P)          MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              A2 / policy A: workflow (S)                  MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              A2 / policy A: head_ref (S)                  MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              A2 / policy A: base_ref (S)                  MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E3c              A2 / policy A: ALL 12 P/S claims together    MET          | EVIDENCE BOUND, P NOT READ; rows identical: True
+E4               actor                                        RECORDED     | same
+E4               actor_id                                     RECORDED     | same
+E4               ref_type                                     RECORDED     | same
+E4               ref_protected                                RECORDED     | same
+E4               repository_visibility                        RECORDED     | same
+E4               runner_environment                           RECORDED     | same
+E4               run_number                                   RECORDED     | differs between A and B; each token still bound by its own policy (R3b)
+E4               jti                                          RECORDED     | differs between A and B; each token still bound by its own policy (R3b)
+E4               repository_owner                             RECORDED     | same
+E4               workflow                                     RECORDED     | same
+E4               head_ref                                     RECORDED     | same
+E4               base_ref                                     RECORDED     | same
