@@ -1,0 +1,52 @@
+ok   baseline: genuine main run A with its own policy and pin is accepted                   EVIDENCE BOUND, P NOT READ
+ok   baseline: genuine main run B with its own policy and pin is accepted                   EVIDENCE BOUND, P NOT READ
+ok   P1 (hypothesised pull_request shapes): F-a the PR-run evidence as collected, main policy pinned to A overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['OIDC binds sha', 'OIDC binds workflow_ref', 'OIDC binds job_workflow_ref (path+ref)', 'OIDC binds ref and subject (identity, IDs from the API)']
+ok   P1 (hypothesised pull_request shapes): F-d the PR-run evidence, main policy without a pin overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['OIDC binds sha', 'OIDC binds workflow_ref', 'OIDC binds job_workflow_ref (path+ref)', 'OIDC binds ref and subject (identity, IDs from the API)']
+ok   P1 (hypothesised pull_request shapes): F-f the PR run pinned as its own decision run   overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['OIDC binds sha', 'OIDC binds workflow_ref', 'OIDC binds job_workflow_ref (path+ref)', 'OIDC binds ref and subject (identity, IDs from the API)']
+ok   P1 (hypothesised pull_request shapes): F-b PR token with a forged main-looking manifest, API metadata and listing overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['OIDC binds run_id', 'OIDC binds sha', 'OIDC binds workflow_ref', 'OIDC binds event_name']
+ok   P1 (hypothesised pull_request shapes): F-c as F-b plus a forged self-report (context.json with the main values) overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['OIDC binds run_id', 'OIDC binds sha', 'OIDC binds workflow_ref', 'OIDC binds event_name']
+ok   P1 (hypothesised pull_request shapes): F-e PR token with one signature bit flipped (manifest re-stamped) overall 'EVIDENCE NOT BOUND (NOT MET)'; signature failed True; claims not evaluated True
+ok   P1 (hypothesised pull_request shapes): R1 the main run A evidence presented for the PR merge commit overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['POLICY binds sha (the approved commit)']
+ok   P1 (hypothesised pull_request shapes): S1 run A token inside run B's package, decision pinned to B overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['OIDC binds run_id', 'POLICY pin: run_id', 'POLICY pin: check_run_id']
+ok   P1 (hypothesised pull_request shapes): S2 run A token swapped into B's package, manifest not re-stamped overall 'EVIDENCE NOT BOUND (NOT MET)'; integrity row failed True
+ok   P1 (hypothesised pull_request shapes): S3 run B token inside run A's package (consistent manifest), decision pinned to A overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['OIDC binds run_id', 'POLICY pin: run_id', 'POLICY pin: check_run_id']
+ok   P2 (twin workflow, same name): F-a the PR-run evidence as collected, main policy pinned to A overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['OIDC binds sha', 'OIDC binds workflow_ref', 'OIDC binds job_workflow_ref (path+ref)', 'OIDC binds ref and subject (identity, IDs from the API)']
+ok   P2 (twin workflow, same name): F-d the PR-run evidence, main policy without a pin      overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['OIDC binds sha', 'OIDC binds workflow_ref', 'OIDC binds job_workflow_ref (path+ref)', 'OIDC binds ref and subject (identity, IDs from the API)']
+ok   P2 (twin workflow, same name): F-f the PR run pinned as its own decision run           overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['OIDC binds sha', 'OIDC binds workflow_ref', 'OIDC binds job_workflow_ref (path+ref)', 'OIDC binds ref and subject (identity, IDs from the API)']
+ok   P2 (twin workflow, same name): F-b PR token with a forged main-looking manifest, API metadata and listing overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['OIDC binds run_id', 'OIDC binds sha', 'OIDC binds workflow_ref', 'OIDC binds event_name']
+ok   P2 (twin workflow, same name): F-c as F-b plus a forged self-report (context.json with the main values) overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['OIDC binds run_id', 'OIDC binds sha', 'OIDC binds workflow_ref', 'OIDC binds event_name']
+ok   P2 (twin workflow, same name): F-e PR token with one signature bit flipped (manifest re-stamped) overall 'EVIDENCE NOT BOUND (NOT MET)'; signature failed True; claims not evaluated True
+ok   P2 (twin workflow, same name): R1 the main run A evidence presented for the PR merge commit overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['POLICY binds sha (the approved commit)']
+ok   P2 (twin workflow, same name): S1 run A token inside run B's package, decision pinned to B overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['OIDC binds run_id', 'POLICY pin: run_id', 'POLICY pin: check_run_id']
+ok   P2 (twin workflow, same name): S2 run A token swapped into B's package, manifest not re-stamped overall 'EVIDENCE NOT BOUND (NOT MET)'; integrity row failed True
+ok   P2 (twin workflow, same name): S3 run B token inside run A's package (consistent manifest), decision pinned to A overall 'EVIDENCE NOT BOUND (NOT MET)'; binding reasons ['OIDC binds run_id', 'POLICY pin: run_id', 'POLICY pin: check_run_id']
+ok   controls hold when the PR claim shape differs: sub shaped as a merge ref               10/10 controls
+ok   controls hold when the PR claim shape differs: path with an @ref suffix                10/10 controls
+ok   framework: a verifier that accepts forgeries is detected (every control reports FAIL)  10/10 flagged
+ok   framework: a tier-1 control rejected only for audience/manifest reasons is NOT accepted 8 tier-1 controls flagged
+ok   describe-pr: H1-H5 confirmed on the hypothesised shapes                                {'H1': 'CONFIRMED', 'H2': 'CONFIRMED', 'H3': 'CONFIRMED', 'H3a': 'CONFIRMED', 'H3b': 'RECORDED', 'H4': 'CONFIRMED', 'H5': 'CONFIRMED', 'H6': 'CONFIRMED', 'H7': 'RECORDED', 'H8': 'CONFIRMED', 'influence': 'RECORDED'}
+ok   describe-pr (F2): the SHA relations are read from the PR object: H3a confirmed, H3b recorded 
+ok   describe-pr (F2): the token sha differs from the PR merge commit -> H3a is not confirmed (recorded, not forced) token sha e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5; PR merge_commit_sha 9f9f9f9f
+ok   describe-pr (F2): without the PR object the SHA relations are NOT-OBSERVABLE (no assumption) 
+ok   describe-pr: H6 is not confirmed for a P1 workflow of the same name only when names differ 
+ok   describe-pr: H6 confirmed for the twin (same workflow name claim as the protected workflow) PR 'me1-evidence', main 'me1-evidence' (a binding on this name would be unsafe)
+ok   describe-pr: a pull_request-looking run whose claims equal the main run REFUTES H1, H2, H3 and H4 {'H1': 'REFUTED', 'H2': 'REFUTED', 'H3': 'REFUTED', 'H4': 'REFUTED'}
+ok   describe-pr: the influence surface lists the differing claims                          
+ok   an old package without a listing: discovery required gives NOT-READ (no fallback)      got 'INCOMPLETE (not read)', want 'INCOMPLETE (not read)'
+ok   attach-listing: a listing fetched afterwards is attached to a COPY                     got None, want None
+ok   attach-listing: the copy is accepted by the policy-mode verifier                       got 'EVIDENCE BOUND, P NOT READ', want 'EVIDENCE BOUND, P NOT READ'
+ok   attach-listing: the original directory is untouched                                    got True, want True
+ok   attach-listing: the copy's manifest records the post-hoc attachment                    got True, want True
+ok   attach-listing refused: the output directory exists                                    got True, want True
+ok   attach-listing refused: the source already holds a listing                             got True, want True
+ok   attach-listing refused: the listing has no check_runs array                            got True, want True
+ok   attach-listing: a listing without the pinned run does not rescue the evidence          got 'EVIDENCE NOT BOUND (NOT MET)', want 'EVIDENCE NOT BOUND (NOT MET)'
+ok   CLI --controls: all controls hold, exit 0                                              exit 0
+ok   CLI --describe-pr: prints the hypotheses, exit 0                                       exit 0
+ok   CLI: missing argument, exit 2                                                          
+ok   CLI --attach-listing: a copy is made, exit 0                                           exit 0
+ok   CLI --attach-listing: an existing output is refused, exit 1                            got 1, want 1
+ok   CLI --attach-listing: a missing argument, exit 2                                       got 2, want 2
+ok   CLI: --selftest mixed with another argument is refused                                 
+SELFTEST OK
+rc=0

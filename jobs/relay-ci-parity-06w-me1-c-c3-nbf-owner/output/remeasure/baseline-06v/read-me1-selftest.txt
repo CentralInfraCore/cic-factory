@@ -1,0 +1,122 @@
+ok   RS256: valid signature                                       want=True got=True
+ok   RS256: other message                                         want=False got=False
+ok   RS256: other key                                             want=False got=False
+ok   RS256: flipped bit                                           want=False got=False
+ok   RS256: truncated signature                                   want=False got=False
+ok   RS256: tiny modulus refused                                  want=False got=False
+ok   PK: every planted difference detected, identical not flagged want=True got=True
+ok   PK: row count                                                want=7 got=7
+ok   good evidence: bound, only P not read                        want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   S: evidence of another run (expect another run id)           want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   S: evidence of another repository                            want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   R: evidence of another head (expect another head)            want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   R: evidence of another attempt (expect attempt 2)            want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: other run_id                                         want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: other run_attempt                                    want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: other sha                                            want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: other repository                                     want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: other event_name                                     want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: other workflow_ref                                   want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: other job_workflow_ref                               want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: other ref                                            want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: other subject                                        want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: other issuer                                         want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: other audience                                       want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: issued before the window                             want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: issued after the window                              want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: expiry before issue                                  want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: iat is not a number                                  want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   claims: field missing                                        want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   token signed by another key                                  want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   token with an unknown kid                                    want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   token alg none                                               want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   token alg HS256                                              want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   token payload tampered after signing                         want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   token not a JWT                                              want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   trusted JWKS without keys                                    want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   trusted JWKS key of another type                             want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   trusted JWKS has the kid twice                               want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   trusted JWKS holds only another issuer's key                 want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   F2: trusted JWKS not given -> INCOMPLETE                     want=INCOMPLETE (not read) got=INCOMPLETE (not read)
+ok   F2: trusted JWKS file does not exist                         want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   F2: trusted JWKS is not JSON                                 want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   F2: the key file inside the evidence package is refused as trust root want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   F2: ... and that very row is the one that fails              want=['NOT-MET'] got=['NOT-MET']
+ok   F2: attacker replaces token, key and manifest inside the package (owner's trusted keys decide) want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   F2: ... even when the attacker's key file is offered as the trust root want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   F3: self-report differs, signed evidence stands              want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   F3: ... and the difference is reported as a NOTE             want=['NOTE'] got=['NOTE']
+ok   F3: self-report is not an object, signed evidence stands     want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   F4: job_workflow_ref absent -> not a failed binding          want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   F4: ... reported as a NOTE                                   want=['NOTE'] got=['NOTE']
+ok   F1: artifact created before the token expired                want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   F1: artifact created 30 s after exp (margin 60 s)            want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   F1: artifact created exactly at exp + 60 s                   want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   F1: token exp missing                                        want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   sub: the ID form with the API's IDs is accepted (the shape measured on the real run) want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   sub: the documented plain form is still accepted             want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   sub: ID form, wrong repository id in the subject             want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   sub: ID form, wrong owner id in the subject                  want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   sub: ID form, the two ids swapped                            want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   sub: ID form, ids not numeric                                want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   sub: only the owner carries an id                            want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   sub: only the repository carries an id                       want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   sub: trailing junk                                           want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   sub: other repository name in the ID form                    want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   sub: environment subject                                     want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   sub: missing                                                 want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   sub: the API reports no ids, the ID form cannot be confirmed want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   id claims: repository_id differs from the API                want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   id claims: repository_owner_id differs from the API          want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   id claims: repository_id missing                             want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   id claims: repository_owner_id missing                       want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   id claims: repository_id is a number, not the documented string want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   api: ids differ from the token's                             want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   workflow_sha differs from the head                           want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   job_workflow_sha differs from the head                       want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   workflow_sha absent: not mandatory                           want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   informational claims are reported and never judged           want=(['NOTE'], 'EVIDENCE BOUND, P NOT READ') got=(['NOTE'], 'EVIDENCE BOUND, P NOT READ')
+ok   the 31-claim shape of the real token is accepted (regression: the first real reading) want=(31, 'EVIDENCE BOUND, P NOT READ') got=(31, 'EVIDENCE BOUND, P NOT READ')
+ok   API run JSON disagrees with the manifest (that very row fails) want=['NOT-MET'] got=['NOT-MET']
+ok   manifest missing                                             want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   a file changed after the manifest (stale mix)                want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   unlisted file in the directory                               want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   token file missing                                           want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   manifest: artifact created outside the window                want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   manifest: other event                                        want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   manifest: other workflow path                                want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   manifest: attempt 2 without a held attempt 1                 want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   --expect-head-sha not given                                  want=INCOMPLETE (not read) got=INCOMPLETE (not read)
+ok   --expect-repo not given                                      want=INCOMPLETE (not read) got=INCOMPLETE (not read)
+ok   --expect-run-id not given                                    want=INCOMPLETE (not read) got=INCOMPLETE (not read)
+ok   --expect-attempt not given                                   want=INCOMPLETE (not read) got=INCOMPLETE (not read)
+ok   writer: approved run                                         want=0 got=0
+ok   writer: the written manifest is accepted by the reader       want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   writer: other head                                           want=1 got=1
+ok   writer: push event                                           want=1 got=1
+ok   writer: failed run                                           want=1 got=1
+ok   writer: attempt 2 without history                            want=1 got=1
+ok   writer: attempt 2 after a held attempt 1                     want=0 got=0
+ok   writer: artifact outside the window                          want=1 got=1
+ok   writer: two artifacts inside the window                      want=1 got=1
+ok   writer: zip digest malformed                                 want=1 got=1
+ok   CLI evaluate: bound evidence, exit 0                         want=(0, True) got=(0, True)
+ok   CLI evaluate: wrong run id, exit 1                           want=1 got=1
+ok   CLI evaluate: no --trusted-jwks, INCOMPLETE exit 1           want=1 got=1
+ok   CLI evaluate: key file inside the evidence package, exit 1   want=1 got=1
+ok   CLI evaluate: flag without value, exit 2                     want=2 got=2
+ok   CLI evaluate: extra positional, exit 2                       want=2 got=2
+ok   CLI evaluate: missing flag, INCOMPLETE exit 1                want=1 got=1
+ok   CLI --pk: exit 0                                             want=(0, False) got=(0, False)
+ok   CLI check-run: approved                                      want=0 got=0
+ok   CLI check-run: wrong head                                    want=1 got=1
+ok   CLI check-run: wrong repository                              want=1 got=1
+ok   CLI check-run: missing argument                              want=2 got=2
+ok   CLI pick-artifact: prints the id                             want=(0, '777') got=(0, '777')
+ok   CLI pick-artifact: wrong head                                want=1 got=1
+ok   CLI write-manifest: approved                                 want=0 got=0
+ok   CLI write-manifest: missing argument                         want=2 got=2
+ok   CLI --selftest mixed with another argument is refused        want=2 got=2
+ok   CLI --selftest mixed with a directory is refused             want=2 got=2
+SELFTEST OK
+rc=0

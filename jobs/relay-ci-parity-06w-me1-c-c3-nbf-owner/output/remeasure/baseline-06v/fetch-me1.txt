@@ -1,0 +1,66 @@
+ok   attempt 1: fetch succeeds                                        
+ok   attempt 1: the evidence directory holds no key file              
+ok   attempt 1: read-me1 gives EVIDENCE BOUND, P NOT READ             EVIDENCE BOUND, P NOT READ
+ok   attempt 1: other expected attempt is NOT MET                     
+ok   attempt 2: fetch succeeds                                        
+ok   attempt 2: the evidence directory holds no key file              
+ok   attempt 2: read-me1 gives EVIDENCE BOUND, P NOT READ             EVIDENCE BOUND, P NOT READ
+ok   attempt 2: other expected attempt is NOT MET                     
+ok   the checks-API listing is fetched and digest-listed in the manifest 
+ok   end to end: the fetched package is accepted by the policy-mode verifier (pinned, discovery required) EVIDENCE BOUND, P NOT READ
+ok   pr profile: a pull_request run is fetched, the manifest records profile, observed path and head_branch 
+ok   pr profile: the PR object is fetched and digest-listed (the authorization source) 
+ok   pr profile: the observed relations are RECORDED (run head equals the PR head here, recorded not assumed) {'pr_head_sha': 'd4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4', 'pr_merge_commit_sha': 'e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5', 'pr_number': 7, 'run_head_sha': 'd4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4', 'run_head_sha_equals_pr_head': True, 'run_head_sha_equals_pr_merge_commit': False, 'run_pull_requests': [{'base_ref': 'main', 'head_ref': 'p-probe', 'head_sha': 'd4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4', 'number': 7}]}
+ok   F3 the run's PR link is recorded in the manifest (number, refs; the SHA inside is recorded, not asserted) {'pr_head_sha': 'd4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4', 'pr_merge_commit_sha': 'e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5', 'pr_number': 7, 'run_head_sha': 'd4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4', 'run_head_sha_equals_pr_head': True, 'run_head_sha_equals_pr_merge_commit': False, 'run_pull_requests': [{'base_ref': 'main', 'head_ref': 'p-probe', 'head_sha': 'd4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4', 'number': 7}]}
+ok   pr profile: the checks-API listing of the run's commit is fetched 
+ok   F2 the run's head_sha differs from the approved PR head: COLLECTED, the deviation is observed, not refused 
+ok   F2 ... the manifest records run_head_sha_equals_pr_head=False and equals_pr_merge_commit=True {'pr_head_sha': 'd4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4', 'pr_merge_commit_sha': 'e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5', 'pr_number': 7, 'run_head_sha': 'e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5', 'run_head_sha_equals_pr_head': False, 'run_head_sha_equals_pr_merge_commit': True, 'run_pull_requests': [{'base_ref': 'main', 'head_ref': 'p-probe', 'head_sha': 'd4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4', 'number': 7}]}
+ok   F2 ... and the artifact and the listing are bound to the run's OWN head_sha (the manifest head_sha is the observed one) 
+ok   pr profile: a path with an @ref suffix is recorded verbatim (H7 is not asserted) 
+ok   refused: pr profile: the run is a workflow_dispatch run          rc=1 refusing: the run is not the approved one: event='workflow_dispatch' (
+ok   refused: pr profile: the run comes from main (not a probe branch) rc=1 refusing: the run is not the approved one: head_branch='main' (a probe
+ok   refused: pr profile: the run failed                              rc=1 refusing: the run is not the approved one: conclusion='failure' (want 
+ok   refused: F2 authorization: the PR object's head.sha is not the approved PR head rc=1 refusing: the PR is not the approved probe PR: head.sha='a9a9a9a9a9a9a
+ok   refused: F2 authorization: the PR's head.ref is not the probe branch rc=1 refusing: the PR is not the approved probe PR: head.ref='feature' (wan
+ok   refused: F2 authorization: the PR's base is not main             rc=1 refusing: the PR is not the approved probe PR: base.ref='dev' (want 'm
+ok   refused: F2 authorization: the probe PR was merged               rc=1 refusing: the PR is not the approved probe PR: merged=True (a probe PR
+ok   refused: F2 authorization: the PR object cannot be read          rc=1 mock: no fixture for repos/o/r/pulls/7
+ok   refused: F2 authorization: the PR object has no number           rc=1 refusing: the PR is not the approved probe PR: number
+ok   refused: pr profile: the PR number is missing                    rc=1 refusing: the pr profile needs the numeric PR number
+ok   refused: pr profile: the PR number is not numeric                rc=1 refusing: the pr profile needs the numeric PR number
+ok   refused: main profile: a PR number is given (it belongs to the pr profile only) rc=1 refusing: a PR number belongs to the pr profile only
+ok   refused: F3 the PR object read back has another number than the one asked for (PR 7 asked, object says 8) rc=1 refusing: the PR is not the approved probe PR: number=8 (the PR that w
+ok   refused: F3 the run belongs to ANOTHER pull request (approved PR 7, the run's pull_requests names 9) rc=1 refusing: the run belongs to PR 9, not to the approved PR '7'
+ok   refused: F3 the run carries NO pull_requests (empty list): the link is not established, fail-closed rc=1 refusing: the run carries no pull_requests: its link to the approved P
+ok   refused: F3 the run has no pull_requests key at all: fail-closed rc=1 refusing: the run carries no pull_requests: its link to the approved P
+ok   refused: F3 the pull_requests value is not a list: fail-closed   rc=1 refusing: the run carries no pull_requests: its link to the approved P
+ok   refused: F3 the run is associated with two pull requests (the approved one and another): ambiguous, fail-closed rc=1 refusing: the run is associated with 2 pull requests [7, 9]: the link 
+ok   refused: F3 the run's pull_requests entry has no numeric number  rc=1 refusing: the run's pull_requests entry has no numeric number
+ok   refused: F3 the run's PR entry names another head branch         rc=1 refusing: the run's PR entry is not the probe PR: head.ref='feature' (
+ok   refused: F3 the run's PR entry names another base branch         rc=1 refusing: the run's PR entry is not the probe PR: base.ref='dev' (want
+ok   refused: main profile: a pull_request run is presented           rc=1 refusing: the run is not the approved one: event='pull_request' (want 
+ok   refused: unknown profile                                         rc=1 refusing: profile must be main or pr
+ok   refused: the checks-API listing cannot be read (no silent skip)  rc=1 mock: no fixture for repos/o/r/commits/a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a
+ok   refused: a later attempt exists (current 3, fetching 2)          rc=1 refusing: the run's current attempt is 3, not 2
+ok   refused: current attempt differs from the asked one              rc=1 refusing: the run's current attempt is 2, not 1
+ok   refused: attempt changes while fetching                          rc=1 refusing: the run changed while fetching (attempt 3, updated_at 2026-0
+ok   refused: attempt object updated while fetching                   rc=1 refusing: the run changed while fetching (attempt 2, updated_at 2026-0
+ok   refused: attempt 1 of attempt 2 had a job                        rc=1 refusing: attempt 2 needs attempt 1 completed/action_required with 0 j
+ok   refused: artifact created before the window                      rc=1 refusing: 0 artifact(s) qualify for this attempt (need exactly 1)
+ok   refused: artifact created after the window                       rc=1 refusing: 0 artifact(s) qualify for this attempt (need exactly 1)
+ok   refused: artifact of another head                                rc=1 refusing: 0 artifact(s) qualify for this attempt (need exactly 1)
+ok   refused: two artifacts inside the window                         rc=1 refusing: 2 artifact(s) qualify for this attempt (need exactly 1)
+ok   refused: no artifact                                             rc=1 refusing: 0 artifact(s) qualify for this attempt (need exactly 1)
+ok   refused: attempt 3 asked for                                     rc=1 refusing: the run's current attempt is 2, not 3
+ok   refused: output directory exists                                 rc=1 refusing: /tmp/tmptogol3bb/out already exists (use a new directory per
+ok   keys of another issuer as trust root: the reader says NOT MET    EVIDENCE NOT BOUND (NOT MET)
+ok   claims of another commit: fetched, the reader says NOT MET       EVIDENCE NOT BOUND (NOT MET)
+ok   fetch-jwks: a JWKS is kept                                       
+ok   fetch-jwks refused: curl fails                                   
+ok   fetch-jwks refused: not JSON                                     
+ok   fetch-jwks refused: no keys array                                
+ok   fetch-jwks refused: empty keys                                   
+ok   fetch-jwks refused: a list instead of an object                  
+ok   fetch-jwks refused: output file exists (and is left untouched)   
+TEST OK
+rc=0

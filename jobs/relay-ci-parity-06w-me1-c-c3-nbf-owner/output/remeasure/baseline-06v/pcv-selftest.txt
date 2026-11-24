@@ -1,0 +1,108 @@
+ok   V2 pin A, listing [A,B] (B is the newer run): the A evidence is accepted                     want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V2 ... the 'additional candidate runs' alert is raised, the verifier does not switch         want=['NOTE'] got=['NOTE']
+ok   V2 pin B: the B evidence is accepted although A is older                                     want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V2 pin A, the B evidence presented: rejected (pin and check_run_id)                          want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V2 pin B, the A evidence presented: rejected                                                 want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V2 a run C appears AFTER the pin: the pinned evidence stays accepted                         want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V2 ... and C is only an alert (extra candidates listed)                                      want=True got=True
+ok   V2 listing order swapped: pinned verdict unchanged                                           want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V2 no pin, two candidates: the verifier does not choose (never the latest)                   want=INCOMPLETE (not read) got=INCOMPLETE (not read)
+ok   V2 no pin, two candidates, the OTHER run's evidence: still does not choose                   want=INCOMPLETE (not read) got=INCOMPLETE (not read)
+ok   V2 no pin, two candidates, listing order swapped: still does not choose                      want=INCOMPLETE (not read) got=INCOMPLETE (not read)
+ok   V2 no pin, exactly one candidate and it is this evidence's run: accepted                     want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V2 no pin, exactly one candidate but it is ANOTHER run: rejected                             want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V2 no pin, no candidate: rejected                                                            want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V2 discovery required, the listing is unavailable: incomplete, NO fallback to the pin        want=INCOMPLETE (not read) got=INCOMPLETE (not read)
+ok   F1 a policy with discovery=optional is refused at load (no P-c/V profile without discovery)  want=None got=None
+ok   F1 ... the error says discovery must be required                                             want=True got=True
+ok   F1 CLI: the optional policy is refused (exit 2), so the missing listing is never tolerated   want=2 got=2
+ok   F1 discovery=required stated explicitly is accepted                                          want=None got=None
+ok   V2 the pinned check-run concluded failure                                                    want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V2 the pinned check-run is still in progress                                                 want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V2 the pinned check-run belongs to another app                                               want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V2 the pinned check-run has another name                                                     want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V2 the listing is TRUNCATED (total_count above the page): discovery incomplete, never a silent single candidate want=INCOMPLETE (not read) got=INCOMPLETE (not read)
+ok   V2 ... also without a pin                                                                    want=INCOMPLETE (not read) got=INCOMPLETE (not read)
+ok   V2 the pinned check_run_id is not the Actions job id of the run (API cross-check): rejected  want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V2 ISOLATED: token and pin agree on check_run_id, the Actions job id (API) differs: rejected want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V2 ISOLATED: check_run_id agrees with the pin, only the run_id differs: rejected             want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V2 ISOLATED: only the run_attempt differs from the pin (attempt 2 against a pin on attempt 1): rejected want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V2 ... and the same attempt-2 evidence with a pin on attempt 2 is accepted                   want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V3 baseline: all claims as the policy expects                                                want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V3 K claim changed: repository -> rejected                                                   want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: repository_id -> rejected                                                want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: repository_owner_id -> rejected                                          want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: workflow_ref -> rejected                                                 want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: job_workflow_ref -> rejected                                             want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: event_name -> rejected                                                   want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: ref -> rejected                                                          want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: sub -> rejected                                                          want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: sha -> rejected                                                          want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: workflow_sha -> rejected                                                 want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: job_workflow_sha -> rejected                                             want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: run_id -> rejected                                                       want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: run_attempt -> rejected                                                  want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: check_run_id -> rejected                                                 want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: iss -> rejected                                                          want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 K claim changed: aud -> rejected                                                          want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 P/S claim changed: actor -> verdict unchanged                                             want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V3 P/S claim changed: actor_id -> verdict unchanged                                          want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V3 P/S claim changed: ref_type -> verdict unchanged                                          want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V3 P/S claim changed: ref_protected -> verdict unchanged                                     want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V3 P/S claim changed: repository_visibility -> verdict unchanged                             want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V3 P/S claim changed: runner_environment -> verdict unchanged                                want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V3 P/S claim changed: run_number -> verdict unchanged                                        want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V3 P/S claim changed: jti -> verdict unchanged                                               want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V3 P/S claim changed: workflow -> verdict unchanged                                          want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V3 P/S claim changed: head_ref -> verdict unchanged                                          want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V3 P/S claim changed: base_ref -> verdict unchanged                                          want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V3 internally consistent token for another commit, the policy approves HEAD: rejected (the token alone is not enough) want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 the policy requires another approved commit than the token carries: rejected              want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 the policy gives another workflow_sha: rejected                                           want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V3 the policy gives no workflow_sha: not bound (its meaning per event type is not assumed), verdict stays want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V3 ... and says so                                                                           want=['NOTE'] got=['NOTE']
+ok   V3 job_workflow_ref absent: not mandatory                                                    want=EVIDENCE BOUND, P NOT READ got=EVIDENCE BOUND, P NOT READ
+ok   V1 invalid policy refused (fail-closed): unknown key                                         want=True got=True
+ok   V1 invalid policy refused (fail-closed): missing repository                                  want=True got=True
+ok   V1 invalid policy refused (fail-closed): repository_id as a string                           want=True got=True
+ok   V1 invalid policy refused (fail-closed): repository without an owner                         want=True got=True
+ok   V1 invalid policy refused (fail-closed): other event (the reader supports the main profile only) want=True got=True
+ok   V1 invalid policy refused (fail-closed): other ref                                           want=True got=True
+ok   V1 invalid policy refused (fail-closed): other workflow path                                 want=True got=True
+ok   V1 invalid policy refused (fail-closed): sha not 40-hex                                      want=True got=True
+ok   V1 invalid policy refused (fail-closed): workflow_sha not 40-hex                             want=True got=True
+ok   V1 invalid policy refused (fail-closed): discovery value unknown                             want=True got=True
+ok   V1 invalid policy refused (fail-closed): pin with a missing field                            want=True got=True
+ok   V1 invalid policy refused (fail-closed): pin with a non-positive id                          want=True got=True
+ok   V1 invalid policy refused (fail-closed): pin with a boolean id                               want=True got=True
+ok   V1 invalid policy refused (fail-closed): job_name other than the measured job                want=True got=True
+ok   V1 invalid policy refused: not JSON                                                          want=True got=True
+ok   V1 the valid policy loads                                                                    want=None got=None
+ok   V1 token file missing: rejected                                                              want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V1 token empty (manifest re-stamped): not accepted                                           want=True got=True
+ok   V1 context.json missing: rejected                                                            want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V1 api/run.json missing: not accepted                                                        want=True got=True
+ok   V1 manifest missing: rejected                                                                want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V1 the trusted keys are unavailable: incomplete                                              want=INCOMPLETE (not read) got=INCOMPLETE (not read)
+ok   V1 the trusted keys file does not exist: rejected                                            want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V1 the collector refuses a run that is failure (suppression is never evidence)               want=True got=True
+ok   V1 the collector refuses a run that is cancelled (suppression is never evidence)             want=True got=True
+ok   V1 the collector refuses a run that is skipped (suppression is never evidence)               want=True got=True
+ok   V1 the collector refuses a run that is timed_out (suppression is never evidence)             want=True got=True
+ok   V1 the collector refuses a run that is neutral (suppression is never evidence)               want=True got=True
+ok   V1 the collector refuses a run that is action_required (held) (suppression is never evidence) want=True got=True
+ok   V1 the collector refuses a run that is in progress (suppression is never evidence)           want=True got=True
+ok   V1 the collector refuses a run that is queued (suppression is never evidence)                want=True got=True
+ok   V1 an EXPIRED artifact is not picked (the R2 natural-experiment shape, synthetic)            want=True got=True
+ok   V1 a deleted (absent) artifact is not picked                                                 want=True got=True
+ok   V4 artifact created BEFORE the token expired (early publication): rejected                   want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V4 artifact created 30 s after exp (below the 60 s margin): rejected                         want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V4 artifact created outside the attempt window: rejected                                     want=EVIDENCE NOT BOUND (NOT MET) got=EVIDENCE NOT BOUND (NOT MET)
+ok   V4 two artifacts in the window: not picked (ambiguous)                                       want=True got=True
+ok   CLI --policy: bound evidence, exit 0                                                         want=(0, True) got=(0, True)
+ok   CLI --policy: a rejected package, exit 1                                                     want=1 got=1
+ok   CLI --policy together with --expect-run-id: refused, exit 2                                  want=2 got=2
+ok   CLI --policy with an invalid policy: refused, exit 2                                         want=2 got=2
+ok   CLI --policy without a value: refused, exit 2                                                want=2 got=2
+SELFTEST OK
+rc=0

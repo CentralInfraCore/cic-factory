@@ -1,0 +1,25 @@
+ok   normal: waits exp+121-now, then publishes                      sleep ['421']
+ok   clock after the wait not past exp+120 -> no token (strict check unchanged) 
+ok   F5: simulated clock, exp - now = 1 s -> published              sleep ['122']
+ok   F5: simulated clock, exp - now = 2 s -> published              sleep ['123']
+ok   F5: simulated clock, exp - now = 119 s -> published            sleep ['240']
+ok   F5: simulated clock, exp - now = 120 s -> published            sleep ['241']
+ok   F5: simulated clock, exp - now = 121 s -> published            sleep ['242']
+ok   F5: simulated clock, exp - now = 300 s -> published            sleep ['421']
+ok   F5: simulated clock, exp - now = 599 s -> published            sleep ['720']
+ok   F5: simulated clock, exp - now = 600 s -> published            sleep ['721']
+ok   F5: exp - now = 601 s -> refused (cap at the exact boundary), no sleep, no token 
+ok   clock did not advance (shim) -> no token                       
+ok   expiry too far (> 600 s) -> fail closed, no sleep, no token    
+ok   already expired long ago: no wait, publishes                   
+ok   exp missing -> fail closed, no token                           
+ok   exp not a number -> fail closed, no token                      
+ok   exp null -> fail closed, no token                              
+ok   curl answer value null -> fail closed, no token                
+ok   curl answer value missing -> fail closed, no token             
+ok   curl answer not JSON -> fail closed, no token                  
+ok   curl answer not a JWT -> fail closed, no token                 
+ok   curl answer empty -> fail closed, no token                     
+ok   the token never appears in the step's own output               
+TEST OK
+rc=0

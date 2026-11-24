@@ -1,0 +1,667 @@
+[
+ [
+  "E2",
+  "claim names of the real tokens",
+  "all classified by the contract table",
+  "unclassified: none",
+  "MET"
+ ],
+ [
+  "E3a",
+  "B / policy B",
+  "derived baseline == the real verdict (BOUND)",
+  "EVIDENCE BOUND, P NOT READ",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: repository",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds repository', 'POLICY binds repository'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: repository_id",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds repository_id (API repository.id)', 'POLICY binds repository_id'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: repository_owner_id",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds repository_owner_id (API owner.id)', 'POLICY binds repository_owner_id'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: workflow_ref",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds workflow_ref', 'POLICY binds workflow_ref (the approved workflow identity)'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: job_workflow_ref",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds job_workflow_ref (path+ref)', 'POLICY binds job_workflow_ref'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: event_name",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds event_name', 'POLICY binds event_name'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: ref",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds ref and subject (identity, IDs from the API)', 'POLICY binds ref'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: sub",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds ref and subject (identity, IDs from the API)', 'POLICY binds sub (identity, ids from the policy)'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: sha",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds sha', 'POLICY binds sha (the approved commit)'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: workflow_sha",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: [\"OIDC binds workflow_sha (the workflow file's commit)\", 'POLICY binds workflow_sha (the approved workflow file commit)'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: job_workflow_sha",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: [\"OIDC binds job_workflow_sha (the workflow file's commit)\", 'POLICY binds job_workflow_sha (the approved workflow file commit)'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: run_id",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds run_id', 'POLICY pin: run_id'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: run_attempt",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds run_attempt', 'POLICY pin: run_attempt'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: check_run_id",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['POLICY pin: check_run_id'] (all NOT-MET rows: 1)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: iss",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC issuer', 'POLICY binds iss'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "B / policy B: aud",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: [\"OIDC audience (the measurement's own)\", 'POLICY binds aud'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "B / policy B: iat far outside the attempt window",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC issued inside the attempt window'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "B / policy B: exp so late that the artifact is not 60 s after it",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC provably expired before the artifact was created (server time)'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "B / policy B: exp = iat",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC issued inside the attempt window'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "B / policy B: nbf far above iat+60",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "B / policy B: nbf = iat+61",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "B / policy B: nbf = iat+60 (boundary, permitted)",
+  "accepted, every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3t",
+  "B / policy B: nbf = iat (permitted)",
+  "accepted, every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3t",
+  "B / policy B: nbf = iat-10000 (permitted range: changed, still accepted)",
+  "accepted, every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3t",
+  "B / policy B: nbf missing",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "B / policy B: nbf a string",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "B / policy B: nbf a fraction",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3c",
+  "B / policy B: actor (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "B / policy B: actor_id (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "B / policy B: ref_type (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "B / policy B: ref_protected (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "B / policy B: repository_visibility (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "B / policy B: runner_environment (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "B / policy B: run_number (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "B / policy B: jti (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "B / policy B: repository_owner (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "B / policy B: workflow (S)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "B / policy B: head_ref (S)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "B / policy B: base_ref (S)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "B / policy B: ALL 12 P/S claims together",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3a",
+  "A2 / policy A",
+  "derived baseline == the real verdict (BOUND)",
+  "EVIDENCE BOUND, P NOT READ",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: repository",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds repository', 'POLICY binds repository'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: repository_id",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds repository_id (API repository.id)', 'POLICY binds repository_id'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: repository_owner_id",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds repository_owner_id (API owner.id)', 'POLICY binds repository_owner_id'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: workflow_ref",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds workflow_ref', 'POLICY binds workflow_ref (the approved workflow identity)'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: job_workflow_ref",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds job_workflow_ref (path+ref)', 'POLICY binds job_workflow_ref'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: event_name",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds event_name', 'POLICY binds event_name'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: ref",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds ref and subject (identity, IDs from the API)', 'POLICY binds ref'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: sub",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds ref and subject (identity, IDs from the API)', 'POLICY binds sub (identity, ids from the policy)'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: sha",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds sha', 'POLICY binds sha (the approved commit)'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: workflow_sha",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: [\"OIDC binds workflow_sha (the workflow file's commit)\", 'POLICY binds workflow_sha (the approved workflow file commit)'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: job_workflow_sha",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: [\"OIDC binds job_workflow_sha (the workflow file's commit)\", 'POLICY binds job_workflow_sha (the approved workflow file commit)'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: run_id",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds run_id', 'POLICY pin: run_id'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: run_attempt",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC binds run_attempt', 'POLICY pin: run_attempt'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: check_run_id",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['POLICY pin: check_run_id'] (all NOT-MET rows: 1)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: iss",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC issuer', 'POLICY binds iss'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3b",
+  "A2 / policy A: aud",
+  "NOT BOUND, a NOT-MET row names the claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: [\"OIDC audience (the measurement's own)\", 'POLICY binds aud'] (all NOT-MET rows: 2)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "A2 / policy A: iat far outside the attempt window",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC issued inside the attempt window'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "A2 / policy A: exp so late that the artifact is not 60 s after it",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC provably expired before the artifact was created (server time)'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "A2 / policy A: exp = iat",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC issued inside the attempt window'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "A2 / policy A: nbf far above iat+60",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "A2 / policy A: nbf = iat+61",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "A2 / policy A: nbf = iat+60 (boundary, permitted)",
+  "accepted, every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3t",
+  "A2 / policy A: nbf = iat (permitted)",
+  "accepted, every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3t",
+  "A2 / policy A: nbf = iat-10000 (permitted range: changed, still accepted)",
+  "accepted, every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3t",
+  "A2 / policy A: nbf missing",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "A2 / policy A: nbf a string",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3t",
+  "A2 / policy A: nbf a fraction",
+  "NOT BOUND with a NOT-MET row on that claim",
+  "EVIDENCE NOT BOUND (NOT MET); NOT-MET rows naming it: ['OIDC not-before (nbf) present, valid, consistent with iat'] (all: 1)",
+  "MET"
+ ],
+ [
+  "E3c",
+  "A2 / policy A: actor (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "A2 / policy A: actor_id (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "A2 / policy A: ref_type (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "A2 / policy A: ref_protected (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "A2 / policy A: repository_visibility (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "A2 / policy A: runner_environment (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "A2 / policy A: run_number (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "A2 / policy A: jti (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "A2 / policy A: repository_owner (P)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "A2 / policy A: workflow (S)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "A2 / policy A: head_ref (S)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "A2 / policy A: base_ref (S)",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E3c",
+  "A2 / policy A: ALL 12 P/S claims together",
+  "verdict and every row status identical to the baseline",
+  "EVIDENCE BOUND, P NOT READ; rows identical: True",
+  "MET"
+ ],
+ [
+  "E4",
+  "actor",
+  "(observation)",
+  "same",
+  "RECORDED"
+ ],
+ [
+  "E4",
+  "actor_id",
+  "(observation)",
+  "same",
+  "RECORDED"
+ ],
+ [
+  "E4",
+  "ref_type",
+  "(observation)",
+  "same",
+  "RECORDED"
+ ],
+ [
+  "E4",
+  "ref_protected",
+  "(observation)",
+  "same",
+  "RECORDED"
+ ],
+ [
+  "E4",
+  "repository_visibility",
+  "(observation)",
+  "same",
+  "RECORDED"
+ ],
+ [
+  "E4",
+  "runner_environment",
+  "(observation)",
+  "same",
+  "RECORDED"
+ ],
+ [
+  "E4",
+  "run_number",
+  "(observation)",
+  "differs between A and B; each token still bound by its own policy (R3b)",
+  "RECORDED"
+ ],
+ [
+  "E4",
+  "jti",
+  "(observation)",
+  "differs between A and B; each token still bound by its own policy (R3b)",
+  "RECORDED"
+ ],
+ [
+  "E4",
+  "repository_owner",
+  "(observation)",
+  "same",
+  "RECORDED"
+ ],
+ [
+  "E4",
+  "workflow",
+  "(observation)",
+  "same",
+  "RECORDED"
+ ],
+ [
+  "E4",
+  "head_ref",
+  "(observation)",
+  "same",
+  "RECORDED"
+ ],
+ [
+  "E4",
+  "base_ref",
+  "(observation)",
+  "same",
+  "RECORDED"
+ ]
+]
