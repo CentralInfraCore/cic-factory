@@ -18,9 +18,9 @@ workplace:
     - "cic-factory"
     - "CIC_Relay"
   branch: "feature/o1-wp02-relay-artifact-admission"
-status: "pending"
+status: "running"
 error_message: ""
 timestamps:
   created: "2026-11-27T18:46:14Z"
-  started: ""
+  started: "2026-11-27T19:07:09Z"
   completed: ""
