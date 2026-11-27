@@ -1,0 +1,23 @@
+# Probe: does the Python reference_verify accept a P-384 key for alg ecdsa-p256-sha256?
+import base64, hashlib, json, sys, types
+src = open(sys.argv[1]).read()
+# load only the functions of the reference generator without regenerating files
+ns = {}
+exec(compile(open(sys.argv[2]).read().split("# ================================================================ 2. ABI profile")[0].replace("DEST = pathlib.Path(sys.argv[1])", "DEST = pathlib.Path('/home/sinkog/.cache/o6/wt-factory/jobs/o1-wp00-vector-reproduction/probe/tmp')"), "b", "exec"), ns)
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+start = src.index("def reference_verify"); end = src.index("def case(")
+g = {"base64": base64, "serialization": serialization, "ec": ec, "hashes": hashes, "envelope_signed_bytes": ns["envelope_signed_bytes"], "parse_signed_bytes": ns["parse_signed_bytes"],
+     "sha": lambda b: "sha256:" + hashlib.sha256(b).hexdigest()}
+from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.exceptions import InvalidSignature
+g.update(ed25519=ed25519, InvalidSignature=InvalidSignature)
+exec(src[start:end], g)
+case = json.load(open(sys.argv[3]))["cases"][0]
+k = ec.generate_private_key(ec.SECP384R1())
+spki = k.public_key().public_bytes(serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
+case["envelope"]["signer"]["key_id"] = g["sha"](spki)
+case["signer_spki_b64"] = base64.b64encode(spki).decode()
+sig = k.sign(ns["envelope_signed_bytes"](case["envelope"]), ec.ECDSA(hashes.SHA256()))
+case["signature_file"] = base64.b64encode(sig).decode() + "\n"
+print("alg:", case["envelope"]["signer"]["alg"], "curve:", k.curve.name, "reference_verify ->", g["reference_verify"](case))

@@ -1,0 +1,212 @@
+# Common cryptographic conformance vectors for the O-1 wire contracts (envelope CICMODENVv1, CICCHAINv2, CICHOSTINTv1).
+# TEST KEYS ONLY: derived from public constants below, worthless by construction. No Vault, no real signing, nothing here is a release signature.
+# usage: make_o1_vectors.py <out-dir> <path to build_o1_schemas.py>
+# Status of the vectors: PROVISIONAL until the Relay (WP-02) and a second implementation reproduce them.
+# WP-00 CORRECTION (o1-wp00-vector-reproduction, 2026-11-27): derived from the reference make_o1_vectors.py with exactly
+# three changes, all marked "WP-00": (1) the raw module is well-formed (the original custom section declared size 5 but
+# carried 6 bytes, so the pinned wabin decoder rejects it); (2) WASM_EXEC is the MEASURED wasm-canon/v1 output of the Go
+# stripWasmModuleFunc (pinned wabin, CoreFeaturesV2), asserted below; (3) the output file name and the corpus metadata.
+import base64
+import hashlib
+import io
+import json
+import pathlib
+import runpy
+import sys
+import contextlib
+
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec, ed25519
+from cryptography.exceptions import InvalidSignature
+
+OUT = pathlib.Path(sys.argv[1])
+OUT.mkdir(parents=True, exist_ok=True)
+BUILD = sys.argv[2]
+tmp = OUT / ".build-tmp"
+with contextlib.redirect_stdout(io.StringIO()):
+    sys.argv = ["x", str(tmp)]
+    ns = {"__name__": "builder"}
+    try:
+        exec(compile(open(BUILD).read(), BUILD, "exec"), ns)
+    except SystemExit:
+        pass
+import shutil
+shutil.rmtree(tmp, ignore_errors=True)
+envelope_signed_bytes, parse_signed_bytes = ns["envelope_signed_bytes"], ns["parse_signed_bytes"]
+chain_hash, chain_bytes, interactions_digest, record_bytes = ns["chain_hash"], ns["chain_bytes"], ns["interactions_digest"], ns["record_bytes"]
+profile_signed_bytes = ns["profile_signed_bytes"]
+
+b64 = lambda b: base64.b64encode(b).decode()
+sha = lambda b: "sha256:" + hashlib.sha256(b).hexdigest()
+
+# ---- TEST keys (public constants)
+ED_SEED = bytes(range(32))
+ed_priv = ed25519.Ed25519PrivateKey.from_private_bytes(ED_SEED)
+EC_D = int.from_bytes(hashlib.sha256(b"CIC O-1 TEST KEY ecdsa-p256 (public test constant)").digest(), "big") % (2**255) + 1
+ec_priv = ec.derive_private_key(EC_D, ec.SECP256R1())
+spki = lambda pub: pub.public_bytes(serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
+KEYS = {"ecdsa-p256-sha256": (ec_priv, spki(ec_priv.public_key())), "ed25519": (ed_priv, spki(ed_priv.public_key()))}
+KEY_ID = {a: sha(k[1]) for a, k in KEYS.items()}
+
+
+def sign(alg, msg):
+    priv = KEYS[alg][0]
+    return priv.sign(msg, ec.ECDSA(hashes.SHA256())) if alg == "ecdsa-p256-sha256" else priv.sign(msg)
+
+
+# ---- the artifacts: a minimal wasm module with one custom section (the reference strip is byte-level removal of custom sections;
+#      PROVISIONAL: confirming it against the Relay's wabin re-encode is part of WP-02, no Go toolchain was available here)
+HEADER = b"\x00asm\x01\x00\x00\x00"
+# WP-00: id 0, size 10 = 1 (name length) + 8 ("cic.test") + 1 (payload 0xaa). The original b"\x00\x05\x04name\xaa" was malformed.
+CUSTOM = b"\x00\x0a\x08cic.test\xaa"
+WASM_RAW = HEADER + CUSTOM
+WASM_EXEC = HEADER
+# WP-00: measured in Go (core/cabinet/o1_vectors_test.go, TestO1WasmCanonV1Measurement M6): stripWasmModuleFunc(WASM_RAW) == HEADER
+assert WASM_RAW.hex() == "0061736d01000000000a086369632e74657374aa", WASM_RAW.hex()
+assert hashlib.sha256(WASM_EXEC).hexdigest() == "93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476"
+MANIFEST = b"name: cic-module-test\nversion: 0.1.0\ncapability_manifest:\n  egress: []\nabi:\n  operations: [observe]\n"
+
+
+def make_env(alg):
+    return {"kind": "ModuleReleaseEnvelope", "envelope_version": 1, "module_id": "cic-module-test@0.1.0", "wasm_sha256": sha(WASM_RAW),
+            "executed_wasm_sha256": sha(WASM_EXEC), "manifest_digest": sha(MANIFEST), "signer": {"key_id": KEY_ID[alg], "alg": alg}}
+
+
+def reference_verify(case):
+    """Reference admission steps for the envelope (V1, V2, V4, V5 of 01-162). Returns None (accept) or an error code."""
+    env = case["envelope"]
+    if env.get("envelope_version") != 1:
+        return "ENVELOPE_VERSION"
+    try:
+        signed = envelope_signed_bytes(env)
+        parse_signed_bytes(signed)
+    except Exception:
+        return "ENVELOPE_INVALID"
+    alg = env["signer"]["alg"]
+    pub = base64.b64decode(case["signer_spki_b64"])
+    pk = serialization.load_der_public_key(pub)
+    is_ec = isinstance(pk, ec.EllipticCurvePublicKey)
+    if (alg == "ecdsa-p256-sha256") != is_ec or (alg == "ed25519") != isinstance(pk, ed25519.Ed25519PublicKey):
+        return "ALG_MISMATCH"
+    if env["signer"]["key_id"] != sha(pub):
+        return "KEY_MISMATCH"
+    sf = case["signature_file"]
+    if not sf.endswith("\n") or "\n" in sf[:-1] or " " in sf or "\r" in sf:
+        return "SIG_ENCODING"
+    try:
+        sig = base64.b64decode(sf[:-1], validate=True)
+        if base64.b64encode(sig).decode() != sf[:-1]:
+            return "SIG_ENCODING"
+    except Exception:
+        return "SIG_ENCODING"
+    try:
+        if alg == "ecdsa-p256-sha256":
+            pk.verify(sig, signed, ec.ECDSA(hashes.SHA256()))
+        else:
+            pk.verify(sig, signed)
+    except InvalidSignature:
+        return "SIGNATURE_INVALID"
+    raw, exe, man = (base64.b64decode(case["artifacts"][k]) for k in ("wasm_raw_b64", "wasm_executed_b64", "manifest_raw_b64"))
+    if sha(raw) != env["wasm_sha256"]:
+        return "WASM_DIGEST_MISMATCH"
+    if sha(exe) != env["executed_wasm_sha256"]:
+        return "EXECUTED_DIGEST_MISMATCH"
+    if sha(man) != env["manifest_digest"]:
+        return "MANIFEST_DIGEST_MISMATCH"
+    return None
+
+
+def case(cid, desc, alg, expect, env_mut=None, sig_mut=None, art=None, key_alg=None, sign_env_mut=True):
+    env = make_env(alg)
+    signed_env = json.loads(json.dumps(env))
+    if env_mut:
+        env_mut(env)
+    # the signature always covers the ORIGINAL envelope unless sign_env_mut: that is what makes a tampered envelope detectable
+    signed = envelope_signed_bytes(env if sign_env_mut else signed_env)
+    sig = sign(alg, signed)
+    sf = b64(sig) + "\n"
+    if sig_mut:
+        sf = sig_mut(sf)
+    a = {"wasm_raw_b64": b64(WASM_RAW), "wasm_executed_b64": b64(WASM_EXEC), "manifest_raw_b64": b64(MANIFEST)}
+    if art:
+        a.update(art)
+    k = key_alg or alg
+    return {"id": cid, "description": desc, "envelope": env, "signature_file": sf, "signer_spki_b64": b64(KEYS[k][1]), "artifacts": a, "expect": expect}
+
+
+def flip(s, i=3):
+    return s[:i] + ("A" if s[i] != "A" else "B") + s[i + 1:]
+
+
+def bad_env(**kw):
+    def m(e):
+        for k, v in kw.items():
+            if k == "key_id":
+                e["signer"]["key_id"] = v
+            elif k == "alg":
+                e["signer"]["alg"] = v
+            else:
+                e[k] = v
+    return m
+
+
+cases = []
+for alg in ("ecdsa-p256-sha256", "ed25519"):
+    t = alg.split("-")[0]
+    cases += [
+        case(f"{t}-valid", "valid envelope, artifacts match", alg, None),
+        case(f"{t}-wasm-raw-modified", "the raw artifact differs from the signed digest", alg, "WASM_DIGEST_MISMATCH", art={"wasm_raw_b64": b64(WASM_RAW + b"\x00\x00")}),
+        case(f"{t}-executed-representation-differs", "the executed representation differs from the signed executed digest", alg, "EXECUTED_DIGEST_MISMATCH", art={"wasm_executed_b64": b64(WASM_RAW)}),
+        case(f"{t}-manifest-modified", "one byte of the manifest changed after signing", alg, "MANIFEST_DIGEST_MISMATCH", art={"manifest_raw_b64": b64(MANIFEST.replace(b"egress: []", b"egress: [*]"))}),
+        case(f"{t}-envelope-field-tampered", "the envelope's executed digest was edited after signing (signature covers the original)", alg, "SIGNATURE_INVALID", env_mut=bad_env(executed_wasm_sha256=sha(b"other")), sign_env_mut=False),
+        case(f"{t}-signature-bit-flipped", "one character of the signature changed", alg, "SIGNATURE_INVALID", sig_mut=lambda s: flip(s)),
+        case(f"{t}-signature-with-whitespace", "signature file contains a space", alg, "SIG_ENCODING", sig_mut=lambda s: s[:10] + " " + s[10:]),
+        case(f"{t}-signature-without-final-lf", "signature file has no final LF", alg, "SIG_ENCODING", sig_mut=lambda s: s[:-1]),
+        case(f"{t}-signature-two-lines", "signature file spans two lines", alg, "SIG_ENCODING", sig_mut=lambda s: s[:10] + "\n" + s[10:]),
+        case(f"{t}-key-id-of-another-key", "key_id does not derive from the presented SPKI", alg, "KEY_MISMATCH", env_mut=bad_env(key_id=sha(b"someone else"))),
+        case(f"{t}-unknown-envelope-version", "envelope_version 2", alg, "ENVELOPE_VERSION", env_mut=bad_env(envelope_version=2)),
+    ]
+cases += [
+    case("alg-declares-ed25519-but-key-is-ecdsa", "the declared algorithm does not match the certificate key type", "ed25519", "ALG_MISMATCH", key_alg="ecdsa-p256-sha256"),
+    case("alg-declares-ecdsa-but-key-is-ed25519", "the declared algorithm does not match the certificate key type", "ecdsa-p256-sha256", "ALG_MISMATCH", key_alg="ed25519"),
+    case("alg-not-in-allowlist", "algorithm outside the allowlist", "ed25519", "ENVELOPE_INVALID", env_mut=bad_env(alg="rsa-pkcs1-sha1")),
+    case("malformed-wasm-digest-form", "an uppercase hex digest in the signed domain", "ed25519", "ENVELOPE_INVALID", env_mut=bad_env(wasm_sha256=sha(WASM_RAW).upper().replace("SHA256:", "sha256:"))),
+]
+bad = []
+for c in cases:
+    got = reference_verify(c)
+    if got != c["expect"]:
+        bad.append((c["id"], c["expect"], got))
+assert not bad, bad
+
+envelope_vectors = {
+    "kind": "O1ConformanceVectors/envelope", "version": 1, "status": "PROVISIONAL (WP-00 correction proposal; generated by the Python reference, verified by the Go implementation; not normative until owner review)",
+    "keys": "TEST ONLY: public test constants; the keys sign nothing real", "signed_domain": "CICMODENVv1",
+    "key_ids": KEY_ID, "wasm_canon": "wasm-canon/v1", "wasm_note": "WP-00 correction: wasm_executed_b64 is the measured output of the Relay stripWasmModuleFunc (github.com/tetratelabs/wabin v0.0.0-20230304001439-f6f874872834, wasm.CoreFeaturesV2, decode -> CustomSections=nil -> encode) on the well-formed raw module",
+    "correction_of": "envelope-vectors.json sha256:91f64b74b4e68853be2f0cad2ecf742b975913709ae4d438d95c89b7f19cab51",
+    "cases": cases,
+}
+(OUT / "envelope-vectors.wasm-canon-v1.json").write_text(json.dumps(envelope_vectors, indent=1, sort_keys=True))
+
+# ---- chain hash + host interactions + profile domain (independent of keys)
+ART, REJ = ns["ART"], ns["rej"]
+chain_cases = [{"id": "chain-ok", "artifact": ART, "expect_chain_hash": chain_hash(ART)},
+               {"id": "chain-rejected-before-load", "artifact": REJ, "expect_chain_hash": chain_hash(REJ)}]
+mut = json.loads(json.dumps(ART))
+mut["steps"][0]["executed"]["executed_digest"] = sha(b"x")
+chain_cases.append({"id": "chain-executed-digest-changed", "artifact": mut, "expect_chain_hash": chain_hash(mut), "must_differ_from": "chain-ok"})
+for c in chain_cases:
+    c["expect_hash_input_b64"] = b64(chain_bytes(c["artifact"]))
+HI0 = ns["HI"]
+HI1 = {**json.loads(json.dumps(HI0)), "interaction_id": "i-0002", "seq": 1, "decision": "denied", "code": "POLICY_METHOD", "method": "POST", "status": None, "response_body_sha256": None}
+hi_cases = [{"id": "interactions-two", "records": [HI0, HI1], "expect_digest": interactions_digest([HI0, HI1]), "expect_record_bytes_b64": [b64(record_bytes(r)) for r in (HI0, HI1)]},
+            {"id": "interactions-seq-gap", "records": [HI0, {**HI1, "seq": 2}], "expect_error": "SEQ_GAP_OR_ORDER"},
+            {"id": "interactions-order-swapped", "records": [HI1, HI0], "expect_error": "SEQ_GAP_OR_ORDER"}]
+raw_profile = json.dumps(ns["PROF"], sort_keys=True).encode()
+prof_cases = [{"id": "profile-domain", "profile_raw_b64": b64(raw_profile), "signer_key_id": KEY_ID["ed25519"], "signer_alg": "ed25519",
+               "expect_signed_bytes_b64": b64(profile_signed_bytes(raw_profile, KEY_ID["ed25519"], "ed25519"))}]
+(OUT / "chain-and-interaction-vectors.unchanged.json").write_text(json.dumps(
+    {"kind": "O1ConformanceVectors/chain-interactions-profile", "version": 1, "status": "PROVISIONAL (reference implementation only)",
+     "chain_cases": chain_cases, "interaction_cases": hi_cases, "profile_cases": prof_cases}, indent=1, sort_keys=True))
+print(f"envelope vectors: {len(cases)} (all match the reference verifier); chain: {len(chain_cases)}; interactions: {len(hi_cases)}; profile: {len(prof_cases)}")
+print("key ids:", {k: v[:23] + '...' for k, v in KEY_ID.items()})

@@ -1,0 +1,76 @@
+# Fault injection for the O-1 WP-00 negative tests: each fault disables one named check (or
+# corrupts one expectation) in a COPY of the repository and runs the O-1 tests; the log shows
+# which test fails and with which got/want code. usage: fault_inject.py <relay-src> <work-copy> <gorun.sh> <log>
+import hashlib, json, pathlib, re, shutil, subprocess, sys
+SRC, WORK, GORUN, LOG = map(pathlib.Path, sys.argv[1:5])
+T = "core/cabinet/o1_vectors_test.go"
+V = "core/cabinet/testdata/o1-vectors/envelope-vectors.json"
+if WORK.exists():
+    subprocess.run(["chmod", "-R", "u+w", str(WORK)])
+    shutil.rmtree(WORK)
+shutil.copytree(SRC, WORK, ignore=shutil.ignore_patterns(".git"))
+pristine_t = (SRC / T).read_text()
+pristine_v = (SRC / V).read_bytes()
+
+def sub(old, new, count=None):
+    def f(s):
+        n = s.count(old)
+        assert n and (count is None or n == count), (old, n)
+        return s.replace(old, new)
+    return f
+
+def swap_expect(case_id, new_code):
+    def f(s):
+        d = json.loads(pristine_v)
+        for c in d["cases"]:
+            if c["id"] == case_id:
+                c["expect"] = new_code
+        b = json.dumps(d, indent=1, sort_keys=True).encode()
+        (WORK / V).write_bytes(b)
+        return s.replace("91f64b74b4e68853be2f0cad2ecf742b975913709ae4d438d95c89b7f19cab51", hashlib.sha256(b).hexdigest())
+    return f
+
+FAULTS = [
+    ("F01 version check disabled", sub("return codeEnvelopeVersion", "_ = codeEnvelopeVersion", 1), "unknown-envelope-version -> must not be accepted"),
+    ("F02 envelope form (parser) disabled", sub("return codeEnvelopeInvalid", "_ = codeEnvelopeInvalid", 3), "alg-not-in-allowlist, malformed-wasm-digest-form"),
+    ("F03 parser DIGEST_FORM only", sub('return nil, errors.New("DIGEST_FORM")', '_ = errors.New("DIGEST_FORM")', 1), "malformed-wasm-digest-form"),
+    ("F04 parser ALG only", sub('return nil, errors.New("ALG")', '_ = errors.New("ALG")', 1), "alg-not-in-allowlist"),
+    ("F05 alg<->key type disabled", sub("return codeAlgMismatch", "_ = codeAlgMismatch", 1), "alg-declares-*"),
+    ("F06 P-256 curve strictness removed", sub("isP256 := isEC && ecKey.Curve == elliptic.P256()", "isP256 := isEC", 1), "TestO1ECDSAOtherCurveIsAlgMismatch"),
+    ("F07 key_id check disabled", sub("return codeKeyMismatch", "_ = codeKeyMismatch", 1), "key-id-of-another-key"),
+    ("F08 signature encoding checks disabled", sub("return codeSigEncoding", "_ = codeSigEncoding", 3), "signature-with-whitespace / without-final-lf / two-lines"),
+    ("F09 signature verification disabled", sub("return codeSignatureInvalid", "_ = codeSignatureInvalid", 2), "envelope-field-tampered, signature-bit-flipped, fresh ECDSA negative"),
+    ("F10 raw digest check disabled", sub("return codeWasmDigestMismatch", "_ = codeWasmDigestMismatch", 1), "wasm-raw-modified"),
+    ("F11 executed digest check disabled", sub("return codeExecutedDigestMismatch", "_ = codeExecutedDigestMismatch", 1), "executed-representation-differs"),
+    ("F12 manifest digest check disabled", sub("return codeManifestDigestMismatch", "_ = codeManifestDigestMismatch", 1), "manifest-modified"),
+    ("F13 expected code swapped in the corpus (KEY_MISMATCH -> SIGNATURE_INVALID), pin updated", swap_expect("ed25519-key-id-of-another-key", "SIGNATURE_INVALID"), "the harness compares the code, not only the rejection"),
+    ("F14 CR/LF value rejection disabled", sub('if strings.ContainsAny(s, "\\r\\n") {\n\t\treturn "", errBadValue', 'if false {\n\t\treturn "", errBadValue', 1), "TestO1ChainRejectsBadValues, TestO1HostInteractionVectors"),
+    ("F15 non-ASCII value rejection disabled", sub('if s[i] > 0x7f {\n\t\t\treturn "", errBadValue', 'if false {\n\t\t\treturn "", errBadValue', 1), "TestO1ChainRejectsBadValues (poc.obsérve)"),
+    ("F16 seq contiguity check disabled", sub("err != nil || s != int64(i) {", "err != nil || (s != int64(i) && false) {", 1), "interactions-seq-gap / interactions-order-swapped"),
+    ("F17 chain domain: rejection=absent spelled differently", sub('".rejection=absent"', '".rejection=none"', 1), "chain-ok hash input"),
+    ("F18 transformation swapped to byte-level strip (test-copy init)", lambda s: s + "\nfunc init() { stripWasmModuleFunc = o1ByteLevelStrip }\n", "TestO1WasmCanonV1Measurement M4/M5, TestO1OriginalVectorExecutedIsNotWasmCanonV1"),
+    ("F19 Ed25519 test seed changed", sub("seed[i] = byte(i)", "seed[i] = byte(i + 1)", 1), "TestO1Ed25519SignaturesReproduceByteForByte, TestO1TestKeysDeriveTheVectorKeyIDs"),
+]
+
+out = []
+def run(label):
+    r = subprocess.run([str(GORUN), str(WORK), "go test -count=1 -run TestO1 -v ./core/cabinet/ 2>&1"], capture_output=True, text=True)
+    txt = r.stdout + r.stderr
+    keep = [l for l in txt.splitlines() if re.search(r"--- FAIL|Error:|got \"|expected|actual|does not contain|Should|^(ok|FAIL)\s|matched with the expected code|Messages:", l)]
+    return r.returncode, keep
+
+rc, keep = run("baseline")
+out.append("== BASELINE (no fault) rc=%d" % rc)
+out += keep
+for name, mut, expect in FAULTS:
+    (WORK / T).write_text(pristine_t)
+    (WORK / V).write_bytes(pristine_v)
+    (WORK / T).write_text(mut(pristine_t))
+    rc, keep = run(name)
+    out.append("")
+    out.append("== %s  (expected to break: %s) rc=%d" % (name, expect, rc))
+    out += keep
+(WORK / T).write_text(pristine_t)
+(WORK / V).write_bytes(pristine_v)
+LOG.write_text("\n".join(out) + "\n")
+print("\n".join(l for l in out if l.startswith("==")))

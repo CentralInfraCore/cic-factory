@@ -1,0 +1,640 @@
+{
+ "cases": [
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "valid envelope, artifacts match",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ecdsa-p256-sha256",
+     "key_id": "sha256:655f81102f6c605d49f960dc47e94cb5fee70e98fcad4bb068e34bd76afcbfa0"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": null,
+   "id": "ecdsa-valid",
+   "signature_file": "MEUCIQCSoO0fEMIKk7QW2I9KH00P2R8nEX6pKEEXKbDSzlhMpgIgT0hXARqf4kduAox2GG4S6LrKC2SUvQScWhMb9dKm2WM=\n",
+   "signer_spki_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzb8QaQxYs585BmPebMsmsF8zZQKjqWvRz+HhTlCc7J06xGXD7ZPshSEw8YrALEXA/kSpu+Tgc7AHALnTVcSc6Q=="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKoAAA=="
+   },
+   "description": "the raw artifact differs from the signed digest",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ecdsa-p256-sha256",
+     "key_id": "sha256:655f81102f6c605d49f960dc47e94cb5fee70e98fcad4bb068e34bd76afcbfa0"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "WASM_DIGEST_MISMATCH",
+   "id": "ecdsa-wasm-raw-modified",
+   "signature_file": "MEYCIQD3Tr1HBsFS8rM5rSiS8g0ekMTRMgYc+rmtZfVlTOZeHwIhAK1fzOs1LKnzDeVgmfulaJUGrSnNBWV5fianI5f+Tw1y\n",
+   "signer_spki_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzb8QaQxYs585BmPebMsmsF8zZQKjqWvRz+HhTlCc7J06xGXD7ZPshSEw8YrALEXA/kSpu+Tgc7AHALnTVcSc6Q=="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAAACghjaWMudGVzdKo=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "the executed representation differs from the signed executed digest",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ecdsa-p256-sha256",
+     "key_id": "sha256:655f81102f6c605d49f960dc47e94cb5fee70e98fcad4bb068e34bd76afcbfa0"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "EXECUTED_DIGEST_MISMATCH",
+   "id": "ecdsa-executed-representation-differs",
+   "signature_file": "MEQCICRpCkCq9DSAiP4689jNirkxUMPUTEU6YErqXqW6x06oAiAJeTWQjsCCjfL9XYf8t6MPKcFK/WEINwySbcV3+N4V1Q==\n",
+   "signer_spki_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzb8QaQxYs585BmPebMsmsF8zZQKjqWvRz+HhTlCc7J06xGXD7ZPshSEw8YrALEXA/kSpu+Tgc7AHALnTVcSc6Q=="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbKl0KYWJpOgogIG9wZXJhdGlvbnM6IFtvYnNlcnZlXQo=",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "one byte of the manifest changed after signing",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ecdsa-p256-sha256",
+     "key_id": "sha256:655f81102f6c605d49f960dc47e94cb5fee70e98fcad4bb068e34bd76afcbfa0"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "MANIFEST_DIGEST_MISMATCH",
+   "id": "ecdsa-manifest-modified",
+   "signature_file": "MEQCIFf9HI9x5ZY1MQtZhVfGOIT9hgGBUYDNS61RdEY4sn5sAiA8JC3oEtT8jZCWyqnYtqzMu++0oLrIdd+K5u/GtGEEQw==\n",
+   "signer_spki_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzb8QaQxYs585BmPebMsmsF8zZQKjqWvRz+HhTlCc7J06xGXD7ZPshSEw8YrALEXA/kSpu+Tgc7AHALnTVcSc6Q=="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "the envelope's executed digest was edited after signing (signature covers the original)",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ecdsa-p256-sha256",
+     "key_id": "sha256:655f81102f6c605d49f960dc47e94cb5fee70e98fcad4bb068e34bd76afcbfa0"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "SIGNATURE_INVALID",
+   "id": "ecdsa-envelope-field-tampered",
+   "signature_file": "MEUCIQCkiAafHsRsro4tq87Ihclsby/Lb4WwTMDxLeUi0nLa0QIgJG4jxeEk2gJKTCousZfR2M2Qnng4rDxdkrl6xpdeezY=\n",
+   "signer_spki_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzb8QaQxYs585BmPebMsmsF8zZQKjqWvRz+HhTlCc7J06xGXD7ZPshSEw8YrALEXA/kSpu+Tgc7AHALnTVcSc6Q=="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "one character of the signature changed",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ecdsa-p256-sha256",
+     "key_id": "sha256:655f81102f6c605d49f960dc47e94cb5fee70e98fcad4bb068e34bd76afcbfa0"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "SIGNATURE_INVALID",
+   "id": "ecdsa-signature-bit-flipped",
+   "signature_file": "MEUAIEsyRBVSfL4ymf9zMYOkRkoHPOv5kK1Y+DXIxBNx53kSAiEAtWQahnrVYKIo451AYz279GE08Nrog1iiMn/03/Uss6o=\n",
+   "signer_spki_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzb8QaQxYs585BmPebMsmsF8zZQKjqWvRz+HhTlCc7J06xGXD7ZPshSEw8YrALEXA/kSpu+Tgc7AHALnTVcSc6Q=="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "signature file contains a space",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ecdsa-p256-sha256",
+     "key_id": "sha256:655f81102f6c605d49f960dc47e94cb5fee70e98fcad4bb068e34bd76afcbfa0"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "SIG_ENCODING",
+   "id": "ecdsa-signature-with-whitespace",
+   "signature_file": "MEUCIQD2kA rJn7BtfH7xj6ziYAUqY+Zao1Zr870bynue6IU3hgIgUC5X+051IK6FAHFHr0vmWrYSpLhO7XzpVktDCyXWej4=\n",
+   "signer_spki_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzb8QaQxYs585BmPebMsmsF8zZQKjqWvRz+HhTlCc7J06xGXD7ZPshSEw8YrALEXA/kSpu+Tgc7AHALnTVcSc6Q=="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "signature file has no final LF",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ecdsa-p256-sha256",
+     "key_id": "sha256:655f81102f6c605d49f960dc47e94cb5fee70e98fcad4bb068e34bd76afcbfa0"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "SIG_ENCODING",
+   "id": "ecdsa-signature-without-final-lf",
+   "signature_file": "MEQCIGjctFbcaSEAIPCcRwaq6PPM2Yrxa+UFZcHz6qrSqjt4AiA+AR9QPVaUdqNuKljsHZB7jCdareyLzd4zi3JALpnLdg==",
+   "signer_spki_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzb8QaQxYs585BmPebMsmsF8zZQKjqWvRz+HhTlCc7J06xGXD7ZPshSEw8YrALEXA/kSpu+Tgc7AHALnTVcSc6Q=="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "signature file spans two lines",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ecdsa-p256-sha256",
+     "key_id": "sha256:655f81102f6c605d49f960dc47e94cb5fee70e98fcad4bb068e34bd76afcbfa0"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "SIG_ENCODING",
+   "id": "ecdsa-signature-two-lines",
+   "signature_file": "MEQCIA+d6D\ndtXSSYVvvHk2S9dosvqOJO7i8Qmr6PZj0OSCjbAiBwnY+MAXjIY7Nhc3VXs6v9bqhKn1jWIzk428KUffbsqg==\n",
+   "signer_spki_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzb8QaQxYs585BmPebMsmsF8zZQKjqWvRz+HhTlCc7J06xGXD7ZPshSEw8YrALEXA/kSpu+Tgc7AHALnTVcSc6Q=="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "key_id does not derive from the presented SPKI",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ecdsa-p256-sha256",
+     "key_id": "sha256:8e5966554908cc04840d0975ab4d5870643b1649f85e7267f6b732a7a0bef383"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "KEY_MISMATCH",
+   "id": "ecdsa-key-id-of-another-key",
+   "signature_file": "MEYCIQCdAsC+IIUEs8wl5X7cTICpZZO48MQdTHY2QwITChD1BQIhAIHo7fZ8KE7Mg/C6eSRn5/z5JYR8VxcTvxAMtvr7uRq/\n",
+   "signer_spki_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzb8QaQxYs585BmPebMsmsF8zZQKjqWvRz+HhTlCc7J06xGXD7ZPshSEw8YrALEXA/kSpu+Tgc7AHALnTVcSc6Q=="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "envelope_version 2",
+   "envelope": {
+    "envelope_version": 2,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ecdsa-p256-sha256",
+     "key_id": "sha256:655f81102f6c605d49f960dc47e94cb5fee70e98fcad4bb068e34bd76afcbfa0"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "ENVELOPE_VERSION",
+   "id": "ecdsa-unknown-envelope-version",
+   "signature_file": "MEUCIDaw7YuiPsK793pTA+bnnViWdzbfXoowuq0N8CB9bw4VAiEA5DVSTBP6iFPBF8RM1iY03SG+yHiylq/+CtNLfeS4sPQ=\n",
+   "signer_spki_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzb8QaQxYs585BmPebMsmsF8zZQKjqWvRz+HhTlCc7J06xGXD7ZPshSEw8YrALEXA/kSpu+Tgc7AHALnTVcSc6Q=="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "valid envelope, artifacts match",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ed25519",
+     "key_id": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": null,
+   "id": "ed25519-valid",
+   "signature_file": "/WtXY7KusCfZq62d+osKrNqeyCWZrwwMjiD6KYL5RU6rBRFRXeOWcOORd06QUV0Cb/8VdBWn0x+WD01Nk+B2BQ==\n",
+   "signer_spki_b64": "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKoAAA=="
+   },
+   "description": "the raw artifact differs from the signed digest",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ed25519",
+     "key_id": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "WASM_DIGEST_MISMATCH",
+   "id": "ed25519-wasm-raw-modified",
+   "signature_file": "/WtXY7KusCfZq62d+osKrNqeyCWZrwwMjiD6KYL5RU6rBRFRXeOWcOORd06QUV0Cb/8VdBWn0x+WD01Nk+B2BQ==\n",
+   "signer_spki_b64": "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAAACghjaWMudGVzdKo=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "the executed representation differs from the signed executed digest",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ed25519",
+     "key_id": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "EXECUTED_DIGEST_MISMATCH",
+   "id": "ed25519-executed-representation-differs",
+   "signature_file": "/WtXY7KusCfZq62d+osKrNqeyCWZrwwMjiD6KYL5RU6rBRFRXeOWcOORd06QUV0Cb/8VdBWn0x+WD01Nk+B2BQ==\n",
+   "signer_spki_b64": "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbKl0KYWJpOgogIG9wZXJhdGlvbnM6IFtvYnNlcnZlXQo=",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "one byte of the manifest changed after signing",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ed25519",
+     "key_id": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "MANIFEST_DIGEST_MISMATCH",
+   "id": "ed25519-manifest-modified",
+   "signature_file": "/WtXY7KusCfZq62d+osKrNqeyCWZrwwMjiD6KYL5RU6rBRFRXeOWcOORd06QUV0Cb/8VdBWn0x+WD01Nk+B2BQ==\n",
+   "signer_spki_b64": "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "the envelope's executed digest was edited after signing (signature covers the original)",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ed25519",
+     "key_id": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "SIGNATURE_INVALID",
+   "id": "ed25519-envelope-field-tampered",
+   "signature_file": "/WtXY7KusCfZq62d+osKrNqeyCWZrwwMjiD6KYL5RU6rBRFRXeOWcOORd06QUV0Cb/8VdBWn0x+WD01Nk+B2BQ==\n",
+   "signer_spki_b64": "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "one character of the signature changed",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ed25519",
+     "key_id": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "SIGNATURE_INVALID",
+   "id": "ed25519-signature-bit-flipped",
+   "signature_file": "/WtAY7KusCfZq62d+osKrNqeyCWZrwwMjiD6KYL5RU6rBRFRXeOWcOORd06QUV0Cb/8VdBWn0x+WD01Nk+B2BQ==\n",
+   "signer_spki_b64": "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "signature file contains a space",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ed25519",
+     "key_id": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "SIG_ENCODING",
+   "id": "ed25519-signature-with-whitespace",
+   "signature_file": "/WtXY7KusC fZq62d+osKrNqeyCWZrwwMjiD6KYL5RU6rBRFRXeOWcOORd06QUV0Cb/8VdBWn0x+WD01Nk+B2BQ==\n",
+   "signer_spki_b64": "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "signature file has no final LF",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ed25519",
+     "key_id": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "SIG_ENCODING",
+   "id": "ed25519-signature-without-final-lf",
+   "signature_file": "/WtXY7KusCfZq62d+osKrNqeyCWZrwwMjiD6KYL5RU6rBRFRXeOWcOORd06QUV0Cb/8VdBWn0x+WD01Nk+B2BQ==",
+   "signer_spki_b64": "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "signature file spans two lines",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ed25519",
+     "key_id": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "SIG_ENCODING",
+   "id": "ed25519-signature-two-lines",
+   "signature_file": "/WtXY7KusC\nfZq62d+osKrNqeyCWZrwwMjiD6KYL5RU6rBRFRXeOWcOORd06QUV0Cb/8VdBWn0x+WD01Nk+B2BQ==\n",
+   "signer_spki_b64": "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "key_id does not derive from the presented SPKI",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ed25519",
+     "key_id": "sha256:8e5966554908cc04840d0975ab4d5870643b1649f85e7267f6b732a7a0bef383"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "KEY_MISMATCH",
+   "id": "ed25519-key-id-of-another-key",
+   "signature_file": "0565QE6YnxuKstNlZXsODRVvioOteZrtvt8p/VcS/nHMjqyT0TE9+W+gV8hWfIqFyzrk4TE/2as42EQsmn4pBA==\n",
+   "signer_spki_b64": "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "envelope_version 2",
+   "envelope": {
+    "envelope_version": 2,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ed25519",
+     "key_id": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "ENVELOPE_VERSION",
+   "id": "ed25519-unknown-envelope-version",
+   "signature_file": "/WtXY7KusCfZq62d+osKrNqeyCWZrwwMjiD6KYL5RU6rBRFRXeOWcOORd06QUV0Cb/8VdBWn0x+WD01Nk+B2BQ==\n",
+   "signer_spki_b64": "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "the declared algorithm does not match the certificate key type",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ed25519",
+     "key_id": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "ALG_MISMATCH",
+   "id": "alg-declares-ed25519-but-key-is-ecdsa",
+   "signature_file": "/WtXY7KusCfZq62d+osKrNqeyCWZrwwMjiD6KYL5RU6rBRFRXeOWcOORd06QUV0Cb/8VdBWn0x+WD01Nk+B2BQ==\n",
+   "signer_spki_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzb8QaQxYs585BmPebMsmsF8zZQKjqWvRz+HhTlCc7J06xGXD7ZPshSEw8YrALEXA/kSpu+Tgc7AHALnTVcSc6Q=="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "the declared algorithm does not match the certificate key type",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ecdsa-p256-sha256",
+     "key_id": "sha256:655f81102f6c605d49f960dc47e94cb5fee70e98fcad4bb068e34bd76afcbfa0"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "ALG_MISMATCH",
+   "id": "alg-declares-ecdsa-but-key-is-ed25519",
+   "signature_file": "MEYCIQD7NCREcAyF22QcBfXqZYp83+UYabXZCEi1vWQZ4ZK0EwIhAJA/H0LQP9s1Ko4qJq09HbZnrbOWvjr+Z7XmU3m+vViu\n",
+   "signer_spki_b64": "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "algorithm outside the allowlist",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "rsa-pkcs1-sha1",
+     "key_id": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+    },
+    "wasm_sha256": "sha256:b6ffd6e226e752b0b115b83dd75ff6821bf3079df3d9d07c1ba9e634c786d6e2"
+   },
+   "expect": "ENVELOPE_INVALID",
+   "id": "alg-not-in-allowlist",
+   "signature_file": "a6sRmqpiI8hMtbbGPhL8jcizUzUjqhC8vjQXpVwrcagSgMIAdoRhVAWfvltWI4q/ymeAyGEkaj/0sU26zQhDAw==\n",
+   "signer_spki_b64": "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  },
+  {
+   "artifacts": {
+    "manifest_raw_b64": "bmFtZTogY2ljLW1vZHVsZS10ZXN0CnZlcnNpb246IDAuMS4wCmNhcGFiaWxpdHlfbWFuaWZlc3Q6CiAgZWdyZXNzOiBbXQphYmk6CiAgb3BlcmF0aW9uczogW29ic2VydmVdCg==",
+    "wasm_executed_b64": "AGFzbQEAAAA=",
+    "wasm_raw_b64": "AGFzbQEAAAAACghjaWMudGVzdKo="
+   },
+   "description": "an uppercase hex digest in the signed domain",
+   "envelope": {
+    "envelope_version": 1,
+    "executed_wasm_sha256": "sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "kind": "ModuleReleaseEnvelope",
+    "manifest_digest": "sha256:03d93a33e3ffeeda12febc3fdeb914b1a4c629d307c30dfd3649006addf7d4b3",
+    "module_id": "cic-module-test@0.1.0",
+    "signer": {
+     "alg": "ed25519",
+     "key_id": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+    },
+    "wasm_sha256": "sha256:B6FFD6E226E752B0B115B83DD75FF6821BF3079DF3D9D07C1BA9E634C786D6E2"
+   },
+   "expect": "ENVELOPE_INVALID",
+   "id": "malformed-wasm-digest-form",
+   "signature_file": "IyjDDpzUReZZzWbV2RhK0mlWzbOld7Cpv5olktOZEq4A/3TMLn+pjHhadgZv3DN551w8RG1v92oafiC+TC08Bw==\n",
+   "signer_spki_b64": "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  }
+ ],
+ "correction_of": "envelope-vectors.json sha256:91f64b74b4e68853be2f0cad2ecf742b975913709ae4d438d95c89b7f19cab51",
+ "key_ids": {
+  "ecdsa-p256-sha256": "sha256:655f81102f6c605d49f960dc47e94cb5fee70e98fcad4bb068e34bd76afcbfa0",
+  "ed25519": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+ },
+ "keys": "TEST ONLY: public test constants; the keys sign nothing real",
+ "kind": "O1ConformanceVectors/envelope",
+ "signed_domain": "CICMODENVv1",
+ "status": "PROVISIONAL (WP-00 correction proposal; generated by the Python reference, verified by the Go implementation; not normative until owner review)",
+ "version": 1,
+ "wasm_canon": "wasm-canon/v1",
+ "wasm_note": "WP-00 correction: wasm_executed_b64 is the measured output of the Relay stripWasmModuleFunc (github.com/tetratelabs/wabin v0.0.0-20230304001439-f6f874872834, wasm.CoreFeaturesV2, decode -> CustomSections=nil -> encode) on the well-formed raw module"
+}

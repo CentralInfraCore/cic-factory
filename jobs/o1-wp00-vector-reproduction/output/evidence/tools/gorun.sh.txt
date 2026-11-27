@@ -1,0 +1,6 @@
+#!/bin/sh
+# usage: gorun.sh <repo-dir> <cmd...>   (Go 1.26.11 in docker; caches on /home)
+J=/home/sinkog/.cache/o6/wt-factory/jobs/o1-wp00-vector-reproduction
+R="$1"; shift
+exec docker run --rm -u $(id -u):$(id -g) -e HOME=/tmp -e GOTOOLCHAIN=local -e GOCACHE=/gocache -e GOMODCACHE=/gomod -e GOFLAGS=-mod=readonly \
+  -v $J/gocache:/gocache -v $J/gomod:/gomod -v "$R":/src -w /src golang:1.26.11 sh -c "$*"
