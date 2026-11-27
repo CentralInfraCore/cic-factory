@@ -1,0 +1,7 @@
+{
+ "artifact_chain_hash": "sha256:abababababababababababababababababababababababababababababababab",
+ "persisted": false,
+ "recorder": "git-state-recorder",
+ "commit": "abc123",
+ "error_code": "x"
+}

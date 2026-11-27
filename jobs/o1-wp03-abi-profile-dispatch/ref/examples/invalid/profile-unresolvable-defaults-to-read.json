@@ -1,0 +1,63 @@
+{
+ "kind": "AbiProfile",
+ "profile_version": 1,
+ "profile_id": "cic:provider@0.1.0",
+ "required_host_capabilities": [
+  "provider-http@1"
+ ],
+ "limits": {
+  "max_request_bytes": 1048576,
+  "max_response_bytes": 262144,
+  "timeout_ms": 30000
+ },
+ "operations": [
+  {
+   "name": "describe",
+   "host_boundary": "none",
+   "effect": "local",
+   "request_schema": {
+    "id": "cic:provider:describe-request",
+    "digest": "sha256:abababababababababababababababababababababababababababababababab"
+   },
+   "response_schema": {
+    "id": "cic:provider:module-manifest",
+    "digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+   }
+  },
+  {
+   "name": "observe",
+   "host_boundary": "sign+send",
+   "effect": "external-read",
+   "request_schema": {
+    "id": "cic:provider:observe-request",
+    "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
+   },
+   "response_schema": {
+    "id": "cic:provider:observation",
+    "digest": "sha256:1212121212121212121212121212121212121212121212121212121212121212"
+   }
+  },
+  {
+   "name": "invoke",
+   "host_boundary": "sign+send",
+   "effect": "contract-dependent",
+   "effect_resolution": {
+    "source": "request_field",
+    "field": "operation_role",
+    "map": {
+     "read": "external-read",
+     "action": "external-write"
+    },
+    "default": "external-read"
+   },
+   "request_schema": {
+    "id": "cic:provider:operation-request",
+    "digest": "sha256:3434343434343434343434343434343434343434343434343434343434343434"
+   },
+   "response_schema": {
+    "id": "cic:provider:operation-result",
+    "digest": "sha256:5656565656565656565656565656565656565656565656565656565656565656"
+   }
+  }
+ ]
+}

@@ -1,0 +1,26 @@
+schema_version: "1.0"
+job_id: "o1-wp04-sign-send"
+parent_job_id: ""
+level: "repo"
+target:
+  repo: "CIC_Relay"
+  path: ""
+kb_focus:
+  - "c781"
+  - "c912"
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-5"
+workplace:
+  repos:
+    - "cic-factory"
+    - "CIC_Relay"
+    - "cic-module-oracle-cloud"
+  branch: "feature/o1-wp04-sign-send"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-11-27T18:46:14Z"
+  started: ""
+  completed: ""

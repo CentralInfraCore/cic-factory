@@ -1,0 +1,25 @@
+schema_version: "1.0"
+job_id: "o1-wp01-envelope-producer"
+parent_job_id: ""
+level: "repo"
+target:
+  repo: "cic-module-oracle-cloud"
+  path: ""
+kb_focus:
+  - "c781"
+  - "c912"
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-sonnet-5"
+workplace:
+  repos:
+    - "cic-factory"
+    - "cic-module-oracle-cloud"
+  branch: "feature/o1-wp01-envelope-producer"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-11-27T18:46:14Z"
+  started: ""
+  completed: ""

@@ -1,0 +1,47 @@
+{
+ "kind": "ProofArtifact",
+ "version": "2.0",
+ "chain_version": "CICCHAINv2",
+ "workflow": {
+  "id": "poc.observe",
+  "source_digest": "git:86ea1ab"
+ },
+ "steps": [
+  {
+   "index": 0,
+   "name": "oracle@0.1.0.invoke(req) -> out",
+   "requested": {
+    "module_id": "cic-module-oracle-cloud@0.1.0",
+    "operation": "invoke",
+    "presented_artifact_digest": "sha256:abababababababababababababababababababababababababababababababab"
+   },
+   "outcome": {
+    "execution": "REJECTED",
+    "authorization": "DENIED"
+   },
+   "rejection": {
+    "phase": "policy",
+    "code": "POLICY_DENIED"
+   },
+   "input_digest": "sha256:abababababababababababababababababababababababababababababababab",
+   "output_digest": null,
+   "references": {
+    "execution_context": {
+     "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
+    },
+    "authorization_decision": {
+     "digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+    },
+    "host_interactions": {
+     "digest": "sha256:abababababababababababababababababababababababababababababababab",
+     "count": 0
+    }
+   }
+  }
+ ],
+ "outcome": {
+  "execution": "REJECTED",
+  "authorization": "DENIED"
+ },
+ "chain_hash": "sha256:e7dd7e29046b1db6480586fd7e20d237fc9b63f51cd7d696faa73f9e41ff2d8f"
+}

@@ -1,0 +1,15 @@
+{
+ "v": 1,
+ "outcome": "completed",
+ "interaction_id": "i-0001",
+ "interaction_digest": "sha256:abababababababababababababababababababababababababababababababab",
+ "http": {
+  "status": 200,
+  "headers": {
+   "etag": "x"
+  },
+  "body_base64": "e30=",
+  "body_sha256": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+ },
+ "signature": "abc"
+}

@@ -1,0 +1,6 @@
+{
+ "artifact_chain_hash": "sha256:abababababababababababababababababababababababababababababababab",
+ "persisted": false,
+ "recorder": "git-state-recorder",
+ "error_code": "recorder_unavailable"
+}

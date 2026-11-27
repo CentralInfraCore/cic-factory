@@ -1,0 +1,196 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "cic:o1:sign-send-response",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "v",
+  "outcome",
+  "interaction_id",
+  "interaction_digest"
+ ],
+ "properties": {
+  "v": {
+   "const": 1
+  },
+  "outcome": {
+   "enum": [
+    "completed",
+    "denied",
+    "failed"
+   ]
+  },
+  "interaction_id": {
+   "type": "string",
+   "pattern": "^i-[0-9]{4,}$"
+  },
+  "interaction_digest": {
+   "type": "string",
+   "pattern": "^sha256:[0-9a-f]{64}$"
+  },
+  "denial": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "code"
+   ],
+   "properties": {
+    "code": {
+     "enum": [
+      "POLICY_HOST",
+      "POLICY_PATH",
+      "POLICY_METHOD",
+      "POLICY_TARGET",
+      "POLICY_BINDING",
+      "HEADER_FORBIDDEN",
+      "BODY_TOO_LARGE",
+      "PROFILE_UNKNOWN",
+      "KEY_REF_UNAUTHORIZED",
+      "EGRESS_BLOCKED"
+     ]
+    },
+    "detail": {
+     "type": "string"
+    }
+   }
+  },
+  "failure": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "code"
+   ],
+   "properties": {
+    "code": {
+     "enum": [
+      "SIGNER_ERROR",
+      "TRANSPORT_ERROR",
+      "RESPONSE_TOO_LARGE",
+      "TIMEOUT"
+     ]
+    },
+    "detail": {
+     "type": "string"
+    }
+   }
+  },
+  "http": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "status",
+    "body_sha256"
+   ],
+   "properties": {
+    "status": {
+     "type": "integer",
+     "minimum": 100,
+     "maximum": 599
+    },
+    "headers": {
+     "type": "object",
+     "propertyNames": {
+      "pattern": "^[a-z0-9-]+$",
+      "not": {
+       "enum": [
+        "set-cookie",
+        "authorization",
+        "proxy-authenticate",
+        "www-authenticate",
+        "signature",
+        "x-content-sha256"
+       ]
+      }
+     },
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "body_base64": {
+     "type": "string"
+    },
+    "body_sha256": {
+     "type": "string",
+     "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+   }
+  }
+ },
+ "allOf": [
+  {
+   "if": {
+    "properties": {
+     "outcome": {
+      "const": "completed"
+     }
+    }
+   },
+   "then": {
+    "required": [
+     "http"
+    ],
+    "not": {
+     "anyOf": [
+      {
+       "required": [
+        "denial"
+       ]
+      },
+      {
+       "required": [
+        "failure"
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "outcome": {
+      "const": "denied"
+     }
+    }
+   },
+   "then": {
+    "required": [
+     "denial"
+    ],
+    "not": {
+     "anyOf": [
+      {
+       "required": [
+        "http"
+       ]
+      },
+      {
+       "required": [
+        "failure"
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "outcome": {
+      "const": "failed"
+     }
+    }
+   },
+   "then": {
+    "required": [
+     "failure"
+    ],
+    "not": {
+     "required": [
+      "denial"
+     ]
+    }
+   }
+  }
+ ]
+}

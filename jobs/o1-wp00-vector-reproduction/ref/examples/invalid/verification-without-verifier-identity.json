@@ -1,0 +1,15 @@
+{
+ "kind": "VerificationResult",
+ "artifact_version": "2.0",
+ "subject": {
+  "artifact_chain_hash": "sha256:abababababababababababababababababababababababababababababababab"
+ },
+ "dimensions": {
+  "execution": "SUCCEEDED",
+  "authorization": "ALLOWED",
+  "evidence": "PERSISTED",
+  "verification": "COMPLETE"
+ },
+ "evidence_verdict": "VERIFIED",
+ "acceptance": "NOT_EVALUATED"
+}

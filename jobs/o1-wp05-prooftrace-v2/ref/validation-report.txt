@@ -1,0 +1,110 @@
+schemas: 8 | examples: 67 (16 valid, 51 invalid) | as expected AND for the named reason: 67 | unexpected: 0
+example directory == labelled set: True (67 files)
+signed-bytes: key-order independent: True | every single-field change alters the bytes: True | bytes: 432 | envelope_digest: sha256:ae948ba7a92fc226...
+signed-domain parser: 13 cases, unexpected: 0, emit->parse->emit identical: True
+abi semantic checks: 10 cases, unexpected: 0
+profile signed domain: deterministic: True | any byte of the artifact changes it: True
+host-side target validation: 10 cases, unexpected: 0
+host-interaction list digest: 6 checks, unexpected: 0
+CICCHAINv2 canonical bytes: 11 checks, unexpected: 0
+   envelope-unknown-version                                       [envelope_version] -> 1 was expected
+   envelope-missing-manifest-digest                               [manifest_digest] -> 'manifest_digest' is a required property
+   envelope-missing-executed-wasm-digest                          [executed_wasm_sha256] -> 'executed_wasm_sha256' is a required property
+   envelope-extra-field                                           [capability_manifest] -> Additional properties are not allowed ('capability_manifest' was unexpected)
+   envelope-unknown-signature-algorithm                           [alg] -> 'rsa-pkcs1-sha1' is not one of ['ecdsa-p256-sha256', 'ed25519']
+   envelope-signer-without-alg                                    [alg] -> 'alg' is a required property
+   profile-unknown-effect                                         [effect] -> 'read-only' is not one of ['local', 'external-read', 'external-write', 'contract
+   profile-contract-dependent-without-resolution                  [effect_resolution] -> 'effect_resolution' is a required property
+   profile-local-boundary-with-external-effect                    [effect] -> 'local' was expected
+   profile-schema-ref-without-digest                              [digest] -> 'digest' is a required property
+   profile-unresolvable-defaults-to-read                          [default] -> 'external-write' was expected
+   profile-empty-effect-map                                       [map] -> {} should be non-empty
+   profile-zero-timeout                                           [timeout_ms] -> 0 is less than the minimum of 1
+   request-forbidden-header-authorization                         [authorization] -> 'authorization' should not be valid under {'enum': ['authorization', 'date', 'ho
+   request-forbidden-header-date                                  [date] -> 'date' should not be valid under {'enum': ['authorization', 'date', 'host', 'con
+   request-forbidden-header-x-content-sha256                      [x-content-sha256] -> 'x-content-sha256' should not be valid under {'enum': ['authorization', 'date', 
+   request-forbidden-header-host                                  [host] -> 'host' should not be valid under {'enum': ['authorization', 'date', 'host', 'con
+   request-guest-supplied-signature                               [signature] -> Additional properties are not allowed ('signature' was unexpected)
+   request-without-intent                                         [intent] -> 'intent' is a required property
+   request-without-binding-digest                                 [binding_digest] -> 'binding_digest' is a required property
+   request-query-in-path                                          [path] -> '/a?x=1' does not match '^/[^?#\\s]*$'
+   request-guest-supplied-limit                                   [timeout_ms] -> Additional properties are not allowed ('timeout_ms' was unexpected)
+   response-with-signature-field                                  [signature] -> Additional properties are not allowed ('signature' was unexpected)
+   response-with-authorization-header-field                       [authorization] -> Additional properties are not allowed ('authorization' was unexpected)
+   response-forbidden-header-set-cookie                           [set-cookie] -> 'set-cookie' should not be valid under {'enum': ['set-cookie', 'authorization', 
+   response-denied-but-carries-http                               [http] -> {'v': 1, 'outcome': 'denied', 'interaction_id': 'i-0001', 'interaction_digest': 
+   response-completed-without-http                                [http] -> 'http' is a required property
+   host-interaction-denied-with-status                            [status] -> 200 is not of type 'null'
+   host-interaction-allowed-with-code                             [code] -> 'POLICY_HOST' is not of type 'null'
+   host-interaction-missing-policy-digest                         [policy_digest] -> 'policy_digest' is a required property
+   prooftrace-v1-is-not-v2                                        [version] -> '2.0' was expected
+   prooftrace-v2-executed-missing-artifact-digest                 [artifact_digest] -> 'artifact_digest' is a required property
+   prooftrace-v2-executed-missing-executed-digest                 [executed_digest] -> 'executed_digest' is a required property
+   prooftrace-v2-profile-name-without-digest                      [digest] -> 'digest' is a required property
+   prooftrace-v2-authenticated-without-envelope-digest            [envelope_digest] -> None is not of type 'string'
+   prooftrace-v2-authorized-without-decision-reference            [authorization_decision] -> 'authorization_decision' is a required property
+   prooftrace-v2-interactions-without-digest                      [digest] -> 'digest' is a required property
+   prooftrace-v2-rejected-step-with-executed-identity             [executed] -> {'index': 0, 'name': 'oracle@0.1.0.invoke(req) -> out', 'requested': {'module_id
+   prooftrace-v2-rejected-without-rejection-record                [rejection] -> 'rejection' is a required property
+   prooftrace-v2-succeeded-without-executed-identity              [executed] -> 'executed' is a required property
+   prooftrace-v2-persistence-inside-hash-domain                   [persistence] -> Additional properties are not allowed ('persistence' was unexpected)
+   persistence-failed-with-commit                                 [commit] -> {'artifact_chain_hash': 'sha256:abababababababababababababababababababababababab
+   persistence-without-artifact-binding                           [artifact_chain_hash] -> 'artifact_chain_hash' is a required property
+   persistence-ok-without-attestation                             [attestation] -> 'attestation' is a required property
+   verification-accepted-but-authorization-denied                 [authorization] -> 'ALLOWED' was expected
+   verification-accepted-but-not-persisted                        [evidence] -> 'NOT_PERSISTED' is not one of ['PERSISTED', 'NOT_REQUIRED']
+   verification-accepted-with-unverified-evidence                 [evidence_verdict] -> 'VERIFIED' was expected
+   verification-verified-but-incomplete                           [verification] -> 'COMPLETE' was expected
+   verification-verified-with-unresolved-reference                [unresolved_references] -> {'kind': 'VerificationResult', 'artifact_version': '2.0', 'verifier': {'id': 'in
+   verification-without-verifier-identity                         [verifier] -> 'verifier' is a required property
+   verification-accepted-without-policy-digest                    [acceptance_policy_digest] -> 'acceptance_policy_digest' is a required property
+   signed-domain valid                          expected None               got None               OK
+   signed-domain crlf                           expected CR_PRESENT         got CR_PRESENT         OK
+   signed-domain no-final-lf                    expected NO_FINAL_LF        got NO_FINAL_LF        OK
+   signed-domain wrong-domain                   expected DOMAIN             got DOMAIN             OK
+   signed-domain duplicate-field                expected DUPLICATE          got DUPLICATE          OK
+   signed-domain unknown-field                  expected UNKNOWN_FIELD      got UNKNOWN_FIELD      OK
+   signed-domain missing-field                  expected MISSING_OR_ORDER   got MISSING_OR_ORDER   OK
+   signed-domain reordered                      expected ORDER              got ORDER              OK
+   signed-domain value-with-embedded-newline    expected UNKNOWN_FIELD      got UNKNOWN_FIELD      OK
+   signed-domain uppercase-hex                  expected DIGEST_FORM        got DIGEST_FORM        OK
+   signed-domain digest-without-prefix          expected DIGEST_FORM        got DIGEST_FORM        OK
+   signed-domain unknown-algorithm              expected ALG                got ALG                OK
+   signed-domain non-ascii                      expected NON_ASCII          got NON_ASCII          OK
+   abi-semantics profile-valid                              expected None                                   got None                                   OK
+   abi-semantics duplicate-operation-name                   expected DUPLICATE_OPERATION                    got DUPLICATE_OPERATION                    OK
+   abi-semantics schema-ref-unknown-id                      expected SCHEMA_REF_UNRESOLVED                  got SCHEMA_REF_UNRESOLVED                  OK
+   abi-semantics schema-ref-digest-mismatch                 expected SCHEMA_DIGEST_MISMATCH                 got SCHEMA_DIGEST_MISMATCH                 OK
+   abi-semantics effect-field-not-in-request-schema         expected EFFECT_FIELD_UNRESOLVABLE              got EFFECT_FIELD_UNRESOLVABLE              OK
+   abi-semantics effect-map-key-outside-field-domain        expected EFFECT_MAP_KEY_NOT_IN_FIELD_DOMAIN     got EFFECT_MAP_KEY_NOT_IN_FIELD_DOMAIN     OK
+   abi-semantics send-op-without-host-capability            expected HOST_CAPABILITY_INCONSISTENT           got HOST_CAPABILITY_INCONSISTENT           OK
+   abi-semantics capability-without-any-send-op             expected HOST_CAPABILITY_INCONSISTENT           got HOST_CAPABILITY_INCONSISTENT           OK
+   abi-semantics limit-above-operator-cap                   expected LIMIT_EXCEEDS_OPERATOR_CAP             got LIMIT_EXCEEDS_OPERATOR_CAP             OK
+   abi-semantics request-limit-above-operator-cap           expected LIMIT_EXCEEDS_OPERATOR_CAP             got LIMIT_EXCEEDS_OPERATOR_CAP             OK
+   target-validation target-valid                       expected None           got None           OK
+   target-validation host-outside-policy                expected POLICY_HOST    got POLICY_HOST    OK
+   target-validation write-method-in-observation        expected POLICY_METHOD  got POLICY_METHOD  OK
+   target-validation unknown-operation                  expected POLICY_TARGET  got POLICY_TARGET  OK
+   target-validation resource-not-bound                 expected POLICY_TARGET  got POLICY_TARGET  OK
+   target-validation binding-digest-differs             expected POLICY_BINDING got POLICY_BINDING OK
+   target-validation path-targets-other-resource        expected POLICY_PATH    got POLICY_PATH    OK
+   target-validation path-traversal                     expected POLICY_PATH    got POLICY_PATH    OK
+   target-validation encoded-traversal                  expected POLICY_PATH    got POLICY_PATH    OK
+   target-validation extra-query                        expected POLICY_PATH    got POLICY_PATH    OK
+   host-interactions digest-deterministic                       OK
+   host-interactions record-change-alters-digest                OK
+   host-interactions denied-record-is-included-in-count         OK
+   host-interactions seq-gap-rejected                           OK
+   host-interactions order-swapped-rejected                     OK
+   host-interactions newline-in-value-rejected                  OK
+   chain-hash chain-hash-matches-the-example                   OK
+   chain-hash chain-hash-ignores-the-chain_hash-field          OK
+   chain-hash chain-hash-key-order-independent                 OK
+   chain-hash module-digest-change-alters-the-hash             OK
+   chain-hash executed-digest-change-alters-the-hash           OK
+   chain-hash outcome-change-alters-the-hash                   OK
+   chain-hash step-name-change-alters-the-hash                 OK
+   chain-hash host-interactions-change-alters-the-hash         OK
+   chain-hash executed-group-removed-alters-the-hash           OK
+   chain-hash newline-in-value-rejected                        OK
+   chain-hash rejected-example-chain-hash-matches              OK

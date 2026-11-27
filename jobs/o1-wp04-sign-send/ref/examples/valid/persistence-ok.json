@@ -1,0 +1,11 @@
+{
+ "artifact_chain_hash": "sha256:abababababababababababababababababababababababababababababababab",
+ "persisted": true,
+ "recorder": "git-state-recorder",
+ "commit": "abc123",
+ "attestation": {
+  "kind": "git-signed-commit",
+  "signer_key_id": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+  "signature_digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+ }
+}

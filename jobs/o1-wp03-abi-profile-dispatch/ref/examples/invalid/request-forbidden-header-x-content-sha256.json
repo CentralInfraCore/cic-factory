@@ -1,0 +1,20 @@
+{
+ "v": 1,
+ "signing_profile": "http-signature:oci:draft-cavage@1",
+ "key_ref": "oci/default",
+ "request": {
+  "method": "GET",
+  "host": "iaas.eu-frankfurt-1.oraclecloud.com",
+  "path": "/20160918/vcns/ocid1.vcn.oc1.eu-frankfurt-1.aaaa",
+  "headers": {
+   "accept": "application/json",
+   "x-content-sha256": "x"
+  }
+ },
+ "intent": {
+  "operation": "observe",
+  "resource_id": "ocid1.vcn.oc1.eu-frankfurt-1.aaaa",
+  "binding_digest": "sha256:abababababababababababababababababababababababababababababababab"
+ },
+ "trace_id": "guest-chosen-untrusted"
+}
