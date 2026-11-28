@@ -17,9 +17,9 @@ workplace:
     - "cic-factory"
     - "cic-module-oracle-cloud"
   branch: "feature/o1-wp04b-module-send-migration"
-status: "pending"
+status: "running"
 error_message: ""
 timestamps:
   created: "2026-11-28T07:52:38Z"
-  started: ""
+  started: "2026-11-28T07:53:01Z"
   completed: ""
