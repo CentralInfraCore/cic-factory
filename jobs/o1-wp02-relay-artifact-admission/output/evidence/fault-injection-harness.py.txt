@@ -3,7 +3,7 @@
 usage: mutate.py <out-file>"""
 import pathlib, subprocess, sys
 
-W = pathlib.Path("/home/sinkog/.cache/o6/wt-factory/jobs/o1-wp02-relay-artifact-admission/workspace")
+W = pathlib.Path("<job-workspace>")
 R = W / "CIC_Relay"
 ADM, BOOT, REG = "cmd/relay/module_admission.go", "cmd/relay/bootstrap.go", "cmd/relay/cic_flow_registry.go"
 

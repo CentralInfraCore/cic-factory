@@ -2,7 +2,7 @@
 # usage: gorun.sh <logfile> <shell command run inside golang:1.26.11 at /src>
 set -u
 LOG="$1"; shift
-W=/home/sinkog/.cache/o6/wt-factory/jobs/o1-wp02-relay-artifact-admission/workspace
+W=<job-workspace>
 {
   echo "# image: golang:1.26.11 ($(docker image inspect golang:1.26.11 --format '{{.Id}}'))"
   echo "# cmd: $*"
