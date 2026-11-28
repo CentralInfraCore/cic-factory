@@ -1,0 +1,152 @@
+## baseline
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmissionReview|TestAdmission_EnvelopeAndSignatureForm|TestLoadModule_CICFlow_FailClosed|TestO1Envelope|TestGitGrant_Follows|TestGitCapabilityLifecycle' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]' | head -12
+# date: 2026-11-28T05:30:02Z  HEAD: 12cfa2ed96b20908f13a64581e86f1339c54b2c3
+ok  	centralrelay/cmd/relay	0.092s
+# exit: 0
+
+## M31 F1 strict envelope scan disabled
+# test: TestAdmissionReview_F1_StrictEnvelopeReading/duplicate_key
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmissionReview|TestAdmission_EnvelopeAndSignatureForm|TestLoadModule_CICFlow_FailClosed|TestO1Envelope|TestGitGrant_Follows|TestGitCapabilityLifecycle' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]' | head -12
+# date: 2026-11-28T05:30:04Z  HEAD: 12cfa2ed96b20908f13a64581e86f1339c54b2c3
+--- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading (0.00s)
+    --- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading/duplicate_key (0.00s)
+    --- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading/case-variant_key (0.00s)
+    --- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading/unknown_key (0.00s)
+    --- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading/missing_required_key (0.00s)
+    --- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading/trailing_data (0.00s)
+    --- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading/not_an_object (0.00s)
+    --- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading/duplicate_key_in_signer (0.00s)
+FAIL
+FAIL	centralrelay/cmd/relay	0.055s
+FAIL
+# exit: 0
+
+## M32 F1/F4 duplicate keys accepted
+# test: TestAdmissionReview_F1_StrictEnvelopeReading/duplicate_key
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmissionReview|TestAdmission_EnvelopeAndSignatureForm|TestLoadModule_CICFlow_FailClosed|TestO1Envelope|TestGitGrant_Follows|TestGitCapabilityLifecycle' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]' | head -12
+# date: 2026-11-28T05:30:06Z  HEAD: 12cfa2ed96b20908f13a64581e86f1339c54b2c3
+--- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading (0.00s)
+    --- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading/duplicate_key (0.00s)
+    --- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading/duplicate_key_in_signer (0.00s)
+--- FAIL: TestAdmissionReview_F4_StrictAuthoritiesReading (0.00s)
+    --- FAIL: TestAdmissionReview_F4_StrictAuthoritiesReading/duplicate_top-level_key (0.00s)
+FAIL
+FAIL	centralrelay/cmd/relay	0.054s
+FAIL
+# exit: 0
+
+## M33 F1/F4 unknown or case-variant keys accepted
+# test: TestAdmissionReview_F1_StrictEnvelopeReading/case-variant_key
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmissionReview|TestAdmission_EnvelopeAndSignatureForm|TestLoadModule_CICFlow_FailClosed|TestO1Envelope|TestGitGrant_Follows|TestGitCapabilityLifecycle' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]' | head -12
+# date: 2026-11-28T05:30:08Z  HEAD: 12cfa2ed96b20908f13a64581e86f1339c54b2c3
+--- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading (0.00s)
+    --- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading/case-variant_key (0.00s)
+    --- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading/unknown_key (0.00s)
+    --- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading/missing_required_key (0.00s)
+--- FAIL: TestAdmissionReview_F4_StrictAuthoritiesReading (0.00s)
+    --- FAIL: TestAdmissionReview_F4_StrictAuthoritiesReading/case-variant_key (0.00s)
+    --- FAIL: TestAdmissionReview_F4_StrictAuthoritiesReading/unknown_field (0.00s)
+FAIL
+FAIL	centralrelay/cmd/relay	0.082s
+FAIL
+# exit: 0
+
+## M34 F1/F4 trailing data accepted
+# test: TestAdmissionReview_F1_StrictEnvelopeReading/trailing_data
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmissionReview|TestAdmission_EnvelopeAndSignatureForm|TestLoadModule_CICFlow_FailClosed|TestO1Envelope|TestGitGrant_Follows|TestGitCapabilityLifecycle' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]' | head -12
+# date: 2026-11-28T05:30:11Z  HEAD: 12cfa2ed96b20908f13a64581e86f1339c54b2c3
+--- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading (0.00s)
+    --- FAIL: TestAdmissionReview_F1_StrictEnvelopeReading/trailing_data (0.00s)
+--- FAIL: TestAdmissionReview_F4_StrictAuthoritiesReading (0.00s)
+    --- FAIL: TestAdmissionReview_F4_StrictAuthoritiesReading/trailing_data (0.00s)
+FAIL
+FAIL	centralrelay/cmd/relay	0.063s
+FAIL
+# exit: 0
+
+## M35 F4 authority bindings read without the strict scan
+# test: TestAdmissionReview_F4_StrictAuthoritiesReading/trailing_data
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmissionReview|TestAdmission_EnvelopeAndSignatureForm|TestLoadModule_CICFlow_FailClosed|TestO1Envelope|TestGitGrant_Follows|TestGitCapabilityLifecycle' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]' | head -12
+# date: 2026-11-28T05:30:13Z  HEAD: 12cfa2ed96b20908f13a64581e86f1339c54b2c3
+--- FAIL: TestAdmissionReview_F4_StrictAuthoritiesReading (0.00s)
+    --- FAIL: TestAdmissionReview_F4_StrictAuthoritiesReading/duplicate_top-level_key (0.00s)
+    --- FAIL: TestAdmissionReview_F4_StrictAuthoritiesReading/case-variant_key (0.00s)
+    --- FAIL: TestAdmissionReview_F4_StrictAuthoritiesReading/unknown_field (0.00s)
+    --- FAIL: TestAdmissionReview_F4_StrictAuthoritiesReading/trailing_data (0.00s)
+    --- FAIL: TestAdmissionReview_F4_StrictAuthoritiesReading/missing_roles (0.00s)
+FAIL
+FAIL	centralrelay/cmd/relay	0.062s
+FAIL
+# exit: 0
+
+## M36 F2 failed provenance downgraded to transitional
+# test: TestAdmissionReview_F2_FailedProvenanceIsRejectedNotTransitional
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmissionReview|TestAdmission_EnvelopeAndSignatureForm|TestLoadModule_CICFlow_FailClosed|TestO1Envelope|TestGitGrant_Follows|TestGitCapabilityLifecycle' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]' | head -12
+# date: 2026-11-28T05:30:15Z  HEAD: 12cfa2ed96b20908f13a64581e86f1339c54b2c3
+--- FAIL: TestLoadModule_CICFlow_FailClosedWithoutSourceCA (0.00s)
+    --- FAIL: TestLoadModule_CICFlow_FailClosedWithoutSourceCA/dev (0.00s)
+    --- FAIL: TestLoadModule_CICFlow_FailClosedWithoutSourceCA/prod (0.00s)
+--- FAIL: TestGitGrant_FollowsTheVerifiedArtifactAndTheRunningInstance (0.00s)
+--- FAIL: TestGitCapabilityLifecycle_LoadThenInstantiate (0.01s)
+--- FAIL: TestAdmissionReview_F2_FailedProvenanceIsRejectedNotTransitional (0.00s)
+    --- FAIL: TestAdmissionReview_F2_FailedProvenanceIsRejectedNotTransitional/prod (0.00s)
+    --- FAIL: TestAdmissionReview_F2_FailedProvenanceIsRejectedNotTransitional/dev (0.00s)
+    --- FAIL: TestAdmissionReview_F2_FailedProvenanceIsRejectedNotTransitional/a_git-only_module_with_a_verified_envelope_but_no_provenance_is_rejected_too (0.00s)
+FAIL
+FAIL	centralrelay/cmd/relay	0.055s
+FAIL
+# exit: 0
+
+## M37 F3 undeclared wasm import accepted
+# test: TestAdmissionReview_F3_ActualImportsMustBeDeclared
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmissionReview|TestAdmission_EnvelopeAndSignatureForm|TestLoadModule_CICFlow_FailClosed|TestO1Envelope|TestGitGrant_Follows|TestGitCapabilityLifecycle' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]' | head -12
+# date: 2026-11-28T05:30:17Z  HEAD: 12cfa2ed96b20908f13a64581e86f1339c54b2c3
+--- FAIL: TestAdmissionReview_F3_ActualImportsMustBeDeclared (0.01s)
+    --- FAIL: TestAdmissionReview_F3_ActualImportsMustBeDeclared/cic-flow_imported_but_not_declared (0.00s)
+    --- FAIL: TestAdmissionReview_F3_ActualImportsMustBeDeclared/a_different_cic-flow_function_than_the_declared_one (0.00s)
+    --- FAIL: TestAdmissionReview_F3_ActualImportsMustBeDeclared/git_imported_but_not_declared (0.00s)
+    --- FAIL: TestAdmissionReview_F3_ActualImportsMustBeDeclared/an_undeclared_import_is_rejected_without_an_envelope_too (0.00s)
+FAIL
+FAIL	centralrelay/cmd/relay	0.079s
+FAIL
+# exit: 0
+
+## M38 a missing envelope_version is no longer ENVELOPE_VERSION
+# test: TestAdmission_EnvelopeAndSignatureForm
+# RESULT: NOT CAUGHT / WRONG REASON
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmissionReview|TestAdmission_EnvelopeAndSignatureForm|TestLoadModule_CICFlow_FailClosed|TestO1Envelope|TestGitGrant_Follows|TestGitCapabilityLifecycle' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]' | head -12
+# date: 2026-11-28T05:30:20Z  HEAD: 12cfa2ed96b20908f13a64581e86f1339c54b2c3
+ok  	centralrelay/cmd/relay	0.082s
+# exit: 0
+
+## M39 F5 vector executed bytes not compared to the relay transformation
+# test: TestO1EnvelopeVectors_ExecutedIsTheRelaysTransformation
+# RESULT: NOT CAUGHT / WRONG REASON
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmissionReview|TestAdmission_EnvelopeAndSignatureForm|TestLoadModule_CICFlow_FailClosed|TestO1Envelope|TestGitGrant_Follows|TestGitCapabilityLifecycle' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]' | head -12
+# date: 2026-11-28T05:30:23Z  HEAD: 12cfa2ed96b20908f13a64581e86f1339c54b2c3
+ok  	centralrelay/cmd/relay	0.079s
+# exit: 0
+
+## after restore
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmissionReview|TestAdmission_EnvelopeAndSignatureForm|TestLoadModule_CICFlow_FailClosed|TestO1Envelope|TestGitGrant_Follows|TestGitCapabilityLifecycle' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]' | head -12
+# date: 2026-11-28T05:30:26Z  HEAD: 12cfa2ed96b20908f13a64581e86f1339c54b2c3
+ok  	centralrelay/cmd/relay	0.093s
+# exit: 0

@@ -80,3 +80,23 @@ Kiegészítő tesztek: `Ed25519Signer`, `EnvelopeAndSignatureForm` (M15), `Envel
 4. **ProofTrace:** az `executed.envelope_digest` bekötése a WP-05 dolga.
 
 **Nem része (HOLD):** valódi Vault-aláírás, countersign, release, publikáció, merge, production aktiválás.
+
+---
+
+## Review-kör 1 (külső review a `12cfa2e` fejre; javítások a `28042aa` és `87bb1e3` commitban)
+
+A külső review F1–F6 leleteit a PR `12cfa2e` fejére adta; a javítást az orchestrátor végezte (a végrehajtó agent megszakadt). Ez a szakasz a fenti jelentés kiegészítése, **a fenti AC-táblák a `12cfa2e`-re vonatkoztak**.
+
+| Lelet | Javítás | Bizonyíték |
+|---|---|---|
+| F1 strict JSON | szigorú olvasó az envelope-ra (ismeretlen, kis/nagybetűben eltérő, duplikált kulcs, záró adat); azonos algoritmus a #234 olvasójával, külön másolat (két ág, `package main`); a hiányzó/ismeretlen verzió továbbra is `ENVELOPE_VERSION` | `TestAdmissionReview_F1_*`; M31–M34 |
+| F2 transitional vs. sikertelen hitelesítés | verifikált envelope + hiányzó CICSourceCA-provenance → `PROVENANCE_UNVERIFIED` elutasítás dev és prod módban; csak az envelope nélküli modul transitional. **Három, a lefokozást elváró meglévő teszt az új szabályra módosult** (`TestLoadModule_CICFlow_FailClosedWithoutSourceCA`, a két git-teszt): ezek a review szándékát rögzítették, nem lazítás | `TestAdmissionReview_F2_*`; M36 |
+| F3 WASM-import ↔ manifest | a végrehajtott wasm tényleges `cic-flow`/`git` importjai deklaráltak kell legyenek (`IMPORT_UNDECLARED`); a V6 a tényleges importokra is érvényes | `TestAdmissionReview_F3_*`; M37 |
+| F4 konfig-olvasó | a `module:sign` jogosultsági fájl ugyanazt a szigorú olvasót használja, a bemenet végét is ellenőrzi | `TestAdmissionReview_F4_*`; M35 |
+| F5 vektorok | a végleges `wasm-canon/v1` vektor (WP-00); a `executed` bájtok **kötelező assertion** szerint egyeznek a Relay saját transzformációjával | `TestO1EnvelopeVectors_ExecutedIsTheRelaysTransformation`; M39b |
+| F6 CI | **egyetlen, additív lépés** a `verify.yml`-ban a `cic_test_seams` konfigurációra (`go vet` + `go test` a két csomagon), **külön commit** (`87bb1e3`); meglévő kapu, küszöb, mutation/proof/trust követelmény nem módosult | a lépés a GitHub CI-n még nem futott: **UNVERIFIED** |
+| F4 (trust bundle, freshness, anti-rollback) | **nem része**: a komponensszintű `CIC_MODULE_SIGN_AUTHORITIES` marad; a teljes production admission külön státusz | — |
+
+**Kapuk (helyi, docker `golang:1.26.11`):** `go test ./...` ok; `-race` és `-tags cic_test_seams` ok; lefedettség `core/cabinet` 94,2%, `cmd/relay` 91,5%; gofmt, vet (mindkét konfiguráció), staticcheck, docgate 0 hiányzó. **Bevetett hibák:** M31–M37 és M39b a megnevezett teszten bukik; **M38 egyenértékű mutáns** (a hiányzó verzió a struct-ellenőrzésből ugyanazt az `ENVELOPE_VERSION` kódot adja), M39 első változata gyenge mutáció volt (a digest-egyezés a bájt-egyezést is jelenti), M39b váltotta.
+
+**Nyitott / UNVERIFIED:** a GitHub CI a `87bb1e3` fejre; a `verify.yml` új lépése CI-n; a trust bundle digest-pin, minimális verzió, freshness és anti-rollback (production admission); a közös strict-JSON csomag (követő lépés, ha a #233 és a #234 egyaránt landolt); a teljes kötés a #234 `ModuleProfileBinding.EnvelopeDigest` mezőjéhez (integrációs ág).

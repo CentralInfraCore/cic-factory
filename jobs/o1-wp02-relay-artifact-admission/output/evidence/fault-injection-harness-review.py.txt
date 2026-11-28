@@ -1,0 +1,45 @@
+# Fault-injection harness for the #233 review fixes (F1-F4): each mutation must make its NAMED test fail (and compile); baseline before and after.
+import pathlib, subprocess, sys
+W = pathlib.Path("<job-workspace>")
+R = W / "CIC_Relay"
+OUT = W / "evidence-raw" / "fault-injection-review.txt"
+G = "<local-tmp>/gorun4.sh"
+PAT = "TestAdmissionReview|TestAdmission_EnvelopeAndSignatureForm|TestLoadModule_CICFlow_FailClosed|TestO1Envelope|TestGitGrant_Follows|TestGitCapabilityLifecycle"
+MUT = [
+ ("M31 F1 strict envelope scan disabled", "cmd/relay/module_admission.go", "if err := strictScan(data, envelopeJSONShape); err != nil {", "if err := strictScan(data, envelopeJSONShape); false && err != nil {", "TestAdmissionReview_F1_StrictEnvelopeReading/duplicate_key"),
+ ("M32 F1/F4 duplicate keys accepted", "cmd/relay/strict_json.go", "\t\tif seen[key] {", "\t\tif false && seen[key] {", "TestAdmissionReview_F1_StrictEnvelopeReading/duplicate_key"),
+ ("M33 F1/F4 unknown or case-variant keys accepted", "cmd/relay/strict_json.go", "\t\tif !ok {\n\t\t\treturn fmt.Errorf(\"%s: unknown or differently spelled key", "\t\tif false && !ok {\n\t\t\treturn fmt.Errorf(\"%s: unknown or differently spelled key", "TestAdmissionReview_F1_StrictEnvelopeReading/case-variant_key"),
+ ("M34 F1/F4 trailing data accepted", "cmd/relay/strict_json.go", "\tif _, err := dec.Token(); err != io.EOF {", "\tif _, err := dec.Token(); false && err != io.EOF {", "TestAdmissionReview_F1_StrictEnvelopeReading/trailing_data"),
+ ("M35 F4 authority bindings read without the strict scan", "cmd/relay/pki_companion.go", "if err := strictScan(data, authoritiesJSONShape); err != nil {", "if err := strictScan(data, authoritiesJSONShape); false && err != nil {", "TestAdmissionReview_F4_StrictAuthoritiesReading/trailing_data"),
+ ("M36 F2 failed provenance downgraded to transitional", "cmd/relay/module_admission.go", "\t\tif provErr := verifyCICFlowProvenance(cert, pkiAssets); provErr != nil {\n\t\t\treturn \"\", \"\", reject(codeProvenanceUnverified, \"the envelope verifies but the signer chain has no CICSourceCA provenance: %v\", provErr)\n\t\t}\n\t\tstate, digest = trustAuthenticated, ve.Digest", "\t\tif provErr := verifyCICFlowProvenance(cert, pkiAssets); provErr != nil {\n\t\t\t_ = provErr\n\t\t\tstate = trustTransitional\n\t\t} else {\n\t\t\tstate, digest = trustAuthenticated, ve.Digest\n\t\t}", "TestAdmissionReview_F2_FailedProvenanceIsRejectedNotTransitional"),
+ ("M37 F3 undeclared wasm import accepted", "cmd/relay/module_admission_imports.go", "\t\tif !fns[imp.Name] {", "\t\tif false && !fns[imp.Name] {", "TestAdmissionReview_F3_ActualImportsMustBeDeclared"),
+ ("M38 a missing envelope_version is no longer ENVELOPE_VERSION", "cmd/relay/module_admission.go", "if probe.EnvelopeVersion == nil || string(", "if probe.EnvelopeVersion != nil && string(", "TestAdmission_EnvelopeAndSignatureForm"),
+ ("M39 F5 vector executed bytes not compared to the relay transformation", "cmd/relay/module_admission_vectors_test.go", "assert.Equal(t, want, d.WasmCode, \"%s\", c.ID)", "_ = want", "TestO1EnvelopeVectors_ExecutedIsTheRelaysTransformation"),
+]
+def run(pattern):
+    log = W / "evidence-raw" / "mut2.run.log"
+    subprocess.run([G, str(log), f"go test -count=1 -run '{pattern}' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\\[build failed\\]' | head -12"], check=False)
+    return log.read_text()
+lines, bad = [], 0
+base = run(PAT)
+body = "\n".join(l for l in base.splitlines() if not l.startswith("#"))
+lines.append("## baseline\n" + base)
+if "--- FAIL" in body or "FAIL\t" in body or "ok" not in body: print("baseline fails"); sys.exit(1)
+for label, f, old, new, test in MUT:
+    p = R / f; orig = p.read_text()
+    if orig.count(old) != 1:
+        lines.append(f"## {label}\n# RESULT: MUTATION NOT APPLIED (pattern count {orig.count(old)})\n"); bad += 1; continue
+    try:
+        p.write_text(orig.replace(old, new, 1))
+        out = run(PAT)
+        top = test.split("/")[0]
+        caught = f"--- FAIL: {top}" in out and "[build failed]" not in out
+        status = "FAILED as required" if caught else "NOT CAUGHT / WRONG REASON"
+        if not caught: bad += 1
+        lines.append(f"## {label}\n# test: {test}\n# RESULT: {status}\n{out}")
+    finally:
+        p.write_text(orig)
+after = run(PAT)
+lines.append("## after restore\n" + after)
+OUT.write_text("\n".join(lines))
+print("mutations:", len(MUT), "not-as-required:", bad)

@@ -1,0 +1,22 @@
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: echo "== gofmt -l"; gofmt -l $(git ls-files -co --exclude-standard "*.go"); echo "== go vet (default + cic_test_seams)"; go vet ./... && go vet -tags cic_test_seams ./cmd/relay/ ./core/cabinet/ && echo vet-ok; echo "== staticcheck"; go install honnef.co/go/tools/cmd/staticcheck@v0.6.1 >/dev/null 2>&1; /gopath/bin/staticcheck ./... && echo staticcheck-ok; echo "== symbols"; go run ./tools/symbolsgen context/SYMBOLS.ALLOWPKGS context/SYMBOLS.md >/dev/null; git diff HEAD --stat -- context/SYMBOLS.md | tail -1; echo "== docgate(go)"; git config --global --add safe.directory /src 2>/dev/null; python3 /ev/docgate_go_only.py.txt | tail -4; echo "== go test -race"; go test -count=1 -race ./cmd/relay/ ./core/cabinet/ 2>&1 | grep -vE "level="; echo "== tagged"; go test -count=1 -tags cic_test_seams ./cmd/relay/ ./core/cabinet/ 2>&1 | grep -vE "level="; echo "== go test ./... (non-ok lines only)"; go test -count=1 -timeout 600s ./... 2>&1 | grep -vE "no test files|level=" | grep -vE "^ok"; echo "== coverage"; go test -count=1 -cover ./core/cabinet/ ./cmd/relay/ 2>&1 | grep -E "coverage|FAIL"
+# date: 2026-11-28T05:31:16Z  HEAD: 12cfa2ed96b20908f13a64581e86f1339c54b2c3
+== gofmt -l
+== go vet (default + cic_test_seams)
+vet-ok
+== staticcheck
+staticcheck-ok
+== symbols
+== docgate(go)
+docgate(go only): 125 Go files checked; 0 undocumented declaration(s)
+== go test -race
+ok  	centralrelay/cmd/relay	7.380s
+ok  	centralrelay/core/cabinet	2.338s
+== tagged
+ok  	centralrelay/cmd/relay	4.434s
+ok  	centralrelay/core/cabinet	1.055s
+== go test ./... (non-ok lines only)
+== coverage
+ok  	centralrelay/core/cabinet	1.060s	coverage: 94.2% of statements
+ok  	centralrelay/cmd/relay	4.403s	coverage: 91.5% of statements
+# exit: 0
