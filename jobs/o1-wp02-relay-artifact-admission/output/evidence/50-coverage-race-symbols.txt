@@ -1,0 +1,48 @@
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: echo "== coverage"; go test -count=1 -coverprofile=/tmp/c1 ./cmd/relay/ ./core/cabinet/ 2>&1 | tail -3; go tool cover -func=/tmp/c1 | grep -E "module_admission.go|pki_companion.go|cic_flow_registry.go|total" ; echo "== race (cmd/relay, core/cabinet)"; go test -count=1 -race -timeout 600s ./cmd/relay/ ./core/cabinet/ 2>&1 | tail -4; echo "== symbolsgen"; go run ./tools/symbolsgen context/SYMBOLS.ALLOWPKGS context/SYMBOLS.md && git diff --stat context/SYMBOLS.md
+# date: 2026-11-27T19:33:56Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+== coverage
+ok  	centralrelay/cmd/relay	4.683s	coverage: 89.8% of statements
+ok  	centralrelay/core/cabinet	1.057s	coverage: 94.2% of statements
+centralrelay/cmd/relay/cic_flow_registry.go:85:		newCICFlowRegistry		100.0%
+centralrelay/cmd/relay/cic_flow_registry.go:96:		lookupFor			100.0%
+centralrelay/cmd/relay/cic_flow_registry.go:112:	stageVerified			100.0%
+centralrelay/cmd/relay/cic_flow_registry.go:118:	commitGrant			100.0%
+centralrelay/cmd/relay/cic_flow_registry.go:135:	bindingFor			100.0%
+centralrelay/cmd/relay/cic_flow_registry.go:151:	publish				100.0%
+centralrelay/cmd/relay/cic_flow_registry.go:193:	revoke				100.0%
+centralrelay/cmd/relay/cic_flow_registry.go:213:	authorizeGit			100.0%
+centralrelay/cmd/relay/cic_flow_registry.go:252:	gitRuleCovers			66.7%
+centralrelay/cmd/relay/cic_flow_registry.go:267:	containsExact			100.0%
+centralrelay/cmd/relay/cic_flow_registry.go:277:	refAllowed			90.0%
+centralrelay/cmd/relay/cic_flow_registry.go:297:	clipForError			66.7%
+centralrelay/cmd/relay/module_admission.go:80:		Error				100.0%
+centralrelay/cmd/relay/module_admission.go:83:		reject				100.0%
+centralrelay/cmd/relay/module_admission.go:88:		admissionCode			75.0%
+centralrelay/cmd/relay/module_admission.go:112:		signedBytes			100.0%
+centralrelay/cmd/relay/module_admission.go:125:		sha256Ref			100.0%
+centralrelay/cmd/relay/module_admission.go:132:		parseEnvelope			93.3%
+centralrelay/cmd/relay/module_admission.go:159:		validateEnvelopeForm		100.0%
+centralrelay/cmd/relay/module_admission.go:183:		decodeSignatureFile		100.0%
+centralrelay/cmd/relay/module_admission.go:219:		verifyEnvelope			97.0%
+centralrelay/cmd/relay/module_admission.go:272:		signerAuthorized		100.0%
+centralrelay/cmd/relay/module_admission.go:282:		admitEnvelope			87.5%
+centralrelay/cmd/relay/module_admission.go:308:		importsCICFlow			75.0%
+centralrelay/cmd/relay/module_admission.go:324:		readOptional			100.0%
+centralrelay/cmd/relay/module_admission.go:333:		signatureMaterialPresent	85.7%
+centralrelay/cmd/relay/module_admission.go:346:		requiresAuthentication		100.0%
+centralrelay/cmd/relay/module_admission.go:362:		admitModuleArtifact		89.5%
+centralrelay/cmd/relay/pki_companion.go:25:		loadCompanionCAPool		100.0%
+centralrelay/cmd/relay/pki_companion.go:41:		loadProvenanceAnchors		93.8%
+centralrelay/cmd/relay/pki_companion.go:71:		verifyCICFlowProvenance		100.0%
+centralrelay/cmd/relay/pki_companion.go:105:		parseModuleSignAuthorities	0.0%
+centralrelay/cmd/relay/pki_companion.go:138:		loadModuleSignAuthorities	0.0%
+total:							(statements)			91.1%
+== race (cmd/relay, core/cabinet)
+ok  	centralrelay/cmd/relay	7.348s
+ok  	centralrelay/core/cabinet	2.342s
+== symbolsgen
+Successfully generated context/SYMBOLS.md
+ context/SYMBOLS.md | 1 -
+ 1 file changed, 1 deletion(-)
+# exit: 0

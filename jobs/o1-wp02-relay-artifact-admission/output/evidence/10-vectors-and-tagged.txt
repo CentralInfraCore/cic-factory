@@ -1,0 +1,60 @@
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -v -run "TestO1EnvelopeVectors|TestAdmission_AC18" ./cmd/relay/ 2>&1 | grep -E "^(=== RUN|--- |ok|FAIL|PASS)|MEASURED" ; echo "--- tagged build (cic_test_seams) ---"; go test -count=1 -tags cic_test_seams -v -run "TestAdmission_AC18|TestStrip|TestValidate" ./cmd/relay/ ./core/cabinet/ 2>&1 | grep -E "^(--- |ok|FAIL)"
+# date: 2026-11-27T19:29:47Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+=== RUN   TestAdmission_AC18_StripSeamNotInProductionBuild
+--- PASS: TestAdmission_AC18_StripSeamNotInProductionBuild (0.01s)
+=== RUN   TestO1EnvelopeVectors_Provisional
+=== RUN   TestO1EnvelopeVectors_Provisional/ecdsa-valid
+=== RUN   TestO1EnvelopeVectors_Provisional/ecdsa-wasm-raw-modified
+=== RUN   TestO1EnvelopeVectors_Provisional/ecdsa-executed-representation-differs
+=== RUN   TestO1EnvelopeVectors_Provisional/ecdsa-manifest-modified
+=== RUN   TestO1EnvelopeVectors_Provisional/ecdsa-envelope-field-tampered
+=== RUN   TestO1EnvelopeVectors_Provisional/ecdsa-signature-bit-flipped
+=== RUN   TestO1EnvelopeVectors_Provisional/ecdsa-signature-with-whitespace
+=== RUN   TestO1EnvelopeVectors_Provisional/ecdsa-signature-without-final-lf
+=== RUN   TestO1EnvelopeVectors_Provisional/ecdsa-signature-two-lines
+=== RUN   TestO1EnvelopeVectors_Provisional/ecdsa-key-id-of-another-key
+=== RUN   TestO1EnvelopeVectors_Provisional/ecdsa-unknown-envelope-version
+=== RUN   TestO1EnvelopeVectors_Provisional/ed25519-valid
+=== RUN   TestO1EnvelopeVectors_Provisional/ed25519-wasm-raw-modified
+=== RUN   TestO1EnvelopeVectors_Provisional/ed25519-executed-representation-differs
+=== RUN   TestO1EnvelopeVectors_Provisional/ed25519-manifest-modified
+=== RUN   TestO1EnvelopeVectors_Provisional/ed25519-envelope-field-tampered
+=== RUN   TestO1EnvelopeVectors_Provisional/ed25519-signature-bit-flipped
+=== RUN   TestO1EnvelopeVectors_Provisional/ed25519-signature-with-whitespace
+=== RUN   TestO1EnvelopeVectors_Provisional/ed25519-signature-without-final-lf
+=== RUN   TestO1EnvelopeVectors_Provisional/ed25519-signature-two-lines
+=== RUN   TestO1EnvelopeVectors_Provisional/ed25519-key-id-of-another-key
+=== RUN   TestO1EnvelopeVectors_Provisional/ed25519-unknown-envelope-version
+=== RUN   TestO1EnvelopeVectors_Provisional/alg-declares-ed25519-but-key-is-ecdsa
+=== RUN   TestO1EnvelopeVectors_Provisional/alg-declares-ecdsa-but-key-is-ed25519
+=== RUN   TestO1EnvelopeVectors_Provisional/alg-not-in-allowlist
+=== RUN   TestO1EnvelopeVectors_Provisional/malformed-wasm-digest-form
+--- PASS: TestO1EnvelopeVectors_Provisional (0.01s)
+=== RUN   TestO1EnvelopeVectors_WabinExecutedRepresentation
+    module_admission_vectors_test.go:86: MEASURED: the relay cannot build a descriptor from the vector wasm_raw: invalid: wasm canonicalization failed: failed to decode wasm module with wabin: get size of section unknown: EOF
+    module_admission_vectors_test.go:87: MEASURED: reference executed = sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476 (0061736d01000000)
+--- PASS: TestO1EnvelopeVectors_WabinExecutedRepresentation (0.00s)
+PASS
+ok  	centralrelay/cmd/relay	0.028s
+--- tagged build (cic_test_seams) ---
+--- PASS: TestAdmission_AC18_ChangedTransformationIsRejected (0.00s)
+--- PASS: TestValidateConfig_Valid (0.00s)
+--- PASS: TestValidateConfig_RangeViolation_JSONSize (0.00s)
+--- PASS: TestValidateConfig_RangeViolation_WASMSize (0.00s)
+--- PASS: TestValidateConfig_RangeViolation_HashingTimeout (0.00s)
+--- PASS: TestValidateConfig_RangeViolation_WasmExecTimeout (0.00s)
+--- PASS: TestValidateConfig_RangeViolation_RateLimitRPS (0.00s)
+--- PASS: TestValidateConfig_RangeViolation_MaxConcurrent (0.00s)
+--- PASS: TestAdmission_AC18_StripSeamNotInProductionBuild (0.01s)
+ok  	centralrelay/cmd/relay	0.019s
+--- PASS: TestValidateSchema (0.00s)
+--- PASS: TestValidateInputSchema (0.00s)
+--- PASS: TestValidateSet_Required (0.00s)
+--- PASS: TestValidateSet_NotFound (0.00s)
+--- PASS: TestValidateAndChecksum (0.00s)
+--- PASS: TestStripWasmModuleFunc_Error (0.00s)
+--- PASS: TestValidateAndChecksumSchema_Validation (0.00s)
+--- PASS: TestValidateAndChecksumWorkflow_Validation (0.00s)
+ok  	centralrelay/core/cabinet	0.009s
+# exit: 0

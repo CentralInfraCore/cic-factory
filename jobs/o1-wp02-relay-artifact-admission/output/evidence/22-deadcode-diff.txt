@@ -1,0 +1,6 @@
+1,3d0
+< cmd/relay/cic_flow_manifest.go:319:25: unreachable func: moduleProject.verifyBuildHash
+< cmd/relay/cic_flow_registry.go:102:27: unreachable func: cicFlowRegistry.publishVerified
+< cmd/relay/cic_flow_registry.go:94:27: unreachable func: cicFlowRegistry.registerVerified
+30d26
+< core/cabinet/validate.go:49:6: unreachable func: SetStripWasmModuleFunc

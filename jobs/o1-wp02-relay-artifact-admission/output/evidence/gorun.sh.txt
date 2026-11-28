@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# usage: gorun.sh <logfile> <shell command run inside golang:1.26.11 at /src>
+set -u
+LOG="$1"; shift
+W=/home/sinkog/.cache/o6/wt-factory/jobs/o1-wp02-relay-artifact-admission/workspace
+{
+  echo "# image: golang:1.26.11 ($(docker image inspect golang:1.26.11 --format '{{.Id}}'))"
+  echo "# cmd: $*"
+  echo "# date: $(date -u +%Y-%m-%dT%H:%M:%SZ)  HEAD: $(git -C $W/CIC_Relay rev-parse HEAD)"
+  docker run --rm -u "$(id -u):$(id -g)" \
+    -e HOME=/tmp -e GOFLAGS=-buildvcs=false -e GOTOOLCHAIN=local \
+    -e GOMODCACHE=/gomod -e GOCACHE=/gocache -e GOPATH=/gopath \
+    -v wp02-gomod:/gomod -v wp02-gocache:/gocache -v wp02-gopath:/gopath \
+    -v "$W/CIC_Relay:/src" -v "$W/evidence-raw:/ev" -w /src golang:1.26.11 sh -c "$*"
+  echo "# exit: $?"
+} > "$LOG" 2>&1

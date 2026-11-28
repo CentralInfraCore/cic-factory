@@ -1,0 +1,12 @@
+# Runs only the Go part of tools/docgate/docgate.py (the container has no cargo; the Rust part is not touched by WP-02).
+import sys, subprocess
+sys.path.insert(0, "/src/tools/docgate")
+import docgate
+from pathlib import Path
+root = Path("/src")
+files = [f for f in subprocess.run(["git", "ls-files", "--others", "--cached", "--exclude-standard", "*.go"], cwd=root, capture_output=True, text=True).stdout.split()]
+globs = docgate.load_excludes(root / ".docgate-exclude")
+files = [f for f in files if not docgate.excluded(f, globs) and not f.endswith("_test.go")]
+gaps = docgate.go_gaps(root, files)
+for g in gaps: print(g)
+print(f"docgate(go only): {len(files)} Go files checked; {len(gaps)} undocumented declaration(s)")

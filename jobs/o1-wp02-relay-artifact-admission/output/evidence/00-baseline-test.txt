@@ -1,0 +1,25 @@
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go version && go test ./cmd/relay/ ./core/cabinet/ 2>&1 | tail -20
+# date: 2026-11-27T19:11:50Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+go version go1.26.11 linux/amd64
+go: downloading github.com/davecgh/go-spew v1.1.1
+go: downloading github.com/pmezard/go-difflib v1.0.0
+go: downloading github.com/stretchr/objx v0.5.2
+go: downloading github.com/hashicorp/go-multierror v1.1.1
+go: downloading github.com/go-jose/go-jose/v4 v4.1.6
+go: downloading github.com/cenkalti/backoff/v4 v4.3.0
+go: downloading github.com/hashicorp/errwrap v1.1.0
+go: downloading github.com/hashicorp/go-cleanhttp v0.5.2
+go: downloading github.com/hashicorp/go-retryablehttp v0.7.8
+go: downloading github.com/hashicorp/go-rootcerts v1.0.2
+go: downloading github.com/hashicorp/go-secure-stdlib/parseutil v0.2.0
+go: downloading github.com/hashicorp/go-secure-stdlib/strutil v0.1.2
+go: downloading github.com/hashicorp/hcl v1.0.1-vault-7
+go: downloading github.com/mitchellh/mapstructure v1.5.0
+go: downloading golang.org/x/net v0.62.0
+go: downloading github.com/hashicorp/go-sockaddr v1.0.7
+go: downloading github.com/ryanuber/go-glob v1.0.0
+go: downloading golang.org/x/text v0.43.0
+ok  	centralrelay/cmd/relay	6.120s
+ok  	centralrelay/core/cabinet	1.149s
+# exit: 0

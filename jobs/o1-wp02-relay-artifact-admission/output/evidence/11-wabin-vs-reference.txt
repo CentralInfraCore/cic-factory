@@ -1,0 +1,9 @@
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -v -run "TestO1EnvelopeVectors_WabinExecutedRepresentation" ./cmd/relay/ 2>&1 | grep -E -- "--- |MEASURED|^ok|^FAIL"
+# date: 2026-11-27T19:30:31Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+    module_admission_vectors_test.go:87: MEASURED vector wasm_raw: raw 0061736d010000000005046e616d65aa: the relay cannot build a descriptor: invalid: wasm canonicalization failed: failed to decode wasm module with wabin: get size of section unknown: EOF
+    module_admission_vectors_test.go:87: MEASURED vector wasm_raw, section size corrected to 6: raw 0061736d010000000006046e616d65aa: the relay cannot build a descriptor: invalid: wasm canonicalization failed: failed to decode wasm module with wabin: section custom: failed to read the size of subsection[170]: EOF
+    module_admission_vectors_test.go:90: MEASURED custom section "x" (size 3): raw 0061736d0100000000030178aa -> relay executed sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476 (0061736d01000000); reference executed sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476; equal=true
+--- PASS: TestO1EnvelopeVectors_WabinExecutedRepresentation (0.00s)
+ok  	centralrelay/cmd/relay	0.003s
+# exit: 0

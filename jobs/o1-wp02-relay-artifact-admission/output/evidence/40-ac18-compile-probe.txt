@@ -1,0 +1,10 @@
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: cp -r /src /tmp/s && mkdir -p /tmp/s/cmd/zzprobe && cp /ev/probe_main.go.txt /tmp/s/cmd/zzprobe/main.go && cd /tmp/s && echo "== default build (production):" && (go build ./cmd/zzprobe; echo "build rc=$?") && echo "== -tags cic_test_seams:" && (go build -tags cic_test_seams -o /dev/null ./cmd/zzprobe; echo "build rc=$?")
+# date: 2026-11-27T19:33:39Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+== default build (production):
+# centralrelay/cmd/zzprobe
+cmd/zzprobe/main.go:6:10: undefined: cabinet.SetStripWasmModuleFunc
+build rc=1
+== -tags cic_test_seams:
+build rc=0
+# exit: 0

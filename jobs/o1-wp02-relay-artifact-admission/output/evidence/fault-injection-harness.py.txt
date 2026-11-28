@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+"""Fault injection for the WP-02 negative tests: apply one mutation, run the named tests, record, restore.
+usage: mutate.py <out-file>"""
+import pathlib, subprocess, sys
+
+W = pathlib.Path("/home/sinkog/.cache/o6/wt-factory/jobs/o1-wp02-relay-artifact-admission/workspace")
+R = W / "CIC_Relay"
+ADM, BOOT, REG = "cmd/relay/module_admission.go", "cmd/relay/bootstrap.go", "cmd/relay/cic_flow_registry.go"
+
+M = [
+ ("M01 V2 signature check disabled", ADM, "\tif !ok {\n\t\treturn nil, reject(codeSignatureInvalid", "\tif false && !ok {\n\t\treturn nil, reject(codeSignatureInvalid",
+  "TestAdmission_AC01|TestO1EnvelopeVectors_Provisional", "", "SIGNATURE_INVALID"),
+ ("M02 V5 manifest digest check disabled", ADM, "if got := sha256Ref(in.Manifest); got != env.ManifestDigest {", "if got := sha256Ref(in.Manifest); false && got != env.ManifestDigest {",
+  "TestAdmission_AC02|TestAdmission_AC15", "", "MANIFEST_DIGEST_MISMATCH"),
+ ("M03 V4 raw digest check (envelope) disabled", ADM, "if got := sha256Ref(in.RawWasm); got != env.WasmSHA256 {", "if got := sha256Ref(in.RawWasm); false && got != env.WasmSHA256 {",
+  "TestAdmission_AC03|TestO1EnvelopeVectors_Provisional", "", "WASM_DIGEST_MISMATCH"),
+ ("M04 V4 executed digest check disabled", ADM, "if got := sha256Ref(in.ExecutedWasm); got != env.ExecutedWasmSHA256 {", "if got := sha256Ref(in.ExecutedWasm); false && got != env.ExecutedWasmSHA256 {",
+  "TestAdmission_AC12|TestAdmission_AC18", "cic_test_seams", "EXECUTED_DIGEST_MISMATCH"),
+ ("M05 V1 version checks disabled (probe and form)", ADM, "if probe.EnvelopeVersion != nil && string(*probe.EnvelopeVersion) != \"1\" {", "if false {",
+  "TestAdmission_AC05", "", "ENVELOPE_VERSION", ("\tif env.EnvelopeVersion != 1 {\n\t\treturn reject(codeEnvelopeVersion", "\tif false {\n\t\treturn reject(codeEnvelopeVersion")),
+ ("M06 V2 key_id = SPKI check disabled", ADM, "if got := sha256Ref(in.SignerSPKI); got != env.Signer.KeyID {", "if got := sha256Ref(in.SignerSPKI); false && got != env.Signer.KeyID {",
+  "TestAdmission_AC06", "", "KEY_MISMATCH"),
+ ("M07 V2b signer authority always granted", ADM, "\treturn pkiAssets.ModuleSignAuthorities[keyID]\n", "\treturn true\n",
+  "TestAdmission_AC13", "", "SIGNER_NOT_AUTHORIZED", ("\tif pkiAssets == nil || pkiAssets.ModuleSignAuthorities == nil {\n\t\treturn false", "\tif false {\n\t\treturn false")),
+ ("M08 V6 prod rule disabled", ADM, "\treturn pkiAssets == nil || pkiAssets.TrustMode != TrustModeDev\n", "\treturn false\n",
+  "TestAdmission_AC07|TestAdmission_AC15", "", "MODULE_REJECTED"),
+ ("M09 V7 envelope binding not compared (cic-flow)", REG, "g.envelopeDigest == \"\" || g.envelopeDigest != instance.Binding {\n\t\treturn cicFlowDeps{}, false", "false {\n\t\treturn cicFlowDeps{}, false",
+  "TestAdmission_AC04|TestPerModule_Resolution", "", "no verified capability|not authorised|inherit"),
+ ("M10 V4 second read of the wasm for the descriptor", BOOT, "if moduleDesc, err = cabinet.NewModuleDescriptor(ctx, file.Metadata, file.Type, file.Accepts, file.OutputKeys, wasmCode); err != nil {\n\t\t\treturn fmt.Errorf(\"module validation: %w\", err)\n\t\t}\n\t\ttrustState",
+  "wasmCode2, _ := fs.ReadFile(fsys, wasmPath)\n\t\tif moduleDesc, err = cabinet.NewModuleDescriptor(ctx, file.Metadata, file.Type, file.Accepts, file.OutputKeys, wasmCode2); err != nil {\n\t\t\treturn fmt.Errorf(\"module validation: %w\", err)\n\t\t}\n\t\ttrustState",
+  "TestAdmission_AC14", "", "read exactly once|EXECUTED_DIGEST_MISMATCH|hashed buffer", ("if moduleDesc, err = cabinet.NewModuleDescriptor(ctx, file.Metadata, file.Type, file.Accepts, file.OutputKeys, wasmCode2)", "if moduleDesc, err = cabinet.NewModuleDescriptor(ctx, file.Metadata, file.Type, file.Accepts, file.OutputKeys, wasmCode2)")),
+ ("M11 verifyBuildHash call removed from the load path", ADM, "\tif err := project.verifyBuildHash(in.RawWasm); err != nil {", "\tif err := project.verifyBuildHash(in.RawWasm); false && err != nil {",
+  "TestAdmission_AC09", "", "buildHash"),
+ ("M12 dev opt-in accepts signature material without certificate", ADM, "\t\t\treturn true, nil\n\t\t} else if", "\t\t\treturn false, nil\n\t\t} else if",
+  "TestAdmission_AC08", "", "MODULE_REJECTED"),
+ ("M13 envelope module_id not compared", ADM, "if ve.Envelope.ModuleID != moduleID {", "if false && ve.Envelope.ModuleID != moduleID {",
+  "TestAdmission_EnvelopeModuleIDMustMatchManifest", "", "ENVELOPE_INVALID"),
+ ("M14 algorithm vs key type not compared", ADM, "if !isEC || ecKey.Curve != elliptic.P256() {", "if false && (!isEC || ecKey.Curve != elliptic.P256()) {",
+  "TestAdmission_RSASignerCanNotSignAnEnvelope|TestO1EnvelopeVectors_Provisional", "", "ALG_MISMATCH"),
+ ("M15 signature-file form not enforced", ADM, "if body == \"\" || strings.ContainsAny(body, \"\\n\\r \\t\") {", "if body == \"\" {",
+  "TestO1EnvelopeVectors_Provisional|TestAdmission_EnvelopeAndSignatureForm", "", "SIG_ENCODING", ("err != nil || base64.StdEncoding.EncodeToString(sig) != body {", "err != nil {")),
+ ("M16 strip setter back in the production build", "core/cabinet/validate.go", "// metaForChecksum is a helper struct", "// SetStripWasmModuleFunc is the old exported seam.\nfunc SetStripWasmModuleFunc(f func([]byte) ([]byte, error)) {\n\tstripWasmModuleFunc = f\n}\n\n// metaForChecksum is a helper struct",
+  "TestAdmission_AC18_StripSeamNotInProductionBuild", "", "strip seam|stripWasmModuleFunc"),
+ ("M17 #155: a non-PEM certificate file accepted as absent", BOOT, "\t\tif block == nil || block.Type != \"CERTIFICATE\" {", "\t\tif false && (block == nil || block.Type != \"CERTIFICATE\") {",
+  "TestAdmission_AC11", "", "AC11|not a PEM|registered"),
+]
+
+out = open(sys.argv[1], "w")
+def log(s):
+    out.write(s + "\n"); out.flush()
+
+for m in M:
+    name, path, old, new, tests, tags, reason = m[:7]
+    extra = m[7] if len(m) > 7 else None
+    p = R / path
+    orig = p.read_text()
+    assert orig.count(old) == 1, (name, "anchor not unique/absent")
+    mutated = orig.replace(old, new)
+    if extra and extra[0] != extra[1]:
+        assert mutated.count(extra[0]) == 1, (name, "extra anchor")
+        mutated = mutated.replace(extra[0], extra[1])
+    p.write_text(mutated)
+    try:
+        tagflag = f"-tags {tags} " if tags else ""
+        cmd = f"go test -count=1 {tagflag}-run '{tests}' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\\[build failed\\]|cannot|undefined' | head -60"
+        r = subprocess.run([str(W / "gorun.sh"), str(W / "mut.tmp"), cmd], capture_output=True, text=True)
+        body = (W / "mut.tmp").read_text()
+        lines = [l for l in body.splitlines() if not l.startswith("# cmd:")]
+        failed = any(l.lstrip().startswith("--- FAIL:") for l in lines)
+        if any("[build failed]" in l for l in lines):
+            failed = False
+        log(f"## {name}\n# file: {path}\n# tests: {tests} {('(tags ' + tags + ')') if tags else ''}\n# expected named reason: {reason}\n# RESULT: {'FAILED as required' if failed else 'DID NOT FAIL or BUILD FAILED (not evidence)'}")
+        log(body)
+    finally:
+        p.write_text(orig)
+log("# all mutations restored")

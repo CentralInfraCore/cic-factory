@@ -1,0 +1,386 @@
+## M01 V2 signature check disabled
+# file: cmd/relay/module_admission.go
+# tests: TestAdmission_AC01|TestO1EnvelopeVectors_Provisional 
+# expected named reason: SIGNATURE_INVALID
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_AC01|TestO1EnvelopeVectors_Provisional' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:32:50Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_AC01_ForeignBuildWithValidCertificate (0.01s)
+    module_admission_test.go:153: 
+        	Error:      	An error is expected but got nil.
+--- FAIL: TestO1EnvelopeVectors_Provisional (0.00s)
+    --- FAIL: TestO1EnvelopeVectors_Provisional/ecdsa-envelope-field-tampered (0.00s)
+        module_admission_vectors_test.go:74: 
+            	Error:      	Not equal: 
+            	            	expected: "SIGNATURE_INVALID"
+            	            	actual  : "EXECUTED_DIGEST_MISMATCH"
+            	Messages:   	the envelope's executed digest was edited after signing (signature covers the original): EXECUTED_DIGEST_MISMATCH: executed wasm sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476 != envelope executed_wasm_sha256 sha256:d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa
+    --- FAIL: TestO1EnvelopeVectors_Provisional/ecdsa-signature-bit-flipped (0.00s)
+        module_admission_vectors_test.go:73: 
+            	Error:      	An error is expected but got nil.
+            	Messages:   	one character of the signature changed
+    --- FAIL: TestO1EnvelopeVectors_Provisional/ed25519-envelope-field-tampered (0.00s)
+        module_admission_vectors_test.go:74: 
+            	Error:      	Not equal: 
+            	            	expected: "SIGNATURE_INVALID"
+            	            	actual  : "EXECUTED_DIGEST_MISMATCH"
+            	Messages:   	the envelope's executed digest was edited after signing (signature covers the original): EXECUTED_DIGEST_MISMATCH: executed wasm sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476 != envelope executed_wasm_sha256 sha256:d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa
+    --- FAIL: TestO1EnvelopeVectors_Provisional/ed25519-signature-bit-flipped (0.00s)
+        module_admission_vectors_test.go:73: 
+            	Error:      	An error is expected but got nil.
+            	Messages:   	one character of the signature changed
+FAIL
+FAIL	centralrelay/cmd/relay	0.016s
+FAIL
+# exit: 0
+
+## M02 V5 manifest digest check disabled
+# file: cmd/relay/module_admission.go
+# tests: TestAdmission_AC02|TestAdmission_AC15 
+# expected named reason: MANIFEST_DIGEST_MISMATCH
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_AC02|TestAdmission_AC15' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:32:51Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_AC02_ManifestEditedAfterSigning (0.01s)
+    --- FAIL: TestAdmission_AC02_ManifestEditedAfterSigning/extra_secrets (0.00s)
+        module_admission_test.go:171: 
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestAdmission_AC02_ManifestEditedAfterSigning/one_byte (0.00s)
+        module_admission_test.go:171: 
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestAdmission_AC02_ManifestEditedAfterSigning/wider_egress (0.00s)
+        module_admission_test.go:171: 
+            	Error:      	An error is expected but got nil.
+--- FAIL: TestAdmission_AC15_MetadataSignStaysSeparate (0.00s)
+    --- FAIL: TestAdmission_AC15_MetadataSignStaysSeparate/edited_after_the_envelope_was_signed (0.00s)
+        module_admission_test.go:443: 
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/cmd/relay	0.020s
+FAIL
+# exit: 0
+
+## M03 V4 raw digest check (envelope) disabled
+# file: cmd/relay/module_admission.go
+# tests: TestAdmission_AC03|TestO1EnvelopeVectors_Provisional 
+# expected named reason: WASM_DIGEST_MISMATCH
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_AC03|TestO1EnvelopeVectors_Provisional' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:32:52Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_AC03_AC16_WasmReplaced (0.00s)
+    --- FAIL: TestAdmission_AC03_AC16_WasmReplaced/manifest_wasmDigest_and_buildHash_rewritten_too (0.00s)
+        module_admission_test.go:194: 
+            	Error:      	Not equal: 
+            	            	expected: "WASM_DIGEST_MISMATCH"
+            	            	actual  : "MANIFEST_DIGEST_MISMATCH"
+            	Messages:   	rejected for the named reason: module "adm.mod@1.0.0" rejected: MANIFEST_DIGEST_MISMATCH: manifest sha256:f3a2806fd897f7014d45d95e44c4a514d6d6c67d1c66157bc8d5d2366c16c81a != envelope manifest_digest sha256:b4c54d362da8bd018f80924215c4c824fa0774f18bf2f450fe1953c3ad753e7e
+--- FAIL: TestO1EnvelopeVectors_Provisional (0.00s)
+    --- FAIL: TestO1EnvelopeVectors_Provisional/ecdsa-wasm-raw-modified (0.00s)
+        module_admission_vectors_test.go:73: 
+            	Error:      	An error is expected but got nil.
+            	Messages:   	the raw artifact differs from the signed digest
+    --- FAIL: TestO1EnvelopeVectors_Provisional/ed25519-wasm-raw-modified (0.00s)
+        module_admission_vectors_test.go:73: 
+            	Error:      	An error is expected but got nil.
+            	Messages:   	the raw artifact differs from the signed digest
+FAIL
+FAIL	centralrelay/cmd/relay	0.015s
+FAIL
+# exit: 0
+
+## M04 V4 executed digest check disabled
+# file: cmd/relay/module_admission.go
+# tests: TestAdmission_AC12|TestAdmission_AC18 (tags cic_test_seams)
+# expected named reason: EXECUTED_DIGEST_MISMATCH
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -tags cic_test_seams -run 'TestAdmission_AC12|TestAdmission_AC18' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:32:54Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_AC18_ChangedTransformationIsRejected (0.00s)
+    admission_strip_seam_test.go:23: 
+        	Error:      	An error is expected but got nil.
+--- FAIL: TestAdmission_AC12_AC17_ExecutedRepresentationDiffers (0.00s)
+    module_admission_test.go:390: 
+        	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/cmd/relay	0.031s
+FAIL
+# exit: 0
+
+## M05 V1 version checks disabled (probe and form)
+# file: cmd/relay/module_admission.go
+# tests: TestAdmission_AC05 
+# expected named reason: ENVELOPE_VERSION
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_AC05' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:32:55Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_AC05_UnknownEnvelopeVersion (0.00s)
+    module_admission_test.go:264: 
+        	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/cmd/relay	0.010s
+FAIL
+# exit: 0
+
+## M06 V2 key_id = SPKI check disabled
+# file: cmd/relay/module_admission.go
+# tests: TestAdmission_AC06 
+# expected named reason: KEY_MISMATCH
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_AC06' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:32:56Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_AC06_KeyIDNotTheCertificateKey (0.00s)
+    module_admission_test.go:271: 
+        	Error:      	Not equal: 
+        	            	expected: "KEY_MISMATCH"
+        	            	actual  : "SIGNER_NOT_AUTHORIZED"
+        	Messages:   	rejected for the named reason: module "adm.mod@1.0.0" rejected: SIGNER_NOT_AUTHORIZED: signer sha256:8e5966554908cc04840d0975ab4d5870643b1649f85e7267f6b732a7a0bef383 holds no module:sign authority in the pinned bindings
+FAIL
+FAIL	centralrelay/cmd/relay	0.006s
+FAIL
+# exit: 0
+
+## M07 V2b signer authority always granted
+# file: cmd/relay/module_admission.go
+# tests: TestAdmission_AC13 
+# expected named reason: SIGNER_NOT_AUTHORIZED
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_AC13' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:32:58Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_AC13_SignerNotAuthorized (0.01s)
+    --- FAIL: TestAdmission_AC13_SignerNotAuthorized/no_bindings_at_all (0.00s)
+        module_admission_test.go:411: 
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestAdmission_AC13_SignerNotAuthorized/key_not_listed (0.00s)
+        module_admission_test.go:411: 
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestAdmission_AC13_SignerNotAuthorized/key_listed,_no_role (0.00s)
+        module_admission_test.go:411: 
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/cmd/relay	0.010s
+FAIL
+# exit: 0
+
+## M08 V6 prod rule disabled
+# file: cmd/relay/module_admission.go
+# tests: TestAdmission_AC07|TestAdmission_AC15 
+# expected named reason: MODULE_REJECTED
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_AC07|TestAdmission_AC15' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:33:00Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_AC07_MissingSignatureInProd (0.01s)
+    --- FAIL: TestAdmission_AC07_MissingSignatureInProd/no_envelope,_no_.sig:_prod (0.00s)
+        module_admission_test.go:291: 
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestAdmission_AC07_MissingSignatureInProd/no_envelope,_no_.sig:_unset_trust_mode_counts_as_prod (0.00s)
+        module_admission_test.go:298: 
+            	Error:      	An error is expected but got nil.
+--- FAIL: TestAdmission_AC15_MetadataSignStaysSeparate (0.00s)
+    --- FAIL: TestAdmission_AC15_MetadataSignStaysSeparate/present,_no_envelope:_does_not_replace_the_envelope (0.00s)
+        module_admission_test.go:437: 
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/cmd/relay	0.018s
+FAIL
+# exit: 0
+
+## M09 V7 envelope binding not compared (cic-flow)
+# file: cmd/relay/cic_flow_registry.go
+# tests: TestAdmission_AC04|TestPerModule_Resolution 
+# expected named reason: no verified capability|not authorised|inherit
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_AC04|TestPerModule_Resolution' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:33:02Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestPerModule_Resolution (0.00s)
+    cic_flow_host_funcs_test.go:268: 
+        	Error:      	<nil> could not be applied builtin len()
+        	Messages:   	same ID, other envelope
+    cic_flow_host_funcs_test.go:268: 
+        	Error:      	<nil> could not be applied builtin len()
+        	Messages:   	same ID, no envelope binding
+--- FAIL: TestAdmission_AC04_ReusedModuleIDDoesNotInherit (0.01s)
+    --- FAIL: TestAdmission_AC04_ReusedModuleIDDoesNotInherit/re-released_with_another_wasm (0.00s)
+        module_admission_test.go:242: 
+            	Error:      	Should be false
+            	Messages:   	the old instance does not inherit the new grant
+        module_admission_test.go:247: 
+            	Error:      	Should be false
+            	Messages:   	the new artifact under the old envelope identity is not authorised
+FAIL
+FAIL	centralrelay/cmd/relay	0.020s
+FAIL
+# exit: 0
+
+## M10 V4 second read of the wasm for the descriptor
+# file: cmd/relay/bootstrap.go
+# tests: TestAdmission_AC14 
+# expected named reason: read exactly once|EXECUTED_DIGEST_MISMATCH|hashed buffer
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_AC14' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:33:05Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_AC14_AC19_SingleReadNoTOCTOU (0.00s)
+    module_admission_test.go:495: 
+        	Error:      	Not equal: 
+        	            	expected: 1
+        	            	actual  : 2
+        	Messages:   	the wasm is read exactly once
+FAIL
+FAIL	centralrelay/cmd/relay	0.008s
+FAIL
+# exit: 0
+
+## M11 verifyBuildHash call removed from the load path
+# file: cmd/relay/module_admission.go
+# tests: TestAdmission_AC09 
+# expected named reason: buildHash
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_AC09' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:33:09Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_AC09_BuildHashOnTheLoadPath (0.01s)
+    --- FAIL: TestAdmission_AC09_BuildHashOnTheLoadPath/buildHash_missing (0.00s)
+        module_admission_test.go:214: 
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestAdmission_AC09_BuildHashOnTheLoadPath/buildHash_names_another_wasm (0.00s)
+        module_admission_test.go:214: 
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/cmd/relay	0.013s
+FAIL
+# exit: 0
+
+## M12 dev opt-in accepts signature material without certificate
+# file: cmd/relay/module_admission.go
+# tests: TestAdmission_AC08 
+# expected named reason: MODULE_REJECTED
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_AC08' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:33:12Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_AC08_DevOptIn (0.00s)
+    --- FAIL: TestAdmission_AC08_DevOptIn/no_certificate_but_.envelope.json_present (0.00s)
+        module_admission_test.go:351: 
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestAdmission_AC08_DevOptIn/no_certificate_but_.sig_present (0.00s)
+        module_admission_test.go:351: 
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/cmd/relay	0.011s
+FAIL
+# exit: 0
+
+## M13 envelope module_id not compared
+# file: cmd/relay/module_admission.go
+# tests: TestAdmission_EnvelopeModuleIDMustMatchManifest 
+# expected named reason: ENVELOPE_INVALID
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_EnvelopeModuleIDMustMatchManifest' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:33:14Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_EnvelopeModuleIDMustMatchManifest (0.00s)
+    module_admission_test.go:587: 
+        	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/cmd/relay	0.012s
+FAIL
+# exit: 0
+
+## M14 algorithm vs key type not compared
+# file: cmd/relay/module_admission.go
+# tests: TestAdmission_RSASignerCanNotSignAnEnvelope|TestO1EnvelopeVectors_Provisional 
+# expected named reason: ALG_MISMATCH
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_RSASignerCanNotSignAnEnvelope|TestO1EnvelopeVectors_Provisional' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:33:16Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_RSASignerCanNotSignAnEnvelope (0.00s)
+FAIL	centralrelay/cmd/relay	0.022s
+FAIL
+# exit: 0
+
+## M15 signature-file form not enforced
+# file: cmd/relay/module_admission.go
+# tests: TestO1EnvelopeVectors_Provisional|TestAdmission_EnvelopeAndSignatureForm 
+# expected named reason: SIG_ENCODING
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestO1EnvelopeVectors_Provisional|TestAdmission_EnvelopeAndSignatureForm' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:33:17Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_EnvelopeAndSignatureForm (0.01s)
+    --- FAIL: TestAdmission_EnvelopeAndSignatureForm/signature_two_lines (0.00s)
+        module_admission_test.go:577: 
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestAdmission_EnvelopeAndSignatureForm/signature_CRLF (0.00s)
+        module_admission_test.go:577: 
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestAdmission_EnvelopeAndSignatureForm/signature_space (0.00s)
+        module_admission_test.go:577: 
+            	Error:      	Should be false
+            	Messages:   	a rejected module is not registered
+    --- FAIL: TestAdmission_EnvelopeAndSignatureForm/signature_url_alphabet (0.00s)
+        module_admission_test.go:577: 
+            	Error:      	Should be false
+            	Messages:   	a rejected module is not registered
+    --- FAIL: TestAdmission_EnvelopeAndSignatureForm/signature_valid_but_bad (0.00s)
+        module_admission_test.go:577: 
+            	Error:      	Should be false
+            	Messages:   	a rejected module is not registered
+--- FAIL: TestO1EnvelopeVectors_Provisional (0.01s)
+    --- FAIL: TestO1EnvelopeVectors_Provisional/ecdsa-signature-two-lines (0.00s)
+        module_admission_vectors_test.go:73: 
+            	Error:      	An error is expected but got nil.
+            	Messages:   	signature file spans two lines
+    --- FAIL: TestO1EnvelopeVectors_Provisional/ed25519-signature-two-lines (0.00s)
+        module_admission_vectors_test.go:73: 
+            	Error:      	An error is expected but got nil.
+            	Messages:   	signature file spans two lines
+FAIL
+FAIL	centralrelay/cmd/relay	0.034s
+FAIL
+# exit: 0
+
+## M16 strip setter back in the production build
+# file: core/cabinet/validate.go
+# tests: TestAdmission_AC18_StripSeamNotInProductionBuild 
+# expected named reason: strip seam|stripWasmModuleFunc
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_AC18_StripSeamNotInProductionBuild' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:33:19Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_AC18_StripSeamNotInProductionBuild (0.01s)
+    module_admission_test.go:615: 
+        	Error:      	Should not be: "SetStripWasmModuleFunc"
+        	Messages:   	validate.go declares the strip seam in a production build
+    module_admission_test.go:620: validate.go assigns stripWasmModuleFunc in a production build
+    module_admission_test.go:627: 
+        	Error:      	Should be zero, but was 1
+FAIL
+FAIL	centralrelay/cmd/relay	0.019s
+FAIL
+# exit: 0
+
+## M17 #155: a non-PEM certificate file accepted as absent
+# file: cmd/relay/bootstrap.go
+# tests: TestAdmission_AC11 
+# expected named reason: AC11|not a PEM|registered
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmission_AC11' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|Error:|expected:|actual  :|Messages:|^(ok|FAIL)|_test.go:[0-9]+:|\[build failed\]|cannot|undefined' | head -60
+# date: 2026-11-27T19:33:21Z  HEAD: 86ea1ab30e1f234ab294e51385f6f51bbff0aff9
+--- FAIL: TestAdmission_AC11_Issue155FailClosed (0.00s)
+    --- FAIL: TestAdmission_AC11_Issue155FailClosed/not_a_PEM (0.00s)
+FAIL	centralrelay/cmd/relay	0.020s
+FAIL
+# exit: 0
+
+# all mutations restored

@@ -1,0 +1,7 @@
+package main
+
+import "centralrelay/core/cabinet"
+
+func main() {
+	cabinet.SetStripWasmModuleFunc(func(b []byte) ([]byte, error) { return b, nil })
+}

@@ -1,0 +1,54 @@
+# HEAD 12cfa2ed96b20908f13a64581e86f1339c54b2c3; grep -rn --include=*.go -F <sym> . | grep -v _test.go
+-- verifyBuildHash(
+cmd/relay/cic_flow_manifest.go:319:func (p *moduleProject) verifyBuildHash(wasm []byte) error {
+cmd/relay/module_admission.go:320:	if err := project.verifyBuildHash(in.RawWasm); err != nil {
+-- admitEnvelope(
+cmd/relay/module_admission.go:301:func admitEnvelope(in envelopeInput, cert *x509.Certificate, moduleID, wasmDigestHex string, pkiAssets *PKIAssets) (*verifiedEnvelope, error) {
+cmd/relay/module_admission.go:400:		ve, err := admitEnvelope(envelopeInput{EnvelopeJSON: envData, SignatureFile: sigFile, RawWasm: rawWasm, ExecutedWasm: executedWasm, Manifest: manifest},
+-- verifyEnvelope(
+cmd/relay/module_admission.go:238:func verifyEnvelope(in envelopeInput) (*verifiedEnvelope, error) {
+cmd/relay/module_admission.go:303:	ve, err := verifyEnvelope(in)
+-- admitModuleArtifact(
+cmd/relay/bootstrap.go:608:		trustState, envelopeDigest, admErr := admitModuleArtifact(fsys, yamlPath, moduleID, calculatedDigest, yamlContent, wasmCode, moduleDesc.WasmCode, cert, pkiAssets, auditLogger)
+cmd/relay/module_admission.go:383:func admitModuleArtifact(fsys fs.FS, yamlPath, moduleID, wasmDigestHex string, manifest, rawWasm, executedWasm []byte, cert *x509.Certificate, pkiAssets *PKIAssets, logger *logrus.Entry) (string, string, error) {
+-- signerAuthorized(
+cmd/relay/module_admission.go:291:func signerAuthorized(pkiAssets *PKIAssets, keyID string) bool {
+cmd/relay/module_admission.go:307:	if !signerAuthorized(pkiAssets, ve.Envelope.Signer.KeyID) {
+-- lookupFor(
+cmd/relay/cic_flow_host_funcs.go:104:		deps, ok := reg.lookupFor(id)
+cmd/relay/cic_flow_registry.go:96:func (r *cicFlowRegistry) lookupFor(instance cabinet.InstanceIdentity) (cicFlowDeps, bool) {
+-- stageVerified
+cmd/relay/cic_flow_registry.go:107:// stageVerified is the loader's registerModuleCapability: the grant is recorded with its artifact and its
+cmd/relay/cic_flow_registry.go:112:func (r *cicFlowRegistry) stageVerified(moduleID string, projectYAML []byte, artifact, envelopeDigest string) error {
+cmd/relay/cic_flow_registry.go:147:// publish is the body of stageVerified. It parses the module's project.yaml and
+cmd/relay/main.go:744:	registerModuleCapability = cicFlowReg.stageVerified
+-- loadModuleSignAuthorities(
+cmd/relay/main.go:786:	if err := loadModuleSignAuthorities(pkiAssets, logger); err != nil {
+cmd/relay/pki_companion.go:138:func loadModuleSignAuthorities(pkiAssets *PKIAssets, logger *logrus.Logger) error {
+-- requiresAuthentication(
+cmd/relay/module_admission.go:367:func requiresAuthentication(pkiAssets *PKIAssets) bool {
+cmd/relay/module_admission.go:411:	if state != trustAuthenticated && requiresAuthentication(pkiAssets) && importsCICFlow(manifest) {
+-- signatureMaterialPresent(
+cmd/relay/module_admission.go:354:func signatureMaterialPresent(fsys fs.FS, yamlPath string) (bool, error) {
+cmd/relay/bootstrap.go:626:		if present, statErr := signatureMaterialPresent(fsys, yamlPath); statErr != nil || present {
+-- loadModule(ctx
+cmd/relay/bootstrap.go:457:			loadErr = loadModule(ctx, svc, fsys, path, content, pkiAssets, maxWasmModuleSize, logger)
+cmd/relay/bootstrap.go:508:func loadModule(ctx context.Context, svc cabinet.Cabinet, fsys fs.FS, yamlPath string, yamlContent []byte, pkiAssets *PKIAssets, maxWasmModuleSize int64, logger *logrus.Logger) error {
+-- loadComponentsFromFS(ctx
+cmd/relay/bootstrap.go:387:	if err := loadComponentsFromFS(ctx, svc, schemas, ".", true, pkiAssets, maxWasmModuleSize, logger); err != nil {
+cmd/relay/bootstrap.go:390:	if err := loadComponentsFromFS(ctx, svc, workflows, ".", true, pkiAssets, maxWasmModuleSize, logger); err != nil {
+cmd/relay/bootstrap.go:417:	if err := loadComponentsFromFS(ctx, svc, installedFS, ".", false, pkiAssets, maxWasmModuleSize, logger); err != nil {
+cmd/relay/bootstrap.go:425:func loadComponentsFromFS(ctx context.Context, svc cabinet.Cabinet, fsys fs.FS, root string, failOnError bool, pkiAssets *PKIAssets, maxWasmModuleSize int64, logger *logrus.Logger) error {
+-- loadEmbeddedComponents(loadCtx
+cmd/relay/main.go:811:	if err := loadEmbeddedComponents(loadCtx, cabinetSvc, embeddedFS, embeddedFS, pkiAssets, cfg.MaxWASMModuleSize, logger); err != nil {
+-- loadInstalledComponents(loadCtx
+cmd/relay/main.go:817:	if err := loadInstalledComponents(loadCtx, cabinetSvc, "/etc/cic-relay/components.d", pkiAssets, cfg.MaxWASMModuleSize, logger); err != nil {
+-- registerModuleCapability(moduleID
+cmd/relay/bootstrap.go:617:			if err := registerModuleCapability(moduleID, yamlContent, moduleDesc.Checksum(), envelopeDigest); err != nil {
+-- SetStripWasmModuleFunc
+core/cabinet/strip_seam_testhook.go:5:// SetStripWasmModuleFunc overrides the wasm-canon/v1 transformation. It exists ONLY in a build with the
+core/cabinet/strip_seam_testhook.go:9:func SetStripWasmModuleFunc(f func([]byte) ([]byte, error)) (previous func([]byte) ([]byte, error)) {
+core/cabinet/validate.go:50:// only exported override, SetStripWasmModuleFunc, exists solely under the cic_test_seams build tag
+-- build tag cic_test_seams users
+cmd/relay/admission_strip_seam_test.go
+core/cabinet/strip_seam_testhook.go
