@@ -1,0 +1,40 @@
+# Fault-injection harness for the WP-01 envelope producer: each mutation must make its NAMED test fail (not a collection/import error); the baseline passes before and after.
+import pathlib, re, subprocess, sys
+R = pathlib.Path(__file__).resolve().parent.parent / "cic-module-oracle-cloud"
+PY = "<venv>/bin/python"
+F = R / "tools/releaselib/envelope.py"
+MUT = [
+ ("M01 signed-domain field order changed", '_FIELDS = (\n    "module_id",\n    "wasm_sha256",', '_FIELDS = (\n    "wasm_sha256",\n    "module_id",', "test_ed25519_output_is_byte_identical_to_the_shared_vector"),
+ ("M02 domain tag changed", 'ENVELOPE_DOMAIN = "CICMODENVv1"', 'ENVELOPE_DOMAIN = "CICMODENVv2"', "test_ed25519_output_is_byte_identical_to_the_shared_vector"),
+ ("M03 producer self-check skipped", "    digest = verify_release(\n        envelope, sig_file, spki_der, raw_wasm, executed_wasm, manifest_raw\n    )", "    digest = sha256_ref(signed)", "test_wrong_ecdsa_marshaling_is_refused_at_production"),
+ ("M04 manifest digest not compared", 'if fields["manifest_digest"] != sha256_ref(manifest_raw):', 'if False and fields["manifest_digest"] != sha256_ref(manifest_raw):', "test_manifest_edited_after_signing_is_detected"),
+ ("M05 executed digest not compared", 'if fields["executed_wasm_sha256"] != sha256_ref(executed_wasm):', 'if False and fields["executed_wasm_sha256"] != sha256_ref(executed_wasm):', "test_a_different_executed_representation_is_detected"),
+ ("M06 raw wasm digest not compared", 'if fields["wasm_sha256"] != sha256_ref(raw_wasm):', 'if False and fields["wasm_sha256"] != sha256_ref(raw_wasm):', "test_a_modified_raw_wasm_is_detected"),
+ ("M07 key identity not the SPKI digest", "    return sha256_ref(spki_der)", "    return sha256_ref(spki_der[:-1])", "test_ed25519_output_is_byte_identical_to_the_shared_vector"),
+ ("M08 curve not restricted to P-256", "        key.curve, ec.SECP256R1\n    ):", "        True, True\n    ):", "test_keys_outside_the_allowlist_are_refused"),
+ ("M09 signature file without the final LF", 'return base64.b64encode(signature) + b"\\n"', 'return base64.b64encode(signature) + b""', "test_signature_file_form"),
+ ("M10 vault adapter sends another digest", "hashlib.sha256(message).digest()", "hashlib.sha256(message + b'x').digest()", "test_vault_adapter_sends_the_prehashed_digest_of_the_signed_bytes"),
+ ("M11 vault prefix not checked", 'if not isinstance(signature, str) or not signature.startswith(prefix):', 'if False:', "test_vault_adapter_refuses_a_signature_without_the_vault_prefix"),
+ ("M12 algorithm not compared with the key type", 'if fields["signer_alg"] != algorithm_of(spki_der):', 'if False and fields["signer_alg"] != algorithm_of(spki_der):', "test_every_shared_vector_gets_its_expected_code_from_the_reference_verifier"),
+ ("M13 key_id not compared with the signer key", 'if fields["signer_key_id"] != key_id_of(spki_der):', 'if False and fields["signer_key_id"] != key_id_of(spki_der):', "test_every_shared_vector_gets_its_expected_code_from_the_reference_verifier"),
+]
+def run():
+    p = subprocess.run([PY, "-m", "pytest", "tests/test_tools/test_releaselib/test_envelope.py", "-q", "--no-cov", "-p", "no:cacheprovider", "-rf"], cwd=R, capture_output=True, text=True)
+    return p.returncode, p.stdout
+lines, bad = [], 0
+rc, out = run(); lines.append(f"## baseline rc={rc}\n{out.splitlines()[-1]}")
+if rc != 0: print("baseline fails"); sys.exit(1)
+orig = F.read_text()
+for label, old, new, test in MUT:
+    if orig.count(old) != 1:
+        lines.append(f"## {label}\n# MUTATION NOT APPLIED (count {orig.count(old)})"); bad += 1; continue
+    try:
+        F.write_text(orig.replace(old, new, 1)); rc, out = run()
+        caught = rc != 0 and ("FAILED " in out) and any(l.startswith("FAILED") and test in l for l in out.splitlines())
+        lines.append(f"## {label}\n# test: {test}\n# RESULT: {'FAILED as required' if caught else 'NOT CAUGHT / WRONG REASON'}\n{out.splitlines()[-1]}")
+        bad += (not caught)
+    finally:
+        F.write_text(orig)
+rc, out = run(); lines.append(f"## after restore rc={rc}\n{out.splitlines()[-1]}")
+(pathlib.Path(__file__).parent / "fault-injection-wp01.txt").write_text("\n".join(lines))
+print("mutations:", len(MUT), "not-as-required:", bad, "| after restore rc:", rc)

@@ -1,0 +1,56 @@
+## baseline rc=0
+============================== 54 passed in 0.09s ==============================
+## M01 signed-domain field order changed
+# test: test_ed25519_output_is_byte_identical_to_the_shared_vector
+# RESULT: FAILED as required
+======================== 10 failed, 44 passed in 0.17s =========================
+## M02 domain tag changed
+# test: test_ed25519_output_is_byte_identical_to_the_shared_vector
+# RESULT: FAILED as required
+======================== 10 failed, 44 passed in 0.13s =========================
+## M03 producer self-check skipped
+# test: test_wrong_ecdsa_marshaling_is_refused_at_production
+# RESULT: FAILED as required
+========================= 3 failed, 51 passed in 0.14s =========================
+## M04 manifest digest not compared
+# test: test_manifest_edited_after_signing_is_detected
+# RESULT: FAILED as required
+========================= 3 failed, 51 passed in 0.13s =========================
+## M05 executed digest not compared
+# test: test_a_different_executed_representation_is_detected
+# RESULT: FAILED as required
+========================= 3 failed, 51 passed in 0.10s =========================
+## M06 raw wasm digest not compared
+# test: test_a_modified_raw_wasm_is_detected
+# RESULT: NOT CAUGHT / WRONG REASON
+========================= 3 failed, 51 passed in 0.11s =========================
+## M07 key identity not the SPKI digest
+# test: test_ed25519_output_is_byte_identical_to_the_shared_vector
+# RESULT: FAILED as required
+======================== 19 failed, 35 passed in 0.17s =========================
+## M08 curve not restricted to P-256
+# test: test_keys_outside_the_allowlist_are_refused
+# RESULT: FAILED as required
+======================== 23 failed, 31 passed in 0.32s =========================
+## M09 signature file without the final LF
+# test: test_signature_file_form
+# RESULT: FAILED as required
+======================== 12 failed, 42 passed in 0.20s =========================
+## M10 vault adapter sends another digest
+# test: test_vault_adapter_sends_the_prehashed_digest_of_the_signed_bytes
+# RESULT: FAILED as required
+========================= 1 failed, 53 passed in 0.11s =========================
+## M11 vault prefix not checked
+# test: test_vault_adapter_refuses_a_signature_without_the_vault_prefix
+# RESULT: FAILED as required
+========================= 1 failed, 53 passed in 0.16s =========================
+## M12 algorithm not compared with the key type
+# test: test_every_shared_vector_gets_its_expected_code_from_the_reference_verifier
+# RESULT: FAILED as required
+========================= 2 failed, 52 passed in 0.11s =========================
+## M13 key_id not compared with the signer key
+# test: test_every_shared_vector_gets_its_expected_code_from_the_reference_verifier
+# RESULT: FAILED as required
+========================= 2 failed, 52 passed in 0.12s =========================
+## after restore rc=0
+============================== 54 passed in 0.17s ==============================
