@@ -11,7 +11,7 @@
 | Commitok | `7b0e2f7` (megvalósítás), **`c9603c7`** (a külső review F1–F5 javításai) |
 | Commit-aláírás | a gyári hookon át, fejlesztői kulcs; nem release-aláírás |
 | Környezet | docker `golang:1.26.11` (`sha256:957952ae…`); a Go-eszközlánc a gépen nem natív |
-| **GitHub CI a `c9603c7` head SHA-n** | **UNVERIFIED / folyamatban:** az ellenőrzéskor 8 job `pass`, 3 `pending` (`go (chunk 0)`, `object-evidence`, `rust`), 1 `skipping` (rust shard). A végleges eredményt a head SHA-ra újra le kell kérdezni. (A korábbi, zöld CI a `7b0e2f7`-re vonatkozott, nem erre.) |
+| **GitHub CI a `c9603c7` head SHA-n** | **ellenőrizve (az orchestrátor, `gh pr checks 234`, a PR head SHA `c9603c73…` egyezik): 14 job `pass`, 1 `skipping` (rust shard), 0 hiba.** A korábbi, a `7b0e2f7`-re vonatkozó zöld CI külön állapot. |
 | Evidence-naplók | a helyi futások a munkafán készültek, amely a `7b0e2f7`-re épülve lett a `c9603c7` |
 
 ## Mit valósít meg
