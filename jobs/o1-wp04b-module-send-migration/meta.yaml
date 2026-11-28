@@ -1,0 +1,25 @@
+schema_version: "1.0"
+job_id: "o1-wp04b-module-send-migration"
+parent_job_id: ""
+level: "repo"
+target:
+  repo: "cic-module-oracle-cloud"
+  path: ""
+kb_focus:
+  - "c781"
+  - "c912"
+promptmap_ref: ""
+agent:
+  config_dir: "~/.claude-personal/agents/agent-01"
+  model: "claude-opus-5"
+workplace:
+  repos:
+    - "cic-factory"
+    - "cic-module-oracle-cloud"
+  branch: "feature/o1-wp04b-module-send-migration"
+status: "pending"
+error_message: ""
+timestamps:
+  created: "2026-11-28T07:52:38Z"
+  started: ""
+  completed: ""

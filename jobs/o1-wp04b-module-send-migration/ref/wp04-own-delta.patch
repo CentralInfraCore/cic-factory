@@ -1,0 +1,1209 @@
+diff --git a/MANIFEST.sha256 b/MANIFEST.sha256
+index 54cd353..e5a9a3c 100644
+--- a/MANIFEST.sha256
++++ b/MANIFEST.sha256
+@@ -2,16 +2,17 @@
+ 01956821ece300a66ff61849618cb03b0b3fd5aefce4dfd9bff7a4a33c867e1e  docs/design/specs/capability-manifest.md
+ 052458dca6bed674aec47f25561534ce72cda99a62faf33e2e947474400c7374  tools/vault-rootCA-sign-agent.sh
+ 070afe72a7b0b43ffe81e7199b135c484bcf513800616bebcabc636ff1b6013c  docs/design/primitives-alignment.md
+-07dd65e321c4eeb0e26ea6d7154d93d2a9b79b7a5ac0f19c2a32c7621b9844c2  module/relay_integration_test.go
++0b966e84f39888f1cd22c47cf0a74dc92b3910f52064d749545ca3bc96619f6b  module/relay_integration_test.go
+ 0d08c6a7982760ef2c1bac82bf587e8d2c0e30fadc6638056e63aaa5e259a1cd  tools/finalize_release.py
++0d34f429d7fb87969cc0547ef41a59759ac89056d49dff5de04859ab79260f5a  module/provider_test.go
+ 0e290d5b03efe23941d250236579dbed1c3cd6afdee70234f757b44aa7f6cc77  md.meta.schema.yaml
+ 1126b99a345f693bd4c98eedaa86397ad4251f34f89dc48079f33764af0804d8  docs/hu/makefile-cheatsheet.md
+ 113f83b3ca0443799224e8f29396b90777539217771ecb6f1c932df1b5168389  LICENSE.meta.yaml
+ 11a0fb2cf1ce82ed7df0fe05a6fceb8e20051c48c4e9c80925f34d68dace503d  tools/schemalib/validator.py
+ 134ea29c14da90cff091cb9bd5406522e182a07a86c6c4203e1436df8c26c4bc  docs/en/concept/declarative_ecosystem_integration.meta.yaml
+ 15551f514d13c6d42283a2cf09355f900f862624a51f3e32b6675ef3a24fce4a  tools/oci-extract/go.mod
+-1610f9791c9760be651e499bd3a22f3c65cc5c0521fc77dfe90f08ddbc72f0be  module/cicflow_guest.go
+ 16183e414f0bb7bc6dc2236f94cba83695ebf78f6afeb75740914308a88cd16c  docs/hu/concept/git-management.md
++17b1757e6b002bb18484196b7f159ddc87b8bc363587c55c27aba07bf713129c  module/module.wasm
+ 197c7810efb00fc299c52bc63811bf3f40ca26f63179117b094eafc926bcc06c  docs/design/README.md
+ 19d34cdecc100a1aad3f693963917a2f0468d6b8bea91fb612c5b70cc0f73c3f  tools/oci-extract/schema.go
+ 1b3e25bf2122e2d44a8cfc13620797fd129911c5c74d8e1c1db96cee6994f1ce  docs/hu/concept/git-management.meta.yaml
+@@ -20,10 +21,10 @@
+ 1fb21ac33f8dfbeab2fe887dd40a03aeb834e28508f69e036de88e83a431b55a  tests/test_tools/test_infra_coverage.py
+ 2020cd3da7008987b81055f0ef1bc7481567202da7f8bf49d616b1018f52bc21  mk/infra.mk
+ 20b03084c87f86f2ed3c27cb48ca6d9bc8d55fb53e45ee350687079074520615  docs/hu/workflow.md
++228ea9def1b0b00a01788fd21e76a6058904fdac6b204f087162cac7414df92e  module/cicflow_guest.go
+ 22c39262d79bf0d4406a423beab572bdcb6b0fd9c84c192b2f371bc3925c8189  Dockerfile
+ 239aeb42d7a7ad0589b5cdf063d0dfd9fa165af87673efb51fe9788835214819  .yamllint
+ 2403edc1fbd917fa0553fbd6429c5d3c05ebde8302e6878a570f35834253c805  tools/oci-extract/extract_test.go
+-247687949482cd6e8645802f2daaaa50d2b0fe546b5b66c97a887830ae6a9e17  module/oci_sign.go
+ 27bd8b5ecad9a195ff70e99da7a70ddd9a1dd5d42f35c0f0c163c9f3e617ede9  mk/wasm.mk
+ 2a6bc913a5c877b2b2dfb30f68d165950d9c881606819d6873047f1122c63abf  docs/hu/architecture.yaml
+ 2ab20175d0b7d0f2a7ebe960903a08dc7fe69620615f253ae1fa3e584747edaa  pytest.ini
+@@ -31,7 +32,6 @@
+ 2d28d83b74f3b137a2e2d02d21178ad751b9b59ea81133ec42c9704ca535c986  tools/init_from_template.sh
+ 2d71ac3c49cf88cc1d95b43948afe78d3f531e4ced96ee0675bb6fea05144dc6  docs/design/specs/host-functions.md
+ 2d87c2957061063b82c61db64dfe51c5f3291e8341325152c9afadde746b2ab3  docs/design/architecture.md
+-2e148cfb493a5d7ac03d99bf9e6a40c109e6a929451aac289bfa1311b0d95297  docs/design/specs/provider-abi.md
+ 2e19ebdd9db8f56f6dc5fb006f8bb23037595794d0c288e72901b9f628d2d5b5  tools/git_hook_commit-msg.sh
+ 2e85d74791ed8db0bee2e473f3d5906c351c1c962901e12dc4278198a44d07a3  docs/hu/concept/declarative_ecosystem_integration.meta.yaml
+ 31c160fcfce1bab71012e39794a54dba00fd746b58cddeeada9fa5982445bd55  tools/verify_release.py
+@@ -41,7 +41,9 @@
+ 374a2c54d3fcd2b684d2a1699fe7e67c69dffa51e302001c13f55b1468c8c0c2  tests/test_tools/test_compiler.py
+ 3766bf4bce6194763f838cc1f2aebff0801d4451956b8446916b17ecf846c2d7  abi.schema.yaml
+ 395199128c561de3e991d635b3d93a2f2a8d7809de5ebe7195877ac37c2d92ba  README.md
++39c9538b2737964ab619655d8cf4d0fa0b841bf51004e774c89bd5b629d8e440  module/cicflow_host.go
+ 3afc5e1977e9258dd478d592606874b8fad4229f72306b15ef072c2b7fe67665  module/abi_negative_test.go
++3c7bb13c30bec8936bc8344f7de851b027f82c01e92a17d14412436db9efd1c9  module/send_contract_test.go
+ 400f82459e0cb32a710c1d573bbc26ad97c304c5f8899344dc1f8e5071d747b1  tools/oci-extract/diff.go
+ 4052911ff15fb58c6072a0cc9de1119286ccece4491fac76f4c27817cdf1447a  docs/contracts/en/envelope.md
+ 41ab08a0eb4f0739f352e60b35512c5402644f16fc349552cd185c490cb4d5a3  module/contracts_test.go
+@@ -51,6 +53,8 @@
+ 4d7369474566105752ec28aefab51de748b237342c71d05b3189fa8c2ae1fdef  Makefile
+ 4f17c0159f1f921350ba3a5762388676cf2ec8784618941f705c833e8565b598  docs/design/specs/state-model.md
+ 4fffcdac095c0623fefb8515ab80b3e9629c0febc454456cd08b3cdf3c941720  LICENSE.md
++517ba675cce3df4b95eaf51c07e47263267ebbb92d16d44f361b13ed632d6153  docs/design/specs/provider-abi.md
++53db03b237ed73e081e965a6f8709a180eae2c72091b10864d8e6b089b120f77  module/provider.go
+ 5432506f15d65fa59572362a70db4bc403c13b163ec961ecb2951d7f98d093d0  module/go.mod
+ 54c06b36eb6d6ff546f6e54e60dab6dac5363f9e93537b847d5018193d01fce8  module/schemas/core/instance.json
+ 57980b8a84a13ffad62b7295e3095bd635f8894716665d0654dfb54eebbf10e5  docs/contracts/en/host-expectations.md
+@@ -64,9 +68,7 @@
+ 6db64092fb2c2dc8bcbd3e321faf04f6cc40b16e890c8dec3e56e4178df01402  LICENSE.yaml
+ 6e47d263c8203e2fdd44672be70aeb71456e767e0d2ea6840831f6070eb8214f  tools/oci-extract/testdata/polymorphic.go
+ 6f3655bf787efee284225bcb6096913d0ec556771dddb42845311e649c21e7ad  docs/hu/concept/declarative_ecosystem_integration.md
+-6f65f1d391de8f23bc0be7d317a46245386c8f0c113719589a3768d63ab8896d  module/provider.go
+ 7068014ecee4111cb4456d3d3328c33b53a79c7803d68f040036f34449423f65  tools/oci-extract/testdata/instance.go
+-7080b3423beded8b64891afdcf2e6f6d8bec6ebeaa88aecbb1b06e149b54ef86  module/module.wasm
+ 7136d8366bbd7c5ccc19a3d810a7f55c31541acec9b0f05bd84e45a39107ded7  tests/test_capability_manifest.py
+ 7426752feb1140b2023192728df35248e4f802617c150bb0523ab97dc1638c0b  tools/init-hooks.sh
+ 74d93981f1935d21001ed0475ebb84132ab67c71840ca82ca0cbfac5aca29ea2  docs/contracts/en/wasm-abi.md
+@@ -77,9 +79,9 @@
+ 805c05942247d6327f0f006a8799119ace530c4ae288ad637d0f8faddca21d86  docs/hu/architecture.md
+ 806851c10862d6900eb858a229e3ba7138943abe3fd75e5b1e8f8ca4b57d1d6f  mk/golang.mk
+ 885e419c23b97b7558a4f599267ef904a9f059ed3c455d3a95eda787ea7ab117  tools/releaselib/git_service.py
+-8a269de9b6799fbda2837466293f020125b5376b4e0794eb25d8d4146af8aa0b  docs/design/specs/relay-sign-send-interface.md
+ 8c956255f18ea7baa83eec246e38e9138b9e29284972a2fa95084a70ea97d6a9  capability-manifest.schema.yaml
+ 8db6dccfdd2342641ad77532d9f66b305f74920ecc116371e81d8a36c873c7fb  tools/oci-extract/policy.go
++90e42a426da0174dadb1985065aecfde99b2cc15f3bf089346b429dc6a4eedcd  module/module_loadtest_test.go
+ 91028e56a79fe945c71943ceaa1659a9ec3e194b55e12f1f8f2f73444540b22d  .github/workflows/ci.yml
+ 9162efab5184e7d9546bbd6b7fbed2fff74d5b1564a3b6847aada81ff7ec7ae3  project.schema.yaml
+ 941db4ccb700b939d937831c1d34ce432564c5d86fd82a91f01231149f3096c8  tools/oci-extract/cmd/oci-extract/main.go
+@@ -92,7 +94,8 @@ a44687b269fac17633c80d8e735cf3402d5f65fd0bb2c24e9996d0a89e134c94  docs/contracts
+ a6c2baaaf307c0718ecaa43f654742269c3830fd9ff899a000af5e56713e5082  tools/__init__.py
+ a85fe8169218b1abe90093cc5d7f8bccc0cb1eb98a4670881b31d37834e54893  tools/oci-extract/client_test.go
+ a8ecf9c2551505fd5a4c477c735c88fff9c4627136dade955cdcbfc16d8ca131  docs/en/makefile-cheatsheet.md
+-b304ac8143d669cbb505d50ffbeb11deac010d54cfab4fa2f0d6ac2355382e7f  module/cicflow_host.go
++abc246ff49dd627b227af540248ec5768e60ce2cc2c8136804cfba4e8b162be5  project.yaml
++b267c9fd43f65969bacb1e30355f871880f0a594b19f69900cd5d88b50af2317  docs/design/specs/relay-sign-send-interface.md
+ b3585cfa2c622b28548424d092f4ee05a679d7ced46a762f7c1f5bc4931e5c27  tools/oci-extract/testdata/bucket.go
+ b3d0d0dd71c294b5fa8bad4fcdd9784feae35141aeb71e1755abd8bbd0cfca58  pyproject.toml
+ b4243f2ae7001af0ff5fe747ce968866becba32ec759c0adcf3b7eba008f6ed3  README.hu.md
+@@ -105,6 +108,7 @@ bb8a1743ab9f77a309bd851b4a1660f6f2420900455a5a0dfb83f4e6905968ff  module/abi_man
+ bbe93c718d90a03de5aab2999031c7097bd63a8e40ec14589c8dbe4364a4ec52  renovate.json
+ bfccbd3cd778ac6f0458b7d45d7b25e2cbdc0a789f40e81c1de476f8aab44363  tools/schemalib/loader.py
+ c31a1313ace9ae3da9483d7ac7bbc0938d5e2f6c7c0460d785d94db5bb931e85  docs/contracts/en/release-artifact.md
++c53cc776cc0c998b7b9dc7c5c35a9848004f396cb375090103841a3e8757667b  module/host_mock_test.go
+ c54659558693be5238ff020322eb00ca80ce7d14aea461ee1ae24361e80fe84f  tools/releaselib/vault_service.py
+ c55c74bb201c91330aa8bda11dd256fe35f84b3a3a0e24a1cebe3e487bd60135  requirements.in
+ c6919cec77cbf13916932f91cdc9b9d32d9290282c5d87244af7adc1a30d441a  module/go.sum
+@@ -126,7 +130,6 @@ dbf95454ac47989d27ed0dc7e8a37275945c38cfb823aaa63921bb89d7e29396  tools/oci-extr
+ dbfb640d40533eeb73ececd170189f951f16ad07c549a8321dbb12251e78d067  features/feature-001/spec.md
+ dc0c98d1e3ca6fac0ef40227c6f8c026397180059c95188d9adb4567cef2e11d  tests/test_tools/test_infra.py
+ df1a1d134a0917f492882af78775b072430c47dd43008625140ad35e206457e9  tests/test_tools/test_releaselib/test_vault_service.py
+-e0a0284215350127f8a8d9d74c6dd2889b41e88b5e189d28762f87b20ffc19d6  project.yaml
+ e17623644dcf3c28de7ad5692e1b576506cb33ae009b8c57a11b19c1c32c91ed  tools/oci-extract/testdata/identity_client.go
+ e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  configs/schemas/.gitkeep
+ e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  source/.gitkeep
+@@ -147,9 +150,7 @@ f000102bd4c1a767896b393391d11934a6c1deba7d610c6d36c6686514d7222a  .editorconfig
+ f4914a052e30bc3fd6434fdaafded1f77915ede4ee2fae0271fc2acfd24d36c3  tools/oci-extract/testdata/bucket_client.go
+ f4e9f98c7ef8cc6104b4a2ea77154a5f6c310ae868554df84ffddaec8a2a28c7  tools/oci-extract/diff_test.go
+ f5d91d616d254df0e7f6500bc5dff95b2e2f33a66f20a7401d8f1510f5c6bac1  tools/release.sh
+-f5e7fefe8c91b5dbe03797a2996140ca1994e56da8ba8b0853750452803402d2  module/provider_test.go
+ f75b14ade8b810dcd2f4b74008fc1bd5d6fd42bb3a44d3cd72d2c1f82e69ca91  tools/oci-extract/schema_test.go
+ f976e235703f9691570933d31828c04da3dd03d1c10680187264570274ab59f6  oci-sdk.lock.yaml
+ fb885dd678928855a632f1411e364e0674409d8fa15da767ce07d036e2da824f  tools/oci-extract/cmd/oci-sweep/main.go
+ fc893fc83e0ba0aac68d4fa7813ec56ac425fe385e4d896fd77532ee94a39509  tools/oci-extract/testdata/vcn.go
+-fd39b467b4e2740ffb01085c774f66d530dcfc77cf90915c8f1a67d0f61c3ad0  module/module_loadtest_test.go
+diff --git a/docs/design/specs/provider-abi.md b/docs/design/specs/provider-abi.md
+index d7a11bc..191ceac 100644
+--- a/docs/design/specs/provider-abi.md
++++ b/docs/design/specs/provider-abi.md
+@@ -140,7 +140,7 @@ overwrite.
+ ## `abi.schema.yaml` extension (P0.3) · done
+ 
+ `abi.schema.yaml` now has an optional `imports` surface and `project.yaml`
+-declares `abi.imports` (`cic-flow`: `sign`/`actuate`, provisional). `describe()`
++declares `abi.imports` (`cic-flow`: `send` — O-1 WP-04; a korábbi `sign`/`actuate` felosztás megszűnt). `describe()`
+ reports it, so the host can read the module's required sign+send surface. It is a
+ **declaration** — the names are settled with the relay when the host surface
+ lands (R1/R2), and nothing is imported at the wasm level yet (WASI-off; the
+@@ -155,7 +155,7 @@ abi:
+     # is native-FFI only and Bearer-based. The concrete host surface (a
+     # sign-then-send capability for OCI) is a relay requirement, not a given.
+     - module: cic-flow          # exact module/function names TBD with the relay
+-      functions: [sign, actuate]
++      functions: [send]   # O-1 WP-04: host-side sign+send; the guest holds no raw sign/actuate
+ ```
+ 
+ The exact import names are settled with the relay when the host surface lands —
+diff --git a/docs/design/specs/relay-sign-send-interface.md b/docs/design/specs/relay-sign-send-interface.md
+index 783f1b5..989a6a3 100644
+--- a/docs/design/specs/relay-sign-send-interface.md
++++ b/docs/design/specs/relay-sign-send-interface.md
+@@ -6,6 +6,16 @@ OCI-key entitlement/provisioning) · **Relay is read-only from here** — see
+ [relay-requirements.md](../relay-requirements.md) (R1, R2) and
+ [host-functions.md](host-functions.md).
+ 
++> **Felülírva (O-1 WP-04, 2026-11-27).** Az alábbi `sign` + `actuate` felosztás **történeti**: a modul
++> mostantól egyetlen host-importot használ, a `cic-flow.send`-et. A guest **strukturált kérést** küld
++> (`method`, `host`, `path`, `intent{operation, resource_id, binding_digest}`, törzs); a kanonikus
++> karakterláncot, a `date`-et, a tartalom-digestet, az aláírást és az `Authorization` fejlécet a **host**
++> állítja elő (D-11, `pkg/hostsign` + `pkg/hostsign/ociprofile` a Relay-ben), a célt a host az operátori
++> policy ellen validálja **aláírás előtt**. A guest sosem kap aláírást vagy `Authorization`-t. A normatív
++> szerződés a Relay O-1 `03-sign-send-contract.md` (§3–§8, §12). Az `abi.imports` ezért `cic-flow: [send]`.
++> A `module/oci_sign.go` (guest-oldali kanonikus karakterlánc) megszűnt; a teszt-oldali host-mock
++> (`module/host_mock_test.go`) tartja a régi képletet kizárólag a Relay szerepének szimulálásához.
++
+ > **As-built note.** The relay implemented this with two deltas from the original
+ > proposal below, now the authoritative contract:
+ > 1. **ABI** — the `git` host-module convention
+diff --git a/module/cicflow_guest.go b/module/cicflow_guest.go
+index 5f50794..55edd98 100644
+--- a/module/cicflow_guest.go
++++ b/module/cicflow_guest.go
+@@ -2,8 +2,7 @@
+ 
+ package main
+ 
+-// cicflow_guest.go binds the relay's `cic-flow` host module (R1/R2, landed in
+-// CIC_Relay#91). The ABI is the `git` host-module convention: a JSON request at
++// cicflow_guest.go binds the relay's `cic-flow` host module (cic-flow.send, O-1 WP-04). The ABI is the `git` host-module convention: a JSON request at
+ // (reqPtr, reqLen), a JSON response written into a guest-allocated buffer at
+ // (outPtr, outLen), and a return of bytes written or -1 (did not fit / memory
+ // error). A host-side failure is an {"error": "..."} JSON body with a positive
+@@ -14,11 +13,8 @@ import (
+ 	"unsafe"
+ )
+ 
+-//go:wasmimport cic-flow sign
+-func wasmCicFlowSign(reqPtr, reqLen, outPtr, outLen uint32) int32
+-
+-//go:wasmimport cic-flow actuate
+-func wasmCicFlowActuate(reqPtr, reqLen, outPtr, outLen uint32) int32
++//go:wasmimport cic-flow send
++func wasmCicFlowSend(reqPtr, reqLen, outPtr, outLen uint32) int32
+ 
+ // cicFlowOutCap is the response buffer the guest allocates per host call. OCI
+ // bodies are small (a VCN/subnet is a few KiB); 256 KiB is ample headroom.
+@@ -44,12 +40,9 @@ func hostCall(fn func(uint32, uint32, uint32, uint32) int32, req []byte) ([]byte
+ 	return out, nil
+ }
+ 
+-// A //go:wasmimport function cannot be used as a value, so wrap each in a plain
+-// closure before handing it to hostCall.
+-func callHostSign(req []byte) ([]byte, error) {
+-	return hostCall(func(rp, rl, op, ol uint32) int32 { return wasmCicFlowSign(rp, rl, op, ol) }, req)
+-}
+-
+-func callHostActuate(req []byte) ([]byte, error) {
+-	return hostCall(func(rp, rl, op, ol uint32) int32 { return wasmCicFlowActuate(rp, rl, op, ol) }, req)
++// A //go:wasmimport function cannot be used as a value, so wrap it in a plain
++// closure before handing it to hostCall. cic-flow.send is the ONLY host import for the
++// sign+send operations: there is no raw sign or actuate import (D-11, WP-04).
++func callHostSend(req []byte) ([]byte, error) {
++	return hostCall(func(rp, rl, op, ol uint32) int32 { return wasmCicFlowSend(rp, rl, op, ol) }, req)
+ }
+diff --git a/module/cicflow_host.go b/module/cicflow_host.go
+index 8f3efa3..eb5afea 100644
+--- a/module/cicflow_host.go
++++ b/module/cicflow_host.go
+@@ -10,21 +10,12 @@ package main
+ 
+ import "errors"
+ 
+-var (
+-	testCallHostSign    func(req []byte) ([]byte, error)
+-	testCallHostActuate func(req []byte) ([]byte, error)
+-)
++// testCallHostSend is the injectable cic-flow.send host call for host-side tests.
++var testCallHostSend func(req []byte) ([]byte, error)
+ 
+-func callHostSign(req []byte) ([]byte, error) {
+-	if testCallHostSign != nil {
+-		return testCallHostSign(req)
++func callHostSend(req []byte) ([]byte, error) {
++	if testCallHostSend != nil {
++		return testCallHostSend(req)
+ 	}
+-	return nil, errors.New("cic-flow.sign unavailable on host")
+-}
+-
+-func callHostActuate(req []byte) ([]byte, error) {
+-	if testCallHostActuate != nil {
+-		return testCallHostActuate(req)
+-	}
+-	return nil, errors.New("cic-flow.actuate unavailable on host")
++	return nil, errors.New("cic-flow.send unavailable on host")
+ }
+diff --git a/module/host_mock_test.go b/module/host_mock_test.go
+new file mode 100644
+index 0000000..a53fb26
+--- /dev/null
++++ b/module/host_mock_test.go
+@@ -0,0 +1,170 @@
++package main
++
++// host_mock_test.go plays the RELAY'S side of cic-flow.send for host-side tests: it receives the guest's
++// structured request, rejects anything a real host would refuse (a guest-built Authorization/date/signature),
++// builds the canonical string (the work the guest used to do, now the host profile's), signs through the
++// injectable testCallHostSign, sends through testCallHostActuate and answers in the sign-send-response shape.
++// The guest-side production code never sees any of this.
++
++import (
++	"crypto/sha256"
++	"encoding/base64"
++	"encoding/json"
++	"strconv"
++	"strings"
++)
++
++// Injectable sign/actuate behaviour of the mock host (the former guest-visible host functions).
++var (
++	testCallHostSign    func(req []byte) ([]byte, error)
++	testCallHostActuate func(req []byte) ([]byte, error)
++)
++
++func init() { testCallHostSend = mockRelaySend }
++
++// ociTimeFormat is the RFC 1123 GMT format OCI's Date header requires.
++const ociTimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
++
++// bodyMethod reports whether a method carries (and signs) a body.
++func bodyMethod(method string) bool {
++	switch strings.ToUpper(method) {
++	case "POST", "PUT", "PATCH":
++		return true
++	default:
++		return false
++	}
++}
++
++// ociCanonical builds the string-to-sign and the wire headers (minus
++// Authorization) for one request. signedHeaders is the ordered list that must
++// appear, in the same order, in the Authorization `headers` field.
++//
++// For body methods the signed set adds x-content-sha256, content-type,
++// content-length (all also sent on the wire); non-body methods sign only
++// (request-target) host date.
++func ociCanonical(method, host, path, date string, body []byte) (canonical string, signedHeaders []string, wireHeaders map[string]string) {
++	reqTarget := strings.ToLower(method) + " " + path
++	lines := []string{
++		"(request-target): " + reqTarget,
++		"host: " + host,
++		"date: " + date,
++	}
++	signedHeaders = []string{"(request-target)", "host", "date"}
++	wireHeaders = map[string]string{"date": date}
++
++	if bodyMethod(method) {
++		sum := sha256.Sum256(body)
++		xcs := base64.StdEncoding.EncodeToString(sum[:])
++		ct := "application/json"
++		cl := strconv.Itoa(len(body))
++		lines = append(lines,
++			"x-content-sha256: "+xcs,
++			"content-type: "+ct,
++			"content-length: "+cl,
++		)
++		signedHeaders = append(signedHeaders, "x-content-sha256", "content-type", "content-length")
++		wireHeaders["x-content-sha256"] = xcs
++		wireHeaders["content-type"] = ct
++		wireHeaders["content-length"] = cl
++	}
++	return strings.Join(lines, "\n"), signedHeaders, wireHeaders
++}
++
++// ociAuthorization assembles the Authorization: Signature header value. The
++// headers list must match ociCanonical's signedHeaders order exactly.
++func ociAuthorization(keyID string, signedHeaders []string, signatureB64 string) string {
++	return `Signature version="1",keyId="` + keyID +
++		`",algorithm="rsa-sha256",headers="` + strings.Join(signedHeaders, " ") +
++		`",signature="` + signatureB64 + `"`
++}
++
++func mockFailed(code, detail string) ([]byte, error) {
++	return json.Marshal(map[string]any{"v": 1, "outcome": "failed", "failure": map[string]string{"code": code, "detail": detail}})
++}
++
++func mockRelaySend(raw []byte) ([]byte, error) {
++	var in struct {
++		V       int    `json:"v"`
++		Profile string `json:"signing_profile"`
++		KeyRef  string `json:"key_ref"`
++		Request struct {
++			Method  string            `json:"method"`
++			Host    string            `json:"host"`
++			Path    string            `json:"path"`
++			Query   map[string]string `json:"query"`
++			Headers map[string]string `json:"headers"`
++			Body    *struct {
++				Base64 string `json:"base64"`
++			} `json:"body"`
++		} `json:"request"`
++		Intent map[string]string `json:"intent"`
++	}
++	if err := json.Unmarshal(raw, &in); err != nil {
++		return json.Marshal(map[string]string{"error": "bad request JSON", "code": "REQUEST_INVALID"})
++	}
++	for k := range in.Request.Headers {
++		switch strings.ToLower(k) {
++		case "authorization", "date", "host", "content-length", "x-content-sha256", "signature":
++			return json.Marshal(map[string]any{"v": 1, "outcome": "denied", "denial": map[string]string{"code": "HEADER_FORBIDDEN"}})
++		}
++	}
++	var body []byte
++	if in.Request.Body != nil {
++		body, _ = base64.StdEncoding.DecodeString(in.Request.Body.Base64)
++	}
++	target := in.Request.Path
++	if len(in.Request.Query) > 0 {
++		var parts []string
++		for k, v := range in.Request.Query {
++			parts = append(parts, k+"="+v)
++		}
++		target += "?" + strings.Join(parts, "&")
++	}
++	canonical, signedHeaders, wire := ociCanonical(in.Request.Method, in.Request.Host, target, nowFunc().Format(ociTimeFormat), body)
++	if testCallHostSign == nil {
++		return mockFailed("SIGNER_ERROR", "no signer")
++	}
++	sigReq, _ := json.Marshal(map[string]string{"data_base64": base64.StdEncoding.EncodeToString([]byte(canonical))})
++	sigRaw, err := testCallHostSign(sigReq)
++	if err != nil {
++		return mockFailed("SIGNER_ERROR", err.Error())
++	}
++	var sig struct {
++		Signature string `json:"signature"`
++		Error     string `json:"error"`
++	}
++	_ = json.Unmarshal(sigRaw, &sig)
++	if sig.Error != "" || sig.Signature == "" {
++		return mockFailed("SIGNER_ERROR", sig.Error)
++	}
++	wire["authorization"] = ociAuthorization("tenancy/user/fp", signedHeaders, sig.Signature)
++	for k, v := range in.Request.Headers {
++		wire[strings.ToLower(k)] = v
++	}
++	if testCallHostActuate == nil {
++		return mockFailed("TRANSPORT_ERROR", "no transport")
++	}
++	actReq, _ := json.Marshal(map[string]any{
++		"method": in.Request.Method, "url": "https://" + in.Request.Host + target,
++		"headers": wire, "body_base64": base64.StdEncoding.EncodeToString(body),
++	})
++	actRaw, err := testCallHostActuate(actReq)
++	if err != nil {
++		return mockFailed("TRANSPORT_ERROR", err.Error())
++	}
++	var act struct {
++		Status     int               `json:"status"`
++		Headers    map[string]string `json:"headers"`
++		BodyBase64 string            `json:"body_base64"`
++		Error      string            `json:"error"`
++	}
++	_ = json.Unmarshal(actRaw, &act)
++	if act.Error != "" {
++		return mockFailed("TRANSPORT_ERROR", act.Error)
++	}
++	sum := sha256.Sum256([]byte(act.BodyBase64))
++	_ = strconv.Itoa
++	return json.Marshal(map[string]any{"v": 1, "outcome": "completed", "http": map[string]any{
++		"status": act.Status, "headers": act.Headers, "body_base64": act.BodyBase64, "body_sha256": "sha256:" + base64.StdEncoding.EncodeToString(sum[:]),
++	}})
++}
+diff --git a/module/module_loadtest_test.go b/module/module_loadtest_test.go
+index a5e12dd..b51124e 100644
+--- a/module/module_loadtest_test.go
++++ b/module/module_loadtest_test.go
+@@ -66,7 +66,7 @@ func loadModule(t *testing.T) (context.Context, api.Module, api.Function, api.Fu
+ 		t.Fatalf("failed to instantiate wasi: %v", err)
+ 	}
+ 
+-	// The guest imports the relay's cic-flow host module (sign/actuate). Register
++	// The guest imports the relay's cic-flow host module (send). Register
+ 	// a stub so instantiation succeeds; tests that do not exercise execute never
+ 	// call it. TestHostLoadExecute builds its own runtime with a capturing mock.
+ 	stub := func(ctx context.Context, mod api.Module, reqPtr, reqLen, outPtr, outLen uint32) int32 {
+@@ -77,8 +77,7 @@ func loadModule(t *testing.T) (context.Context, api.Module, api.Function, api.Fu
+ 		return int32(len(resp))
+ 	}
+ 	if _, err := runtime.NewHostModuleBuilder("cic-flow").
+-		NewFunctionBuilder().WithFunc(stub).WithParameterNames("req_ptr", "req_len", "out_ptr", "out_len").Export("sign").
+-		NewFunctionBuilder().WithFunc(stub).WithParameterNames("req_ptr", "req_len", "out_ptr", "out_len").Export("actuate").
++		NewFunctionBuilder().WithFunc(stub).WithParameterNames("req_ptr", "req_len", "out_ptr", "out_len").Export("send").
+ 		Instantiate(ctx); err != nil {
+ 		t.Fatalf("failed to instantiate cic-flow stub: %v", err)
+ 	}
+@@ -316,8 +315,8 @@ func TestHostLoadExecute(t *testing.T) {
+ 		t.Fatalf("wasi: %v", err)
+ 	}
+ 
+-	var signedString, actuateReq string
+-	// One host-func adapter for the git/cic-flow ABI: read req JSON, hand it to
++	var sendReq string
++	// One host-func adapter for the cic-flow ABI: read req JSON, hand it to
+ 	// handler, write the response, return bytes written (or -1 if it overruns).
+ 	adapt := func(handler func(req []byte) []byte) func(context.Context, api.Module, uint32, uint32, uint32, uint32) int32 {
+ 		return func(ctx context.Context, mod api.Module, reqPtr, reqLen, outPtr, outLen uint32) int32 {
+@@ -334,24 +333,18 @@ func TestHostLoadExecute(t *testing.T) {
+ 	}
+ 	_, err = rt.NewHostModuleBuilder("cic-flow").
+ 		NewFunctionBuilder().WithFunc(adapt(func(req []byte) []byte {
+-		var r struct {
+-			DataBase64 string `json:"data_base64"`
+-		}
+-		json.Unmarshal(req, &r)
+-		raw, _ := base64.StdEncoding.DecodeString(r.DataBase64)
+-		signedString = string(raw)
+-		out, _ := json.Marshal(map[string]string{"signature": "FAKESIG=="})
+-		return out
+-	})).WithParameterNames("req_ptr", "req_len", "out_ptr", "out_len").Export("sign").
+-		NewFunctionBuilder().WithFunc(adapt(func(req []byte) []byte {
+-		actuateReq = string(req)
++		sendReq = string(req)
+ 		out, _ := json.Marshal(map[string]interface{}{
+-			"status":      200,
+-			"headers":     map[string]string{"etag": "etag-1", "opc-request-id": "req-1"},
+-			"body_base64": base64.StdEncoding.EncodeToString([]byte("{}")),
++			"v": 1, "outcome": "completed",
++			"http": map[string]interface{}{
++				"status":      200,
++				"headers":     map[string]string{"etag": "etag-1", "opc-request-id": "req-1"},
++				"body_base64": base64.StdEncoding.EncodeToString([]byte("{}")),
++				"body_sha256": "sha256:" + strings.Repeat("0", 64),
++			},
+ 		})
+ 		return out
+-	})).WithParameterNames("req_ptr", "req_len", "out_ptr", "out_len").Export("actuate").
++	})).WithParameterNames("req_ptr", "req_len", "out_ptr", "out_len").Export("send").
+ 		Instantiate(ctx)
+ 	if err != nil {
+ 		t.Fatalf("cic-flow host module: %v", err)
+@@ -413,19 +406,31 @@ func TestHostLoadExecute(t *testing.T) {
+ 		t.Errorf("step = %+v, want UpdateVcn/200/etag-1/no-error", s)
+ 	}
+ 
+-	// The guest signed the OCI canonical string with the templated path...
+-	if !strings.Contains(signedString, "(request-target): put /vcns/ocid1.vcn.oc1..xyz") {
+-		t.Errorf("signed string missing templated request-target:\n%s", signedString)
++	// The guest sent ONE structured request through the real wasmimport surface: method, host, templated
++	// path, intent, body. It carries no signature, Authorization, date, canonical string or key.
++	var sr map[string]any
++	if err := json.Unmarshal([]byte(sendReq), &sr); err != nil {
++		t.Fatalf("send request is not JSON: %v\n%s", err, sendReq)
+ 	}
+-	if !strings.Contains(signedString, "host: iaas.eu-frankfurt-1.oraclecloud.com") {
+-		t.Errorf("signed string missing host header:\n%s", signedString)
++	rq, _ := sr["request"].(map[string]any)
++	if rq["method"] != "PUT" || rq["host"] != "iaas.eu-frankfurt-1.oraclecloud.com" || rq["path"] != "/vcns/ocid1.vcn.oc1..xyz" {
++		t.Errorf("structured request wrong: %v", rq)
+ 	}
+-	// ...and actuated to the concrete URL carrying its own Signature Authorization.
+-	if !strings.Contains(actuateReq, `"url":"https://iaas.eu-frankfurt-1.oraclecloud.com/vcns/ocid1.vcn.oc1..xyz"`) {
+-		t.Errorf("actuate URL wrong:\n%s", actuateReq)
++	in, _ := sr["intent"].(map[string]any)
++	if in["operation"] != "execute" || in["resource_id"] != "ocid1.vcn.oc1..xyz" {
++		t.Errorf("intent wrong: %v", in)
+ 	}
+-	if !strings.Contains(actuateReq, `keyId=\"tenancy/user/fp\"`) || !strings.Contains(actuateReq, "FAKESIG==") {
+-		t.Errorf("actuate Authorization missing keyId/signature:\n%s", actuateReq)
++	if sr["signing_profile"] != "http-signature:oci:draft-cavage@1" || sr["key_ref"] != "oci/default" {
++		t.Errorf("profile/key_ref wrong: %v / %v", sr["signing_profile"], sr["key_ref"])
++	}
++	walkJSONKeys(sr, func(k string) {
++		switch strings.ToLower(k) {
++		case "authorization", "signature", "date", "x-content-sha256", "content-length":
++			t.Errorf("the guest request carries the host-owned field %q:\n%s", k, sendReq)
++		}
++	})
++	if strings.Contains(sendReq, "request-target") || strings.Contains(sendReq, "FAKESIG") {
++		t.Errorf("the guest must not build signing material:\n%s", sendReq)
+ 	}
+ }
+ 
+diff --git a/module/oci_sign.go b/module/oci_sign.go
+deleted file mode 100644
+index 08ab680..0000000
+--- a/module/oci_sign.go
++++ /dev/null
+@@ -1,70 +0,0 @@
+-// Package main — oci_sign.go builds the OCI draft-cavage HTTP Signatures signing
+-// material. Pure, no build tag (host-testable): the module owns the
+-// canonicalization (which headers, in which order, x-content-sha256 over the
+-// body); only the RSA-SHA256 over the canonical string needs the key, and that
+-// one step goes to the host (cic-flow.sign). See
+-// docs/design/specs/relay-sign-send-interface.md.
+-package main
+-
+-import (
+-	"crypto/sha256"
+-	"encoding/base64"
+-	"strconv"
+-	"strings"
+-)
+-
+-// ociTimeFormat is the RFC 1123 GMT format OCI's Date header requires.
+-const ociTimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
+-
+-// bodyMethod reports whether a method carries (and signs) a body.
+-func bodyMethod(method string) bool {
+-	switch strings.ToUpper(method) {
+-	case "POST", "PUT", "PATCH":
+-		return true
+-	default:
+-		return false
+-	}
+-}
+-
+-// ociCanonical builds the string-to-sign and the wire headers (minus
+-// Authorization) for one request. signedHeaders is the ordered list that must
+-// appear, in the same order, in the Authorization `headers` field.
+-//
+-// For body methods the signed set adds x-content-sha256, content-type,
+-// content-length (all also sent on the wire); non-body methods sign only
+-// (request-target) host date.
+-func ociCanonical(method, host, path, date string, body []byte) (canonical string, signedHeaders []string, wireHeaders map[string]string) {
+-	reqTarget := strings.ToLower(method) + " " + path
+-	lines := []string{
+-		"(request-target): " + reqTarget,
+-		"host: " + host,
+-		"date: " + date,
+-	}
+-	signedHeaders = []string{"(request-target)", "host", "date"}
+-	wireHeaders = map[string]string{"date": date}
+-
+-	if bodyMethod(method) {
+-		sum := sha256.Sum256(body)
+-		xcs := base64.StdEncoding.EncodeToString(sum[:])
+-		ct := "application/json"
+-		cl := strconv.Itoa(len(body))
+-		lines = append(lines,
+-			"x-content-sha256: "+xcs,
+-			"content-type: "+ct,
+-			"content-length: "+cl,
+-		)
+-		signedHeaders = append(signedHeaders, "x-content-sha256", "content-type", "content-length")
+-		wireHeaders["x-content-sha256"] = xcs
+-		wireHeaders["content-type"] = ct
+-		wireHeaders["content-length"] = cl
+-	}
+-	return strings.Join(lines, "\n"), signedHeaders, wireHeaders
+-}
+-
+-// ociAuthorization assembles the Authorization: Signature header value. The
+-// headers list must match ociCanonical's signedHeaders order exactly.
+-func ociAuthorization(keyID string, signedHeaders []string, signatureB64 string) string {
+-	return `Signature version="1",keyId="` + keyID +
+-		`",algorithm="rsa-sha256",headers="` + strings.Join(signedHeaders, " ") +
+-		`",signature="` + signatureB64 + `"`
+-}
+diff --git a/module/provider.go b/module/provider.go
+index 83b04da..06ddec3 100644
+--- a/module/provider.go
++++ b/module/provider.go
+@@ -160,7 +160,7 @@ func Describe(auth, data []byte) ([]byte, error) {
+ 		// The sign+send host surface this module requires (project.yaml
+ 		// abi.imports). Provisional until settled with the relay (R1/R2).
+ 		Imports: []importReq{
+-			{Module: "cic-flow", Functions: []string{"sign", "actuate"}},
++			{Module: "cic-flow", Functions: []string{"send"}},
+ 		},
+ 		RequiredCapabilities: capReq{
+ 			EgressHosts: []string{"*.oraclecloud.com"},
+@@ -591,7 +591,7 @@ func Destroy(auth, data []byte) ([]byte, error) {
+ 	if perr != nil {
+ 		return errResult(perr)
+ 	}
+-	status, headers, respBody, err := actuateSigned(op.method, req.Binding.Host, opPath(req.Binding, op.path), req.Binding.KeyID, nil, nowFunc().Format(ociTimeFormat), req.Binding.Revision)
++	status, headers, respBody, err := actuateSigned("destroy", req.Binding, op.method, opPath(req.Binding, op.path), nil, req.Binding.Revision)
+ 	if err != nil {
+ 		return errResult(&providerError{Class: classTransport, Message: err.Error()})
+ 	}
+@@ -671,7 +671,7 @@ func Invoke(auth, data []byte) ([]byte, error) {
+ 		body = []byte("{}")
+ 	}
+ 	path := opPath(req.Binding, op.path)
+-	status, headers, respBody, err := actuateSigned(op.method, req.Binding.Host, path, req.Binding.KeyID, body, nowFunc().Format(ociTimeFormat), req.Binding.Revision)
++	status, headers, respBody, err := actuateSigned("invoke", req.Binding, op.method, path, body, req.Binding.Revision)
+ 	if err != nil {
+ 		return errResult(&providerError{Class: classTransport, Message: err.Error()})
+ 	}
+@@ -720,7 +720,7 @@ func Poll(auth, data []byte) ([]byte, error) {
+ 	if req.Binding.Host == "" || req.Binding.KeyID == "" || req.Path == "" {
+ 		return errResult(&providerError{Class: classValidation, FieldPath: "binding/path", Message: "binding.host, binding.key_id and path are required"})
+ 	}
+-	status, _, respBody, err := actuateSigned("GET", req.Binding.Host, req.Path, req.Binding.KeyID, nil, nowFunc().Format(ociTimeFormat), "")
++	status, _, respBody, err := actuateSigned("poll", req.Binding, "GET", req.Path, nil, "")
+ 	if err != nil {
+ 		return errResult(&providerError{Class: classTransport, Message: err.Error()})
+ 	}
+@@ -822,8 +822,7 @@ func Observe(auth, data []byte) ([]byte, error) {
+ 	}
+ 
+ 	path := opPath(req.Binding, getOp.path)
+-	date := nowFunc().Format(ociTimeFormat)
+-	status, headers, respBody, err := actuateSigned(getOp.method, req.Binding.Host, path, req.Binding.KeyID, nil, date, "")
++	status, headers, respBody, err := actuateSigned("observe", req.Binding, getOp.method, path, nil, "")
+ 	if err != nil {
+ 		return errResult(&providerError{Class: classTransport, Message: err.Error()})
+ 	}
+@@ -846,7 +845,7 @@ func Observe(auth, data []byte) ([]byte, error) {
+ 			ResourceID:   req.Binding.ResourceID,
+ 			Etag:         headers["etag"],
+ 			OpcRequestID: headers["opc-request-id"],
+-			ObservedAt:   date,
++			ObservedAt:   nowFunc().Format(observedAtFormat),
+ 		},
+ 	})
+ }
+@@ -879,11 +878,14 @@ type executeRequest struct {
+ // tenancy/user/fingerprint), and the target resource id for path templating.
+ // Not secret; supplied with the intent.
+ type execBinding struct {
+-	Host       string `json:"host"`        // e.g. iaas.eu-frankfurt-1.oraclecloud.com
+-	BasePath   string `json:"base_path"`   // OCI API version prefix, e.g. /20160918 (core); prepended to op paths
+-	KeyID      string `json:"key_id"`      // <tenancyOCID>/<userOCID>/<fingerprint>
+-	ResourceID string `json:"resource_id"` // ocid1.vcn... — fills {vcnId}/{subnetId} path params
+-	Revision   string `json:"revision"`    // observed etag; sent as If-Match on mutations (optimistic concurrency)
++	Host     string `json:"host"`      // e.g. iaas.eu-frankfurt-1.oraclecloud.com
++	BasePath string `json:"base_path"` // OCI API version prefix, e.g. /20160918 (core); prepended to op paths
++	KeyID    string `json:"key_id"`    // <tenancyOCID>/<userOCID>/<fingerprint>; informational: the HOST owns the key identifier, the guest never builds an Authorization header
++	// BindingDigest is the digest of the deployment-policy binding of ResourceID. It is supplied by the caller
++	// (never derived here) and validated by the host against the operator policy before anything is signed.
++	BindingDigest string `json:"binding_digest"`
++	ResourceID    string `json:"resource_id"` // ocid1.vcn... — fills {vcnId}/{subnetId} path params
++	Revision      string `json:"revision"`    // observed etag; sent as If-Match on mutations (optimistic concurrency)
+ }
+ 
+ // opPath is the full request path for an operation: the API version prefix from
+@@ -941,6 +943,10 @@ func ociError(status int, body []byte) *providerError {
+ 	return pe
+ }
+ 
++// observedAtFormat is the RFC 1123 GMT layout of provider_metadata.observed_at (an observation timestamp; it is
++// NOT a request header: the request date is set by the host).
++const observedAtFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
++
+ // nowFunc is the clock, injectable for deterministic tests.
+ var nowFunc = func() time.Time { return time.Now().UTC() }
+ 
+@@ -966,11 +972,10 @@ func Execute(auth, data []byte) ([]byte, error) {
+ 		return errResult(&providerError{Class: classSchema, FieldPath: "config.data", Message: err.Error()})
+ 	}
+ 
+-	date := nowFunc().Format(ociTimeFormat)
+ 	result := executionResult{Status: "succeeded"}
+ 	async := false
+ 	for _, po := range req.Plan.ProviderOperations {
+-		step, fatal := executeOne(c, po, config, req.Binding, date)
++		step, fatal := executeOne(c, po, config, req.Binding)
+ 		result.Steps = append(result.Steps, step)
+ 		if step.WorkRequestID != "" {
+ 			async = true
+@@ -988,13 +993,13 @@ func Execute(auth, data []byte) ([]byte, error) {
+ 	return okResult(result)
+ }
+ 
+-// executeOne runs a single provider operation: render → sign → actuate. fatal is
++// executeOne runs a single provider operation: render → cic-flow.send (the host signs and sends). fatal is
+ // true when the step failed and the plan must stop.
+-func executeOne(c resourceContract, po providerOperation, config map[string]json.RawMessage, b execBinding, date string) (executionStep, bool) {
++func executeOne(c resourceContract, po providerOperation, config map[string]json.RawMessage, b execBinding) (executionStep, bool) {
+ 	step := executionStep{Operation: po.Operation}
+ 	body := renderBody(c, po, config)
+ 
+-	status, headers, respBody, err := actuateSigned(po.Method, b.Host, opPath(b, po.Path), b.KeyID, body, date, b.Revision)
++	status, headers, respBody, err := actuateSigned("execute", b, po.Method, opPath(b, po.Path), body, b.Revision)
+ 	if err != nil {
+ 		step.Error = err.Error()
+ 		return step, true
+@@ -1013,55 +1018,109 @@ func executeOne(c resourceContract, po providerOperation, config map[string]json
+ 	return step, false
+ }
+ 
+-// actuateSigned is the shared sign-then-send core used by execute and observe:
+-// build the OCI canonical string, cic-flow.sign it, assemble the Authorization
+-// header, cic-flow.actuate, and return the decoded response. The key never
+-// enters the guest; the host enforces egress + scope.
+-func actuateSigned(method, host, path, keyID string, body []byte, date, ifMatch string) (status int, headers map[string]string, respBody []byte, err error) {
+-	canonical, signedHeaders, wire := ociCanonical(method, host, path, date, body)
++// ociSigningProfile and ociKeyRef are the identifiers the guest names in a cic-flow.send request. The signing
++// profile is a host-side component (D-11): the guest does not build the canonical string, the date, the
++// content digest or the Authorization header, and it never names a key or a key identifier beyond the
++// manifest handle.
++const (
++	ociSigningProfile = "http-signature:oci:draft-cavage@1"
++	ociKeyRef         = "oci/default"
++)
+ 
+-	sigReq, _ := json.Marshal(map[string]string{"data_base64": base64.StdEncoding.EncodeToString([]byte(canonical))})
+-	sigRaw, err := callHostSign(sigReq)
+-	if err != nil {
+-		return 0, nil, nil, fmt.Errorf("sign: %s", err.Error())
+-	}
+-	var sig struct {
+-		Signature string `json:"signature"`
+-		Error     string `json:"error"`
+-	}
+-	json.Unmarshal(sigRaw, &sig)
+-	if sig.Error != "" || sig.Signature == "" {
+-		return 0, nil, nil, fmt.Errorf("sign: %s", firstNonEmpty(sig.Error, "empty signature"))
+-	}
++// sendRequest is the structured cic-flow.send request (wire: sign-send-request.schema.json). It has no field for
++// a signature, an Authorization header, a date, a limit or a key.
++type sendRequest struct {
++	V              int        `json:"v"`
++	SigningProfile string     `json:"signing_profile"`
++	KeyRef         string     `json:"key_ref"`
++	Request        sendHTTP   `json:"request"`
++	Intent         sendIntent `json:"intent"`
++}
+ 
+-	wire["authorization"] = ociAuthorization(keyID, signedHeaders, sig.Signature)
+-	// If-Match (optimistic concurrency) is a wire header, not a signed one — OCI
+-	// signs only its fixed header set; extra headers travel unsigned.
++type sendHTTP struct {
++	Method  string            `json:"method"`
++	Host    string            `json:"host"`
++	Path    string            `json:"path"`
++	Query   map[string]string `json:"query,omitempty"`
++	Headers map[string]string `json:"headers,omitempty"`
++	Body    *sendBody         `json:"body,omitempty"`
++}
++
++type sendBody struct {
++	Base64 string `json:"base64"`
++}
++
++type sendIntent struct {
++	Operation     string `json:"operation"`
++	ResourceID    string `json:"resource_id"`
++	BindingDigest string `json:"binding_digest"`
++}
++
++// sendResponse is the part of the cic-flow.send answer the guest reads. A host-level error (not a v1 answer)
++// arrives as {"error","code"}.
++type sendResponse struct {
++	Outcome string `json:"outcome"`
++	Denial  *struct {
++		Code   string `json:"code"`
++		Detail string `json:"detail"`
++	} `json:"denial"`
++	Failure *struct {
++		Code   string `json:"code"`
++		Detail string `json:"detail"`
++	} `json:"failure"`
++	HTTP *struct {
++		Status     int               `json:"status"`
++		Headers    map[string]string `json:"headers"`
++		BodyBase64 string            `json:"body_base64"`
++	} `json:"http"`
++	Error string `json:"error"`
++	Code  string `json:"code"`
++}
++
++// actuateSigned is the shared sign+send core used by every host-touching operation: it describes the request
++// structurally (method, host, path, intent, body) and hands it to cic-flow.send. The host validates the target
++// against the operator policy, builds the canonical string, signs with a key the guest cannot name, sends, and
++// answers with the HTTP result only. operation is the ABI operation name carried as the intent.
++func actuateSigned(operation string, b execBinding, method, path string, body []byte, ifMatch string) (status int, headers map[string]string, respBody []byte, err error) {
++	hr := sendHTTP{Method: method, Host: b.Host, Path: path}
++	if i := strings.IndexByte(path, '?'); i >= 0 {
++		hr.Path = path[:i]
++		hr.Query = map[string]string{}
++		for _, kv := range strings.Split(path[i+1:], "&") {
++			k, v, _ := strings.Cut(kv, "=")
++			hr.Query[k] = v
++		}
++	}
+ 	if ifMatch != "" {
+-		wire["if-match"] = ifMatch
++		hr.Headers = map[string]string{"if-match": ifMatch}
+ 	}
+-	actReq, _ := json.Marshal(map[string]interface{}{
+-		"method":      method,
+-		"url":         "https://" + host + path,
+-		"headers":     wire,
+-		"body_base64": base64.StdEncoding.EncodeToString(body),
++	if len(body) > 0 {
++		hr.Body = &sendBody{Base64: base64.StdEncoding.EncodeToString(body)}
++	}
++	reqJSON, _ := json.Marshal(sendRequest{
++		V: 1, SigningProfile: ociSigningProfile, KeyRef: ociKeyRef, Request: hr,
++		Intent: sendIntent{Operation: operation, ResourceID: b.ResourceID, BindingDigest: b.BindingDigest},
+ 	})
+-	actRaw, err := callHostActuate(actReq)
++	raw, err := callHostSend(reqJSON)
+ 	if err != nil {
+-		return 0, nil, nil, fmt.Errorf("actuate: %s", err.Error())
++		return 0, nil, nil, fmt.Errorf("send: %s", err.Error())
+ 	}
+-	var act struct {
+-		Status     int               `json:"status"`
+-		Headers    map[string]string `json:"headers"`
+-		BodyBase64 string            `json:"body_base64"`
+-		Error      string            `json:"error"`
++	var resp sendResponse
++	if err := json.Unmarshal(raw, &resp); err != nil {
++		return 0, nil, nil, fmt.Errorf("send: unreadable host answer")
+ 	}
+-	json.Unmarshal(actRaw, &act)
+-	if act.Error != "" {
+-		return 0, nil, nil, fmt.Errorf("actuate: %s", act.Error)
+-	}
+-	respBody, _ = base64.StdEncoding.DecodeString(act.BodyBase64)
+-	return act.Status, act.Headers, respBody, nil
++	switch {
++	case resp.Error != "":
++		return 0, nil, nil, fmt.Errorf("send: %s", resp.Error)
++	case resp.Outcome == "denied" && resp.Denial != nil:
++		return 0, nil, nil, fmt.Errorf("send denied: %s", resp.Denial.Code)
++	case resp.Outcome == "failed" && resp.Failure != nil:
++		return 0, nil, nil, fmt.Errorf("send failed: %s", resp.Failure.Code)
++	case resp.Outcome == "completed" && resp.HTTP != nil:
++		respBody, _ = base64.StdEncoding.DecodeString(resp.HTTP.BodyBase64)
++		return resp.HTTP.Status, resp.HTTP.Headers, respBody, nil
++	}
++	return 0, nil, nil, fmt.Errorf("send: unexpected host answer")
+ }
+ 
+ // renderBody builds the OCI request body for one operation from the desired
+@@ -1119,10 +1178,3 @@ func templatePath(path, resourceID string) string {
+ 	}
+ 	return path
+ }
+-
+-func firstNonEmpty(a, b string) string {
+-	if a != "" {
+-		return a
+-	}
+-	return b
+-}
+diff --git a/module/provider_test.go b/module/provider_test.go
+index f1eaae9..7064d40 100644
+--- a/module/provider_test.go
++++ b/module/provider_test.go
+@@ -53,10 +53,10 @@ func TestDescribeManifest(t *testing.T) {
+ 	// The declared import surface (P0.3) must be reported, so a host can read the
+ 	// module's sign+send requirement from describe().
+ 	if len(m.Imports) != 1 || m.Imports[0].Module != "cic-flow" {
+-		t.Fatalf("imports = %+v, want [{cic-flow [sign actuate]}]", m.Imports)
++		t.Fatalf("imports = %+v, want [{cic-flow [send]}]", m.Imports)
+ 	}
+-	if len(m.Imports[0].Functions) != 2 {
+-		t.Errorf("imports[0].functions = %v, want [sign actuate]", m.Imports[0].Functions)
++	if len(m.Imports[0].Functions) != 1 || m.Imports[0].Functions[0] != "send" {
++		t.Errorf("imports[0].functions = %v, want [send]", m.Imports[0].Functions)
+ 	}
+ }
+ 
+diff --git a/module/relay_integration_test.go b/module/relay_integration_test.go
+index 2aea6ca..40adec2 100644
+--- a/module/relay_integration_test.go
++++ b/module/relay_integration_test.go
+@@ -307,9 +307,18 @@ func loadWithCICFlow(t *testing.T, wasmBytes []byte, sign, actuate func([]byte)
+ 			return int32(len(resp))
+ 		}
+ 	}
++	// The mock relay host (host_mock_test.go) does what the relay does: it builds the canonical string, signs
++	// through `sign` and sends through `actuate`; the guest only ever sees the cic-flow.send answer.
++	oldSign, oldAct := testCallHostSign, testCallHostActuate
++	testCallHostSign = func(req []byte) ([]byte, error) { return sign(req), nil }
++	testCallHostActuate = func(req []byte) ([]byte, error) { return actuate(req), nil }
++	t.Cleanup(func() { testCallHostSign, testCallHostActuate = oldSign, oldAct })
++	send := func(req []byte) []byte {
++		out, _ := mockRelaySend(req)
++		return out
++	}
+ 	if _, err := rt.NewHostModuleBuilder("cic-flow").
+-		NewFunctionBuilder().WithFunc(adapt(sign)).WithParameterNames("req_ptr", "req_len", "out_ptr", "out_len").Export("sign").
+-		NewFunctionBuilder().WithFunc(adapt(actuate)).WithParameterNames("req_ptr", "req_len", "out_ptr", "out_len").Export("actuate").
++		NewFunctionBuilder().WithFunc(adapt(send)).WithParameterNames("req_ptr", "req_len", "out_ptr", "out_len").Export("send").
+ 		Instantiate(ctx); err != nil {
+ 		t.Fatalf("cic-flow host module: %v", err)
+ 	}
+diff --git a/module/send_contract_test.go b/module/send_contract_test.go
+new file mode 100644
+index 0000000..eb464f5
+--- /dev/null
++++ b/module/send_contract_test.go
+@@ -0,0 +1,240 @@
++package main
++
++import (
++	"bufio"
++	"context"
++	"encoding/base64"
++	"encoding/json"
++	"os"
++	"path/filepath"
++	"strings"
++	"testing"
++
++	"github.com/tetratelabs/wazero"
++)
++
++// captureSend installs a cic-flow.send double that records every structured request the guest code
++// sends and answers with the given raw JSON; it restores the previous double afterwards.
++func captureSend(t *testing.T, answer string) *[]string {
++	t.Helper()
++	var got []string
++	old := testCallHostSend
++	testCallHostSend = func(req []byte) ([]byte, error) {
++		got = append(got, string(req))
++		return []byte(answer), nil
++	}
++	t.Cleanup(func() { testCallHostSend = old })
++	return &got
++}
++
++const okAnswer = `{"v":1,"outcome":"completed","http":{"status":200,"headers":{"etag":"e1"},"body_base64":"e30=","body_sha256":"sha256:0000000000000000000000000000000000000000000000000000000000000000"}}`
++
++func walkJSONKeys(v any, f func(string)) {
++	switch x := v.(type) {
++	case map[string]any:
++		for k, vv := range x {
++			f(k)
++			walkJSONKeys(vv, f)
++		}
++	case []any:
++		for _, vv := range x {
++			walkJSONKeys(vv, f)
++		}
++	}
++}
++
++// The guest's request is the structured form of the contract (method, host, path, intent, body) and
++// carries nothing the host owns: no Authorization, signature, date, content digest, key, limit.
++func TestSendRequestIsStructuredAndCarriesNoHostOwnedFields(t *testing.T) {
++	got := captureSend(t, okAnswer)
++	b := execBinding{Host: "iaas.eu-frankfurt-1.oraclecloud.com", KeyID: "t/u/f", ResourceID: "ocid1.vcn..z", Revision: "etag-42",
++		BindingDigest: "sha256:" + strings.Repeat("ab", 32)}
++	status, headers, body, err := actuateSigned("execute", b, "PUT", "/20160918/vcns/ocid1.vcn..z", []byte(`{"displayName":"x"}`), b.Revision)
++	if err != nil || status != 200 || headers["etag"] != "e1" || string(body) != "{}" {
++		t.Fatalf("actuateSigned = %d %v %q %v", status, headers, body, err)
++	}
++	if len(*got) != 1 {
++		t.Fatalf("want exactly one cic-flow.send call, got %d", len(*got))
++	}
++	var m map[string]any
++	if err := json.Unmarshal([]byte((*got)[0]), &m); err != nil {
++		t.Fatal(err)
++	}
++	want := map[string]any{"v": float64(1), "signing_profile": "http-signature:oci:draft-cavage@1", "key_ref": "oci/default"}
++	for k, v := range want {
++		if m[k] != v {
++			t.Errorf("%s = %v, want %v", k, m[k], v)
++		}
++	}
++	rq := m["request"].(map[string]any)
++	if rq["method"] != "PUT" || rq["host"] != b.Host || rq["path"] != "/20160918/vcns/ocid1.vcn..z" {
++		t.Errorf("request = %v", rq)
++	}
++	if rq["headers"].(map[string]any)["if-match"] != "etag-42" {
++		t.Errorf("if-match not carried: %v", rq["headers"])
++	}
++	raw, _ := base64.StdEncoding.DecodeString(rq["body"].(map[string]any)["base64"].(string))
++	if string(raw) != `{"displayName":"x"}` {
++		t.Errorf("body = %q", raw)
++	}
++	in := m["intent"].(map[string]any)
++	if in["operation"] != "execute" || in["resource_id"] != "ocid1.vcn..z" || in["binding_digest"] != b.BindingDigest {
++		t.Errorf("intent = %v", in)
++	}
++	forbidden := map[string]bool{"authorization": true, "signature": true, "date": true, "host-header": true, "content-length": true,
++		"x-content-sha256": true, "timeout_ms": true, "max_response_bytes": true, "max_request_bytes": true, "key": true, "key_id": true}
++	walkJSONKeys(m, func(k string) {
++		if forbidden[strings.ToLower(k)] {
++			t.Errorf("the guest request carries the host-owned field %q", k)
++		}
++	})
++	if strings.Contains(strings.ToLower((*got)[0]), "request-target") {
++		t.Errorf("the guest must not build the canonical string:\n%s", (*got)[0])
++	}
++}
++
++func TestSendQueryIsSplitFromPath(t *testing.T) {
++	got := captureSend(t, okAnswer)
++	_, _, _, err := actuateSigned("observe", execBinding{Host: "h"}, "GET", "/x/y?limit=5&page=2", nil, "")
++	if err != nil {
++		t.Fatal(err)
++	}
++	var m struct {
++		Request struct {
++			Path  string            `json:"path"`
++			Query map[string]string `json:"query"`
++		} `json:"request"`
++	}
++	_ = json.Unmarshal([]byte((*got)[0]), &m)
++	if m.Request.Path != "/x/y" || m.Request.Query["limit"] != "5" || m.Request.Query["page"] != "2" {
++		t.Errorf("request = %+v", m.Request)
++	}
++}
++
++// A refusal, a failure and a host-level error each surface as an error to the caller, never as a success.
++func TestSendDeniedFailedAndErrorAreErrors(t *testing.T) {
++	cases := map[string]string{
++		`{"v":1,"outcome":"denied","denial":{"code":"POLICY_METHOD"}}`: "send denied: POLICY_METHOD",
++		`{"v":1,"outcome":"failed","failure":{"code":"TIMEOUT"}}`:      "send failed: TIMEOUT",
++		`{"error":"cic-flow.send: not granted to this module"}`:        "send: cic-flow.send: not granted",
++		`{"error":"request too large","code":"REQUEST_INVALID"}`:       "send: request too large",
++		`{"v":1,"outcome":"completed"}`:                                "send: unexpected host answer",
++		`not json`:                                                     "send: unreadable host answer",
++	}
++	for answer, want := range cases {
++		captureSend(t, answer)
++		_, _, _, err := actuateSigned("observe", execBinding{Host: "h"}, "GET", "/p", nil, "")
++		if err == nil || !strings.Contains(err.Error(), want) {
++			t.Errorf("answer %s: err = %v, want containing %q", answer, err, want)
++		}
++	}
++}
++
++// AC-SS-06 (guest side): the observation operations (observe, poll) only ever issue reads. The block on
++// writes is the host's (observation profile on the outgoing request); this pins that the guest does not
++// even attempt one.
++func TestObservationOperationsOnlyIssueReads(t *testing.T) {
++	got := captureSend(t, `{"v":1,"outcome":"completed","http":{"status":200,"headers":{},"body_base64":"e30=","body_sha256":"sha256:0000000000000000000000000000000000000000000000000000000000000000"}}`)
++	obs, _ := json.Marshal(observeRequest{Kind: "cic:network:vcn", Binding: execBinding{Host: "h", KeyID: "k", ResourceID: "ocid1.vcn..x"}})
++	if _, err := Observe(nil, obs); err != nil {
++		t.Fatal(err)
++	}
++	poll, _ := json.Marshal(pollRequest{Binding: execBinding{Host: "h", KeyID: "k"}, Path: "/20160918/workRequests/w1"})
++	if _, err := Poll(nil, poll); err != nil {
++		t.Fatal(err)
++	}
++	if len(*got) != 2 {
++		t.Fatalf("calls = %d, want 2", len(*got))
++	}
++	for _, c := range *got {
++		var m struct {
++			Request struct {
++				Method string `json:"method"`
++			} `json:"request"`
++			Intent struct {
++				Operation string `json:"operation"`
++			} `json:"intent"`
++		}
++		_ = json.Unmarshal([]byte(c), &m)
++		if m.Request.Method != "GET" {
++			t.Errorf("%s issued %s, want GET", m.Intent.Operation, m.Request.Method)
++		}
++	}
++}
++
++// The shipped artifact imports exactly one cic-flow function, send: no raw sign or actuate (checked on the
++// compiled wasm, not on the declaration).
++func TestWasmArtifactImportsOnlyCICFlowSend(t *testing.T) {
++	wasm, err := os.ReadFile(wasmPath)
++	if os.IsNotExist(err) {
++		t.Skip("module.wasm not built")
++	}
++	if err != nil {
++		t.Fatal(err)
++	}
++	ctx := context.Background()
++	rt := wazero.NewRuntime(ctx)
++	defer rt.Close(ctx)
++	cm, err := rt.CompileModule(ctx, wasm)
++	if err != nil {
++		t.Fatal(err)
++	}
++	var flow []string
++	for _, f := range cm.ImportedFunctions() {
++		if mod, name, ok := f.Import(); ok && mod == "cic-flow" {
++			flow = append(flow, name)
++		}
++	}
++	if len(flow) != 1 || flow[0] != "send" {
++		t.Fatalf("cic-flow imports of module.wasm = %v, want [send]", flow)
++	}
++}
++
++// project.yaml declares abi.imports = cic-flow: [send] (and nothing else).
++func TestProjectYAMLDeclaresOnlySend(t *testing.T) {
++	f, err := os.Open(projectYAMLPath)
++	if err != nil {
++		t.Fatal(err)
++	}
++	defer f.Close()
++	in := false
++	var fns []string
++	sc := bufio.NewScanner(f)
++	for sc.Scan() {
++		line := sc.Text()
++		tr := strings.TrimSpace(line)
++		if tr == "" || strings.HasPrefix(tr, "#") {
++			continue
++		}
++		indent := len(line) - len(strings.TrimLeft(line, " "))
++		if indent == 2 && tr == "imports:" {
++			in = true
++			continue
++		}
++		if in && indent <= 2 {
++			break
++		}
++		if in && strings.HasPrefix(tr, "- ") && !strings.HasPrefix(tr, "- module:") {
++			fns = append(fns, strings.TrimSpace(strings.TrimPrefix(tr, "- ")))
++		}
++	}
++	if len(fns) != 1 || fns[0] != "send" {
++		t.Fatalf("abi.imports functions = %v, want [send]", fns)
++	}
++}
++
++// The guest sources hold no signing or Authorization construction any more.
++func TestGuestSourcesBuildNoAuthorization(t *testing.T) {
++	files, _ := filepath.Glob("*.go")
++	for _, f := range files {
++		if strings.HasSuffix(f, "_test.go") {
++			continue
++		}
++		b, _ := os.ReadFile(f)
++		for _, bad := range []string{"ociCanonical", "ociAuthorization", "callHostSign", "callHostActuate", "wasmCicFlowSign", "wasmCicFlowActuate", `"authorization"`, "data_base64", "rsa-sha256"} {
++			if strings.Contains(string(b), bad) {
++				t.Errorf("%s still contains %q", f, bad)
++			}
++		}
++	}
++}
+diff --git a/project.yaml b/project.yaml
+index 7f51891..c8bab4a 100644
+--- a/project.yaml
++++ b/project.yaml
+@@ -38,7 +38,7 @@ metadata:
+   # the build-gap between the prepare and finalize release phases. The
+   # finalization phase (tools/infra.py: _resign_with_build_hash) requires
+   # this to be non-empty and re-signs metadata.sign to cover it.
+-  buildHash: 7080b3423beded8b64891afdcf2e6f6d8bec6ebeaa88aecbb1b06e149b54ef86
++  buildHash: 17b1757e6b002bb18484196b7f159ddc87b8bc363587c55c27aba07bf713129c
+   cicSign: 'TBD'
+   cicSignedCA:
+     certificate: "TBD — filled by the release process with the CIC Root CA certificate"
+@@ -80,15 +80,15 @@ abi:
+     - invoke
+     - destroy
+   # Host functions this module REQUIRES for the sign+send ops (observe/execute/
+-  # poll/invoke/destroy). Declaration only — the module does not define the host
+-  # side. Names are provisional until settled with the relay (relay-requirements.md
+-  # R1/R2); today the trust-flow is native-FFI, not a wasm import, so nothing is
+-  # imported at the wasm level yet. describe() reports this surface.
++  # poll/invoke/destroy): cic-flow.send only. The guest describes the request
++  # structurally (method, host, path, intent, body); the HOST validates the target
++  # against the operator policy, signs and sends (O-1 WP-04, contract 03 sign+send).
++  # The raw sign/actuate imports are gone: the guest never builds a signature or an
++  # Authorization header. describe() reports this surface.
+   imports:
+     - module: cic-flow
+       functions:
+-        - sign
+-        - actuate
++        - send
+ # capability_manifest declares what this module needs from the host; the host
+ # enforces exactly this (relay-requirements.md R3). This is the OCI provisioner's
+ # target reach — egress to OCI's REST endpoints and a sign-only OCI key handle.
