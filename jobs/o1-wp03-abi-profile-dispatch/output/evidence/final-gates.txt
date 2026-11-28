@@ -1,0 +1,50 @@
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: echo "== gofmt -l"; gofmt -l $(git ls-files -co --exclude-standard "*.go"); echo "== go vet ./..."; go vet ./... && echo vet-ok; echo "== staticcheck"; go install honnef.co/go/tools/cmd/staticcheck@v0.6.1 >/dev/null 2>&1; /gopath/bin/staticcheck ./... && echo staticcheck-ok; echo "== symbols"; go run ./tools/symbolsgen context/SYMBOLS.ALLOWPKGS context/SYMBOLS.md >/dev/null; git diff HEAD --stat -- context/SYMBOLS.md; echo "== docgate(go)"; git config --global --add safe.directory /src 2>/dev/null; python3 /ev/docgate_go_only.py.txt | tail -3; echo "== deadcode"; go install golang.org/x/tools/cmd/deadcode@v0.44.0 >/dev/null 2>&1; /gopath/bin/deadcode ./... > /ev/deadcode-after.txt; grep -E "cmd/relay|core/cabinet" /ev/baseline-deadcode-86ea1ab.txt | sed -E "s/:[0-9]+:[0-9]+:/:/" | sort > /ev/dc-before.n; grep -E "cmd/relay|core/cabinet" /ev/deadcode-after.txt | sed -E "s/:[0-9]+:[0-9]+:/:/" | sort > /ev/dc-after.n; echo "deadcode diff (before -> after):"; diff /ev/dc-before.n /ev/dc-after.n | cut -c1-120; echo "== go test -race"; go test -count=1 -race ./core/cabinet/ ./cmd/relay/ 2>&1 | grep -vE "level="; echo "== go test ./... -count=1 (non-ok lines only)"; go test -count=1 -timeout 600s ./... 2>&1 | grep -vE "no test files|level=" | grep -vE "^ok"; echo "== coverage"; go test -count=1 -cover ./core/cabinet/ ./cmd/relay/ 2>&1 | grep -E "coverage|^ok|FAIL"
+# date: 2026-11-28T05:16:21Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+== gofmt -l
+== go vet ./...
+vet-ok
+== staticcheck
+staticcheck-ok
+== symbols
+ context/SYMBOLS.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+== docgate(go)
+core/cabinet/abi_profile_strict.go:29: var profileShape
+core/cabinet/abi_profile_strict.go:60: func scanValue
+docgate(go only): 126 Go files checked; 3 undocumented declaration(s)
+== deadcode
+deadcode diff (before -> after):
+13a14,32
+> core/cabinet/abi_profile.go: unreachable func: ParseProfile
+> core/cabinet/abi_profile.go: unreachable func: ProfileDigest
+> core/cabinet/abi_profile.go: unreachable func: ProfileSignedBytes
+> core/cabinet/abi_profile.go: unreachable func: ResolveEffect
+> core/cabinet/abi_profile.go: unreachable func: validateOperationShape
+> core/cabinet/abi_profile_dispatch.go: unreachable func: AbiProfile.snapshot
+> core/cabinet/abi_profile_dispatch.go: unreachable func: NewModuleProfileBinding
+> core/cabinet/abi_profile_registry.go: unreachable func: NewProfileRegistry
+> core/cabinet/abi_profile_registry.go: unreachable func: ProfileRegistry.Admit
+> core/cabinet/abi_profile_semantics.go: unreachable func: ABIProfileError.Error
+> core/cabinet/abi_profile_semantics.go: unreachable func: ABIProfileError.Is
+> core/cabinet/abi_profile_semantics.go: unreachable func: ABIProfileErrorCode
+> core/cabinet/abi_profile_semantics.go: unreachable func: AbiLimits.limitFields
+> core/cabinet/abi_profile_semantics.go: unreachable func: CheckProfileSemantics
+> core/cabinet/abi_profile_semantics.go: unreachable func: InMemorySchemaRegistry.Resolve
+> core/cabinet/abi_profile_semantics.go: unreachable func: OperatorLimits.cap
+> core/cabinet/abi_profile_strict.go: unreachable func: checkStrictLimits
+> core/cabinet/abi_profile_strict.go: unreachable func: scanValue
+> core/cabinet/abi_profile_strict.go: unreachable func: strictScan
+18a38
+> core/cabinet/mock_wasm_manager.go: unreachable func: MockCicWasmHost.Call
+27a48,49
+> core/cabinet/service.go: unreachable func: WithModuleProfileBindings
+> core/cabinet/service.go: unreachable func: WithProfileRequiredModules
+== go test -race
+ok  	centralrelay/core/cabinet	2.661s
+ok  	centralrelay/cmd/relay	7.266s
+== go test ./... -count=1 (non-ok lines only)
+== coverage
+ok  	centralrelay/core/cabinet	1.061s	coverage: 94.0% of statements
+ok  	centralrelay/cmd/relay	4.675s	coverage: 91.2% of statements
+# exit: 0

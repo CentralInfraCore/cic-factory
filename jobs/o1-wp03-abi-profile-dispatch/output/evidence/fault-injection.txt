@@ -1,0 +1,441 @@
+## baseline
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03|TestAdmit|TestParse|TestResolve|TestABI05|TestBinding|TestDispatch|TestStale|TestProfileRequired|TestGenericDispatch|TestLegacy' ./core/cabinet/ ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:14:53Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+ok  	centralrelay/core/cabinet	0.026s
+ok  	centralrelay/cmd/relay	0.022s
+# exit: 0
+
+## M01 ABI-01 duplicate op names not checked
+# test: TestAC03_3_ProfileSemanticsReferenceCases/duplicate-operation-name
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03_3_ProfileSemanticsReferenceCases' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:14:54Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAC03_3_ProfileSemanticsReferenceCases (0.00s)
+    --- FAIL: TestAC03_3_ProfileSemanticsReferenceCases/duplicate-operation-name (0.00s)
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.007s
+FAIL
+# exit: 0
+
+## M02 ABI-03 schema digest not compared
+# test: TestAC03_3_ProfileSemanticsReferenceCases/schema-ref-digest-mismatch
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03_3_ProfileSemanticsReferenceCases' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:14:56Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAC03_3_ProfileSemanticsReferenceCases (0.00s)
+    --- FAIL: TestAC03_3_ProfileSemanticsReferenceCases/schema-ref-digest-mismatch (0.00s)
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.005s
+FAIL
+# exit: 0
+
+## M03 ABI-03 unresolved schema ref accepted
+# test: TestAC03_3_ProfileSemanticsReferenceCases/schema-ref-unknown-id
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03_3_ProfileSemanticsReferenceCases' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:14:57Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAC03_3_ProfileSemanticsReferenceCases (0.00s)
+    --- FAIL: TestAC03_3_ProfileSemanticsReferenceCases/schema-ref-unknown-id (0.00s)
+            	            	expected: "SCHEMA_REF_UNRESOLVED"
+            	            	actual  : "SCHEMA_DIGEST_MISMATCH"
+FAIL
+FAIL	centralrelay/core/cabinet	0.006s
+FAIL
+# exit: 0
+
+## M04 ABI-02 effect field not resolved
+# test: TestAC03_3_ProfileSemanticsReferenceCases/effect-field-not-in-request-schema
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03_3_ProfileSemanticsReferenceCases' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:14:58Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAC03_3_ProfileSemanticsReferenceCases (0.00s)
+    --- FAIL: TestAC03_3_ProfileSemanticsReferenceCases/effect-field-not-in-request-schema (0.00s)
+            	            	expected: "EFFECT_FIELD_UNRESOLVABLE"
+            	            	actual  : "EFFECT_MAP_KEY_NOT_IN_FIELD_DOMAIN"
+FAIL
+FAIL	centralrelay/core/cabinet	0.008s
+FAIL
+# exit: 0
+
+## M05 ABI-02 map key outside the field domain accepted
+# test: TestAC03_3_ProfileSemanticsReferenceCases/effect-map-key-outside-field-domain
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03_3_ProfileSemanticsReferenceCases' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:01Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAC03_3_ProfileSemanticsReferenceCases (0.00s)
+    --- FAIL: TestAC03_3_ProfileSemanticsReferenceCases/effect-map-key-outside-field-domain (0.00s)
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.006s
+FAIL
+# exit: 0
+
+## M06 ABI-04 host capability consistency not checked
+# test: TestAC03_3_ProfileSemanticsReferenceCases/send-op-without-host-capability
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03_3_ProfileSemanticsReferenceCases' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:03Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAC03_3_ProfileSemanticsReferenceCases (0.00s)
+    --- FAIL: TestAC03_3_ProfileSemanticsReferenceCases/send-op-without-host-capability (0.00s)
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestAC03_3_ProfileSemanticsReferenceCases/capability-without-any-send-op (0.00s)
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.007s
+FAIL
+# exit: 0
+
+## M07 SS-05 operator cap not enforced
+# test: TestAC03_3_ProfileSemanticsReferenceCases/limit-above-operator-cap
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03_3_ProfileSemanticsReferenceCases' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:05Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAC03_3_ProfileSemanticsReferenceCases (0.00s)
+    --- FAIL: TestAC03_3_ProfileSemanticsReferenceCases/limit-above-operator-cap (0.00s)
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestAC03_3_ProfileSemanticsReferenceCases/request-limit-above-operator-cap (0.00s)
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.007s
+FAIL
+# exit: 0
+
+## M08 admission: pinned digest not compared
+# test: TestAC03_2_UnknownOrUnpinnedProfileRejected
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03_2_UnknownOrUnpinnedProfileRejected' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:07Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAC03_2_UnknownOrUnpinnedProfileRejected (0.00s)
+        	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.005s
+FAIL
+# exit: 0
+
+## M09 admission: unknown profile id accepted
+# test: TestAC03_2_UnknownOrUnpinnedProfileRejected
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03_2_UnknownOrUnpinnedProfileRejected' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:10Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAC03_2_UnknownOrUnpinnedProfileRejected (0.00s)
+        	            	expected: "PROFILE_UNKNOWN"
+        	            	actual  : "PROFILE_DIGEST_MISMATCH"
+FAIL
+FAIL	centralrelay/core/cabinet	0.007s
+FAIL
+# exit: 0
+
+## M10 admission: signature verification skipped
+# test: TestAdmitSignatureFailureRejectsAndNoFallback
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmitSignatureFailureRejectsAndNoFallback' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:12Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAdmitSignatureFailureRejectsAndNoFallback (0.00s)
+        	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.005s
+FAIL
+# exit: 0
+
+## M11 manifest pin not compared
+# test: TestAC03_2_ManifestPinAndOpSet
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03_2_ManifestPinAndOpSet' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:14Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAC03_2_ManifestPinAndOpSet (0.00s)
+        	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.007s
+FAIL
+# exit: 0
+
+## M12 manifest op-set subset not checked
+# test: TestAC03_2_ManifestPinAndOpSet
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03_2_ManifestPinAndOpSet' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:17Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAC03_2_ManifestPinAndOpSet (0.00s)
+        	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.004s
+FAIL
+# exit: 0
+
+## M13 generic dispatch default ON (switch ignored)
+# test: TestAC03_5_DefaultOffUsesLegacyDispatchEvenForABoundModule
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03_5_DefaultOffUsesLegacyDispatchEvenForABoundModule' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:20Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAC03_5_DefaultOffUsesLegacyDispatchEvenForABoundModule (0.00s)
+	assert: mock: I don't know what to return because the method call was unexpected.
+		This method was unexpected:
+FAIL	centralrelay/core/cabinet	0.012s
+FAIL
+# exit: 0
+
+## M14 stale binding no longer rejected (legacy fallback)
+# test: TestStaleBindingIsRejectedNotLegacy
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestStaleBindingIsRejectedNotLegacy' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:22Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestStaleBindingIsRejectedNotLegacy (0.00s)
+	assert: mock: I don't know what to return because the method call was unexpected.
+		This method was unexpected:
+FAIL	centralrelay/core/cabinet	0.008s
+FAIL
+# exit: 0
+
+## M15 sign+send op executed instead of failing closed
+# test: TestAC03_4_GenericDispatchSwitchOnProfileOpsRun
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03_4_GenericDispatchSwitchOnProfileOpsRun' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:24Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAC03_4_GenericDispatchSwitchOnProfileOpsRun (0.00s)
+	mock: Unexpected Method Call
+FAIL	centralrelay/core/cabinet	0.010s
+FAIL
+# exit: 0
+
+## M16 manifest op-set not honoured at dispatch
+# test: TestDispatchHonoursTheManifestOpSet
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestDispatchHonoursTheManifestOpSet' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:27Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestDispatchHonoursTheManifestOpSet (0.00s)
+FAIL
+FAIL	centralrelay/core/cabinet	0.004s
+FAIL
+# exit: 0
+
+## M17 unmapped effect value defaults to read
+# test: TestResolveEffectFailClosed
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestResolveEffectFailClosed' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:29Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestResolveEffectFailClosed (0.00s)
+        	            	expected: "external-write"
+        	            	actual  : "external-read"
+        	            	expected: "external-write"
+        	            	actual  : "external-read"
+FAIL
+FAIL	centralrelay/core/cabinet	0.006s
+FAIL
+# exit: 0
+
+## M18 signed-domain tag changed
+# test: TestABI05DigestAndSignedDomainMatchSharedVector
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestABI05DigestAndSignedDomainMatchSharedVector' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:31Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestABI05DigestAndSignedDomainMatchSharedVector (0.00s)
+        	            	expected: "CICABIPROFv1\nprofile_sha256=sha256:4d8b4475dfdae7ddbf07ddba60ec9e3cd1a70ff576c2e23c1705eedff3df4573\nsigner_key_id=sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5\nsigner_alg=ed25519\n"
+        	            	actual  : "CICABIPROFv2\nprofile_sha256=sha256:4d8b4475dfdae7ddbf07ddba60ec9e3cd1a70ff576c2e23c1705eedff3df4573\nsigner_key_id=sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5\nsigner_alg=ed25519\n"
+FAIL
+FAIL	centralrelay/core/cabinet	0.004s
+FAIL
+# exit: 0
+
+## M19 default effect not enforced fail-closed at parse
+# test: TestParseProfileStructuralRejections/unresolvable-defaults-to-read
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestParseProfileStructuralRejections' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:34Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestParseProfileStructuralRejections (0.00s)
+    --- FAIL: TestParseProfileStructuralRejections/unresolvable-defaults-to-read (0.00s)
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.007s
+FAIL
+# exit: 0
+
+## M20 env switch accepts any value as true
+# test: TestGenericDispatchFromEnv
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestGenericDispatchFromEnv' ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:36Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestGenericDispatchFromEnv (0.00s)
+        	Error:      	An error is expected but got nil.
+        	Messages:   	TRUE
+FAIL
+FAIL	centralrelay/cmd/relay	0.006s
+FAIL
+# exit: 0
+
+## M21 F1 lower-casing applied on the generic path
+# test: TestGenericDispatchUsesExactOperationIdentity
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestGenericDispatchUsesExactOperationIdentity' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:39Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestGenericDispatchUsesExactOperationIdentity (0.00s)
+	assert: mock: I don't know what to return because the method call was unexpected.
+		This method was unexpected:
+FAIL	centralrelay/core/cabinet	0.007s
+FAIL
+# exit: 0
+
+## M22 F2 profile-required module without binding runs legacy
+# test: TestProfileRequiredModuleWithoutBindingIsRejected
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestProfileRequiredModuleWithoutBindingIsRejected' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:42Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestProfileRequiredModuleWithoutBindingIsRejected (0.00s)
+	assert: mock: I don't know what to return because the method call was unexpected.
+		This method was unexpected:
+FAIL	centralrelay/core/cabinet	0.007s
+FAIL
+# exit: 0
+
+## M23 F3 binding without envelope digest accepted
+# test: TestBindingRequiresEnvelopeDigestAndSnapshotsTheProfile
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestBindingRequiresEnvelopeDigestAndSnapshotsTheProfile' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:45Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestBindingRequiresEnvelopeDigestAndSnapshotsTheProfile (0.00s)
+        	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.006s
+FAIL
+# exit: 0
+
+## M24 F3 profile held by reference, not snapshot
+# test: TestBindingRequiresEnvelopeDigestAndSnapshotsTheProfile
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestBindingRequiresEnvelopeDigestAndSnapshotsTheProfile' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:48Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestBindingRequiresEnvelopeDigestAndSnapshotsTheProfile (0.00s)
+        	            	expected: "describe"
+        	            	actual  : "mutated"
+        	            	expected: "external-read"
+        	            	actual  : "external-write"
+        	            	expected: "provider-http@1"
+        	            	actual  : "other@1"
+        	            	expected: 30000
+        	            	actual  : 1
+FAIL
+FAIL	centralrelay/core/cabinet	0.005s
+FAIL
+# exit: 0
+
+## M25 F4 duplicate keys accepted
+# test: TestParseProfileStrictWire/duplicate-key
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestParseProfileStrictWire' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:50Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestParseProfileStrictWire (0.00s)
+    --- FAIL: TestParseProfileStrictWire/duplicate-key (0.00s)
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestParseProfileStrictWire/duplicate-key-in-effect-map (0.00s)
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.010s
+FAIL
+# exit: 0
+
+## M26 F4 unknown or differently spelled keys accepted
+# test: TestParseProfileStrictWire/case-variant-key
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestParseProfileStrictWire' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:53Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestParseProfileStrictWire (0.00s)
+    --- FAIL: TestParseProfileStrictWire/unknown-top-level-key (0.00s)
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestParseProfileStrictWire/case-variant-key (0.00s)
+    --- FAIL: TestParseProfileStrictWire/unknown-key-in-operation (0.00s)
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestParseProfileStrictWire/unknown-key-in-schema-ref (0.00s)
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.006s
+FAIL
+# exit: 0
+
+## M27 F4 non-positive limits accepted
+# test: TestParseProfileStrictWire/zero-limit
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestParseProfileStrictWire' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:55Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestParseProfileStrictWire (0.00s)
+    --- FAIL: TestParseProfileStrictWire/zero-limit (0.00s)
+            	Error:      	An error is expected but got nil.
+    --- FAIL: TestParseProfileStrictWire/negative-limit (0.00s)
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.007s
+FAIL
+# exit: 0
+
+## M28 F4 duplicate host capability accepted
+# test: TestParseProfileStrictWire/duplicate-host-capability
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestParseProfileStrictWire' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:15:58Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestParseProfileStrictWire (0.00s)
+    --- FAIL: TestParseProfileStrictWire/duplicate-host-capability (0.00s)
+            	Error:      	An error is expected but got nil.
+FAIL
+FAIL	centralrelay/core/cabinet	0.009s
+FAIL
+# exit: 0
+
+## M29 F4 trailing data accepted
+# test: TestParseProfileStrictWire/trailing-data
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestParseProfileStrictWire' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:16:00Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestParseProfileStrictWire (0.00s)
+    --- FAIL: TestParseProfileStrictWire/trailing-data (0.00s)
+FAIL
+FAIL	centralrelay/core/cabinet	0.007s
+FAIL
+# exit: 0
+
+## M30 F5 missing verifier/schemas not a controlled error
+# test: TestAdmitFailsClosedWhenUnconfigured
+# RESULT: FAILED as required
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAdmitFailsClosedWhenUnconfigured' ./core/cabinet/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:16:03Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+--- FAIL: TestAdmitFailsClosedWhenUnconfigured (0.00s)
+FAIL	centralrelay/core/cabinet	0.006s
+FAIL
+# exit: 0
+
+## after restore
+# image: golang:1.26.11 (sha256:957952ae74dc010608717144399a59a2c6e82ea03d63be1c7ff6577c5a135f93)
+# cmd: go test -count=1 -run 'TestAC03|TestAdmit|TestParse|TestResolve|TestABI05|TestBinding|TestDispatch|TestStale|TestProfileRequired|TestGenericDispatch|TestLegacy' ./core/cabinet/ ./cmd/relay/ 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\[build failed\]|expected|actual|Messages' | head -12
+# date: 2026-11-28T05:16:05Z  HEAD: 7b0e2f70b7e4040e09f8e78b0bac576e7f4a8436
+ok  	centralrelay/core/cabinet	0.032s
+ok  	centralrelay/cmd/relay	0.023s
+# exit: 0

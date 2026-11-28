@@ -1,0 +1,67 @@
+# Fault-injection harness for WP-03: each mutation must make its NAMED test fail (the named test, not a build error), baseline must pass before and after.
+import pathlib, subprocess, sys
+W = pathlib.Path("<job-workspace>")
+R = W / "CIC_Relay"
+OUT = W / "evidence-raw" / "fault-injection.txt"
+G = "<local-tmp>/gorun3.sh"
+MUT = [
+ ("M01 ABI-01 duplicate op names not checked", "core/cabinet/abi_profile_semantics.go", "\t\tif seen[op.Name] {\n\t\t\treturn &ABIProfileError{Code: CodeDuplicateOperation}\n\t\t}\n", "", "TestAC03_3_ProfileSemanticsReferenceCases/duplicate-operation-name"),
+ ("M02 ABI-03 schema digest not compared", "core/cabinet/abi_profile_semantics.go", "\t\t\tif entry.Digest != ref.Digest {", "\t\t\tif false && entry.Digest != ref.Digest {", "TestAC03_3_ProfileSemanticsReferenceCases/schema-ref-digest-mismatch"),
+ ("M03 ABI-03 unresolved schema ref accepted", "core/cabinet/abi_profile_semantics.go", "\t\t\tif !ok {\n\t\t\t\treturn &ABIProfileError{Code: CodeSchemaRefUnresolved}", "\t\t\tif false && !ok {\n\t\t\t\treturn &ABIProfileError{Code: CodeSchemaRefUnresolved}", "TestAC03_3_ProfileSemanticsReferenceCases/schema-ref-unknown-id"),
+ ("M04 ABI-02 effect field not resolved", "core/cabinet/abi_profile_semantics.go", "\t\t\tif !ok {\n\t\t\t\treturn &ABIProfileError{Code: CodeEffectFieldUnresolvable}\n\t\t\t}\n", "\t\t\t_ = ok\n", "TestAC03_3_ProfileSemanticsReferenceCases/effect-field-not-in-request-schema"),
+ ("M05 ABI-02 map key outside the field domain accepted", "core/cabinet/abi_profile_semantics.go", "\t\t\t\tif !domainSet[k] {\n\t\t\t\t\treturn &ABIProfileError{Code: CodeEffectMapKeyNotInFieldDomain}\n\t\t\t\t}\n", "\t\t\t\t_ = k\n", "TestAC03_3_ProfileSemanticsReferenceCases/effect-map-key-outside-field-domain"),
+ ("M06 ABI-04 host capability consistency not checked", "core/cabinet/abi_profile_semantics.go", "\tif usesSend != hasCap {", "\tif false && usesSend != hasCap {", "TestAC03_3_ProfileSemanticsReferenceCases/send-op-without-host-capability"),
+ ("M07 SS-05 operator cap not enforced", "core/cabinet/abi_profile_semantics.go", "\t\tif ok && f.value > capVal {\n\t\t\treturn &ABIProfileError{Code: CodeLimitExceedsOperatorCap}\n\t\t}\n", "\t\t_, _ = ok, capVal\n", "TestAC03_3_ProfileSemanticsReferenceCases/limit-above-operator-cap"),
+ ("M08 admission: pinned digest not compared", "core/cabinet/abi_profile_registry.go", "\tif pinnedDigest != digest {", "\tif false && pinnedDigest != digest {", "TestAC03_2_UnknownOrUnpinnedProfileRejected"),
+ ("M09 admission: unknown profile id accepted", "core/cabinet/abi_profile_registry.go", "\tif !known {\n\t\treturn nil, digest, &ABIProfileError{Code: CodeProfileUnknown}\n\t}\n", "\t_ = known\n", "TestAC03_2_UnknownOrUnpinnedProfileRejected"),
+ ("M10 admission: signature verification skipped", "core/cabinet/abi_profile_registry.go", "r.verifier.VerifySignedProfile(signedBytes, sig); err != nil", "func() error { _ = signedBytes; return nil }(); err != nil", "TestAdmitSignatureFailureRejectsAndNoFallback"),
+ ("M11 manifest pin not compared", "core/cabinet/abi_profile_dispatch.go", "\tif pin.ID != profile.ProfileID || pin.Digest != admittedDigest {\n\t\treturn nil, &ABIProfileError{Code: CodeProfilePinMismatch}\n\t}\n", "", "TestAC03_2_ManifestPinAndOpSet"),
+ ("M12 manifest op-set subset not checked", "core/cabinet/abi_profile_dispatch.go", "\t\tif !profileOps[name] {", "\t\tif false && !profileOps[name] {", "TestAC03_2_ManifestPinAndOpSet"),
+ ("M13 generic dispatch default ON (switch ignored)", "core/cabinet/service.go", "\tif !c.genericDispatch {\n\t\treturn nil, nil\n\t}\n", "", "TestAC03_5_DefaultOffUsesLegacyDispatchEvenForABoundModule"),
+ ("M14 stale binding no longer rejected (legacy fallback)", "core/cabinet/service.go", "\t\tif b.ModuleChecksum != m.Checksum() {", "\t\tif false && b.ModuleChecksum != m.Checksum() {", "TestStaleBindingIsRejectedNotLegacy"),
+ ("M15 sign+send op executed instead of failing closed", "core/cabinet/service.go", "\t\t\t\tcase op.HostBoundary != \"none\":", "\t\t\t\tcase false:", "TestAC03_4_GenericDispatchSwitchOnProfileOpsRun"),
+ ("M16 manifest op-set not honoured at dispatch", "core/cabinet/abi_profile_dispatch.go", "\tfor _, d := range b.Operations {\n\t\tif d == name {\n\t\t\treturn b.Profile.FindOperation(name)\n\t\t}\n\t}\n\treturn AbiOperation{}, false", "\treturn b.Profile.FindOperation(name)", "TestDispatchHonoursTheManifestOpSet"),
+ ("M17 unmapped effect value defaults to read", "core/cabinet/abi_profile.go", "\treturn op.EffectResolution.Default\n", "\treturn \"external-read\"\n", "TestResolveEffectFailClosed"),
+ ("M18 signed-domain tag changed", "core/cabinet/abi_profile.go", "CICABIPROFv1\\nprofile_sha256", "CICABIPROFv2\\nprofile_sha256", "TestABI05DigestAndSignedDomainMatchSharedVector"),
+ ("M19 default effect not enforced fail-closed at parse", "core/cabinet/abi_profile.go", "\t\tif er.Default != \"external-write\" {", "\t\tif false {", "TestParseProfileStructuralRejections/unresolvable-defaults-to-read"),
+ ("M20 env switch accepts any value as true", "cmd/relay/main.go", "\tcase \"true\":\n\t\treturn true, nil\n\tdefault:\n\t\treturn false, fmt.Errorf(\"invalid CIC_ABI_GENERIC_DISPATCH", "\tcase \"true\":\n\t\treturn true, nil\n\tdefault:\n\t\treturn true, nil\n\t\treturn false, fmt.Errorf(\"invalid CIC_ABI_GENERIC_DISPATCH", "TestGenericDispatchFromEnv"),
+ ("M21 F1 lower-casing applied on the generic path", "core/cabinet/service.go", "binding.Operation(step.FunctionName)", "binding.Operation(normalizedFn)", "TestGenericDispatchUsesExactOperationIdentity"),
+ ("M22 F2 profile-required module without binding runs legacy", "core/cabinet/service.go", "\tif c.profileRequired[m.ID()] {", "\tif false && c.profileRequired[m.ID()] {", "TestProfileRequiredModuleWithoutBindingIsRejected"),
+ ("M23 F3 binding without envelope digest accepted", "core/cabinet/abi_profile_dispatch.go", "\tif envelopeDigest == \"\" {", "\tif false && envelopeDigest == \"\" {", "TestBindingRequiresEnvelopeDigestAndSnapshotsTheProfile"),
+ ("M24 F3 profile held by reference, not snapshot", "core/cabinet/abi_profile_dispatch.go", "Profile: profile.snapshot(),", "Profile: profile,", "TestBindingRequiresEnvelopeDigestAndSnapshotsTheProfile"),
+ ("M25 F4 duplicate keys accepted", "core/cabinet/abi_profile_strict.go", "\t\tif seen[key] {", "\t\tif false && seen[key] {", "TestParseProfileStrictWire/duplicate-key"),
+ ("M26 F4 unknown or differently spelled keys accepted", "core/cabinet/abi_profile_strict.go", "\t\t\tif !ok {\n\t\t\t\treturn fmt.Errorf(\"%s: unknown or differently spelled key", "\t\t\tif false && !ok {\n\t\t\t\treturn fmt.Errorf(\"%s: unknown or differently spelled key", "TestParseProfileStrictWire/case-variant-key"),
+ ("M27 F4 non-positive limits accepted", "core/cabinet/abi_profile_strict.go", "\t\tif v < 1 {", "\t\tif false && v < 1 {", "TestParseProfileStrictWire/zero-limit"),
+ ("M28 F4 duplicate host capability accepted", "core/cabinet/abi_profile.go", "\t\tif seenCap[c] {", "\t\tif false && seenCap[c] {", "TestParseProfileStrictWire/duplicate-host-capability"),
+ ("M29 F4 trailing data accepted", "core/cabinet/abi_profile_strict.go", "\tif _, err := dec.Token(); err != io.EOF {", "\tif _, err := dec.Token(); false && err != io.EOF {", "TestParseProfileStrictWire/trailing-data"),
+ ("M30 F5 missing verifier/schemas not a controlled error", "core/cabinet/abi_profile_registry.go", "\tif r.verifier == nil || r.schemas == nil {", "\tif false {", "TestAdmitFailsClosedWhenUnconfigured"),
+]
+def run(label, pkg, test):
+    log = W / "evidence-raw" / "mut.run.log"
+    subprocess.run([G, str(log), f"go test -count=1 -run '{test}' {pkg} 2>&1 | grep -E -- '--- FAIL|^(ok|FAIL)|\\[build failed\\]|expected|actual|Messages' | head -12"], check=False)
+    return log.read_text()
+lines, bad = [], 0
+base = run("baseline", "./core/cabinet/ ./cmd/relay/", "TestAC03|TestAdmit|TestParse|TestResolve|TestABI05|TestBinding|TestDispatch|TestStale|TestProfileRequired|TestGenericDispatch|TestLegacy")
+lines.append("## baseline\n" + base)
+body = "\n".join(l for l in base.splitlines() if not l.startswith("#"))
+if "--- FAIL" in body or "FAIL\t" in body or "ok" not in body: print("baseline fails"); sys.exit(1)
+for label, f, old, new, test in MUT:
+    p = R / f; orig = p.read_text()
+    if orig.count(old) != 1:
+        lines.append(f"## {label}\n# RESULT: MUTATION NOT APPLIED (pattern count {orig.count(old)})\n"); bad += 1; continue
+    try:
+        p.write_text(orig.replace(old, new, 1))
+        pkg = "./cmd/relay/" if f.startswith("cmd/") else "./core/cabinet/"
+        out = run(label, pkg, test.split("/")[0])
+        named = test.split("/")[-1] if "/" in test else test
+        failed_named = f"--- FAIL: {test.split('/')[0]}" in out and ("[build failed]" not in out)
+        sub_ok = (("/" not in test) or (named in out))
+        status = "FAILED as required" if failed_named and sub_ok else "NOT CAUGHT / WRONG REASON"
+        if status != "FAILED as required": bad += 1
+        lines.append(f"## {label}\n# test: {test}\n# RESULT: {status}\n{out}")
+    finally:
+        p.write_text(orig)
+after = run("after-restore", "./core/cabinet/ ./cmd/relay/", "TestAC03|TestAdmit|TestParse|TestResolve|TestABI05|TestBinding|TestDispatch|TestStale|TestProfileRequired|TestGenericDispatch|TestLegacy")
+lines.append("## after restore\n" + after)
+OUT.write_text("\n".join(lines))
+print("mutations:", len(MUT), "not-as-required:", bad)
