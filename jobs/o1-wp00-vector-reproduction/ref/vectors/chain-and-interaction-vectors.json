@@ -1,0 +1,331 @@
+{
+ "chain_cases": [
+  {
+   "artifact": {
+    "chain_hash": "sha256:6021eec7ffbdf85079de5637d75351dd3377d763ca16f92de62540b526086719",
+    "chain_version": "CICCHAINv2",
+    "kind": "ProofArtifact",
+    "outcome": {
+     "authorization": "ALLOWED",
+     "execution": "SUCCEEDED"
+    },
+    "steps": [
+     {
+      "executed": {
+       "artifact_digest": "sha256:abababababababababababababababababababababababababababababababab",
+       "dispatched": "observe",
+       "envelope_digest": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+       "executed_digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+       "manifest_digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+       "profile": {
+        "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+        "id": "cic:provider@0.1.0"
+       },
+       "trust_state": "authenticated"
+      },
+      "index": 0,
+      "input_digest": "sha256:abababababababababababababababababababababababababababababababab",
+      "name": "oracle@0.1.0.observe(req) -> out",
+      "outcome": {
+       "authorization": "ALLOWED",
+       "execution": "SUCCEEDED"
+      },
+      "output_digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "references": {
+       "authorization_decision": {
+        "digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+       },
+       "execution_context": {
+        "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
+       },
+       "host_interactions": {
+        "count": 1,
+        "digest": "sha256:abababababababababababababababababababababababababababababababab"
+       }
+      },
+      "requested": {
+       "module_id": "cic-module-oracle-cloud@0.1.0",
+       "operation": "observe"
+      }
+     }
+    ],
+    "version": "2.0",
+    "workflow": {
+     "id": "poc.observe",
+     "source_digest": "git:86ea1ab"
+    }
+   },
+   "expect_chain_hash": "sha256:6021eec7ffbdf85079de5637d75351dd3377d763ca16f92de62540b526086719",
+   "expect_hash_input_b64": "Q0lDQ0hBSU52Mgp2ZXJzaW9uPTIuMAp3b3JrZmxvdy5pZD1wb2Mub2JzZXJ2ZQp3b3JrZmxvdy5zb3VyY2VfZGlnZXN0PWdpdDo4NmVhMWFiCm91dGNvbWUuZXhlY3V0aW9uPVNVQ0NFRURFRApvdXRjb21lLmF1dGhvcml6YXRpb249QUxMT1dFRApzdGVwcz0xCnN0ZXAuMC5uYW1lX3NoYTI1Nj1zaGEyNTY6OTQ3ZDQ2NTVkNzg4MjViYzlkMWE0NDI2M2VhZThjZDc5NGI4ZWRhMDU3Y2MzMjY5MzUxN2JhZDQ5OTg5MTQyZQpzdGVwLjAuaW5kZXg9MApzdGVwLjAucmVxdWVzdGVkLm1vZHVsZV9pZD1jaWMtbW9kdWxlLW9yYWNsZS1jbG91ZEAwLjEuMApzdGVwLjAucmVxdWVzdGVkLm9wZXJhdGlvbj1vYnNlcnZlCnN0ZXAuMC5yZXF1ZXN0ZWQucHJlc2VudGVkX2FydGlmYWN0X2RpZ2VzdD1udWxsCnN0ZXAuMC5vdXRjb21lLmV4ZWN1dGlvbj1TVUNDRUVERUQKc3RlcC4wLm91dGNvbWUuYXV0aG9yaXphdGlvbj1BTExPV0VECnN0ZXAuMC5pbnB1dF9kaWdlc3Q9c2hhMjU2OmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWIKc3RlcC4wLm91dHB1dF9kaWdlc3Q9c2hhMjU2OmNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2QKc3RlcC4wLnJlZmVyZW5jZXMuZXhlY3V0aW9uX2NvbnRleHQuZGlnZXN0PXNoYTI1NjplZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmCnN0ZXAuMC5yZWZlcmVuY2VzLmF1dGhvcml6YXRpb25fZGVjaXNpb24uZGlnZXN0PXNoYTI1NjpjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkCnN0ZXAuMC5yZWZlcmVuY2VzLmhvc3RfaW50ZXJhY3Rpb25zLmRpZ2VzdD1zaGEyNTY6YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYgpzdGVwLjAucmVmZXJlbmNlcy5ob3N0X2ludGVyYWN0aW9ucy5jb3VudD0xCnN0ZXAuMC5yZWplY3Rpb249YWJzZW50CnN0ZXAuMC5leGVjdXRlZD1wcmVzZW50CnN0ZXAuMC5leGVjdXRlZC5hcnRpZmFjdF9kaWdlc3Q9c2hhMjU2OmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWIKc3RlcC4wLmV4ZWN1dGVkLmV4ZWN1dGVkX2RpZ2VzdD1zaGEyNTY6ZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZgpzdGVwLjAuZXhlY3V0ZWQubWFuaWZlc3RfZGlnZXN0PXNoYTI1NjpjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkCnN0ZXAuMC5leGVjdXRlZC5lbnZlbG9wZV9kaWdlc3Q9c2hhMjU2OjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIKc3RlcC4wLmV4ZWN1dGVkLnByb2ZpbGUuaWQ9Y2ljOnByb3ZpZGVyQDAuMS4wCnN0ZXAuMC5leGVjdXRlZC5wcm9maWxlLmRpZ2VzdD1zaGEyNTY6ZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZgpzdGVwLjAuZXhlY3V0ZWQuZGlzcGF0Y2hlZD1vYnNlcnZlCnN0ZXAuMC5leGVjdXRlZC50cnVzdF9zdGF0ZT1hdXRoZW50aWNhdGVkCg==",
+   "id": "chain-ok"
+  },
+  {
+   "artifact": {
+    "chain_hash": "sha256:e7dd7e29046b1db6480586fd7e20d237fc9b63f51cd7d696faa73f9e41ff2d8f",
+    "chain_version": "CICCHAINv2",
+    "kind": "ProofArtifact",
+    "outcome": {
+     "authorization": "DENIED",
+     "execution": "REJECTED"
+    },
+    "steps": [
+     {
+      "index": 0,
+      "input_digest": "sha256:abababababababababababababababababababababababababababababababab",
+      "name": "oracle@0.1.0.invoke(req) -> out",
+      "outcome": {
+       "authorization": "DENIED",
+       "execution": "REJECTED"
+      },
+      "output_digest": null,
+      "references": {
+       "authorization_decision": {
+        "digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+       },
+       "execution_context": {
+        "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
+       },
+       "host_interactions": {
+        "count": 0,
+        "digest": "sha256:abababababababababababababababababababababababababababababababab"
+       }
+      },
+      "rejection": {
+       "code": "POLICY_DENIED",
+       "phase": "policy"
+      },
+      "requested": {
+       "module_id": "cic-module-oracle-cloud@0.1.0",
+       "operation": "invoke",
+       "presented_artifact_digest": "sha256:abababababababababababababababababababababababababababababababab"
+      }
+     }
+    ],
+    "version": "2.0",
+    "workflow": {
+     "id": "poc.observe",
+     "source_digest": "git:86ea1ab"
+    }
+   },
+   "expect_chain_hash": "sha256:e7dd7e29046b1db6480586fd7e20d237fc9b63f51cd7d696faa73f9e41ff2d8f",
+   "expect_hash_input_b64": "Q0lDQ0hBSU52Mgp2ZXJzaW9uPTIuMAp3b3JrZmxvdy5pZD1wb2Mub2JzZXJ2ZQp3b3JrZmxvdy5zb3VyY2VfZGlnZXN0PWdpdDo4NmVhMWFiCm91dGNvbWUuZXhlY3V0aW9uPVJFSkVDVEVECm91dGNvbWUuYXV0aG9yaXphdGlvbj1ERU5JRUQKc3RlcHM9MQpzdGVwLjAubmFtZV9zaGEyNTY9c2hhMjU2OmQxYzAzYzU1ZTk5MTlhYWEwY2ZjMjAzMWVlYmRhOTRiYjJiNTkyYTA3MGE0YmQyODJiMmJjNjFiYzI1M2EyMmUKc3RlcC4wLmluZGV4PTAKc3RlcC4wLnJlcXVlc3RlZC5tb2R1bGVfaWQ9Y2ljLW1vZHVsZS1vcmFjbGUtY2xvdWRAMC4xLjAKc3RlcC4wLnJlcXVlc3RlZC5vcGVyYXRpb249aW52b2tlCnN0ZXAuMC5yZXF1ZXN0ZWQucHJlc2VudGVkX2FydGlmYWN0X2RpZ2VzdD1zaGEyNTY6YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYgpzdGVwLjAub3V0Y29tZS5leGVjdXRpb249UkVKRUNURUQKc3RlcC4wLm91dGNvbWUuYXV0aG9yaXphdGlvbj1ERU5JRUQKc3RlcC4wLmlucHV0X2RpZ2VzdD1zaGEyNTY6YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYgpzdGVwLjAub3V0cHV0X2RpZ2VzdD1udWxsCnN0ZXAuMC5yZWZlcmVuY2VzLmV4ZWN1dGlvbl9jb250ZXh0LmRpZ2VzdD1zaGEyNTY6ZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZgpzdGVwLjAucmVmZXJlbmNlcy5hdXRob3JpemF0aW9uX2RlY2lzaW9uLmRpZ2VzdD1zaGEyNTY6Y2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZApzdGVwLjAucmVmZXJlbmNlcy5ob3N0X2ludGVyYWN0aW9ucy5kaWdlc3Q9c2hhMjU2OmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWIKc3RlcC4wLnJlZmVyZW5jZXMuaG9zdF9pbnRlcmFjdGlvbnMuY291bnQ9MApzdGVwLjAucmVqZWN0aW9uPXByZXNlbnQKc3RlcC4wLnJlamVjdGlvbi5waGFzZT1wb2xpY3kKc3RlcC4wLnJlamVjdGlvbi5jb2RlPVBPTElDWV9ERU5JRUQKc3RlcC4wLmV4ZWN1dGVkPWFic2VudAo=",
+   "id": "chain-rejected-before-load"
+  },
+  {
+   "artifact": {
+    "chain_hash": "sha256:6021eec7ffbdf85079de5637d75351dd3377d763ca16f92de62540b526086719",
+    "chain_version": "CICCHAINv2",
+    "kind": "ProofArtifact",
+    "outcome": {
+     "authorization": "ALLOWED",
+     "execution": "SUCCEEDED"
+    },
+    "steps": [
+     {
+      "executed": {
+       "artifact_digest": "sha256:abababababababababababababababababababababababababababababababab",
+       "dispatched": "observe",
+       "envelope_digest": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+       "executed_digest": "sha256:2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
+       "manifest_digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+       "profile": {
+        "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+        "id": "cic:provider@0.1.0"
+       },
+       "trust_state": "authenticated"
+      },
+      "index": 0,
+      "input_digest": "sha256:abababababababababababababababababababababababababababababababab",
+      "name": "oracle@0.1.0.observe(req) -> out",
+      "outcome": {
+       "authorization": "ALLOWED",
+       "execution": "SUCCEEDED"
+      },
+      "output_digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "references": {
+       "authorization_decision": {
+        "digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+       },
+       "execution_context": {
+        "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
+       },
+       "host_interactions": {
+        "count": 1,
+        "digest": "sha256:abababababababababababababababababababababababababababababababab"
+       }
+      },
+      "requested": {
+       "module_id": "cic-module-oracle-cloud@0.1.0",
+       "operation": "observe"
+      }
+     }
+    ],
+    "version": "2.0",
+    "workflow": {
+     "id": "poc.observe",
+     "source_digest": "git:86ea1ab"
+    }
+   },
+   "expect_chain_hash": "sha256:ef9829fc8d43a7f97ec925d26acd02acfbfcec0961e3f469ac7acbedbc57b0ee",
+   "expect_hash_input_b64": "Q0lDQ0hBSU52Mgp2ZXJzaW9uPTIuMAp3b3JrZmxvdy5pZD1wb2Mub2JzZXJ2ZQp3b3JrZmxvdy5zb3VyY2VfZGlnZXN0PWdpdDo4NmVhMWFiCm91dGNvbWUuZXhlY3V0aW9uPVNVQ0NFRURFRApvdXRjb21lLmF1dGhvcml6YXRpb249QUxMT1dFRApzdGVwcz0xCnN0ZXAuMC5uYW1lX3NoYTI1Nj1zaGEyNTY6OTQ3ZDQ2NTVkNzg4MjViYzlkMWE0NDI2M2VhZThjZDc5NGI4ZWRhMDU3Y2MzMjY5MzUxN2JhZDQ5OTg5MTQyZQpzdGVwLjAuaW5kZXg9MApzdGVwLjAucmVxdWVzdGVkLm1vZHVsZV9pZD1jaWMtbW9kdWxlLW9yYWNsZS1jbG91ZEAwLjEuMApzdGVwLjAucmVxdWVzdGVkLm9wZXJhdGlvbj1vYnNlcnZlCnN0ZXAuMC5yZXF1ZXN0ZWQucHJlc2VudGVkX2FydGlmYWN0X2RpZ2VzdD1udWxsCnN0ZXAuMC5vdXRjb21lLmV4ZWN1dGlvbj1TVUNDRUVERUQKc3RlcC4wLm91dGNvbWUuYXV0aG9yaXphdGlvbj1BTExPV0VECnN0ZXAuMC5pbnB1dF9kaWdlc3Q9c2hhMjU2OmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWIKc3RlcC4wLm91dHB1dF9kaWdlc3Q9c2hhMjU2OmNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2QKc3RlcC4wLnJlZmVyZW5jZXMuZXhlY3V0aW9uX2NvbnRleHQuZGlnZXN0PXNoYTI1NjplZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmCnN0ZXAuMC5yZWZlcmVuY2VzLmF1dGhvcml6YXRpb25fZGVjaXNpb24uZGlnZXN0PXNoYTI1NjpjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkCnN0ZXAuMC5yZWZlcmVuY2VzLmhvc3RfaW50ZXJhY3Rpb25zLmRpZ2VzdD1zaGEyNTY6YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYgpzdGVwLjAucmVmZXJlbmNlcy5ob3N0X2ludGVyYWN0aW9ucy5jb3VudD0xCnN0ZXAuMC5yZWplY3Rpb249YWJzZW50CnN0ZXAuMC5leGVjdXRlZD1wcmVzZW50CnN0ZXAuMC5leGVjdXRlZC5hcnRpZmFjdF9kaWdlc3Q9c2hhMjU2OmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWIKc3RlcC4wLmV4ZWN1dGVkLmV4ZWN1dGVkX2RpZ2VzdD1zaGEyNTY6MmQ3MTE2NDJiNzI2YjA0NDAxNjI3Y2E5ZmJhYzMyZjVjODUzMGZiMTkwM2NjNGRiMDIyNTg3MTc5MjFhNDg4MQpzdGVwLjAuZXhlY3V0ZWQubWFuaWZlc3RfZGlnZXN0PXNoYTI1NjpjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkCnN0ZXAuMC5leGVjdXRlZC5lbnZlbG9wZV9kaWdlc3Q9c2hhMjU2OjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIKc3RlcC4wLmV4ZWN1dGVkLnByb2ZpbGUuaWQ9Y2ljOnByb3ZpZGVyQDAuMS4wCnN0ZXAuMC5leGVjdXRlZC5wcm9maWxlLmRpZ2VzdD1zaGEyNTY6ZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZgpzdGVwLjAuZXhlY3V0ZWQuZGlzcGF0Y2hlZD1vYnNlcnZlCnN0ZXAuMC5leGVjdXRlZC50cnVzdF9zdGF0ZT1hdXRoZW50aWNhdGVkCg==",
+   "id": "chain-executed-digest-changed",
+   "must_differ_from": "chain-ok"
+  }
+ ],
+ "interaction_cases": [
+  {
+   "expect_digest": "sha256:5872a1e5d5310e5f64e8ba4715679a3769cfec3aa7a6f179746397e6f8b94b44",
+   "expect_record_bytes_b64": [
+    "aW50ZXJhY3Rpb25faWQ9aS0wMDAxCnNlcT0wCmRlY2lzaW9uPWFsbG93ZWQKY29kZT1udWxsCm1ldGhvZD1HRVQKaG9zdD1pYWFzLmV1LWZyYW5rZnVydC0xLm9yYWNsZWNsb3VkLmNvbQpwYXRoX3NoYTI1Nj1zaGEyNTY6YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYgpyZXF1ZXN0X2JvZHlfc2hhMjU2PW51bGwKc3RhdHVzPTIwMApyZXNwb25zZV9ib2R5X3NoYTI1Nj1zaGEyNTY6Y2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZApwb2xpY3lfZGlnZXN0PXNoYTI1NjplZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmCnByb2ZpbGVfZGlnZXN0PXNoYTI1NjoxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyCnNpZ25pbmdfcHJvZmlsZV9kaWdlc3Q9c2hhMjU2OmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWIKaW50ZW50Lm9wZXJhdGlvbj1vYnNlcnZlCmludGVudC5yZXNvdXJjZV9pZD1vY2lkMS52Y24ub2MxLmV1LWZyYW5rZnVydC0xLmFhYWEKaW50ZW50LmJpbmRpbmdfZGlnZXN0PXNoYTI1NjphYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiCg==",
+    "aW50ZXJhY3Rpb25faWQ9aS0wMDAyCnNlcT0xCmRlY2lzaW9uPWRlbmllZApjb2RlPVBPTElDWV9NRVRIT0QKbWV0aG9kPVBPU1QKaG9zdD1pYWFzLmV1LWZyYW5rZnVydC0xLm9yYWNsZWNsb3VkLmNvbQpwYXRoX3NoYTI1Nj1zaGEyNTY6YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYgpyZXF1ZXN0X2JvZHlfc2hhMjU2PW51bGwKc3RhdHVzPW51bGwKcmVzcG9uc2VfYm9keV9zaGEyNTY9bnVsbApwb2xpY3lfZGlnZXN0PXNoYTI1NjplZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmCnByb2ZpbGVfZGlnZXN0PXNoYTI1NjoxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyCnNpZ25pbmdfcHJvZmlsZV9kaWdlc3Q9c2hhMjU2OmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWIKaW50ZW50Lm9wZXJhdGlvbj1vYnNlcnZlCmludGVudC5yZXNvdXJjZV9pZD1vY2lkMS52Y24ub2MxLmV1LWZyYW5rZnVydC0xLmFhYWEKaW50ZW50LmJpbmRpbmdfZGlnZXN0PXNoYTI1NjphYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiCg=="
+   ],
+   "id": "interactions-two",
+   "records": [
+    {
+     "code": null,
+     "decision": "allowed",
+     "host": "iaas.eu-frankfurt-1.oraclecloud.com",
+     "intent": {
+      "binding_digest": "sha256:abababababababababababababababababababababababababababababababab",
+      "operation": "observe",
+      "resource_id": "ocid1.vcn.oc1.eu-frankfurt-1.aaaa"
+     },
+     "interaction_id": "i-0001",
+     "method": "GET",
+     "path_sha256": "sha256:abababababababababababababababababababababababababababababababab",
+     "policy_digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+     "profile_digest": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+     "request_body_sha256": null,
+     "response_body_sha256": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+     "seq": 0,
+     "signing_profile_digest": "sha256:abababababababababababababababababababababababababababababababab",
+     "status": 200
+    },
+    {
+     "code": "POLICY_METHOD",
+     "decision": "denied",
+     "host": "iaas.eu-frankfurt-1.oraclecloud.com",
+     "intent": {
+      "binding_digest": "sha256:abababababababababababababababababababababababababababababababab",
+      "operation": "observe",
+      "resource_id": "ocid1.vcn.oc1.eu-frankfurt-1.aaaa"
+     },
+     "interaction_id": "i-0002",
+     "method": "POST",
+     "path_sha256": "sha256:abababababababababababababababababababababababababababababababab",
+     "policy_digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+     "profile_digest": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+     "request_body_sha256": null,
+     "response_body_sha256": null,
+     "seq": 1,
+     "signing_profile_digest": "sha256:abababababababababababababababababababababababababababababababab",
+     "status": null
+    }
+   ]
+  },
+  {
+   "expect_error": "SEQ_GAP_OR_ORDER",
+   "id": "interactions-seq-gap",
+   "records": [
+    {
+     "code": null,
+     "decision": "allowed",
+     "host": "iaas.eu-frankfurt-1.oraclecloud.com",
+     "intent": {
+      "binding_digest": "sha256:abababababababababababababababababababababababababababababababab",
+      "operation": "observe",
+      "resource_id": "ocid1.vcn.oc1.eu-frankfurt-1.aaaa"
+     },
+     "interaction_id": "i-0001",
+     "method": "GET",
+     "path_sha256": "sha256:abababababababababababababababababababababababababababababababab",
+     "policy_digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+     "profile_digest": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+     "request_body_sha256": null,
+     "response_body_sha256": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+     "seq": 0,
+     "signing_profile_digest": "sha256:abababababababababababababababababababababababababababababababab",
+     "status": 200
+    },
+    {
+     "code": "POLICY_METHOD",
+     "decision": "denied",
+     "host": "iaas.eu-frankfurt-1.oraclecloud.com",
+     "intent": {
+      "binding_digest": "sha256:abababababababababababababababababababababababababababababababab",
+      "operation": "observe",
+      "resource_id": "ocid1.vcn.oc1.eu-frankfurt-1.aaaa"
+     },
+     "interaction_id": "i-0002",
+     "method": "POST",
+     "path_sha256": "sha256:abababababababababababababababababababababababababababababababab",
+     "policy_digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+     "profile_digest": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+     "request_body_sha256": null,
+     "response_body_sha256": null,
+     "seq": 2,
+     "signing_profile_digest": "sha256:abababababababababababababababababababababababababababababababab",
+     "status": null
+    }
+   ]
+  },
+  {
+   "expect_error": "SEQ_GAP_OR_ORDER",
+   "id": "interactions-order-swapped",
+   "records": [
+    {
+     "code": "POLICY_METHOD",
+     "decision": "denied",
+     "host": "iaas.eu-frankfurt-1.oraclecloud.com",
+     "intent": {
+      "binding_digest": "sha256:abababababababababababababababababababababababababababababababab",
+      "operation": "observe",
+      "resource_id": "ocid1.vcn.oc1.eu-frankfurt-1.aaaa"
+     },
+     "interaction_id": "i-0002",
+     "method": "POST",
+     "path_sha256": "sha256:abababababababababababababababababababababababababababababababab",
+     "policy_digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+     "profile_digest": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+     "request_body_sha256": null,
+     "response_body_sha256": null,
+     "seq": 1,
+     "signing_profile_digest": "sha256:abababababababababababababababababababababababababababababababab",
+     "status": null
+    },
+    {
+     "code": null,
+     "decision": "allowed",
+     "host": "iaas.eu-frankfurt-1.oraclecloud.com",
+     "intent": {
+      "binding_digest": "sha256:abababababababababababababababababababababababababababababababab",
+      "operation": "observe",
+      "resource_id": "ocid1.vcn.oc1.eu-frankfurt-1.aaaa"
+     },
+     "interaction_id": "i-0001",
+     "method": "GET",
+     "path_sha256": "sha256:abababababababababababababababababababababababababababababababab",
+     "policy_digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+     "profile_digest": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+     "request_body_sha256": null,
+     "response_body_sha256": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+     "seq": 0,
+     "signing_profile_digest": "sha256:abababababababababababababababababababababababababababababababab",
+     "status": 200
+    }
+   ]
+  }
+ ],
+ "kind": "O1ConformanceVectors/chain-interactions-profile",
+ "profile_cases": [
+  {
+   "expect_signed_bytes_b64": "Q0lDQUJJUFJPRnYxCnByb2ZpbGVfc2hhMjU2PXNoYTI1Njo0ZDhiNDQ3NWRmZGFlN2RkYmYwN2RkYmE2MGVjOWUzY2QxYTcwZmY1NzZjMmUyM2MxNzA1ZWVkZmYzZGY0NTczCnNpZ25lcl9rZXlfaWQ9c2hhMjU2OmEwNTA4MzdkODUwNzA1ODJjY2Y3Mzk0YjA5ODg4NDdjYzMxMmNiODgyNTliODk0ODk5ZjZmMjM5Y2YxNzkxYTUKc2lnbmVyX2FsZz1lZDI1NTE5Cg==",
+   "id": "profile-domain",
+   "profile_raw_b64": "eyJraW5kIjogIkFiaVByb2ZpbGUiLCAibGltaXRzIjogeyJtYXhfcmVxdWVzdF9ieXRlcyI6IDEwNDg1NzYsICJtYXhfcmVzcG9uc2VfYnl0ZXMiOiAyNjIxNDQsICJ0aW1lb3V0X21zIjogMzAwMDB9LCAib3BlcmF0aW9ucyI6IFt7ImVmZmVjdCI6ICJsb2NhbCIsICJob3N0X2JvdW5kYXJ5IjogIm5vbmUiLCAibmFtZSI6ICJkZXNjcmliZSIsICJyZXF1ZXN0X3NjaGVtYSI6IHsiZGlnZXN0IjogInNoYTI1NjphYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiIiwgImlkIjogImNpYzpwcm92aWRlcjpkZXNjcmliZS1yZXF1ZXN0In0sICJyZXNwb25zZV9zY2hlbWEiOiB7ImRpZ2VzdCI6ICJzaGEyNTY6Y2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZCIsICJpZCI6ICJjaWM6cHJvdmlkZXI6bW9kdWxlLW1hbmlmZXN0In19LCB7ImVmZmVjdCI6ICJleHRlcm5hbC1yZWFkIiwgImhvc3RfYm91bmRhcnkiOiAic2lnbitzZW5kIiwgIm5hbWUiOiAib2JzZXJ2ZSIsICJyZXF1ZXN0X3NjaGVtYSI6IHsiZGlnZXN0IjogInNoYTI1NjplZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmIiwgImlkIjogImNpYzpwcm92aWRlcjpvYnNlcnZlLXJlcXVlc3QifSwgInJlc3BvbnNlX3NjaGVtYSI6IHsiZGlnZXN0IjogInNoYTI1NjoxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyMTIxMjEyIiwgImlkIjogImNpYzpwcm92aWRlcjpvYnNlcnZhdGlvbiJ9fSwgeyJlZmZlY3QiOiAiY29udHJhY3QtZGVwZW5kZW50IiwgImVmZmVjdF9yZXNvbHV0aW9uIjogeyJkZWZhdWx0IjogImV4dGVybmFsLXdyaXRlIiwgImZpZWxkIjogIm9wZXJhdGlvbl9yb2xlIiwgIm1hcCI6IHsiYWN0aW9uIjogImV4dGVybmFsLXdyaXRlIiwgInJlYWQiOiAiZXh0ZXJuYWwtcmVhZCJ9LCAic291cmNlIjogInJlcXVlc3RfZmllbGQifSwgImhvc3RfYm91bmRhcnkiOiAic2lnbitzZW5kIiwgIm5hbWUiOiAiaW52b2tlIiwgInJlcXVlc3Rfc2NoZW1hIjogeyJkaWdlc3QiOiAic2hhMjU2OjM0MzQzNDM0MzQzNDM0MzQzNDM0MzQzNDM0MzQzNDM0MzQzNDM0MzQzNDM0MzQzNDM0MzQzNDM0MzQzNDM0MzQiLCAiaWQiOiAiY2ljOnByb3ZpZGVyOm9wZXJhdGlvbi1yZXF1ZXN0In0sICJyZXNwb25zZV9zY2hlbWEiOiB7ImRpZ2VzdCI6ICJzaGEyNTY6NTY1NjU2NTY1NjU2NTY1NjU2NTY1NjU2NTY1NjU2NTY1NjU2NTY1NjU2NTY1NjU2NTY1NjU2NTY1NjU2NTY1NiIsICJpZCI6ICJjaWM6cHJvdmlkZXI6b3BlcmF0aW9uLXJlc3VsdCJ9fV0sICJwcm9maWxlX2lkIjogImNpYzpwcm92aWRlckAwLjEuMCIsICJwcm9maWxlX3ZlcnNpb24iOiAxLCAicmVxdWlyZWRfaG9zdF9jYXBhYmlsaXRpZXMiOiBbInByb3ZpZGVyLWh0dHBAMSJdfQ==",
+   "signer_alg": "ed25519",
+   "signer_key_id": "sha256:a050837d85070582ccf7394b0988847cc312cb88259b894899f6f239cf1791a5"
+  }
+ ],
+ "status": "PROVISIONAL (reference implementation only)",
+ "version": 1
+}

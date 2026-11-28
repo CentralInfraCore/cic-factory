@@ -1,0 +1,189 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "cic:o1:host-interaction-record",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "interaction_id",
+  "seq",
+  "decision",
+  "code",
+  "method",
+  "host",
+  "path_sha256",
+  "request_body_sha256",
+  "status",
+  "response_body_sha256",
+  "policy_digest",
+  "profile_digest",
+  "signing_profile_digest",
+  "intent"
+ ],
+ "properties": {
+  "interaction_id": {
+   "type": "string",
+   "pattern": "^i-[0-9]{4,}$"
+  },
+  "seq": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "decision": {
+   "enum": [
+    "allowed",
+    "denied",
+    "failed"
+   ]
+  },
+  "code": {
+   "type": [
+    "string",
+    "null"
+   ],
+   "pattern": "^[A-Z_]+$"
+  },
+  "method": {
+   "enum": [
+    "GET",
+    "HEAD",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE"
+   ]
+  },
+  "host": {
+   "type": "string"
+  },
+  "path_sha256": {
+   "type": "string",
+   "pattern": "^sha256:[0-9a-f]{64}$"
+  },
+  "request_body_sha256": {
+   "oneOf": [
+    {
+     "type": "string",
+     "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "status": {
+   "oneOf": [
+    {
+     "type": "integer",
+     "minimum": 100,
+     "maximum": 599
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "response_body_sha256": {
+   "oneOf": [
+    {
+     "type": "string",
+     "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "policy_digest": {
+   "type": "string",
+   "pattern": "^sha256:[0-9a-f]{64}$"
+  },
+  "profile_digest": {
+   "type": "string",
+   "pattern": "^sha256:[0-9a-f]{64}$"
+  },
+  "signing_profile_digest": {
+   "type": "string",
+   "pattern": "^sha256:[0-9a-f]{64}$"
+  },
+  "intent": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "operation",
+    "resource_id",
+    "binding_digest"
+   ],
+   "properties": {
+    "operation": {
+     "type": "string"
+    },
+    "resource_id": {
+     "type": "string"
+    },
+    "binding_digest": {
+     "type": "string",
+     "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+   }
+  }
+ },
+ "allOf": [
+  {
+   "if": {
+    "properties": {
+     "decision": {
+      "const": "allowed"
+     }
+    }
+   },
+   "then": {
+    "properties": {
+     "code": {
+      "type": "null"
+     },
+     "status": {
+      "type": "integer"
+     }
+    }
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "decision": {
+      "const": "denied"
+     }
+    }
+   },
+   "then": {
+    "properties": {
+     "code": {
+      "type": "string"
+     },
+     "status": {
+      "type": "null"
+     },
+     "response_body_sha256": {
+      "type": "null"
+     }
+    }
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "decision": {
+      "const": "failed"
+     }
+    }
+   },
+   "then": {
+    "properties": {
+     "code": {
+      "type": "string"
+     }
+    }
+   }
+  }
+ ]
+}

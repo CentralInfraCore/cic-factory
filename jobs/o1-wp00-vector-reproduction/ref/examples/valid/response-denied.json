@@ -1,0 +1,10 @@
+{
+ "v": 1,
+ "outcome": "denied",
+ "interaction_id": "i-0002",
+ "interaction_digest": "sha256:abababababababababababababababababababababababababababababababab",
+ "denial": {
+  "code": "POLICY_METHOD",
+  "detail": "POST is outside the observation policy"
+ }
+}

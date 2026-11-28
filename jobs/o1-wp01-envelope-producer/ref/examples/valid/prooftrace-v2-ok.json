@@ -1,0 +1,54 @@
+{
+ "kind": "ProofArtifact",
+ "version": "2.0",
+ "chain_version": "CICCHAINv2",
+ "workflow": {
+  "id": "poc.observe",
+  "source_digest": "git:86ea1ab"
+ },
+ "steps": [
+  {
+   "index": 0,
+   "name": "oracle@0.1.0.observe(req) -> out",
+   "requested": {
+    "module_id": "cic-module-oracle-cloud@0.1.0",
+    "operation": "observe"
+   },
+   "outcome": {
+    "execution": "SUCCEEDED",
+    "authorization": "ALLOWED"
+   },
+   "executed": {
+    "artifact_digest": "sha256:abababababababababababababababababababababababababababababababab",
+    "executed_digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+    "manifest_digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+    "envelope_digest": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+    "profile": {
+     "id": "cic:provider@0.1.0",
+     "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
+    },
+    "dispatched": "observe",
+    "trust_state": "authenticated"
+   },
+   "input_digest": "sha256:abababababababababababababababababababababababababababababababab",
+   "output_digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+   "references": {
+    "execution_context": {
+     "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
+    },
+    "authorization_decision": {
+     "digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+    },
+    "host_interactions": {
+     "digest": "sha256:abababababababababababababababababababababababababababababababab",
+     "count": 1
+    }
+   }
+  }
+ ],
+ "outcome": {
+  "execution": "SUCCEEDED",
+  "authorization": "ALLOWED"
+ },
+ "chain_hash": "sha256:6021eec7ffbdf85079de5637d75351dd3377d763ca16f92de62540b526086719"
+}

@@ -1,0 +1,23 @@
+{
+ "kind": "VerificationResult",
+ "artifact_version": "2.0",
+ "verifier": {
+  "id": "independent-verifier",
+  "version": "0.1.0",
+  "implementation_digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+ },
+ "subject": {
+  "artifact_chain_hash": "sha256:abababababababababababababababababababababababababababababababab"
+ },
+ "dimensions": {
+  "execution": "SUCCEEDED",
+  "authorization": "ALLOWED",
+  "evidence": "PERSISTED",
+  "verification": "COMPLETE"
+ },
+ "unresolved_references": [
+  "host_interactions:x"
+ ],
+ "evidence_verdict": "VERIFIED",
+ "acceptance": "NOT_EVALUATED"
+}

@@ -1,0 +1,9 @@
+{
+ "v": 1,
+ "outcome": "failed",
+ "interaction_id": "i-0003",
+ "interaction_digest": "sha256:abababababababababababababababababababababababababababababababab",
+ "failure": {
+  "code": "TRANSPORT_ERROR"
+ }
+}

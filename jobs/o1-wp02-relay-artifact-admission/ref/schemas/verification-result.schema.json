@@ -1,0 +1,207 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "cic:o1:verification-result",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "kind",
+  "artifact_version",
+  "verifier",
+  "subject",
+  "dimensions",
+  "evidence_verdict",
+  "acceptance"
+ ],
+ "properties": {
+  "kind": {
+   "const": "VerificationResult"
+  },
+  "artifact_version": {
+   "enum": [
+    "1.0",
+    "2.0"
+   ]
+  },
+  "verifier": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "id",
+    "version",
+    "implementation_digest"
+   ],
+   "properties": {
+    "id": {
+     "type": "string"
+    },
+    "version": {
+     "type": "string"
+    },
+    "implementation_digest": {
+     "type": "string",
+     "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+   }
+  },
+  "subject": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "artifact_chain_hash"
+   ],
+   "properties": {
+    "artifact_chain_hash": {
+     "type": "string",
+     "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "persistence_digest": {
+     "type": "string",
+     "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+   }
+  },
+  "dimensions": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "execution",
+    "authorization",
+    "evidence",
+    "verification"
+   ],
+   "properties": {
+    "execution": {
+     "enum": [
+      "SUCCEEDED",
+      "REJECTED",
+      "FAILED",
+      "ABORTED",
+      "UNKNOWN"
+     ]
+    },
+    "authorization": {
+     "enum": [
+      "ALLOWED",
+      "DENIED",
+      "NOT_EVALUATED",
+      "UNKNOWN"
+     ]
+    },
+    "evidence": {
+     "enum": [
+      "PERSISTED",
+      "NOT_PERSISTED",
+      "NOT_REQUIRED",
+      "UNKNOWN"
+     ]
+    },
+    "verification": {
+     "enum": [
+      "COMPLETE",
+      "INCOMPLETE",
+      "FAILED"
+     ]
+    }
+   }
+  },
+  "unresolved_references": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "evidence_verdict": {
+   "enum": [
+    "VERIFIED",
+    "NOT_VERIFIED"
+   ]
+  },
+  "acceptance": {
+   "enum": [
+    "ACCEPTED",
+    "NOT_ACCEPTED",
+    "NOT_EVALUATED"
+   ]
+  },
+  "acceptance_policy_digest": {
+   "type": "string",
+   "pattern": "^sha256:[0-9a-f]{64}$"
+  }
+ },
+ "allOf": [
+  {
+   "if": {
+    "properties": {
+     "evidence_verdict": {
+      "const": "VERIFIED"
+     }
+    }
+   },
+   "then": {
+    "properties": {
+     "dimensions": {
+      "properties": {
+       "verification": {
+        "const": "COMPLETE"
+       }
+      }
+     }
+    },
+    "not": {
+     "required": [
+      "unresolved_references"
+     ]
+    }
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "acceptance": {
+      "const": "ACCEPTED"
+     }
+    }
+   },
+   "then": {
+    "required": [
+     "acceptance_policy_digest"
+    ],
+    "properties": {
+     "evidence_verdict": {
+      "const": "VERIFIED"
+     },
+     "dimensions": {
+      "properties": {
+       "execution": {
+        "const": "SUCCEEDED"
+       },
+       "authorization": {
+        "const": "ALLOWED"
+       },
+       "evidence": {
+        "enum": [
+         "PERSISTED",
+         "NOT_REQUIRED"
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "acceptance": {
+      "const": "NOT_ACCEPTED"
+     }
+    }
+   },
+   "then": {
+    "required": [
+     "acceptance_policy_digest"
+    ]
+   }
+  }
+ ]
+}

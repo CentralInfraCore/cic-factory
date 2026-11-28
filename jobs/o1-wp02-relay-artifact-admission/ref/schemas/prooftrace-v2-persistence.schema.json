@@ -1,0 +1,105 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "cic:o1:prooftrace-v2-persistence",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "artifact_chain_hash",
+  "persisted",
+  "recorder"
+ ],
+ "properties": {
+  "artifact_chain_hash": {
+   "type": "string",
+   "pattern": "^sha256:[0-9a-f]{64}$"
+  },
+  "persisted": {
+   "type": "boolean"
+  },
+  "recorder": {
+   "type": "string",
+   "minLength": 1
+  },
+  "commit": {
+   "type": "string"
+  },
+  "error_code": {
+   "type": "string"
+  },
+  "attestation": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "kind",
+    "signer_key_id",
+    "signature_digest"
+   ],
+   "properties": {
+    "kind": {
+     "enum": [
+      "git-signed-commit",
+      "recorder-signature"
+     ]
+    },
+    "signer_key_id": {
+     "type": "string",
+     "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "signature_digest": {
+     "type": "string",
+     "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+   }
+  }
+ },
+ "allOf": [
+  {
+   "if": {
+    "properties": {
+     "persisted": {
+      "const": true
+     }
+    }
+   },
+   "then": {
+    "required": [
+     "commit",
+     "attestation"
+    ],
+    "not": {
+     "required": [
+      "error_code"
+     ]
+    }
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "persisted": {
+      "const": false
+     }
+    }
+   },
+   "then": {
+    "required": [
+     "error_code"
+    ],
+    "not": {
+     "anyOf": [
+      {
+       "required": [
+        "commit"
+       ]
+      },
+      {
+       "required": [
+        "attestation"
+       ]
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

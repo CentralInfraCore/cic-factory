@@ -1,0 +1,204 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "cic:o1:abi-profile",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "kind",
+  "profile_version",
+  "profile_id",
+  "operations",
+  "required_host_capabilities"
+ ],
+ "properties": {
+  "kind": {
+   "const": "AbiProfile"
+  },
+  "profile_version": {
+   "const": 1
+  },
+  "profile_id": {
+   "type": "string",
+   "pattern": "^[a-z][a-z0-9]*:[a-z][a-z0-9-]*@[0-9]+\\.[0-9]+\\.[0-9]+$"
+  },
+  "operations": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "name",
+     "host_boundary",
+     "effect",
+     "request_schema",
+     "response_schema"
+    ],
+    "properties": {
+     "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+     },
+     "host_boundary": {
+      "enum": [
+       "none",
+       "sign+send"
+      ]
+     },
+     "effect": {
+      "enum": [
+       "local",
+       "external-read",
+       "external-write",
+       "contract-dependent"
+      ]
+     },
+     "effect_resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "source",
+       "field",
+       "map",
+       "default"
+      ],
+      "properties": {
+       "source": {
+        "const": "request_field"
+       },
+       "field": {
+        "type": "string"
+       },
+       "map": {
+        "type": "object",
+        "minProperties": 1,
+        "additionalProperties": {
+         "enum": [
+          "local",
+          "external-read",
+          "external-write"
+         ]
+        }
+       },
+       "default": {
+        "const": "external-write"
+       }
+      }
+     },
+     "request_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "digest"
+      ],
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "digest": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+       }
+      }
+     },
+     "response_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "digest"
+      ],
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "digest": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+       }
+      }
+     }
+    },
+    "allOf": [
+     {
+      "if": {
+       "properties": {
+        "effect": {
+         "const": "contract-dependent"
+        }
+       }
+      },
+      "then": {
+       "required": [
+        "effect_resolution"
+       ]
+      }
+     },
+     {
+      "if": {
+       "properties": {
+        "effect": {
+         "enum": [
+          "local",
+          "external-read",
+          "external-write"
+         ]
+        }
+       }
+      },
+      "then": {
+       "not": {
+        "required": [
+         "effect_resolution"
+        ]
+       }
+      }
+     },
+     {
+      "if": {
+       "properties": {
+        "host_boundary": {
+         "const": "none"
+        }
+       }
+      },
+      "then": {
+       "properties": {
+        "effect": {
+         "const": "local"
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  "required_host_capabilities": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "pattern": "^[a-z][a-z0-9-]*@[0-9]+$"
+   },
+   "uniqueItems": true
+  },
+  "limits": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "max_request_bytes": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "max_response_bytes": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "timeout_ms": {
+     "type": "integer",
+     "minimum": 1
+    }
+   }
+  }
+ }
+}

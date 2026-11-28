@@ -1,0 +1,762 @@
+# Builds the O-1 wire-format PROPOSAL schemas, examples and reference checks (NOT accepted wire formats: review-bound).
+# usage: build_o1_schemas.py <dest>     env REASONS=1 prints the rejection reason of every invalid example.
+# Lesson from the mutation-harness correction: a rejection is evidence only if it happens for the NAMED reason.
+# Every invalid example therefore declares `why`, and every validator error must match it.
+import hashlib
+import json
+import os
+import pathlib
+import re
+import sys
+
+import jsonschema
+
+DEST = pathlib.Path(sys.argv[1])
+(DEST / "schemas").mkdir(parents=True, exist_ok=True)
+for sub in ("valid", "invalid"):
+    (DEST / "examples" / sub).mkdir(parents=True, exist_ok=True)
+
+SHA = {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+D = "sha256:" + "ab" * 32
+D2 = "sha256:" + "cd" * 32
+D3 = "sha256:" + "ef" * 32
+D4 = "sha256:" + "12" * 32
+S, E = {}, {}
+
+
+def schema(name, body):
+    body = {"$schema": "http://json-schema.org/draft-07/schema#", "$id": f"cic:o1:{name}", **body}
+    S[name] = body
+    json.dump(body, open(DEST / "schemas" / f"{name}.schema.json", "w"), indent=1)
+
+
+def example(name, sch, obj, valid=True, why=None):
+    assert valid or why, f"invalid example {name} must declare why"
+    E[name] = (sch, obj, valid, why)
+    json.dump(obj, open(DEST / "examples" / ("valid" if valid else "invalid") / f"{name}.json", "w"), indent=1, ensure_ascii=False)
+
+
+def clone(o):
+    return json.loads(json.dumps(o))
+
+
+# ================================================================ 1. ModuleReleaseEnvelope
+ALG = {"enum": ["ecdsa-p256-sha256", "ed25519"]}
+schema("module-release-envelope", {
+    "type": "object", "additionalProperties": False,
+    "required": ["kind", "envelope_version", "module_id", "wasm_sha256", "executed_wasm_sha256", "manifest_digest", "signer"],
+    "properties": {
+        "kind": {"const": "ModuleReleaseEnvelope"}, "envelope_version": {"const": 1},
+        "module_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*@v?[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "wasm_sha256": SHA, "executed_wasm_sha256": SHA,
+        "manifest_digest": SHA,  # sha256 of the RAW bytes of the whole loaded release manifest file (ENV-01)
+        "signer": {"type": "object", "additionalProperties": False, "required": ["key_id", "alg"],
+                   "properties": {"key_id": SHA, "alg": ALG}},
+    },
+})
+ENV = {"kind": "ModuleReleaseEnvelope", "envelope_version": 1, "module_id": "cic-module-oracle-cloud@0.1.0", "wasm_sha256": D,
+       "executed_wasm_sha256": D3, "manifest_digest": D2, "signer": {"key_id": D3, "alg": "ecdsa-p256-sha256"}}
+example("envelope-ok", "module-release-envelope", ENV)
+example("envelope-unknown-version", "module-release-envelope", {**ENV, "envelope_version": 2}, False, "envelope_version")
+example("envelope-missing-manifest-digest", "module-release-envelope", {k: v for k, v in ENV.items() if k != "manifest_digest"}, False, "manifest_digest")
+example("envelope-missing-executed-wasm-digest", "module-release-envelope", {k: v for k, v in ENV.items() if k != "executed_wasm_sha256"}, False, "executed_wasm_sha256")
+example("envelope-extra-field", "module-release-envelope", {**ENV, "capability_manifest": {"egress": []}}, False, "capability_manifest")
+example("envelope-unknown-signature-algorithm", "module-release-envelope", {**ENV, "signer": {"key_id": D3, "alg": "rsa-pkcs1-sha1"}}, False, "alg")
+example("envelope-signer-without-alg", "module-release-envelope", {**ENV, "signer": {"key_id": D3}}, False, "alg")
+
+
+def envelope_signed_bytes(env):
+    lines = ["CICMODENVv1", f"module_id={env['module_id']}", f"wasm_sha256={env['wasm_sha256']}", f"executed_wasm_sha256={env['executed_wasm_sha256']}",
+             f"manifest_digest={env['manifest_digest']}", f"signer_key_id={env['signer']['key_id']}", f"signer_alg={env['signer']['alg']}"]
+    return ("\n".join(lines) + "\n").encode()
+
+
+def envelope_digest(env):
+    return "sha256:" + hashlib.sha256(envelope_signed_bytes(env)).hexdigest()
+
+
+_ENV_FIELDS = ["module_id", "wasm_sha256", "executed_wasm_sha256", "manifest_digest", "signer_key_id", "signer_alg"]
+_DIG = re.compile(r"^sha256:[0-9a-f]{64}$")
+_MID = re.compile(r"^[a-z0-9][a-z0-9._-]*@v?[0-9]+\.[0-9]+\.[0-9]+$")
+
+
+def parse_signed_bytes(b):
+    try:
+        t = b.decode("ascii")
+    except UnicodeDecodeError:
+        raise ValueError("NON_ASCII")
+    if "\r" in t:
+        raise ValueError("CR_PRESENT")
+    if not t.endswith("\n"):
+        raise ValueError("NO_FINAL_LF")
+    lines = t[:-1].split("\n")
+    if lines[0] != "CICMODENVv1":
+        raise ValueError("DOMAIN")
+    body = lines[1:]
+    keys = [l.split("=", 1)[0] for l in body]
+    if len(set(keys)) != len(keys):
+        raise ValueError("DUPLICATE")
+    if any(k not in _ENV_FIELDS for k in keys):
+        raise ValueError("UNKNOWN_FIELD")
+    if sorted(keys) == sorted(_ENV_FIELDS) and keys != _ENV_FIELDS:
+        raise ValueError("ORDER")
+    if keys != _ENV_FIELDS:
+        raise ValueError("MISSING_OR_ORDER")
+    out = {}
+    for l in body:
+        k, v = l.split("=", 1)
+        if v == "" or " " in v or "\t" in v:
+            raise ValueError("VALUE_FORM")
+        out[k] = v
+    for k in ("wasm_sha256", "executed_wasm_sha256", "manifest_digest", "signer_key_id"):
+        if not _DIG.match(out[k]):
+            raise ValueError("DIGEST_FORM")
+    if out["signer_alg"] not in ("ecdsa-p256-sha256", "ed25519"):
+        raise ValueError("ALG")
+    if not _MID.match(out["module_id"]):
+        raise ValueError("MODULE_ID_FORM")
+    return out
+
+
+# ================================================================ 2. ABI profile
+op = {"type": "object", "additionalProperties": False, "required": ["name", "host_boundary", "effect", "request_schema", "response_schema"],
+      "properties": {
+          "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "host_boundary": {"enum": ["none", "sign+send"]},
+          "effect": {"enum": ["local", "external-read", "external-write", "contract-dependent"]},
+          "effect_resolution": {"type": "object", "additionalProperties": False, "required": ["source", "field", "map", "default"],
+                                "properties": {"source": {"const": "request_field"}, "field": {"type": "string"},
+                                               "map": {"type": "object", "minProperties": 1, "additionalProperties": {"enum": ["local", "external-read", "external-write"]}},
+                                               "default": {"const": "external-write"}}},
+          "request_schema": {"type": "object", "additionalProperties": False, "required": ["id", "digest"], "properties": {"id": {"type": "string"}, "digest": SHA}},
+          "response_schema": {"type": "object", "additionalProperties": False, "required": ["id", "digest"], "properties": {"id": {"type": "string"}, "digest": SHA}},
+      },
+      "allOf": [
+          {"if": {"properties": {"effect": {"const": "contract-dependent"}}}, "then": {"required": ["effect_resolution"]}},
+          {"if": {"properties": {"effect": {"enum": ["local", "external-read", "external-write"]}}}, "then": {"not": {"required": ["effect_resolution"]}}},
+          {"if": {"properties": {"host_boundary": {"const": "none"}}}, "then": {"properties": {"effect": {"const": "local"}}}},
+      ]}
+schema("abi-profile", {
+    "type": "object", "additionalProperties": False,
+    "required": ["kind", "profile_version", "profile_id", "operations", "required_host_capabilities"],
+    "properties": {
+        "kind": {"const": "AbiProfile"}, "profile_version": {"const": 1},
+        "profile_id": {"type": "string", "pattern": "^[a-z][a-z0-9]*:[a-z][a-z0-9-]*@[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "operations": {"type": "array", "minItems": 1, "items": op},
+        "required_host_capabilities": {"type": "array", "items": {"type": "string", "pattern": "^[a-z][a-z0-9-]*@[0-9]+$"}, "uniqueItems": True},
+        "limits": {"type": "object", "additionalProperties": False,
+                   "properties": {"max_request_bytes": {"type": "integer", "minimum": 1}, "max_response_bytes": {"type": "integer", "minimum": 1}, "timeout_ms": {"type": "integer", "minimum": 1}}},
+    },
+})
+SCHEMA_DIGESTS = {"cic:provider:describe-request": D, "cic:provider:module-manifest": D2, "cic:provider:observe-request": D3,
+                  "cic:provider:observation": D4, "cic:provider:operation-request": "sha256:" + "34" * 32, "cic:provider:operation-result": "sha256:" + "56" * 32}
+# the resolvable schema registry for the semantic checks: id -> (digest, {top-level string-enum field -> allowed values})
+SCHEMA_REGISTRY = {i: (d, {}) for i, d in SCHEMA_DIGESTS.items()}
+SCHEMA_REGISTRY["cic:provider:operation-request"] = (SCHEMA_DIGESTS["cic:provider:operation-request"], {"operation_role": ["read", "action"]})
+
+
+def sref(i):
+    return {"id": i, "digest": SCHEMA_DIGESTS[i]}
+
+
+PROF = {"kind": "AbiProfile", "profile_version": 1, "profile_id": "cic:provider@0.1.0", "required_host_capabilities": ["provider-http@1"],
+        "limits": {"max_request_bytes": 1048576, "max_response_bytes": 262144, "timeout_ms": 30000},
+        "operations": [
+            {"name": "describe", "host_boundary": "none", "effect": "local", "request_schema": sref("cic:provider:describe-request"), "response_schema": sref("cic:provider:module-manifest")},
+            {"name": "observe", "host_boundary": "sign+send", "effect": "external-read", "request_schema": sref("cic:provider:observe-request"), "response_schema": sref("cic:provider:observation")},
+            {"name": "invoke", "host_boundary": "sign+send", "effect": "contract-dependent",
+             "effect_resolution": {"source": "request_field", "field": "operation_role", "map": {"read": "external-read", "action": "external-write"}, "default": "external-write"},
+             "request_schema": sref("cic:provider:operation-request"), "response_schema": sref("cic:provider:operation-result")},
+        ]}
+example("profile-ok", "abi-profile", PROF)
+b = clone(PROF); b["operations"][1]["effect"] = "read-only"
+example("profile-unknown-effect", "abi-profile", b, False, "effect")
+b = clone(PROF); del b["operations"][2]["effect_resolution"]
+example("profile-contract-dependent-without-resolution", "abi-profile", b, False, "effect_resolution")
+b = clone(PROF); b["operations"][0]["effect"] = "external-write"
+example("profile-local-boundary-with-external-effect", "abi-profile", b, False, "effect")
+b = clone(PROF); b["operations"][1]["request_schema"] = {"id": "cic:provider:observe-request"}
+example("profile-schema-ref-without-digest", "abi-profile", b, False, "digest")
+b = clone(PROF); b["operations"][2]["effect_resolution"]["default"] = "external-read"
+example("profile-unresolvable-defaults-to-read", "abi-profile", b, False, "default")
+b = clone(PROF); b["operations"][2]["effect_resolution"]["map"] = {}
+example("profile-empty-effect-map", "abi-profile", b, False, "map")
+b = clone(PROF); b["limits"]["timeout_ms"] = 0
+example("profile-zero-timeout", "abi-profile", b, False, "timeout_ms")
+
+OPERATOR_CAPS = {"max_request_bytes": 1048576, "max_response_bytes": 1048576, "timeout_ms": 60000}
+
+
+def check_profile_semantics(p, registry=SCHEMA_REGISTRY, caps=OPERATOR_CAPS):
+    """Normative runtime checks the JSON Schema cannot express (ABI-01..04, SS-05). Returns the first violation code or None."""
+    names = [o["name"] for o in p["operations"]]
+    if len(set(names)) != len(names):
+        return "DUPLICATE_OPERATION"
+    for o in p["operations"]:
+        for k in ("request_schema", "response_schema"):
+            ref = o[k]
+            if ref["id"] not in registry:
+                return "SCHEMA_REF_UNRESOLVED"
+            if registry[ref["id"]][0] != ref["digest"]:
+                return "SCHEMA_DIGEST_MISMATCH"
+        er = o.get("effect_resolution")
+        if er:
+            fields = registry[o["request_schema"]["id"]][1]
+            if er["field"] not in fields:
+                return "EFFECT_FIELD_UNRESOLVABLE"
+            if not set(er["map"]) <= set(fields[er["field"]]):
+                return "EFFECT_MAP_KEY_NOT_IN_FIELD_DOMAIN"
+            # values of the field that are not mapped fall to the fail-closed default: allowed and deterministic
+    uses_send = any(o["host_boundary"] == "sign+send" for o in p["operations"])
+    has_cap = "provider-http@1" in p["required_host_capabilities"]
+    if uses_send != has_cap:
+        return "HOST_CAPABILITY_INCONSISTENT"
+    for k, v in p.get("limits", {}).items():
+        if v > caps[k]:
+            return "LIMIT_EXCEEDS_OPERATOR_CAP"
+    return None
+
+
+def profile_signed_bytes(raw_profile_bytes, signer_key_id, signer_alg):
+    lines = ["CICABIPROFv1", f"profile_sha256=sha256:{hashlib.sha256(raw_profile_bytes).hexdigest()}", f"signer_key_id={signer_key_id}", f"signer_alg={signer_alg}"]
+    return ("\n".join(lines) + "\n").encode()
+
+
+# ================================================================ 3. sign+send
+FORBIDDEN_REQ_HDR = ["authorization", "date", "host", "content-length", "x-content-sha256", "signature"]
+FORBIDDEN_RESP_HDR = ["set-cookie", "authorization", "proxy-authenticate", "www-authenticate", "signature", "x-content-sha256"]
+HDR = {"type": "object", "propertyNames": {"pattern": "^[a-z0-9-]+$", "not": {"enum": FORBIDDEN_REQ_HDR}}, "additionalProperties": {"type": "string"}}
+schema("sign-send-request", {
+    "type": "object", "additionalProperties": False, "required": ["v", "signing_profile", "key_ref", "request", "intent"],
+    "properties": {
+        "v": {"const": 1},
+        "signing_profile": {"type": "string", "pattern": "^[a-z][a-z0-9-]*:[a-z0-9-]+:[a-z0-9-]+@[0-9]+$"},
+        "key_ref": {"type": "string", "pattern": "^[a-z]+/[a-z0-9-]+$"},
+        "request": {"type": "object", "additionalProperties": False, "required": ["method", "host", "path"],
+                    "properties": {"method": {"enum": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"]}, "host": {"type": "string", "pattern": "^[a-z0-9.-]+$"},
+                                   "path": {"type": "string", "pattern": "^/[^?#\\s]*$"}, "query": {"type": "object", "additionalProperties": {"type": "string"}},
+                                   "headers": HDR, "body": {"type": "object", "additionalProperties": False, "required": ["base64"], "properties": {"base64": {"type": "string"}}}}},
+        "intent": {"type": "object", "additionalProperties": False, "required": ["operation", "resource_id", "binding_digest"],
+                   "properties": {"operation": {"type": "string"}, "resource_id": {"type": "string"}, "binding_digest": SHA}},
+        "trace_id": {"type": "string", "maxLength": 128},
+    },
+})
+REQ = {"v": 1, "signing_profile": "http-signature:oci:draft-cavage@1", "key_ref": "oci/default",
+       "request": {"method": "GET", "host": "iaas.eu-frankfurt-1.oraclecloud.com", "path": "/20160918/vcns/ocid1.vcn.oc1.eu-frankfurt-1.aaaa", "headers": {"accept": "application/json"}},
+       "intent": {"operation": "observe", "resource_id": "ocid1.vcn.oc1.eu-frankfurt-1.aaaa", "binding_digest": D}, "trace_id": "guest-chosen-untrusted"}
+example("request-ok", "sign-send-request", REQ)
+for nm, hv in (("authorization", "Signature ..."), ("date", "x"), ("x-content-sha256", "x"), ("host", "evil")):
+    b = clone(REQ); b["request"]["headers"][nm] = hv
+    example(f"request-forbidden-header-{nm}", "sign-send-request", b, False, nm)
+b = clone(REQ); b["signature"] = "abc"
+example("request-guest-supplied-signature", "sign-send-request", b, False, "signature")
+b = clone(REQ); del b["intent"]
+example("request-without-intent", "sign-send-request", b, False, "intent")
+b = clone(REQ); del b["intent"]["binding_digest"]
+example("request-without-binding-digest", "sign-send-request", b, False, "binding_digest")
+b = clone(REQ); b["request"]["path"] = "/a?x=1"
+example("request-query-in-path", "sign-send-request", b, False, "path")
+b = clone(REQ); b["timeout_ms"] = 999999
+example("request-guest-supplied-limit", "sign-send-request", b, False, "timeout_ms")
+
+RHDR = {"type": "object", "propertyNames": {"pattern": "^[a-z0-9-]+$", "not": {"enum": FORBIDDEN_RESP_HDR}}, "additionalProperties": {"type": "string"}}
+schema("sign-send-response", {
+    "type": "object", "additionalProperties": False, "required": ["v", "outcome", "interaction_id", "interaction_digest"],
+    "properties": {
+        "v": {"const": 1}, "outcome": {"enum": ["completed", "denied", "failed"]},
+        "interaction_id": {"type": "string", "pattern": "^i-[0-9]{4,}$"}, "interaction_digest": SHA,
+        "denial": {"type": "object", "additionalProperties": False, "required": ["code"],
+                   "properties": {"code": {"enum": ["POLICY_HOST", "POLICY_PATH", "POLICY_METHOD", "POLICY_TARGET", "POLICY_BINDING", "HEADER_FORBIDDEN", "BODY_TOO_LARGE", "PROFILE_UNKNOWN", "KEY_REF_UNAUTHORIZED", "EGRESS_BLOCKED"]}, "detail": {"type": "string"}}},
+        "failure": {"type": "object", "additionalProperties": False, "required": ["code"], "properties": {"code": {"enum": ["SIGNER_ERROR", "TRANSPORT_ERROR", "RESPONSE_TOO_LARGE", "TIMEOUT"]}, "detail": {"type": "string"}}},
+        "http": {"type": "object", "additionalProperties": False, "required": ["status", "body_sha256"],
+                 "properties": {"status": {"type": "integer", "minimum": 100, "maximum": 599}, "headers": RHDR, "body_base64": {"type": "string"}, "body_sha256": SHA}},
+    },
+    "allOf": [
+        {"if": {"properties": {"outcome": {"const": "completed"}}}, "then": {"required": ["http"], "not": {"anyOf": [{"required": ["denial"]}, {"required": ["failure"]}]}}},
+        {"if": {"properties": {"outcome": {"const": "denied"}}}, "then": {"required": ["denial"], "not": {"anyOf": [{"required": ["http"]}, {"required": ["failure"]}]}}},
+        {"if": {"properties": {"outcome": {"const": "failed"}}}, "then": {"required": ["failure"], "not": {"required": ["denial"]}}},
+    ],
+})
+RESP = {"v": 1, "outcome": "completed", "interaction_id": "i-0001", "interaction_digest": D, "http": {"status": 200, "headers": {"etag": "x"}, "body_base64": "e30=", "body_sha256": D2}}
+example("response-completed", "sign-send-response", RESP)
+example("response-denied", "sign-send-response", {"v": 1, "outcome": "denied", "interaction_id": "i-0002", "interaction_digest": D, "denial": {"code": "POLICY_METHOD", "detail": "POST is outside the observation policy"}})
+example("response-failed", "sign-send-response", {"v": 1, "outcome": "failed", "interaction_id": "i-0003", "interaction_digest": D, "failure": {"code": "TRANSPORT_ERROR"}})
+example("response-with-signature-field", "sign-send-response", {**RESP, "signature": "abc"}, False, "signature")
+example("response-with-authorization-header-field", "sign-send-response", {**RESP, "authorization": "Signature ..."}, False, "authorization")
+b = clone(RESP); b["http"]["headers"]["set-cookie"] = "a=b"
+example("response-forbidden-header-set-cookie", "sign-send-response", b, False, "set-cookie")
+example("response-denied-but-carries-http", "sign-send-response", {**RESP, "outcome": "denied", "denial": {"code": "POLICY_HOST"}}, False, "http")
+example("response-completed-without-http", "sign-send-response", {"v": 1, "outcome": "completed", "interaction_id": "i-0004", "interaction_digest": D}, False, "http")
+
+# ---- SS-03: normative host-side target validation (reference); the policy is an operator artifact
+POLICY = {"hosts": ["iaas.eu-frankfurt-1.oraclecloud.com"], "operations": {"observe": {"methods": ["GET", "HEAD"], "path_template": "/20160918/vcns/{resource_id}"}},
+          "bindings": {"ocid1.vcn.oc1.eu-frankfurt-1.aaaa": D}}
+
+
+def validate_target(req, pol=POLICY):
+    it, rq = req["intent"], req["request"]
+    opd = pol["operations"].get(it["operation"])
+    if opd is None:
+        return "POLICY_TARGET"
+    if rq["host"] not in pol["hosts"]:
+        return "POLICY_HOST"
+    if rq["method"] not in opd["methods"]:
+        return "POLICY_METHOD"
+    if it["resource_id"] not in pol["bindings"]:
+        return "POLICY_TARGET"
+    if pol["bindings"][it["resource_id"]] != it["binding_digest"]:
+        return "POLICY_BINDING"
+    if re.search(r"(^|/)\.\.?(/|$)|//|%2[ef]|%5c", rq["path"], re.I):
+        return "POLICY_PATH"
+    if rq["path"] != opd["path_template"].replace("{resource_id}", it["resource_id"]):
+        return "POLICY_PATH"
+    if rq.get("query"):
+        return "POLICY_PATH"
+    return None
+
+
+# ---- SS-04: host-interaction record wire format + list digest
+schema("host-interaction-record", {
+    "type": "object", "additionalProperties": False,
+    "required": ["interaction_id", "seq", "decision", "code", "method", "host", "path_sha256", "request_body_sha256", "status", "response_body_sha256",
+                 "policy_digest", "profile_digest", "signing_profile_digest", "intent"],
+    "properties": {
+        "interaction_id": {"type": "string", "pattern": "^i-[0-9]{4,}$"}, "seq": {"type": "integer", "minimum": 0},
+        "decision": {"enum": ["allowed", "denied", "failed"]}, "code": {"type": ["string", "null"], "pattern": "^[A-Z_]+$"},
+        "method": {"enum": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"]}, "host": {"type": "string"},
+        "path_sha256": SHA, "request_body_sha256": {"oneOf": [SHA, {"type": "null"}]},
+        "status": {"oneOf": [{"type": "integer", "minimum": 100, "maximum": 599}, {"type": "null"}]},
+        "response_body_sha256": {"oneOf": [SHA, {"type": "null"}]},
+        "policy_digest": SHA, "profile_digest": SHA, "signing_profile_digest": SHA,
+        "intent": {"type": "object", "additionalProperties": False, "required": ["operation", "resource_id", "binding_digest"],
+                   "properties": {"operation": {"type": "string"}, "resource_id": {"type": "string"}, "binding_digest": SHA}},
+    },
+    "allOf": [
+        {"if": {"properties": {"decision": {"const": "allowed"}}}, "then": {"properties": {"code": {"type": "null"}, "status": {"type": "integer"}}}},
+        {"if": {"properties": {"decision": {"const": "denied"}}}, "then": {"properties": {"code": {"type": "string"}, "status": {"type": "null"}, "response_body_sha256": {"type": "null"}}}},
+        {"if": {"properties": {"decision": {"const": "failed"}}}, "then": {"properties": {"code": {"type": "string"}}}},
+    ],
+})
+HI = {"interaction_id": "i-0001", "seq": 0, "decision": "allowed", "code": None, "method": "GET", "host": "iaas.eu-frankfurt-1.oraclecloud.com", "path_sha256": D,
+      "request_body_sha256": None, "status": 200, "response_body_sha256": D2, "policy_digest": D3, "profile_digest": D4, "signing_profile_digest": D,
+      "intent": {"operation": "observe", "resource_id": "ocid1.vcn.oc1.eu-frankfurt-1.aaaa", "binding_digest": D}}
+example("host-interaction-allowed", "host-interaction-record", HI)
+example("host-interaction-denied", "host-interaction-record", {**HI, "interaction_id": "i-0002", "seq": 1, "decision": "denied", "code": "POLICY_METHOD", "method": "POST", "status": None, "response_body_sha256": None})
+example("host-interaction-denied-with-status", "host-interaction-record", {**HI, "decision": "denied", "code": "POLICY_METHOD", "response_body_sha256": None}, False, "status")
+example("host-interaction-allowed-with-code", "host-interaction-record", {**HI, "code": "POLICY_HOST"}, False, "code")
+example("host-interaction-missing-policy-digest", "host-interaction-record", {k: v for k, v in HI.items() if k != "policy_digest"}, False, "policy_digest")
+
+_REC_FIELDS = ["interaction_id", "seq", "decision", "code", "method", "host", "path_sha256", "request_body_sha256", "status", "response_body_sha256", "policy_digest", "profile_digest", "signing_profile_digest"]
+
+
+def _val(v):
+    s = "null" if v is None else str(v)
+    if "\n" in s or "\r" in s or not s.isascii():
+        raise ValueError("BAD_VALUE")
+    return s
+
+
+def record_bytes(r):
+    lines = [f"{k}={_val(r[k])}" for k in _REC_FIELDS] + [f"intent.{k}={_val(r['intent'][k])}" for k in ("operation", "resource_id", "binding_digest")]
+    return ("\n".join(lines) + "\n").encode()
+
+
+def interactions_digest(records):
+    """host_interactions.digest: sequence must be contiguous from 0; one line per record in seq order."""
+    if [r["seq"] for r in records] != list(range(len(records))):
+        raise ValueError("SEQ_GAP_OR_ORDER")
+    lines = ["CICHOSTINTv1", f"count={len(records)}"] + [f"{r['seq']}:sha256:{hashlib.sha256(record_bytes(r)).hexdigest()}" for r in records]
+    return "sha256:" + hashlib.sha256(("\n".join(lines) + "\n").encode()).hexdigest()
+
+
+# ================================================================ 4. ProofTrace V2
+EXE = {"enum": ["SUCCEEDED", "REJECTED", "FAILED", "ABORTED"]}
+AUTHZ = {"enum": ["ALLOWED", "DENIED", "NOT_EVALUATED"]}
+step = {"type": "object", "additionalProperties": False,
+        "required": ["index", "name", "requested", "outcome", "input_digest", "output_digest", "references"],
+        "properties": {
+            "index": {"type": "integer", "minimum": 0}, "name": {"type": "string", "minLength": 1},
+            # what was ASKED for: exists for every step, including one rejected before any load or dispatch
+            "requested": {"type": "object", "additionalProperties": False, "required": ["module_id", "operation"],
+                          "properties": {"module_id": {"type": "string"}, "operation": {"type": "string"}, "presented_artifact_digest": SHA}},
+            "outcome": {"type": "object", "additionalProperties": False, "required": ["execution", "authorization"], "properties": {"execution": EXE, "authorization": AUTHZ}},
+            "rejection": {"type": "object", "additionalProperties": False, "required": ["phase", "code"],
+                          "properties": {"phase": {"enum": ["admission", "dispatch", "policy"]}, "code": {"type": "string", "pattern": "^[A-Z_]+$"}}},
+            # what was actually EXECUTED: only asserted when the execution phase was reached
+            "executed": {"type": "object", "additionalProperties": False,
+                         "required": ["artifact_digest", "executed_digest", "manifest_digest", "envelope_digest", "profile", "dispatched", "trust_state"],
+                         "properties": {"artifact_digest": SHA, "executed_digest": SHA, "manifest_digest": SHA, "envelope_digest": {"oneOf": [SHA, {"type": "null"}]},
+                                        "profile": {"type": "object", "additionalProperties": False, "required": ["id", "digest"], "properties": {"id": {"type": "string"}, "digest": SHA}},
+                                        "dispatched": {"type": "string"}, "trust_state": {"enum": ["authenticated", "transitional", "dev"]}}},
+            "input_digest": SHA, "output_digest": {"oneOf": [SHA, {"type": "null"}]},
+            "references": {"type": "object", "additionalProperties": False, "required": ["execution_context", "host_interactions"],
+                           "properties": {"execution_context": {"type": "object", "additionalProperties": False, "required": ["digest"], "properties": {"digest": SHA}},
+                                          "authorization_decision": {"type": "object", "additionalProperties": False, "required": ["digest"], "properties": {"digest": SHA}},
+                                          "host_interactions": {"type": "object", "additionalProperties": False, "required": ["digest", "count"], "properties": {"digest": SHA, "count": {"type": "integer", "minimum": 0}}}}},
+        },
+        "allOf": [
+            {"if": {"properties": {"outcome": {"properties": {"execution": {"const": "REJECTED"}}}}},
+             "then": {"required": ["rejection"], "not": {"required": ["executed"]},
+                      "properties": {"output_digest": {"type": "null"}, "references": {"properties": {"host_interactions": {"properties": {"count": {"const": 0}}}}}}}},
+            {"if": {"properties": {"outcome": {"properties": {"execution": {"enum": ["SUCCEEDED", "FAILED", "ABORTED"]}}}}}, "then": {"required": ["executed"], "not": {"required": ["rejection"]}}},
+            {"if": {"properties": {"outcome": {"properties": {"authorization": {"enum": ["ALLOWED", "DENIED"]}}}}}, "then": {"properties": {"references": {"required": ["authorization_decision"]}}}},
+            {"if": {"required": ["executed"], "properties": {"executed": {"properties": {"trust_state": {"const": "authenticated"}}}}},
+             "then": {"properties": {"executed": {"properties": {"envelope_digest": SHA}}}}},
+        ]}
+schema("prooftrace-v2", {
+    "type": "object", "additionalProperties": False, "required": ["kind", "version", "chain_version", "workflow", "steps", "outcome", "chain_hash"],
+    "properties": {
+        "kind": {"const": "ProofArtifact"}, "version": {"const": "2.0"}, "chain_version": {"const": "CICCHAINv2"},
+        "workflow": {"type": "object", "additionalProperties": False, "required": ["id", "source_digest"], "properties": {"id": {"type": "string"}, "source_digest": {"type": "string"}}},
+        "steps": {"type": "array", "items": step},
+        "outcome": {"type": "object", "additionalProperties": False, "required": ["execution", "authorization"], "properties": {"execution": EXE, "authorization": AUTHZ}},
+        "chain_hash": SHA,
+    },
+})
+schema("prooftrace-v2-persistence", {
+    "type": "object", "additionalProperties": False, "required": ["artifact_chain_hash", "persisted", "recorder"],
+    "properties": {
+        "artifact_chain_hash": SHA, "persisted": {"type": "boolean"}, "recorder": {"type": "string", "minLength": 1},
+        "commit": {"type": "string"}, "error_code": {"type": "string"},
+        "attestation": {"type": "object", "additionalProperties": False, "required": ["kind", "signer_key_id", "signature_digest"],
+                        "properties": {"kind": {"enum": ["git-signed-commit", "recorder-signature"]}, "signer_key_id": SHA, "signature_digest": SHA}},
+    },
+    "allOf": [{"if": {"properties": {"persisted": {"const": True}}}, "then": {"required": ["commit", "attestation"], "not": {"required": ["error_code"]}}},
+              {"if": {"properties": {"persisted": {"const": False}}}, "then": {"required": ["error_code"], "not": {"anyOf": [{"required": ["commit"]}, {"required": ["attestation"]}]}}}],
+})
+
+# ---- V2-03: normative canonical bytes of the CICCHAINv2 hash domain (fixed field order, no JSON re-serialisation)
+STEP_COMMON = ["index", "requested.module_id", "requested.operation", "requested.presented_artifact_digest", "outcome.execution", "outcome.authorization",
+               "input_digest", "output_digest", "references.execution_context.digest", "references.authorization_decision.digest",
+               "references.host_interactions.digest", "references.host_interactions.count"]
+EXEC_F = ["artifact_digest", "executed_digest", "manifest_digest", "envelope_digest", "profile.id", "profile.digest", "dispatched", "trust_state"]
+
+
+def _get(o, path):
+    for p in path.split("."):
+        if not isinstance(o, dict) or p not in o:
+            return None
+        o = o[p]
+    return o
+
+
+def _cv(v):
+    if v is None:
+        return "null"
+    s = str(v)
+    if "\n" in s or "\r" in s or not s.isascii():
+        raise ValueError("BAD_VALUE")
+    return s
+
+
+def chain_bytes(a):
+    """CICCHAINv2 hash input. Free text (step.name) enters only as the sha256 of its UTF-8 bytes. Absent groups are explicit."""
+    L = ["CICCHAINv2", f"version={_cv(a['version'])}", f"workflow.id={_cv(a['workflow']['id'])}", f"workflow.source_digest={_cv(a['workflow']['source_digest'])}",
+         f"outcome.execution={_cv(a['outcome']['execution'])}", f"outcome.authorization={_cv(a['outcome']['authorization'])}", f"steps={len(a['steps'])}"]
+    for s in a["steps"]:
+        i = s["index"]
+        L.append(f"step.{i}.name_sha256=sha256:{hashlib.sha256(s['name'].encode('utf-8')).hexdigest()}")
+        for f in STEP_COMMON:
+            L.append(f"step.{i}.{f}={_cv(_get(s, f))}")
+        L.append(f"step.{i}.rejection={'present' if 'rejection' in s else 'absent'}")
+        if "rejection" in s:
+            L += [f"step.{i}.rejection.phase={_cv(s['rejection']['phase'])}", f"step.{i}.rejection.code={_cv(s['rejection']['code'])}"]
+        L.append(f"step.{i}.executed={'present' if 'executed' in s else 'absent'}")
+        if "executed" in s:
+            L += [f"step.{i}.executed.{f}={_cv(_get(s['executed'], f))}" for f in EXEC_F]
+    return ("\n".join(L) + "\n").encode()
+
+
+def chain_hash(a):
+    return "sha256:" + hashlib.sha256(chain_bytes(a)).hexdigest()
+
+
+STEP = {"index": 0, "name": "oracle@0.1.0.observe(req) -> out",
+        "requested": {"module_id": "cic-module-oracle-cloud@0.1.0", "operation": "observe"},
+        "outcome": {"execution": "SUCCEEDED", "authorization": "ALLOWED"},
+        "executed": {"artifact_digest": D, "executed_digest": D3, "manifest_digest": D2, "envelope_digest": D4, "profile": {"id": "cic:provider@0.1.0", "digest": D3},
+                     "dispatched": "observe", "trust_state": "authenticated"},
+        "input_digest": D, "output_digest": D2,
+        "references": {"execution_context": {"digest": D3}, "authorization_decision": {"digest": D2}, "host_interactions": {"digest": D, "count": 1}}}
+ART = {"kind": "ProofArtifact", "version": "2.0", "chain_version": "CICCHAINv2", "workflow": {"id": "poc.observe", "source_digest": "git:86ea1ab"},
+       "steps": [STEP], "outcome": {"execution": "SUCCEEDED", "authorization": "ALLOWED"}, "chain_hash": D}
+ART["chain_hash"] = chain_hash(ART)
+example("prooftrace-v2-ok", "prooftrace-v2", ART)
+rej = clone(ART)
+rej["steps"][0] = {"index": 0, "name": "oracle@0.1.0.invoke(req) -> out", "requested": {"module_id": "cic-module-oracle-cloud@0.1.0", "operation": "invoke", "presented_artifact_digest": D},
+                   "outcome": {"execution": "REJECTED", "authorization": "DENIED"}, "rejection": {"phase": "policy", "code": "POLICY_DENIED"},
+                   "input_digest": D, "output_digest": None,
+                   "references": {"execution_context": {"digest": D3}, "authorization_decision": {"digest": D2}, "host_interactions": {"digest": D, "count": 0}}}
+rej["outcome"] = {"execution": "REJECTED", "authorization": "DENIED"}
+rej["chain_hash"] = chain_hash(rej)
+example("prooftrace-v2-rejected-before-load", "prooftrace-v2", rej)
+b = clone(ART); b["version"] = "1.0"; b["chain_version"] = "CICCHAINv1"
+example("prooftrace-v1-is-not-v2", "prooftrace-v2", b, False, "version")
+b = clone(ART); del b["steps"][0]["executed"]["artifact_digest"]
+example("prooftrace-v2-executed-missing-artifact-digest", "prooftrace-v2", b, False, "artifact_digest")
+b = clone(ART); del b["steps"][0]["executed"]["executed_digest"]
+example("prooftrace-v2-executed-missing-executed-digest", "prooftrace-v2", b, False, "executed_digest")
+b = clone(ART); b["steps"][0]["executed"]["profile"].pop("digest")
+example("prooftrace-v2-profile-name-without-digest", "prooftrace-v2", b, False, "digest")
+b = clone(ART); b["steps"][0]["executed"]["envelope_digest"] = None
+example("prooftrace-v2-authenticated-without-envelope-digest", "prooftrace-v2", b, False, "envelope_digest")
+b = clone(ART); b["steps"][0]["references"].pop("authorization_decision")
+example("prooftrace-v2-authorized-without-decision-reference", "prooftrace-v2", b, False, "authorization_decision")
+b = clone(ART); b["steps"][0]["references"]["host_interactions"].pop("digest")
+example("prooftrace-v2-interactions-without-digest", "prooftrace-v2", b, False, "digest")
+b = clone(rej); b["steps"][0]["executed"] = clone(STEP["executed"])
+example("prooftrace-v2-rejected-step-with-executed-identity", "prooftrace-v2", b, False, "executed")
+b = clone(rej); b["steps"][0].pop("rejection")
+example("prooftrace-v2-rejected-without-rejection-record", "prooftrace-v2", b, False, "rejection")
+b = clone(ART); b["steps"][0].pop("executed")
+example("prooftrace-v2-succeeded-without-executed-identity", "prooftrace-v2", b, False, "executed")
+b = clone(ART); b["persistence"] = {"persisted": False}
+example("prooftrace-v2-persistence-inside-hash-domain", "prooftrace-v2", b, False, "persistence")
+ATT = {"kind": "git-signed-commit", "signer_key_id": D3, "signature_digest": D2}
+example("persistence-failed", "prooftrace-v2-persistence", {"artifact_chain_hash": D, "persisted": False, "recorder": "git-state-recorder", "error_code": "recorder_unavailable"})
+example("persistence-ok", "prooftrace-v2-persistence", {"artifact_chain_hash": D, "persisted": True, "recorder": "git-state-recorder", "commit": "abc123", "attestation": ATT})
+example("persistence-failed-with-commit", "prooftrace-v2-persistence", {"artifact_chain_hash": D, "persisted": False, "recorder": "git-state-recorder", "commit": "abc123", "error_code": "x"}, False, "commit")
+example("persistence-without-artifact-binding", "prooftrace-v2-persistence", {"persisted": True, "recorder": "git-state-recorder", "commit": "abc123", "attestation": ATT}, False, "artifact_chain_hash")
+example("persistence-ok-without-attestation", "prooftrace-v2-persistence", {"artifact_chain_hash": D, "persisted": True, "recorder": "git-state-recorder", "commit": "abc123"}, False, "attestation")
+
+# ---- V2-02: evidence verdict and workflow acceptance are two separate assertions of the independent verifier
+schema("verification-result", {
+    "type": "object", "additionalProperties": False,
+    "required": ["kind", "artifact_version", "verifier", "subject", "dimensions", "evidence_verdict", "acceptance"],
+    "properties": {
+        "kind": {"const": "VerificationResult"}, "artifact_version": {"enum": ["1.0", "2.0"]},
+        "verifier": {"type": "object", "additionalProperties": False, "required": ["id", "version", "implementation_digest"],
+                     "properties": {"id": {"type": "string"}, "version": {"type": "string"}, "implementation_digest": SHA}},
+        "subject": {"type": "object", "additionalProperties": False, "required": ["artifact_chain_hash"], "properties": {"artifact_chain_hash": SHA, "persistence_digest": SHA}},
+        "dimensions": {"type": "object", "additionalProperties": False, "required": ["execution", "authorization", "evidence", "verification"],
+                       "properties": {"execution": {"enum": ["SUCCEEDED", "REJECTED", "FAILED", "ABORTED", "UNKNOWN"]},
+                                      "authorization": {"enum": ["ALLOWED", "DENIED", "NOT_EVALUATED", "UNKNOWN"]},
+                                      "evidence": {"enum": ["PERSISTED", "NOT_PERSISTED", "NOT_REQUIRED", "UNKNOWN"]},
+                                      "verification": {"enum": ["COMPLETE", "INCOMPLETE", "FAILED"]}}},
+        "unresolved_references": {"type": "array", "items": {"type": "string"}},
+        # evidence_verdict: the evidence is authentic and is a complete representation of what happened (independent of what happened)
+        "evidence_verdict": {"enum": ["VERIFIED", "NOT_VERIFIED"]},
+        # acceptance: the operation met the mandatory policy and evidence conditions
+        "acceptance": {"enum": ["ACCEPTED", "NOT_ACCEPTED", "NOT_EVALUATED"]},
+        "acceptance_policy_digest": SHA,
+    },
+    "allOf": [
+        {"if": {"properties": {"evidence_verdict": {"const": "VERIFIED"}}},
+         "then": {"properties": {"dimensions": {"properties": {"verification": {"const": "COMPLETE"}}}}, "not": {"required": ["unresolved_references"]}}},
+        {"if": {"properties": {"acceptance": {"const": "ACCEPTED"}}},
+         "then": {"required": ["acceptance_policy_digest"],
+                  "properties": {"evidence_verdict": {"const": "VERIFIED"},
+                                 "dimensions": {"properties": {"execution": {"const": "SUCCEEDED"}, "authorization": {"const": "ALLOWED"}, "evidence": {"enum": ["PERSISTED", "NOT_REQUIRED"]}}}}}},
+        {"if": {"properties": {"acceptance": {"const": "NOT_ACCEPTED"}}}, "then": {"required": ["acceptance_policy_digest"]}},
+    ],
+})
+VR = {"kind": "VerificationResult", "artifact_version": "2.0", "verifier": {"id": "independent-verifier", "version": "0.1.0", "implementation_digest": D2},
+      "subject": {"artifact_chain_hash": D}}
+DIM = {"execution": "SUCCEEDED", "authorization": "ALLOWED", "evidence": "PERSISTED", "verification": "COMPLETE"}
+example("verification-accepted", "verification-result", {**VR, "dimensions": DIM, "evidence_verdict": "VERIFIED", "acceptance": "ACCEPTED", "acceptance_policy_digest": D3})
+example("verification-evidence-not-persisted", "verification-result",
+        {**VR, "dimensions": {**DIM, "evidence": "NOT_PERSISTED"}, "evidence_verdict": "VERIFIED", "acceptance": "NOT_ACCEPTED", "acceptance_policy_digest": D3})
+example("verification-denied-operation-with-verified-evidence", "verification-result",
+        {**VR, "dimensions": {**DIM, "execution": "REJECTED", "authorization": "DENIED"}, "evidence_verdict": "VERIFIED", "acceptance": "NOT_ACCEPTED", "acceptance_policy_digest": D3})
+example("verification-unresolved-reference", "verification-result",
+        {**VR, "dimensions": {**DIM, "verification": "INCOMPLETE"}, "unresolved_references": ["host_interactions:" + D], "evidence_verdict": "NOT_VERIFIED", "acceptance": "NOT_EVALUATED"})
+example("verification-accepted-but-authorization-denied", "verification-result",
+        {**VR, "dimensions": {**DIM, "authorization": "DENIED"}, "evidence_verdict": "VERIFIED", "acceptance": "ACCEPTED", "acceptance_policy_digest": D3}, False, "authorization")
+example("verification-accepted-but-not-persisted", "verification-result",
+        {**VR, "dimensions": {**DIM, "evidence": "NOT_PERSISTED"}, "evidence_verdict": "VERIFIED", "acceptance": "ACCEPTED", "acceptance_policy_digest": D3}, False, "evidence")
+example("verification-accepted-with-unverified-evidence", "verification-result",
+        {**VR, "dimensions": {**DIM, "verification": "INCOMPLETE"}, "evidence_verdict": "NOT_VERIFIED", "acceptance": "ACCEPTED", "acceptance_policy_digest": D3}, False, "evidence_verdict")
+example("verification-verified-but-incomplete", "verification-result",
+        {**VR, "dimensions": {**DIM, "verification": "INCOMPLETE"}, "evidence_verdict": "VERIFIED", "acceptance": "NOT_EVALUATED"}, False, "verification")
+example("verification-verified-with-unresolved-reference", "verification-result",
+        {**VR, "dimensions": DIM, "unresolved_references": ["host_interactions:x"], "evidence_verdict": "VERIFIED", "acceptance": "NOT_EVALUATED"}, False, "unresolved_references")
+example("verification-without-verifier-identity", "verification-result",
+        {k: v for k, v in {**VR, "dimensions": DIM, "evidence_verdict": "VERIFIED", "acceptance": "NOT_EVALUATED"}.items() if k != "verifier"}, False, "verifier")
+example("verification-accepted-without-policy-digest", "verification-result",
+        {**VR, "dimensions": DIM, "evidence_verdict": "VERIFIED", "acceptance": "ACCEPTED"}, False, "acceptance_policy_digest")
+
+# ================================================================ run everything
+store = {s["$id"]: s for s in S.values()}
+resolver = jsonschema.RefResolver.from_schema(next(iter(S.values())), store=store)
+lines, problems = [], []
+ok = 0
+for name, (sch, obj, valid, why) in E.items():
+    errs = list(jsonschema.Draft7Validator(S[sch], resolver=resolver).iter_errors(obj))
+    if bool(not errs) != valid:
+        problems.append((name, "expected " + ("valid" if valid else "invalid"), [e.message[:70] for e in errs][:2]))
+        continue
+    if not valid:
+        txt = [f"{'/'.join(map(str, e.absolute_path))} | {e.message} | {'/'.join(map(str, e.absolute_schema_path))}" for e in errs]
+        wrong = [t for t in txt if why not in t]
+        if wrong:  # every error must be about the NAMED reason (an unrelated reason would make the example prove nothing)
+            problems.append((name, f"rejected for a reason other than {why!r}", [w[:110] for w in wrong][:2]))
+            continue
+        lines.append(f"   {name:62s} [{why}] -> {txt[0].split(' | ')[1][:80]}")
+    ok += 1
+nv = sum(1 for e in E.values() if e[2])
+ni = len(E) - nv
+print(f"schemas: {len(S)} | examples: {len(E)} ({nv} valid, {ni} invalid) | as expected AND for the named reason: {ok} | unexpected: {len(problems)}")
+# the extracted example directory must equal the labelled set (T-01: a stale file once survived a rename)
+on_disk = {p.stem for k in ("valid", "invalid") for p in (DEST / "examples" / k).glob("*.json")}
+if on_disk != set(E):
+    problems.append(("example-directory", "files not in the labelled set", sorted(on_disk ^ set(E))[:5]))
+print(f"example directory == labelled set: {on_disk == set(E)} ({len(on_disk)} files)")
+
+# --- signed-domain checks (CICMODENVv1)
+a = envelope_signed_bytes(ENV)
+b2 = envelope_signed_bytes(json.loads(json.dumps(dict(reversed(list(ENV.items()))))))
+
+
+def mutate_env(k):
+    e = clone(ENV)
+    if k == "module_id":
+        e[k] = "x@1.0.0"
+    elif k == "signer_key_id":
+        e["signer"]["key_id"] = "sha256:" + "00" * 32
+    elif k == "signer_alg":
+        e["signer"]["alg"] = "ed25519"
+    else:
+        e[k] = e[k][:-1] + ("0" if e[k][-1] != "0" else "1")
+    return e
+
+
+chg = [k for k in ("module_id", "wasm_sha256", "executed_wasm_sha256", "manifest_digest", "signer_key_id", "signer_alg") if envelope_signed_bytes(mutate_env(k)) == a]
+print(f"signed-bytes: key-order independent: {a == b2} | every single-field change alters the bytes: {not chg} | bytes: {len(a)} | envelope_digest: {envelope_digest(ENV)[:23]}...")
+(DEST / "signed-bytes-envelope-example.txt").write_bytes(a)
+if a != b2 or chg:
+    problems.append(("signed-bytes", "not deterministic", chg))
+good = a
+cases = [("valid", good, None), ("crlf", good.replace(b"\n", b"\r\n"), "CR_PRESENT"), ("no-final-lf", good[:-1], "NO_FINAL_LF"),
+         ("wrong-domain", good.replace(b"CICMODENVv1", b"CICMODENVv2"), "DOMAIN"), ("duplicate-field", good + b"module_id=x@1.0.0\n", "DUPLICATE"),
+         ("unknown-field", good + b"extra=1\n", "UNKNOWN_FIELD"), ("missing-field", b"\n".join(good.split(b"\n")[:-2]) + b"\n", "MISSING_OR_ORDER"),
+         ("reordered", b"\n".join([good.split(b"\n")[0], good.split(b"\n")[2], good.split(b"\n")[1]] + good.split(b"\n")[3:]), "ORDER"),
+         ("value-with-embedded-newline", good.replace(b"module_id=cic-module", b"module_id=cic\nmodule"), "UNKNOWN_FIELD"),
+         ("uppercase-hex", good.replace(b"sha256:abab", b"sha256:ABAB", 1), "DIGEST_FORM"),
+         ("digest-without-prefix", good.replace(b"wasm_sha256=sha256:", b"wasm_sha256=", 1), "DIGEST_FORM"),
+         ("unknown-algorithm", good.replace(b"ecdsa-p256-sha256", b"rsa-pkcs1-sha1"), "ALG"),
+         ("non-ascii", good.replace(b"oracle", "orácle".encode()), "NON_ASCII")]
+bad = 0
+rep = []
+for n, bb, exp in cases:
+    try:
+        parse_signed_bytes(bb)
+        got = None
+    except ValueError as e:
+        got = str(e)
+    bad += got != exp
+    rep.append(f"   signed-domain {n:30s} expected {str(exp):18s} got {str(got):18s} {'OK' if got == exp else 'UNEXPECTED'}")
+rt = parse_signed_bytes(good)
+rt_ok = envelope_signed_bytes({"module_id": rt["module_id"], "wasm_sha256": rt["wasm_sha256"], "executed_wasm_sha256": rt["executed_wasm_sha256"], "manifest_digest": rt["manifest_digest"],
+                               "signer": {"key_id": rt["signer_key_id"], "alg": rt["signer_alg"]}}) == good
+print(f"signed-domain parser: {len(cases)} cases, unexpected: {bad}, emit->parse->emit identical: {rt_ok}")
+if bad or not rt_ok:
+    problems.append(("signed-domain-parser", "unexpected", []))
+lines += rep
+
+# --- ABI semantic checks (ABI-01..04, SS-05)
+sem = []
+
+
+def prof_case(label, mut, exp):
+    p = clone(PROF)
+    mut(p)
+    sem.append((label, exp, check_profile_semantics(p)))
+
+
+prof_case("profile-valid", lambda p: None, None)
+prof_case("duplicate-operation-name", lambda p: p["operations"].append(clone(p["operations"][1])), "DUPLICATE_OPERATION")
+prof_case("schema-ref-unknown-id", lambda p: p["operations"][1]["request_schema"].update(id="cic:provider:nope"), "SCHEMA_REF_UNRESOLVED")
+prof_case("schema-ref-digest-mismatch", lambda p: p["operations"][1]["response_schema"].update(digest="sha256:" + "99" * 32), "SCHEMA_DIGEST_MISMATCH")
+prof_case("effect-field-not-in-request-schema", lambda p: p["operations"][2]["effect_resolution"].update(field="nope"), "EFFECT_FIELD_UNRESOLVABLE")
+prof_case("effect-map-key-outside-field-domain", lambda p: p["operations"][2]["effect_resolution"]["map"].update(bogus="external-read"), "EFFECT_MAP_KEY_NOT_IN_FIELD_DOMAIN")
+prof_case("send-op-without-host-capability", lambda p: p.update(required_host_capabilities=[]), "HOST_CAPABILITY_INCONSISTENT")
+prof_case("capability-without-any-send-op", lambda p: p.update(operations=[p["operations"][0]]), "HOST_CAPABILITY_INCONSISTENT")
+prof_case("limit-above-operator-cap", lambda p: p["limits"].update(timeout_ms=600000), "LIMIT_EXCEEDS_OPERATOR_CAP")
+prof_case("request-limit-above-operator-cap", lambda p: p["limits"].update(max_request_bytes=99999999), "LIMIT_EXCEEDS_OPERATOR_CAP")
+for l, e_, g in sem:
+    lines.append(f"   abi-semantics {l:42s} expected {str(e_):38s} got {str(g):38s} {'OK' if e_ == g else 'UNEXPECTED'}")
+    if e_ != g:
+        problems.append(("abi-semantics", l, [str(g)]))
+print(f"abi semantic checks: {len(sem)} cases, unexpected: {sum(1 for _, e_, g in sem if e_ != g)}")
+raw = json.dumps(PROF, sort_keys=True).encode()
+ps = profile_signed_bytes(raw, D3, "ecdsa-p256-sha256")
+print(f"profile signed domain: deterministic: {ps == profile_signed_bytes(raw, D3, 'ecdsa-p256-sha256')} | any byte of the artifact changes it: {ps != profile_signed_bytes(raw + b' ', D3, 'ecdsa-p256-sha256')}")
+
+# --- target validation (SS-03)
+tv = []
+
+
+def tcase(label, mut, exp):
+    r = clone(REQ)
+    mut(r)
+    tv.append((label, exp, validate_target(r)))
+
+
+tcase("target-valid", lambda r: None, None)
+tcase("host-outside-policy", lambda r: r["request"].update(host="evil.example.com"), "POLICY_HOST")
+tcase("write-method-in-observation", lambda r: r["request"].update(method="DELETE"), "POLICY_METHOD")
+tcase("unknown-operation", lambda r: r["intent"].update(operation="destroy"), "POLICY_TARGET")
+tcase("resource-not-bound", lambda r: r["intent"].update(resource_id="ocid1.vcn.oc1.eu-frankfurt-1.zzzz"), "POLICY_TARGET")
+tcase("binding-digest-differs", lambda r: r["intent"].update(binding_digest=D4), "POLICY_BINDING")
+tcase("path-targets-other-resource", lambda r: r["request"].update(path="/20160918/vcns/ocid1.vcn.oc1.eu-frankfurt-1.bbbb"), "POLICY_PATH")
+tcase("path-traversal", lambda r: r["request"].update(path="/20160918/vcns/../vcns/ocid1.vcn.oc1.eu-frankfurt-1.aaaa"), "POLICY_PATH")
+tcase("encoded-traversal", lambda r: r["request"].update(path="/20160918/vcns/%2e%2e/x"), "POLICY_PATH")
+tcase("extra-query", lambda r: r["request"].update(query={"x": "1"}), "POLICY_PATH")
+for l, e_, g in tv:
+    lines.append(f"   target-validation {l:34s} expected {str(e_):14s} got {str(g):14s} {'OK' if e_ == g else 'UNEXPECTED'}")
+    if e_ != g:
+        problems.append(("target-validation", l, [str(g)]))
+print(f"host-side target validation: {len(tv)} cases, unexpected: {sum(1 for _, e_, g in tv if e_ != g)}")
+
+# --- host interaction list digest (SS-04)
+r0 = clone(HI)
+r1 = {**clone(HI), "interaction_id": "i-0002", "seq": 1, "decision": "denied", "code": "POLICY_METHOD", "method": "POST", "status": None, "response_body_sha256": None}
+d_ok = interactions_digest([r0, r1])
+checks = [("digest-deterministic", d_ok == interactions_digest([clone(r0), clone(r1)])),
+          ("record-change-alters-digest", d_ok != interactions_digest([r0, {**r1, "code": "POLICY_HOST"}])),
+          ("denied-record-is-included-in-count", d_ok != interactions_digest([r0]))]
+for lbl, fn in (("seq-gap", lambda: interactions_digest([r0, {**r1, "seq": 2}])), ("order-swapped", lambda: interactions_digest([r1, r0])), ("newline-in-value", lambda: interactions_digest([{**r0, "host": "a\nb"}]))):
+    try:
+        fn()
+        checks.append((lbl + "-rejected", False))
+    except ValueError:
+        checks.append((lbl + "-rejected", True))
+for lbl, okv in checks:
+    lines.append(f"   host-interactions {lbl:42s} {'OK' if okv else 'UNEXPECTED'}")
+    if not okv:
+        problems.append(("host-interactions", lbl, []))
+print(f"host-interaction list digest: {len(checks)} checks, unexpected: {sum(1 for _, o in checks if not o)}")
+
+# --- chain hash (V2-03)
+ch = [("chain-hash-matches-the-example", ART["chain_hash"] == chain_hash(ART)),
+      ("chain-hash-ignores-the-chain_hash-field", chain_hash({**ART, "chain_hash": D}) == chain_hash(ART)),
+      ("chain-hash-key-order-independent", chain_hash(json.loads(json.dumps(dict(reversed(list(ART.items())))))) == chain_hash(ART))]
+for lbl, fn in (("module-digest-change", lambda x: x["steps"][0]["executed"].update(artifact_digest=D4)),
+                ("executed-digest-change", lambda x: x["steps"][0]["executed"].update(executed_digest=D4)),
+                ("outcome-change", lambda x: x["steps"][0]["outcome"].update(authorization="DENIED")),
+                ("step-name-change", lambda x: x["steps"][0].update(name="other")),
+                ("host-interactions-change", lambda x: x["steps"][0]["references"]["host_interactions"].update(count=2)),
+                ("executed-group-removed", lambda x: x["steps"][0].pop("executed"))):
+    x = clone(ART)
+    fn(x)
+    ch.append((lbl + "-alters-the-hash", chain_hash(x) != chain_hash(ART)))
+x = clone(ART)
+x["workflow"]["id"] = "a\nb"
+try:
+    chain_hash(x)
+    ch.append(("newline-in-value-rejected", False))
+except ValueError:
+    ch.append(("newline-in-value-rejected", True))
+ch.append(("rejected-example-chain-hash-matches", rej["chain_hash"] == chain_hash(rej)))
+for lbl, okv in ch:
+    lines.append(f"   chain-hash {lbl:48s} {'OK' if okv else 'UNEXPECTED'}")
+    if not okv:
+        problems.append(("chain-hash", lbl, []))
+print(f"CICCHAINv2 canonical bytes: {len(ch)} checks, unexpected: {sum(1 for _, o in ch if not o)}")
+
+if os.environ.get("REASONS") or problems:
+    for l in lines:
+        print(l)
+for p in problems:
+    print("   UNEXPECTED", p)
+sys.exit(1 if problems else 0)

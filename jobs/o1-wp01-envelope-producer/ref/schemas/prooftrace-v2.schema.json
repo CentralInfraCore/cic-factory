@@ -1,0 +1,418 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "cic:o1:prooftrace-v2",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "kind",
+  "version",
+  "chain_version",
+  "workflow",
+  "steps",
+  "outcome",
+  "chain_hash"
+ ],
+ "properties": {
+  "kind": {
+   "const": "ProofArtifact"
+  },
+  "version": {
+   "const": "2.0"
+  },
+  "chain_version": {
+   "const": "CICCHAINv2"
+  },
+  "workflow": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "id",
+    "source_digest"
+   ],
+   "properties": {
+    "id": {
+     "type": "string"
+    },
+    "source_digest": {
+     "type": "string"
+    }
+   }
+  },
+  "steps": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "index",
+     "name",
+     "requested",
+     "outcome",
+     "input_digest",
+     "output_digest",
+     "references"
+    ],
+    "properties": {
+     "index": {
+      "type": "integer",
+      "minimum": 0
+     },
+     "name": {
+      "type": "string",
+      "minLength": 1
+     },
+     "requested": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "module_id",
+       "operation"
+      ],
+      "properties": {
+       "module_id": {
+        "type": "string"
+       },
+       "operation": {
+        "type": "string"
+       },
+       "presented_artifact_digest": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+       }
+      }
+     },
+     "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "execution",
+       "authorization"
+      ],
+      "properties": {
+       "execution": {
+        "enum": [
+         "SUCCEEDED",
+         "REJECTED",
+         "FAILED",
+         "ABORTED"
+        ]
+       },
+       "authorization": {
+        "enum": [
+         "ALLOWED",
+         "DENIED",
+         "NOT_EVALUATED"
+        ]
+       }
+      }
+     },
+     "rejection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "phase",
+       "code"
+      ],
+      "properties": {
+       "phase": {
+        "enum": [
+         "admission",
+         "dispatch",
+         "policy"
+        ]
+       },
+       "code": {
+        "type": "string",
+        "pattern": "^[A-Z_]+$"
+       }
+      }
+     },
+     "executed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "artifact_digest",
+       "executed_digest",
+       "manifest_digest",
+       "envelope_digest",
+       "profile",
+       "dispatched",
+       "trust_state"
+      ],
+      "properties": {
+       "artifact_digest": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+       },
+       "executed_digest": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+       },
+       "manifest_digest": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+       },
+       "envelope_digest": {
+        "oneOf": [
+         {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "profile": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "id",
+         "digest"
+        ],
+        "properties": {
+         "id": {
+          "type": "string"
+         },
+         "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+         }
+        }
+       },
+       "dispatched": {
+        "type": "string"
+       },
+       "trust_state": {
+        "enum": [
+         "authenticated",
+         "transitional",
+         "dev"
+        ]
+       }
+      }
+     },
+     "input_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+     },
+     "output_digest": {
+      "oneOf": [
+       {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "references": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "execution_context",
+       "host_interactions"
+      ],
+      "properties": {
+       "execution_context": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "digest"
+        ],
+        "properties": {
+         "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+         }
+        }
+       },
+       "authorization_decision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "digest"
+        ],
+        "properties": {
+         "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+         }
+        }
+       },
+       "host_interactions": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "digest",
+         "count"
+        ],
+        "properties": {
+         "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+         },
+         "count": {
+          "type": "integer",
+          "minimum": 0
+         }
+        }
+       }
+      }
+     }
+    },
+    "allOf": [
+     {
+      "if": {
+       "properties": {
+        "outcome": {
+         "properties": {
+          "execution": {
+           "const": "REJECTED"
+          }
+         }
+        }
+       }
+      },
+      "then": {
+       "required": [
+        "rejection"
+       ],
+       "not": {
+        "required": [
+         "executed"
+        ]
+       },
+       "properties": {
+        "output_digest": {
+         "type": "null"
+        },
+        "references": {
+         "properties": {
+          "host_interactions": {
+           "properties": {
+            "count": {
+             "const": 0
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     {
+      "if": {
+       "properties": {
+        "outcome": {
+         "properties": {
+          "execution": {
+           "enum": [
+            "SUCCEEDED",
+            "FAILED",
+            "ABORTED"
+           ]
+          }
+         }
+        }
+       }
+      },
+      "then": {
+       "required": [
+        "executed"
+       ],
+       "not": {
+        "required": [
+         "rejection"
+        ]
+       }
+      }
+     },
+     {
+      "if": {
+       "properties": {
+        "outcome": {
+         "properties": {
+          "authorization": {
+           "enum": [
+            "ALLOWED",
+            "DENIED"
+           ]
+          }
+         }
+        }
+       }
+      },
+      "then": {
+       "properties": {
+        "references": {
+         "required": [
+          "authorization_decision"
+         ]
+        }
+       }
+      }
+     },
+     {
+      "if": {
+       "required": [
+        "executed"
+       ],
+       "properties": {
+        "executed": {
+         "properties": {
+          "trust_state": {
+           "const": "authenticated"
+          }
+         }
+        }
+       }
+      },
+      "then": {
+       "properties": {
+        "executed": {
+         "properties": {
+          "envelope_digest": {
+           "type": "string",
+           "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  "outcome": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "execution",
+    "authorization"
+   ],
+   "properties": {
+    "execution": {
+     "enum": [
+      "SUCCEEDED",
+      "REJECTED",
+      "FAILED",
+      "ABORTED"
+     ]
+    },
+    "authorization": {
+     "enum": [
+      "ALLOWED",
+      "DENIED",
+      "NOT_EVALUATED"
+     ]
+    }
+   }
+  },
+  "chain_hash": {
+   "type": "string",
+   "pattern": "^sha256:[0-9a-f]{64}$"
+  }
+ }
+}

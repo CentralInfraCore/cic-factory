@@ -1,0 +1,12 @@
+{
+ "kind": "ModuleReleaseEnvelope",
+ "envelope_version": 1,
+ "module_id": "cic-module-oracle-cloud@0.1.0",
+ "wasm_sha256": "sha256:abababababababababababababababababababababababababababababababab",
+ "executed_wasm_sha256": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+ "manifest_digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+ "signer": {
+  "key_id": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+  "alg": "ecdsa-p256-sha256"
+ }
+}

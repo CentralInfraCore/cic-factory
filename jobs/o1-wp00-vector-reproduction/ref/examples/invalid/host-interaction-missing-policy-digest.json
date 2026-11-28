@@ -1,0 +1,19 @@
+{
+ "interaction_id": "i-0001",
+ "seq": 0,
+ "decision": "allowed",
+ "code": null,
+ "method": "GET",
+ "host": "iaas.eu-frankfurt-1.oraclecloud.com",
+ "path_sha256": "sha256:abababababababababababababababababababababababababababababababab",
+ "request_body_sha256": null,
+ "status": 200,
+ "response_body_sha256": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+ "profile_digest": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+ "signing_profile_digest": "sha256:abababababababababababababababababababababababababababababababab",
+ "intent": {
+  "operation": "observe",
+  "resource_id": "ocid1.vcn.oc1.eu-frankfurt-1.aaaa",
+  "binding_digest": "sha256:abababababababababababababababababababababababababababababababab"
+ }
+}
