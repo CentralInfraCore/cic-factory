@@ -1,0 +1,53 @@
+### 13. Attempted mechanical cherry-pick -x of the two #54 commits onto ae3c962
+Auto-merging MANIFEST.sha256
+CONFLICT (content): Merge conflict in MANIFEST.sha256
+Auto-merging docs/design/specs/provider-abi.md
+Auto-merging module/cicflow_guest.go
+CONFLICT (content): Merge conflict in module/cicflow_guest.go
+Auto-merging module/cicflow_host.go
+CONFLICT (content): Merge conflict in module/cicflow_host.go
+Auto-merging module/module_loadtest_test.go
+CONFLICT (content): Merge conflict in module/module_loadtest_test.go
+Auto-merging module/provider.go
+CONFLICT (content): Merge conflict in module/provider.go
+Auto-merging module/provider_test.go
+Auto-merging module/relay_integration_test.go
+error: could not apply 4f6db1f... feat(module): migrate the Oracle guest to cic-flow.send (structured request, host-side signing)
+hint: After resolving the conflicts, mark them with
+hint: "git add/rm <pathspec>", then run
+hint: "git cherry-pick --continue".
+hint: You can instead skip this commit with "git cherry-pick --skip".
+hint: To abort and get back to the state before "git cherry-pick",
+hint: run "git cherry-pick --abort".
+hint: Disable this message with "git config set advice.mergeConflict false"
+exit=1
+
+--- status
+UU MANIFEST.sha256
+M  docs/design/specs/provider-abi.md
+M  docs/design/specs/relay-sign-send-interface.md
+UU module/cicflow_guest.go
+UU module/cicflow_host.go
+A  module/host_mock_test.go
+M  module/module.wasm
+UU module/module_loadtest_test.go
+D  module/oci_sign.go
+UU module/provider.go
+M  module/provider_test.go
+M  module/relay_integration_test.go
+A  module/send_contract_test.go
+M  project.yaml
+
+--- conflict list (unmerged)
+MANIFEST.sha256
+module/cicflow_guest.go
+module/cicflow_host.go
+module/module_loadtest_test.go
+module/provider.go
+
+--- conflict hunk counts per file
+MANIFEST.sha256: 11 conflict markers
+module/cicflow_guest.go: 2 conflict markers
+module/cicflow_host.go: 1 conflict markers
+module/module_loadtest_test.go: 3 conflict markers
+module/provider.go: 3 conflict markers

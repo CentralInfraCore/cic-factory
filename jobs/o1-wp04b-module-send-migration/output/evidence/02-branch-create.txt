@@ -1,0 +1,16 @@
+### 10b. git identity set (local)
+Gábor Zoltán Sinkó
+gabor.zoltan.sinko@gmail.com
+
+### 11. create feature branch from ae3c962
+Switched to a new branch 'feature/o1-wp04b-module-send-migration'
+ae3c96237839c9fd06649c918a2194a79ebd8cb1
+merge-base check (must equal ae3c962):
+ae3c96237839c9fd06649c918a2194a79ebd8cb1
+
+### 12. commit signing hook availability
+total 72
+drwxrwxr-x 2 sinkog sinkog 4096 Nov 28 08:54 .
+drwxrwxr-x 7 sinkog sinkog 4096 Nov 28 08:54 ..
+gpg sign config:
+(unset)

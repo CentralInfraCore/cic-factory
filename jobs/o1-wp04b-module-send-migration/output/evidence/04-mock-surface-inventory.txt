@@ -1,0 +1,118 @@
+### Mock-surface usage inventory on devel (ae3c962)
+# command: git grep -c -F <sym> ae3c962 -- module/
+
+== cicFlowMock : 56 occurrences
+   binding_resource_id_test.go:9
+   cicflow_mock_test.go:9
+   execute_bytes_test.go:1
+   execute_create_async_message_test.go:2
+   execute_create_id_guest_test.go:5
+   execute_create_id_test.go:10
+   execute_registry_conformance_test.go:5
+   m4a_gate_test.go:7
+   module_loadtest_test.go:1
+   ocid_boundary_test.go:2
+   plan_create_conformance_test.go:1
+   poll_contract_test.go:4
+
+== wireHostSeam : 18 occurrences
+   binding_resource_id_test.go:5
+   cicflow_mock_test.go:2
+   execute_bytes_test.go:1
+   execute_create_id_test.go:2
+   execute_registry_conformance_test.go:3
+   m4a_gate_test.go:4
+   poll_contract_test.go:1
+
+== loadGuestWithCicFlow : 4 occurrences
+   cicflow_mock_test.go:2
+   execute_create_id_guest_test.go:1
+   module_loadtest_test.go:1
+
+== .Signed : 7 occurrences
+   cicflow_mock_test.go:2
+   execute_create_id_guest_test.go:2
+   module_loadtest_test.go:1
+
+== lastActuate : 7 occurrences
+   binding_resource_id_test.go:1
+   cicflow_mock_test.go:2
+   execute_create_id_guest_test.go:1
+   execute_create_id_test.go:1
+   module_loadtest_test.go:1
+   poll_contract_test.go:1
+
+== .Actuated : 8 occurrences
+   cicflow_mock_test.go:5
+   execute_registry_conformance_test.go:1
+
+== signCount() : 34 occurrences
+   binding_resource_id_test.go:10
+   cicflow_mock_test.go:1
+   execute_create_async_message_test.go:2
+   execute_create_id_test.go:4
+   execute_registry_conformance_test.go:4
+   m4a_gate_test.go:6
+   ocid_boundary_test.go:1
+   plan_create_conformance_test.go:2
+   poll_contract_test.go:4
+
+== actuateCount() : 48 occurrences
+   binding_resource_id_test.go:14
+   cicflow_mock_test.go:1
+   execute_create_async_message_test.go:2
+   execute_create_id_guest_test.go:2
+   execute_create_id_test.go:4
+   execute_registry_conformance_test.go:4
+   m4a_gate_test.go:12
+   ocid_boundary_test.go:1
+   plan_create_conformance_test.go:4
+   poll_contract_test.go:4
+
+== testCallHostSign : 33 occurrences
+   cicflow_host.go:5
+   cicflow_mock_test.go:2
+   manual_real_oci_test.go:4
+   observe_derivation_test.go:2
+   provider_test.go:20
+
+== testCallHostActuate : 33 occurrences
+   cicflow_host.go:5
+   cicflow_mock_test.go:2
+   manual_real_oci_test.go:4
+   observe_derivation_test.go:2
+   provider_test.go:20
+
+== cicFlowReply : 19 occurrences
+   cicflow_mock_test.go:4
+   execute_bytes_test.go:2
+   execute_create_id_guest_test.go:8
+   execute_create_id_test.go:3
+   module_loadtest_test.go:2
+
+== cicFlowCall : 14 occurrences
+   cicflow_mock_test.go:6
+   execute_bytes_test.go:1
+   execute_create_id_guest_test.go:4
+   execute_create_id_test.go:2
+   module_loadtest_test.go:1
+
+### TOTAL mock-coupled references
+281
+### FILES touching the mock
+module/binding_resource_id_test.go
+module/cicflow_host.go
+module/cicflow_mock_test.go
+module/execute_bytes_test.go
+module/execute_create_async_message_test.go
+module/execute_create_id_guest_test.go
+module/execute_create_id_test.go
+module/execute_registry_conformance_test.go
+module/m4a_gate_test.go
+module/manual_real_oci_test.go
+module/module_loadtest_test.go
+module/observe_derivation_test.go
+module/ocid_boundary_test.go
+module/plan_create_conformance_test.go
+module/poll_contract_test.go
+module/provider_test.go

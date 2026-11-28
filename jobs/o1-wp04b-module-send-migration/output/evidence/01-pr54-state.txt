@@ -1,0 +1,26 @@
+### 6. How far is the #54 merge-base behind devel? rev-list --count 5d0a327..origin/devel
+63
+
+### 7. PR #54 state
+{"baseRefName":"devel","headRefName":"feature/o1-wp04-sign-send","headRefOid":"b719b97bd6b7f887b726dc4268bcbc4469cfe237","isDraft":true,"mergeStateStatus":"DIRTY","mergeable":"CONFLICTING","number":54,"state":"OPEN","title":"O-1 WP-04: migrate the Oracle guest to cic-flow.send"}
+
+### 8. #54 own delta: git diff --stat 5d0a327..origin/feature/o1-wp04-sign-send
+ MANIFEST.sha256                                |  23 +--
+ docs/design/specs/provider-abi.md              |   4 +-
+ docs/design/specs/relay-sign-send-interface.md |  10 ++
+ module/cicflow_guest.go                        |  23 +--
+ module/cicflow_host.go                         |  21 +--
+ module/host_mock_test.go                       | 170 ++++++++++++++++++
+ module/module.wasm                             | Bin 1173093 -> 1173869 bytes
+ module/module_loadtest_test.go                 |  65 +++----
+ module/oci_sign.go                             |  70 --------
+ module/provider.go                             | 182 ++++++++++++-------
+ module/provider_test.go                        |   6 +-
+ module/relay_integration_test.go               |  13 +-
+ module/send_contract_test.go                   | 240 +++++++++++++++++++++++++
+ project.yaml                                   |  14 +-
+ 14 files changed, 621 insertions(+), 220 deletions(-)
+
+### 9. #54 commits
+b719b97 module: remove the now unused firstNonEmpty (staticcheck U1000 in CI)
+4f6db1f feat(module): migrate the Oracle guest to cic-flow.send (structured request, host-side signing)

@@ -1,0 +1,27 @@
+### 1. Does ae3c962 exist and what is it?
+commit
+ae3c96237839c9fd06649c918a2194a79ebd8cb1
+Gábor Zoltán Sinkó
+Sat Nov 21 21:26:06 2026 +0100
+Merge pull request #52 from CentralInfraCore/ci/docgate
+
+### 2. devel HEAD
+ae3c96237839c9fd06649c918a2194a79ebd8cb1
+ae3c96237839c9fd06649c918a2194a79ebd8cb1 Sat Nov 21 21:26:06 2026 +0100 Merge pull request #52 from CentralInfraCore/ci/docgate
+
+### 3. Is ae3c962 an ancestor of origin/devel? (merge-base --is-ancestor; 0=yes)
+exit=0
+### 3b. git merge-base origin/devel ae3c962
+ae3c96237839c9fd06649c918a2194a79ebd8cb1
+
+### 4. How far has devel moved past the pinned base? rev-list --count ae3c962..origin/devel
+0
+
+### 5. The #54 branch (feature/o1-wp04-sign-send)
+b719b97bd6b7f887b726dc4268bcbc4469cfe237
+merge-base with ae3c962:
+5d0a3278c6cc68f4808edacb8ee4300299af3153
+merge-base with origin/devel:
+5d0a3278c6cc68f4808edacb8ee4300299af3153
+rev-list --count ae3c962..#54branch:
+2
