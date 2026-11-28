@@ -50,6 +50,6 @@
 - **A transit-kulcs típusa** közvetlenül: UNVERIFIED (a metaadat nem olvasható a token szerepével).
 - **Valódi aláírás és a release-folyamatba kötés** (`release.sh` / `ReleaseManager`): nincs bekötve; az aktiválás külön lépés, és a #233 landolásától függ. Valódi Vault-aláírás külön tulajdonosi engedély.
 - **`executed_wasm_sha256` előállítása:** a pinelt relay-transzformáció kimenete kell hozzá; egy szűk, újrahasznosítható transzformációs komponens (a Relay oldalán, wabin-nal) még nincs: a WP-01-nek ez a bemenete, a függőségi vizsgálat (a komponens a teljes Relay behúzása nélkül elérhető-e) nyitott.
-- **Az `ocid`/szerkezeti változás nélkül** a modul `project.yaml`-ja nem módosult.
+- **A modul `project.yaml`-ja nem módosult** (a `metadata.sign` és a `metadata.cicSign` jelentése változatlan).
 
 **HOLD:** merge, valódi aláírás, countersign, release, production aktiválás.
